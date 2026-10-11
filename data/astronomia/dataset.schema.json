@@ -1,0 +1,223 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:talaia:schema:calendari-astronomic:v1",
+  "title": "Calendari astronòmic normalitzat de Talaia",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["versio_esquema", "periode", "fonts", "fenomens", "esdeveniments"],
+  "properties": {
+    "versio_esquema": {
+      "const": 1
+    },
+    "periode": {
+      "$ref": "#/$defs/periode"
+    },
+    "fonts": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/font"
+      }
+    },
+    "fenomens": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/fenomen"
+      }
+    },
+    "esdeveniments": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/esdeveniment"
+      }
+    }
+  },
+  "$defs": {
+    "codi": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "data": {
+      "type": "string",
+      "format": "date"
+    },
+    "instant": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "Z$"
+    },
+    "periode": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["des_de", "fins_a"],
+      "properties": {
+        "des_de": {
+          "$ref": "#/$defs/data"
+        },
+        "fins_a": {
+          "$ref": "#/$defs/data"
+        }
+      }
+    },
+    "text": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["nom", "descripcio"],
+      "properties": {
+        "nom": {
+          "type": "string",
+          "minLength": 1
+        },
+        "descripcio": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "textos": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ca"],
+      "properties": {
+        "ca": {
+          "$ref": "#/$defs/text"
+        },
+        "es": {
+          "$ref": "#/$defs/text"
+        },
+        "en": {
+          "$ref": "#/$defs/text"
+        }
+      }
+    },
+    "font": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["codi", "organitzacio", "titol", "url", "consultat_el"],
+      "properties": {
+        "codi": {
+          "$ref": "#/$defs/codi"
+        },
+        "organitzacio": {
+          "enum": ["IMO", "NASA"]
+        },
+        "titol": {
+          "type": "string",
+          "minLength": 1
+        },
+        "url": {
+          "type": "string",
+          "format": "uri"
+        },
+        "any_publicacio": {
+          "type": "integer",
+          "minimum": 1900
+        },
+        "consultat_el": {
+          "$ref": "#/$defs/data"
+        }
+      }
+    },
+    "fenomen": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["codi", "tipus", "periodicitat", "publicable_calendari", "textos"],
+      "properties": {
+        "codi": {
+          "$ref": "#/$defs/codi"
+        },
+        "tipus": {
+          "enum": ["pluja_estels", "eclipsi_solar", "eclipsi_llunar"]
+        },
+        "periodicitat": {
+          "enum": ["anual", "ocasional"]
+        },
+        "publicable_calendari": {
+          "type": "boolean"
+        },
+        "textos": {
+          "$ref": "#/$defs/textos"
+        }
+      }
+    },
+    "precisio": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["inici", "fi", "maxim"],
+      "properties": {
+        "inici": {
+          "enum": ["dia", "hora", "minut", "segon"]
+        },
+        "fi": {
+          "enum": ["dia", "hora", "minut", "segon"]
+        },
+        "maxim": {
+          "oneOf": [
+            {
+              "enum": ["dia", "hora", "minut", "segon"]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "esdeveniment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "codi",
+        "fenomen_codi",
+        "inici",
+        "fi",
+        "maxim",
+        "precisio",
+        "rellevant_catalunya",
+        "font_codi"
+      ],
+      "properties": {
+        "codi": {
+          "$ref": "#/$defs/codi"
+        },
+        "fenomen_codi": {
+          "$ref": "#/$defs/codi"
+        },
+        "inici": {
+          "$ref": "#/$defs/instant"
+        },
+        "fi": {
+          "$ref": "#/$defs/instant"
+        },
+        "maxim": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/instant"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "precisio": {
+          "$ref": "#/$defs/precisio"
+        },
+        "rellevant_catalunya": {
+          "const": true
+        },
+        "nota_visibilitat_ca": {
+          "type": "string",
+          "minLength": 1
+        },
+        "font_codi": {
+          "$ref": "#/$defs/codi"
+        },
+        "referencia_font": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  }
+}
