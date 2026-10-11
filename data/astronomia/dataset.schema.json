@@ -60,10 +60,10 @@
         }
       }
     },
-    "text": {
+    "text_fenomen": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["nom", "descripcio"],
+      "required": ["nom", "descripcio", "consell_general"],
       "properties": {
         "nom": {
           "type": "string",
@@ -72,22 +72,57 @@
         "descripcio": {
           "type": "string",
           "minLength": 1
+        },
+        "consell_general": {
+          "type": "string",
+          "minLength": 1
         }
       }
     },
-    "textos": {
+    "textos_fenomen": {
       "type": "object",
       "additionalProperties": false,
       "required": ["ca"],
       "properties": {
         "ca": {
-          "$ref": "#/$defs/text"
+          "$ref": "#/$defs/text_fenomen"
         },
         "es": {
-          "$ref": "#/$defs/text"
+          "$ref": "#/$defs/text_fenomen"
         },
         "en": {
-          "$ref": "#/$defs/text"
+          "$ref": "#/$defs/text_fenomen"
+        }
+      }
+    },
+    "text_esdeveniment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["nota_visibilitat", "consell_observacio"],
+      "properties": {
+        "nota_visibilitat": {
+          "type": "string",
+          "minLength": 1
+        },
+        "consell_observacio": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "textos_esdeveniment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ca"],
+      "properties": {
+        "ca": {
+          "$ref": "#/$defs/text_esdeveniment"
+        },
+        "es": {
+          "$ref": "#/$defs/text_esdeveniment"
+        },
+        "en": {
+          "$ref": "#/$defs/text_esdeveniment"
         }
       }
     },
@@ -123,6 +158,26 @@
       "type": "object",
       "additionalProperties": false,
       "required": ["codi", "tipus", "periodicitat", "publicable_calendari", "textos"],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "tipus": {
+                "const": "pluja_estels"
+              }
+            },
+            "required": ["tipus"]
+          },
+          "then": {
+            "required": ["velocitat_km_s"]
+          },
+          "else": {
+            "not": {
+              "required": ["velocitat_km_s"]
+            }
+          }
+        }
+      ],
       "properties": {
         "codi": {
           "$ref": "#/$defs/codi"
@@ -136,8 +191,46 @@
         "publicable_calendari": {
           "type": "boolean"
         },
+        "velocitat_km_s": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "Velocitat geocèntrica característica dels meteors, en km/s; només s'aplica a pluges d'estels."
+        },
         "textos": {
-          "$ref": "#/$defs/textos"
+          "$ref": "#/$defs/textos_fenomen"
+        }
+      }
+    },
+    "zhr": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["valor", "qualificador"],
+      "description": "Taxa horària zenital prevista: meteors per hora en condicions ideals, amb cel fosc i el radiant al zenit. El recompte real acostuma a ser inferior.",
+      "properties": {
+        "valor": {
+          "type": "number",
+          "minimum": 0
+        },
+        "qualificador": {
+          "enum": ["estimat", "aproximat", "minim", "variable"]
+        }
+      }
+    },
+    "radiant": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ascensio_recta_graus", "declinacio_graus"],
+      "description": "Posició aparent d'on semblen provenir els meteors al màxim. No cal mirar directament el radiant per observar-los.",
+      "properties": {
+        "ascensio_recta_graus": {
+          "type": "number",
+          "minimum": 0,
+          "exclusiveMaximum": 360
+        },
+        "declinacio_graus": {
+          "type": "number",
+          "minimum": -90,
+          "maximum": 90
         }
       }
     },
@@ -175,6 +268,9 @@
         "maxim",
         "precisio",
         "rellevant_catalunya",
+        "rellevancia",
+        "dificultat_observacio",
+        "textos",
         "font_codi"
       ],
       "properties": {
@@ -206,9 +302,20 @@
         "rellevant_catalunya": {
           "const": true
         },
-        "nota_visibilitat_ca": {
-          "type": "string",
-          "minLength": 1
+        "rellevancia": {
+          "enum": ["principal", "secundari"]
+        },
+        "dificultat_observacio": {
+          "enum": ["baixa", "mitjana", "alta"]
+        },
+        "zhr": {
+          "$ref": "#/$defs/zhr"
+        },
+        "radiant_maxim": {
+          "$ref": "#/$defs/radiant"
+        },
+        "textos": {
+          "$ref": "#/$defs/textos_esdeveniment"
         },
         "font_codi": {
           "$ref": "#/$defs/codi"

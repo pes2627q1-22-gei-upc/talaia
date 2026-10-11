@@ -20,7 +20,7 @@ d'aquesta ingesta.
 
 - [`dataset.schema.json`](dataset.schema.json): contracte JSON Schema del conjunt de dades.
 - [`inventari-fonts.md`](inventari-fonts.md): fonts oficials i selecció raonada d'esdeveniments.
-- `calendaris-2026-2027.json`: dades normalitzades. Es crearà en la fase d'extracció.
+- [`calendaris-2026-2027.json`](calendaris-2026-2027.json): dades normalitzades i traçables.
 
 El conjunt separa quatre conceptes:
 
@@ -48,9 +48,14 @@ perquè TG-107 hi pugui afegir altres tipus.
 
 ### Fenomen i esdeveniment
 
-Un fenomen descriu què és observable i la seva periodicitat. Un esdeveniment només conté la
-seva ocurrència temporal i referencia el fenomen mitjançant `fenomen_codi`. Això evita repetir
-el nom i la descripció a cada any.
+Un fenomen descriu què és observable, la seva periodicitat i les propietats que no canvien
+entre anys, com la velocitat característica d'una pluja. Un esdeveniment conté les condicions
+de la seva ocurrència concreta: dates, màxim, ZHR prevista, radiant, rellevància i dificultat.
+Referencia el fenomen mitjançant `fenomen_codi` i evita repetir el nom i la descripció.
+
+La ZHR és la taxa horària zenital: una estimació del nombre de meteors per hora en condicions
+ideals, amb cel fosc i el radiant al zenit. El recompte real acostuma a ser inferior. El radiant
+és el punt del cel d'on semblen provenir els meteors, però no cal mirar-lo directament.
 
 ### Precisió temporal
 
@@ -62,12 +67,21 @@ durant la normalització com si fos un càlcul oficial.
 `maxim` és nul quan la font no permet identificar-ne un. Si existeix, ha d'estar entre `inici`
 i `fi`.
 
+Quan la font només indica un dia, el dataset representa el màxim a les `12:00:00Z` i declara
+`precisio.maxim: "dia"`. El migdia és un marcador neutre per conservar la data, no una hora
+astronòmica publicada. Els inicis i finals amb precisió de dia es representen respectivament a
+les `00:00:00Z` i les `23:59:59Z`.
+
 ### Rellevància per a Catalunya
 
-Tots els esdeveniments versionats han de tenir `rellevant_catalunya: true`. La nota opcional
-`nota_visibilitat_ca` explica el criteri emprat, especialment en els eclipsis. No s'hi guarden
+Tots els esdeveniments versionats han de tenir `rellevant_catalunya: true`. Els textos de cada
+ocurrència expliquen la visibilitat i donen un consell específic. No s'hi guarden
 coordenades d'un punt d'observació: un esdeveniment no ocorre en un únic punt i les ubicacions
 recomanades corresponen al motor de recomanacions.
+
+`rellevancia` (`principal` o `secundari`) i `dificultat_observacio` pertanyen a l'ocurrència,
+perquè poden canviar d'un any a l'altre. La interfície pot derivar-ne una explicació simple i
+reservar ZHR, radiant i altres valors tècnics per a la vista de «més informació».
 
 ### Estat i meteorologia
 
@@ -78,7 +92,7 @@ procedència.
 
 ### Idiomes
 
-`textos.ca` és obligatori. `textos.es` i `textos.en` són opcionals. L'API de TG-108 podrà
+`textos.ca` és obligatori tant al fenomen com a l'esdeveniment. `textos.es` i `textos.en` són opcionals. L'API de TG-108 podrà
 seleccionar l'idioma i retornar camps plans (`nom`, `descripcio`) sense exposar l'estructura
 interna de traduccions.
 
