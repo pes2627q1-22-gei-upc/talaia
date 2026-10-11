@@ -19,6 +19,7 @@ d'aquesta ingesta.
 ## Fitxers
 
 - [`dataset.schema.json`](dataset.schema.json): contracte JSON Schema del conjunt de dades.
+- [`inventari-fonts.md`](inventari-fonts.md): fonts oficials i selecció raonada d'esdeveniments.
 - `calendaris-2026-2027.json`: dades normalitzades. Es crearà en la fase d'extracció.
 
 El conjunt separa quatre conceptes:
