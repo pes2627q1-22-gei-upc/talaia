@@ -12,4 +12,4 @@ React Native + TypeScript amb Expo (EAS Build, Expo Push, dev client). Patró MV
 
 ## Conseqüències
 
-Tipus compartits amb el servidor via `packages/shared`. MapLibre necessita codi natiu: no funciona amb Expo Go, cal un *development build* (EAS). Les pantalles no criden l'API directament.
+Tipus compartits amb el servidor via `packages/shared`. El mapa (MapLibre GL JS) és una DOM component i funciona a Expo Go ([ADR-0015](0015-mapa-dom-component.md); abans aquí deia que calia un *development build*). Les pantalles no criden l'API directament.

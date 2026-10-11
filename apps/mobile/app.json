@@ -8,9 +8,11 @@
     "scheme": "talaia",
     "userInterfaceStyle": "dark",
     "ios": {
+      "bundleIdentifier": "cat.talaia.app",
       "icon": "./assets/expo.icon"
     },
     "android": {
+      "package": "cat.talaia.app",
       "adaptiveIcon": {
         "backgroundColor": "#0E1433",
         "foregroundImage": "./assets/images/android-icon-foreground.png",

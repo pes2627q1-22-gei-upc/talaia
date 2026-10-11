@@ -55,11 +55,11 @@ Corbes: en entrar, desacceleració (`Easing.out(Easing.cubic)`); en sortir, acce
 6. Les llistes que poden créixer van virtualitzades (`FlatList`), mai amb un `map` dins d'un `ScrollView`.
 7. Res de càlcul pesat mentre s'anima: les dades arriben preparades del ViewModel (`useMemo`), no es transformen a la View.
 8. Es respecta l'opció del sistema de reduir el moviment (`useReducedMotion` de Reanimated): les animacions es converteixen en fosos curts.
-9. **Objectiu: 60 fps.** Es comprova al dispositiu, amb un *development build*. Expo Go i el mode de desenvolupament van més lents i no serveixen per jutjar-ho.
+9. **Objectiu: 60 fps.** Es comprova al dispositiu, amb Expo Go en mode de producció (`npx expo start --no-dev --minify`). El mode de desenvolupament va més lent i no serveix per jutjar-ho. El mapa és un WebView (ADR-0015): mira-hi els fps en un Android de gamma mitjana, i sense el mode d'estalvi d'energia.
 
 ## Mapa
 
-Estil nocturn propi sobre les tessel·les vectorials de l'ICGC, recolorit amb aquesta paleta (aigua i terreny en blaus `nit`/`crep`, etiquetes `boira`). Atribució ICGC + OpenStreetMap obligatòria.
+Estil nocturn propi sobre les tessel·les vectorials de l'ICGC, recolorit amb aquesta paleta (aigua i terreny en blaus `nit`/`crep`, etiquetes `boira`). Atribució ICGC + OpenStreetMap obligatòria. Implementat a `apps/mobile/src/features/map/style/nightStyle.ts` (TG-89): terra `card`, aigua `nit`, vegetació `sheet`, carreteres `linia` (les principals `crep`), edificis `crep`, etiquetes `lluna`/`boira` sobre halo `nit`, terreny 3D amb ombrejat i cel de nit amb boira a l'horitzó (cel `nit`, horitzó `crep`, boira `card`; [ADR-0015](decisions/0015-mapa-dom-component.md)).
 
 ## Regles
 

@@ -2,6 +2,8 @@
 
 **Estat:** Acceptada · **Data:** 2026-09 (Incepció 2)
 
+> **2026-10-10:** el motor del mapa és MapLibre **GL JS** en una DOM component, amb terreny 3D i a Expo Go, i ja no cal *development build*: [ADR-0015](0015-mapa-dom-component.md).
+
 ## Context
 
 Volem un mapa molt més estètic que Google Maps, fosc i en 3D, amb dades obertes i sense cost.

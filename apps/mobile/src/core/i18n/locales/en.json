@@ -9,8 +9,7 @@
     "profile": "Profile"
   },
   "map": {
-    "title": "Where shall we look up?",
-    "subtitle": "The best spots to watch the sky in Catalonia, with their visibility index."
+    "a11y": "Night map of Catalonia with its terrain"
   },
   "calendar": {
     "title": "Calendar",

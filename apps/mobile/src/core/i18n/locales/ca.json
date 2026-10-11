@@ -9,8 +9,7 @@
     "profile": "Perfil"
   },
   "map": {
-    "title": "On mirem el cel?",
-    "subtitle": "Els millors punts per observar el cel de Catalunya, amb el seu índex de visibilitat."
+    "a11y": "Mapa nocturn de Catalunya amb el relleu"
   },
   "calendar": {
     "title": "Calendari",

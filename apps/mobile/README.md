@@ -12,7 +12,7 @@ npm run mobile               # = expo start, des de l'arrel
 
 Variables: copia `apps/mobile/.env.example` a `apps/mobile/.env` (Expo no llegeix el `.env` de l'arrel). Al mòbil, l'adreça de l'API ha de ser la IP de l'ordinador: [docs/onboarding.md](../../docs/onboarding.md#4-engega-lapi-i-lapp).
 
-Mentre no hi hagi mòduls natius (MapLibre arriba amb TG-89), es pot provar amb **Expo Go**. Després caldrà un *development build* (`npx expo run:ios|android` o EAS): vegeu `AGENTS.md`.
+Tota l'app es prova amb **Expo Go**, mapa inclòs. El mapa és MapLibre GL JS en una DOM component (`src/features/map/NightMap.tsx`, ADR-0015) i el seu estil nocturn és a `src/features/map/style/nightStyle.ts`. `metro.transformer.js` evita que Babel transformi `maplibre-gl`: no el treguis.
 
 | Ordre | Què fa |
 |---|---|

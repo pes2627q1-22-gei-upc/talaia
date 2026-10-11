@@ -9,8 +9,7 @@
     "profile": "Perfil"
   },
   "map": {
-    "title": "¿Dónde miramos el cielo?",
-    "subtitle": "Los mejores puntos para observar el cielo de Cataluña, con su índice de visibilidad."
+    "a11y": "Mapa nocturno de Cataluña con el relieve"
   },
   "calendar": {
     "title": "Calendario",

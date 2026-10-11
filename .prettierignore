@@ -8,3 +8,6 @@ expo-env.d.ts
 
 # Generat per Icon Composer
 *.icon/
+
+# Còpia fixa de l'estil de l'ICGC: es manté idèntica a l'original
+apps/mobile/src/features/map/style/icgc-mapa-base-fosc.json
