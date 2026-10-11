@@ -1,26 +1,29 @@
 import type { PropsWithChildren } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { colors, fontSizes, spacing } from '@/core/theme/tokens';
+import { colors, spacing } from '@/core/theme/tokens';
+
+import { AppText } from './AppText';
 
 type ScreenProps = PropsWithChildren<{
   title: string;
   subtitle?: string;
 }>;
 
-/**
- * Esquelet comú d'una pantalla: fons de nit, títol i subtítol.
- * Provisional fins al design system (TG-113), que hi posarà la tipografia de la marca.
- */
+/** Esquelet comú d'una pantalla: fons de nit, títol de la marca i subtítol. */
 export function Screen({ title, subtitle, children }: ScreenProps) {
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
-        <Text accessibilityRole="header" style={styles.title}>
+        <AppText variant="display" accessibilityRole="header">
           {title}
-        </Text>
-        {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
+        </AppText>
+        {subtitle ? (
+          <AppText variant="body" color="boira">
+            {subtitle}
+          </AppText>
+        ) : null}
       </View>
       <View style={styles.body}>{children}</View>
     </SafeAreaView>
@@ -33,23 +36,13 @@ const styles = StyleSheet.create({
     backgroundColor: colors.nit,
   },
   header: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
+    paddingHorizontal: spacing.ml,
+    paddingTop: spacing.sm,
     gap: spacing.sm,
-  },
-  title: {
-    color: colors.lluna,
-    fontSize: fontSizes.title,
-    fontWeight: '700',
-  },
-  subtitle: {
-    color: colors.boira,
-    fontSize: fontSizes.body,
-    lineHeight: fontSizes.body * 1.4,
   },
   body: {
     flex: 1,
-    padding: spacing.lg,
+    padding: spacing.ml,
     gap: spacing.md,
   },
 });

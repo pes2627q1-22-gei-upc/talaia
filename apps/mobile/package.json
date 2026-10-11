@@ -3,6 +3,8 @@
   "main": "expo-router/entry",
   "version": "1.0.0",
   "dependencies": {
+    "@expo-google-fonts/atkinson-hyperlegible-next": "^0.4.1",
+    "@expo-google-fonts/big-shoulders-display": "^0.2.3",
     "@expo/ui": "~57.0.21",
     "@talaia/shared": "*",
     "@tanstack/react-query": "^5.104.1",
@@ -11,6 +13,7 @@
     "expo-device": "~57.0.2",
     "expo-font": "~57.0.4",
     "expo-glass-effect": "~57.0.4",
+    "expo-haptics": "~57.0.3",
     "expo-image": "~57.0.5",
     "expo-linking": "~57.0.11",
     "expo-localization": "~57.0.2",
@@ -58,6 +61,10 @@
     "moduleNameMapper": {
       "^@/assets/(.*)$": "<rootDir>/assets/$1",
       "^@/(.*)$": "<rootDir>/src/$1"
-    }
+    },
+    "resolver": "react-native-worklets/jest/resolver",
+    "setupFilesAfterEnv": [
+      "<rootDir>/jest.setup.ts"
+    ]
   }
 }

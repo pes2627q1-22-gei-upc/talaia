@@ -2,7 +2,7 @@ import { Link } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet } from 'react-native';
 
-import { colors, fontSizes } from '@/core/theme/tokens';
+import { colors, typography } from '@/core/theme/tokens';
 import { Screen } from '@/shared/ui/Screen';
 
 export default function NotFound() {
@@ -17,5 +17,5 @@ export default function NotFound() {
 }
 
 const styles = StyleSheet.create({
-  link: { color: colors.far, fontSize: fontSizes.body },
+  link: { ...typography.label, color: colors.far },
 });

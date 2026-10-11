@@ -35,6 +35,14 @@
     "title": "Observation spot",
     "subtitle": "Spot {{id}}: hourly index and factors."
   },
+  "index": {
+    "level": {
+      "ras": "Clear",
+      "jus": "Fair",
+      "tap": "Overcast"
+    },
+    "a11y": "Visibility index: {{value}} out of 100, {{level}}"
+  },
   "welcome": {
     "title": "Talaia",
     "subtitle": "Where and when to look at the sky."

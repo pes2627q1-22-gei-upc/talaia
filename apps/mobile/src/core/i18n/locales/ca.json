@@ -35,6 +35,14 @@
     "title": "Punt d'observació",
     "subtitle": "Fitxa del punt {{id}}: índex per hores i factors."
   },
+  "index": {
+    "level": {
+      "ras": "Cel ras",
+      "jus": "Justet",
+      "tap": "Tapat"
+    },
+    "a11y": "Índex de visibilitat: {{value}} de 100, {{level}}"
+  },
   "welcome": {
     "title": "Talaia",
     "subtitle": "On i quan mirar el cel."

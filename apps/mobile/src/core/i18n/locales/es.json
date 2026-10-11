@@ -35,6 +35,14 @@
     "title": "Punto de observación",
     "subtitle": "Ficha del punto {{id}}: índice por horas y factores."
   },
+  "index": {
+    "level": {
+      "ras": "Despejado",
+      "jus": "Justito",
+      "tap": "Cubierto"
+    },
+    "a11y": "Índice de visibilidad: {{value}} de 100, {{level}}"
+  },
   "welcome": {
     "title": "Talaia",
     "subtitle": "Dónde y cuándo mirar el cielo."

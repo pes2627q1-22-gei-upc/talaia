@@ -1,9 +1,21 @@
+import {
+  AtkinsonHyperlegibleNext_400Regular,
+  AtkinsonHyperlegibleNext_600SemiBold,
+  AtkinsonHyperlegibleNext_700Bold,
+  AtkinsonHyperlegibleNext_800ExtraBold,
+} from '@expo-google-fonts/atkinson-hyperlegible-next';
+import { BigShouldersDisplay_800ExtraBold } from '@expo-google-fonts/big-shoulders-display';
+import { useFonts } from 'expo-font';
 import { DarkTheme, Stack, ThemeProvider } from 'expo-router';
+import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
+import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { AppProviders } from '@/core/providers/AppProviders';
 import { colors } from '@/core/theme/tokens';
+
+void SplashScreen.preventAutoHideAsync();
 
 const navigationTheme = {
   ...DarkTheme,
@@ -32,6 +44,23 @@ function RootStack() {
 }
 
 export default function RootLayout() {
+  // Les claus són els noms de família que fa servir `fonts` a tokens.ts.
+  const [fontsLoaded, fontError] = useFonts({
+    BigShouldersDisplay_800ExtraBold,
+    AtkinsonHyperlegibleNext_400Regular,
+    AtkinsonHyperlegibleNext_600SemiBold,
+    AtkinsonHyperlegibleNext_700Bold,
+    AtkinsonHyperlegibleNext_800ExtraBold,
+  });
+  const ready = fontsLoaded || fontError !== null;
+
+  useEffect(() => {
+    if (ready) void SplashScreen.hideAsync();
+  }, [ready]);
+
+  // Si una font falla, l'app arrenca igualment amb la del sistema.
+  if (!ready) return null;
+
   return (
     <AppProviders>
       <ThemeProvider value={navigationTheme}>

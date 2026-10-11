@@ -23,6 +23,7 @@ Més context: `docs/producte.md` (abast, MVP, NOT list), `docs/arquitectura.md`,
 - **Qualitat:** ESLint, Prettier, `tsconfig.base.json` i hooks de commit (husky + lint-staged + commitlint) a l'arrel (TG-67, ADR-0010).
 - **API:** scaffold fet (TG-68): Express 5 a `services/api` amb `/api/v1/health`, errors uniformes, entorn validat i OpenAPI generat amb zod + zod-to-openapi (`/api/v1/openapi.json`, `/api/v1/docs`; ADR-0011). Vegeu `services/api/README.md`.
 - **Commit inicial** (TG-112): `packages/shared` amb els tipus de domini, i mòdul MVVM de referència a `apps/mobile/src/features/apiStatus` (guia «Afegir una pantalla nova» a `apps/mobile/README.md`). A `stable` s'hi arriba amb `release/0.1.0` al final del sprint (ADR-0009).
+- **Design system** (TG-113): tokens del Figma (colors, tipografia, moviment) i components base a `apps/mobile/src/shared/ui`. Taula i regles: `docs/design-system.md`.
 - **CI** (TG-70): lint, typecheck i tests de l'app i de l'API a cada PR; SonarCloud preparat (`docs/ci.md`).
 - **Mapa** (TG-89): MapLibre GL JS en una DOM component d'Expo, amb l'estil nocturn de l'ICGC, terreny 3D i cel de nit (ADR-0015). Tota l'app es prova a **Expo Go**; cap mòdul natiu que Expo Go no porti sense ADR (ADR-0014). Identificador: `cat.talaia.app`.
 

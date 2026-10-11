@@ -78,7 +78,7 @@ Per a una feature `xxx` (identificadors en anglès) amb ruta `/ruta-en-catala`:
 1. **Tipus.** Si la resposta és un tipus de domini, és (o s'afegeix) a `packages/shared`: `import type { Esdeveniment } from '@talaia/shared'`.
 2. **Repository** `src/features/xxx/xxxRepository.ts`: `fetchXxx()` crida `apiGet<T>('/recurs')` i `useXxxQuery()` l'embolica amb `useQuery` i una clau pròpia (`['recurs', filtres]`). És l'únic fitxer de la feature que coneix l'API.
 3. **ViewModel** `useXxxViewModel.ts`: crida el hook del Repository i retorna el que la View pinta: textos ja traduïts, dades ja formatades, l'estat (`loading`/`ok`/`error`) i les accions.
-4. **View** `XxxScreen.tsx`: `const vm = useXxxViewModel();` i només JSX. Esquelet amb `Screen` (`shared/ui`); colors, mides i espaiats de `core/theme/tokens`.
+4. **View** `XxxScreen.tsx`: `const vm = useXxxViewModel();` i només JSX. Esquelet amb `Screen` i els components base de `shared/ui` (`AppText`, `Button`, `Card`, `Chip`, `IndexIndicator`…; taula a `docs/design-system.md`); colors, mides i espaiats de `core/theme/tokens`.
 5. **Ruta** a `src/app/` (o a `src/app/(tabs)/` si és una pestanya): un fitxer prim que només retorna `<XxxScreen />`. Amb paràmetres, mira `src/app/punt/[id].tsx`.
 6. **Textos**: les claus noves als tres fitxers de `core/i18n/locales/` (ca, es, en). Són tipades: una clau inexistent no compila, i un test comprova que els tres idiomes tenen les mateixes.
 7. **Tests** a `src/features/xxx/__tests__/`: copia els d'`apiStatus`. Només se simula `apiGet` (`jest.mock('@/core/api/httpClient', …)`) i el proveïdor de consultes és `createQueryWrapper()`.
