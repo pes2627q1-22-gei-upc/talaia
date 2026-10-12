@@ -15,6 +15,13 @@ function hora(hora: string, nuvolsTotal: number): PrevisioMeteoHora {
     nuvolsAlts: nuvolsTotal,
     humitat: 70,
     visibilitat: 30000,
+    temperatura: 12,
+    puntRosada: 8,
+    precipitacio: 0,
+    probabilitatPrecipitacio: 0,
+    ventVelocitat: 5,
+    ventRafegues: 12,
+    ventDireccio: 45,
   };
 }
 

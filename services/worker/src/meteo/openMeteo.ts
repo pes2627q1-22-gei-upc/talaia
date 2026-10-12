@@ -5,8 +5,9 @@ import { z } from 'zod';
 export type Coordenades = { lat: number; lon: number };
 
 /**
- * Variables horàries d'Open-Meteo que demana TG-95. Les de TG-114 (temperatura, vent,
- * precipitació, punt de rosada) s'afegeixen aquí i al mapatge de `toHores`.
+ * Variables horàries d'Open-Meteo: les de TG-95 (núvols, humitat, visibilitat) i les de TG-114
+ * (temperatura, punt de rosada, precipitació, vent). Una variable nova va aquí, a `HourlySchema`
+ * i al mapatge de `toHores`; el typecheck avisa si en falta alguna.
  * Referència: https://open-meteo.com/en/docs
  */
 export const VARIABLES_HORARIES = [
@@ -16,7 +17,24 @@ export const VARIABLES_HORARIES = [
   'cloud_cover_high',
   'relative_humidity_2m',
   'visibility',
+  'temperature_2m',
+  'dew_point_2m',
+  'precipitation',
+  'precipitation_probability',
+  'wind_speed_10m',
+  'wind_gusts_10m',
+  'wind_direction_10m',
 ] as const;
+
+/**
+ * Unitats demanades explícitament, perquè el domini (`PrevisioMeteoHora`) no depengui dels valors
+ * per defecte de la font: °C, mm i km/h. Els percentatges, els metres i els graus no es configuren.
+ */
+export const UNITATS = {
+  temperature_unit: 'celsius',
+  precipitation_unit: 'mm',
+  wind_speed_unit: 'kmh',
+} as const;
 
 /**
  * Dies de previsió per defecte. Open-Meteo compta els dies de 00:00 a 23:00 UTC: amb 3 dies, la
@@ -78,6 +96,13 @@ const HourlySchema = z
     cloud_cover_high: Serie,
     relative_humidity_2m: Serie,
     visibility: Serie,
+    temperature_2m: Serie,
+    dew_point_2m: Serie,
+    precipitation: Serie,
+    precipitation_probability: Serie,
+    wind_speed_10m: Serie,
+    wind_gusts_10m: Serie,
+    wind_direction_10m: Serie,
   })
   // Les sèries són paral·leles a `time`: una de més curta és una resposta mal formada.
   .refine((hourly) => VARIABLES_HORARIES.every((v) => hourly[v].length === hourly.time.length), {
@@ -110,6 +135,13 @@ export function toHores(hourly: Lloc['hourly']): PrevisioMeteoHora[] {
     nuvolsAlts: hourly.cloud_cover_high[i] ?? null,
     humitat: hourly.relative_humidity_2m[i] ?? null,
     visibilitat: hourly.visibility[i] ?? null,
+    temperatura: hourly.temperature_2m[i] ?? null,
+    puntRosada: hourly.dew_point_2m[i] ?? null,
+    precipitacio: hourly.precipitation[i] ?? null,
+    probabilitatPrecipitacio: hourly.precipitation_probability[i] ?? null,
+    ventVelocitat: hourly.wind_speed_10m[i] ?? null,
+    ventRafegues: hourly.wind_gusts_10m[i] ?? null,
+    ventDireccio: hourly.wind_direction_10m[i] ?? null,
   }));
 }
 
@@ -140,6 +172,7 @@ export function createOpenMeteoClient(options: OpenMeteoClientOptions): OpenMete
     url.searchParams.set('timezone', 'UTC');
     url.searchParams.set('timeformat', 'unixtime');
     url.searchParams.set('forecast_days', String(diesPrevisio));
+    for (const [param, unitat] of Object.entries(UNITATS)) url.searchParams.set(param, unitat);
     return url;
   }
 
