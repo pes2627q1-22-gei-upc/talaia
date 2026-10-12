@@ -38,7 +38,7 @@ function RootStack() {
         name="punt/[id]"
         options={{ headerShown: true, title: t('point.title'), headerTintColor: colors.lluna }}
       />
-      <Stack.Screen name="benvinguda" options={{ presentation: 'modal' }} />
+      <Stack.Screen name="benvinguda" options={{ presentation: 'fullScreenModal' }} />
     </Stack>
   );
 }
