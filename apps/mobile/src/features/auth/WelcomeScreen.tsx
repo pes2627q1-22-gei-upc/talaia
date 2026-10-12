@@ -53,6 +53,7 @@ export function WelcomeScreen() {
       ) : null}
 
       <View
+        testID="welcome-content"
         onLayout={(event) => setContentHeight(event.nativeEvent.layout.height)}
         style={[styles.content, { paddingBottom: Math.max(insets.bottom, spacing.lg) }]}
       >

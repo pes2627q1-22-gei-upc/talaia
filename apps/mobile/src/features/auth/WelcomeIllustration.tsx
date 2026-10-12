@@ -81,6 +81,7 @@ export function WelcomeIllustration({ scale, screenWidth, bottom }: WelcomeIllus
 
   return (
     <Animated.View
+      testID="welcome-illustration"
       entering={FadeIn.duration(motion.slow).easing(motion.enter)}
       pointerEvents="none"
       accessibilityElementsHidden
