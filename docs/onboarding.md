@@ -137,8 +137,6 @@ Tota l'app es prova a **Expo Go**, mapa inclòs: el mapa és MapLibre GL JS dins
 
 ## 5. Supabase: base de dades i migracions
 
-> **Aquesta secció s'aplica quan es fusioni TG-69** ([PR #12](https://github.com/pes2627q1-22-gei-upc/talaia/pull/12)), que porta `supabase/config.toml` i la primera migració. Fins aleshores, la carpeta `supabase/` no existeix a `snapshot`.
-
 La base de dades és a Supabase (Postgres 17 amb PostGIS, a Irlanda). **L'esquema només canvia amb migracions** versionades a `supabase/migrations/`: res de crear taules ni columnes des del panell web. Un canvi fet al panell no queda al repo, ningú el pot revisar i la resta de l'equip no el tindrà.
 
 ### Els valors del `.env`
