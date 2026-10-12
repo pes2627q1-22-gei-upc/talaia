@@ -10,7 +10,14 @@ import { z } from 'zod';
 import { ErrorSchema, registry } from '../openapi';
 
 const TipusFenomenSchema: z.ZodType<TipusFenomen> = z
-  .enum(['pluja_estels', 'eclipsi_solar', 'eclipsi_llunar'])
+  .enum([
+    'fase_llunar',
+    'pluja_estels',
+    'eclipsi_solar',
+    'eclipsi_llunar',
+    'conjuncio',
+    'superlluna',
+  ])
   .meta({ id: 'TipusFenomen' });
 
 const IdiomaEsdevenimentSchema: z.ZodType<IdiomaEsdeveniment> = z

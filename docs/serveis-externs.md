@@ -25,12 +25,28 @@ X-API-Key: <clau assignada a Aprop>
 |---|---|---|
 | `des_de` | Sí | Primer dia de l'interval, inclòs, en format `YYYY-MM-DD`. |
 | `fins_a` | Sí | Últim dia de l'interval, inclòs, en format `YYYY-MM-DD`. |
-| `tipus` | No | `pluja_estels`, `eclipsi_solar` o `eclipsi_llunar`. |
+| `tipus` | No | Categoria del calendari; valors enumerats a continuació. |
 | `idioma` | No | `ca`, `es` o `en`; per defecte, `ca`. |
 
 Es retornen els esdeveniments que intersecten l'interval, ordenats per `inici`. No cal
 paginació per al volum previst del calendari. L'accés es protegeix amb una API key al header
 `X-API-Key`; la clau queda al backend d'Aprop i no en una aplicació client.
+
+`tipus` classifica les entrades per famílies estables; no identifica cada fenomen concret. El
+nom diferencia, per exemple, les Perseids de les Gemínids o la lluna plena de la lluna nova:
+
+| `tipus` | Exemples de `nom` | Origen |
+|---|---|---|
+| `fase_llunar` | Lluna nova, quart creixent, lluna plena, quart minvant | TG-107 |
+| `pluja_estels` | Perseids, Gemínids, Oriònids | TG-106 |
+| `eclipsi_solar` | Eclipsi solar total | TG-106 |
+| `eclipsi_llunar` | Eclipsi lunar penumbral | TG-106 |
+| `conjuncio` | Conjunció de Venus i Júpiter | TG-107 |
+| `superlluna` | Superlluna plena | TG-107 |
+
+Si Aprop omet el filtre `tipus`, rep totes les categories. No s'exposen sortides i postes del
+Sol ni crepuscles: són dades diàries per calcular la visibilitat, no entrades del calendari
+d'esdeveniments acordat.
 
 ### Resposta acordada
 
@@ -61,7 +77,8 @@ Decisions incorporades arran de la resposta d'Aprop:
 - Cada esdeveniment conté una ubicació general recomanada (`nom`, `latitud`, `longitud`) perquè
   el puguin representar al mapa. No afirma que sigui l'únic lloc d'observació ni incorpora una
   previsió de núvols.
-- El català és l'idioma per defecte. El paràmetre `idioma` prepara també castellà i anglès.
+- El català és obligatori i l'idioma per defecte. Aprop va marcar castellà i anglès com una
+  millora opcional; el contracte reserva `idioma=es|en` perquè Talaia ha decidit suportar-los.
 - L'autenticació és mitjançant API key.
 - No es retorna `estat`: un fenomen astronòmic no es cancel·la i el període `inici`--`fi` ja
   permet saber si és futur, actiu o passat. La meteorologia s'ha de tractar separadament.

@@ -1,5 +1,6 @@
-/** Tipus de fenomen publicats al servei acordat amb Aprop (P14, TG-109). */
-export type TipusFenomen = 'pluja_estels' | 'eclipsi_solar' | 'eclipsi_llunar';
+/** Categories del calendari publicades al servei acordat amb Aprop (P14, TG-109). */
+export type TipusFenomen =
+  'fase_llunar' | 'pluja_estels' | 'eclipsi_solar' | 'eclipsi_llunar' | 'conjuncio' | 'superlluna';
 
 export type IdiomaEsdeveniment = 'ca' | 'es' | 'en';
 

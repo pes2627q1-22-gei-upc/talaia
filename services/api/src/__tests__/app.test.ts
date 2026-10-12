@@ -67,6 +67,18 @@ describe('OpenAPI', () => {
     expect(res.body.components.schemas).toHaveProperty('Error');
     expect(res.body.components.schemas).toHaveProperty('Esdeveniment');
     expect(res.body.components.securitySchemes).toHaveProperty('ApiKeyAprop');
+
+    const tipus = res.body.paths['/esdeveniments'].get.parameters.find(
+      (parameter: { name: string }) => parameter.name === 'tipus',
+    );
+    expect(tipus.schema.enum).toEqual([
+      'fase_llunar',
+      'pluja_estels',
+      'eclipsi_solar',
+      'eclipsi_llunar',
+      'conjuncio',
+      'superlluna',
+    ]);
   });
 
   it('serveix la UI a /api/v1/docs/', async () => {
