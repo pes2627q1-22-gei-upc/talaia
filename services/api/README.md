@@ -16,9 +16,9 @@ npm run api                   # = npm run dev -w services/api, amb recàrrega
 | Ordre (`-w services/api`) | Què fa |
 |---|---|
 | `npm run dev` | `tsx watch`: recarrega en desar |
-| `npm run build` | Compila a `dist/` (sense els tests) |
+| `npm run build` | `tsup`: empaqueta a `dist/server.js`, amb el codi de `@talaia/*` a dins ([ADR-0013](../../docs/decisions/0013-acces-bd-kysely.md)) |
 | `npm start` | Executa `dist/server.js` (cal `build` abans) |
-| `npm run typecheck` | TypeScript strict (`tsconfig.base.json` de l'arrel) |
+| `npm run typecheck` | TypeScript strict (`tsconfig.base.json` de l'arrel). `tsc` només comprova tipus, no compila |
 | `npm test` | Jest + supertest |
 | `npm run lint` | ESLint amb la configuració de l'arrel |
 

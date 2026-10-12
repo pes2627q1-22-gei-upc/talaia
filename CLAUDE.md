@@ -23,9 +23,10 @@ Més context: `docs/producte.md` (abast, MVP, NOT list), `docs/arquitectura.md`,
 - **Qualitat:** ESLint, Prettier, `tsconfig.base.json` i hooks de commit (husky + lint-staged + commitlint) a l'arrel (TG-67, ADR-0010).
 - **API:** scaffold fet (TG-68): Express 5 a `services/api` amb `/api/v1/health`, errors uniformes, entorn validat i OpenAPI generat amb zod + zod-to-openapi (`/api/v1/openapi.json`, `/api/v1/docs`; ADR-0011). Vegeu `services/api/README.md`.
 - **Supabase** (TG-69): `supabase/` amb la configuració del CLI (Postgres 17) i les migracions; la primera activa PostGIS a l'esquema `extensions`. Flux de migracions: `docs/onboarding.md` → secció 5.
+- **Base de dades** (TG-86): taula `punts_observacio` (PostGIS, RLS sense polítiques) i paquet `packages/db` (`@talaia/db`): `createDb`, tipus generats amb `npm run db:types` i helpers de PostGIS. L'API compila amb tsup. `supabase db reset` carrega els seeds de `supabase/seeds/`. Vegeu `packages/db/README.md`.
 - **Commit inicial** (TG-112): `packages/shared` amb els tipus de domini, i mòdul MVVM de referència a `apps/mobile/src/features/apiStatus` (guia «Afegir una pantalla nova» a `apps/mobile/README.md`). A `stable` s'hi arriba amb `release/0.1.0` al final del sprint (ADR-0009).
 - **Design system** (TG-113): tokens del Figma (colors, tipografia, moviment) i components base a `apps/mobile/src/shared/ui`. Taula i regles: `docs/design-system.md`.
-- **CI** (TG-70): lint, typecheck i tests de l'app i de l'API a cada PR; SonarCloud preparat (`docs/ci.md`).
+- **CI** (TG-70): lint, typecheck i tests de l'app, de l'API i de `@talaia/db` a cada PR; SonarCloud preparat (`docs/ci.md`).
 - **Mapa** (TG-89): MapLibre GL JS en una DOM component d'Expo, amb l'estil nocturn de l'ICGC, terreny 3D i cel de nit (ADR-0015). Tota l'app es prova a **Expo Go**; cap mòdul natiu que Expo Go no porti sense ADR (ADR-0014). Identificador: `cat.talaia.app`.
 
 ## Stack (decidit, no reobrir sense ADR)
@@ -54,6 +55,7 @@ npm run api                    # API amb recàrrega (http://localhost:3000/api/v
 npm run typecheck && npm test  # tots els workspaces
 npm run lint                   # ESLint a tot el repo
 npm run format                 # Prettier (format:check per comprovar-ho)
+npm run db:types               # tipus de Kysely de la base de dades local (després d'una migració)
 ```
 
 Un workspace nou estén `tsconfig.base.json` de l'arrel i no necessita configuració d'ESLint pròpia.
@@ -68,6 +70,7 @@ apps/admin         Web d'administració (React)
 services/api       API REST Express (/api/v1, OpenAPI)
 services/worker    Worker horari de l'índex de visibilitat
 packages/shared    Tipus i models compartits (PuntObservacio, Esdeveniment, IndexVisibilitat…)
+packages/db        Accés a la base de dades amb Kysely: createDb, tipus generats i helpers de PostGIS
 data/              Dades estàtiques i scripts de preprocés (GeoTIFF, seeds) — els fitxers grans NO es versionen
 docs/              Context, decisions (ADR), sprint, contractes d'API
 ```

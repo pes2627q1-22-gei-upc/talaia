@@ -17,6 +17,7 @@ Ets nou a l'equip? Segueix la **[guia d'onboarding](docs/onboarding.md)**: en mi
 | `services/api` | API REST Node.js + Express (`/api/v1`, OpenAPI) |
 | `services/worker` | Càlcul horari de l'índex de visibilitat |
 | `packages/shared` | Tipus i models compartits |
+| `packages/db` | Accés a la base de dades (Kysely + PostGIS) |
 | `data` | Scripts de preprocés de dades obertes |
 | `docs` | Producte, arquitectura, decisions, sprint, flux de Git |
 
