@@ -44,8 +44,13 @@
     "a11y": "Índex de visibilitat: {{value}} de 100, {{level}}"
   },
   "welcome": {
-    "title": "Talaia",
-    "subtitle": "On i quan mirar el cel."
+    "appName": "Talaia",
+    "tagline": "On i quan mirar el cel.",
+    "description": "Et diem quin és el millor lloc a prop teu per veure postes de sol, pluges d'estels i nits clares.",
+    "continueGoogle": "Continua amb Google",
+    "continueApple": "Continua amb Apple",
+    "continueEmail": "Continua amb el correu",
+    "legal": "En continuar acceptes les condicions d'ús i la política de privacitat de Talaia."
   },
   "notFound": {
     "title": "Aquesta pantalla no existeix",

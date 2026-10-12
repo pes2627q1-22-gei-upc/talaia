@@ -21,5 +21,6 @@ Format: **Context → Decisió → Conseqüències**. Estat: `Acceptada`, `Propo
 | [0013](0013-acces-bd-kysely.md) | Accés a la base de dades amb Kysely (`@talaia/db`) sobre migracions SQL de Supabase; RLS activat sense polítiques | Acceptada |
 | [0014](0014-identificador-app-expo-go.md) | Identificador `cat.talaia.app` (P22) i Expo Go per provar en dispositius | Acceptada |
 | [0015](0015-mapa-dom-component.md) | Mapa amb MapLibre GL JS en una DOM component d'Expo: Expo Go i terreny 3D | Acceptada |
+| [0016](0016-sign-in-with-apple-ios.md) | «Continua amb Apple» només a iOS (P15) | Acceptada |
 
 Decisions encara obertes: [pendents.md](pendents.md).

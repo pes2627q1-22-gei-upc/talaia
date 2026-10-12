@@ -22,6 +22,18 @@ export const colors = {
   pedra: '#D9C4A0',
 } as const;
 
+/**
+ * Degradats del Figma. Els seus colors només existeixen dins del degradat: no són tokens de color
+ * i no es fan servir enlloc més.
+ */
+export const gradients = {
+  /** Cel de la benvinguda (mockup 01), de dalt a baix. */
+  cel: {
+    colors: ['#0B1030', '#17205A', '#2F3680'],
+    locations: [0, 0.58, 1],
+  },
+} as const;
+
 export const spacing = {
   xs: 4,
   sm: 8,
@@ -39,11 +51,13 @@ export const radii = {
   pill: 999,
 } as const;
 
-/** Alçades fixes del Figma i la mida mínima de tacte (44 pt). */
+/** Alçades fixes del Figma, la mida mínima de tacte (44 pt) i la de les icones. */
 export const sizes = {
   button: 54,
   chip: 34,
   touch: 44,
+  /** Caixa de les icones (botons, files). */
+  icon: 22,
 } as const;
 
 /** Noms amb què `_layout.tsx` registra les fonts (`useFonts`). Cada pes és una família. */
@@ -86,6 +100,8 @@ export const motion = {
   enter: Easing.out(Easing.cubic),
   exit: Easing.in(Easing.cubic),
   pressedScale: 0.97,
+  /** Retard entre elements que entren en cascada. */
+  stagger: 40,
 } as const;
 
 export type ColorToken = keyof typeof colors;
