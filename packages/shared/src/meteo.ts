@@ -4,9 +4,9 @@ import type { PuntObservacio } from './punts';
 export type FontMeteo = 'open_meteo';
 
 /**
- * Previsió meteorològica d'una hora en un punt, tal com la ingesta el worker d'Open-Meteo (TG-95).
- * Només les variables de l'índex v1: núvols per capes, humitat i visibilitat. La resta
- * (temperatura, vent, precipitació, punt de rosada) arriba amb TG-114.
+ * Previsió meteorològica d'una hora en un punt, tal com la ingesta el worker d'Open-Meteo
+ * (TG-95: núvols per capes, humitat i visibilitat; TG-114: temperatura, vent, precipitació i
+ * punt de rosada). Unitats fixes, demanades explícitament a la font: %, m, °C, mm, km/h i graus.
  * Un `null` vol dir que la font no dóna el valor per a aquella hora.
  */
 export type PrevisioMeteoHora = {
@@ -24,6 +24,23 @@ export type PrevisioMeteoHora = {
   humitat: number | null;
   /** Visibilitat horitzontal, en metres. */
   visibilitat: number | null;
+  /** Temperatura de l'aire a 2 m, en °C. */
+  temperatura: number | null;
+  /**
+   * Punt de rosada a 2 m, en °C. Com més a prop de la temperatura, més risc de boira i de
+   * condensació a l'òptica.
+   */
+  puntRosada: number | null;
+  /** Precipitació acumulada durant l'hora (pluja, neu, calabruix), en mm. */
+  precipitacio: number | null;
+  /** Probabilitat de precipitació durant l'hora, en %. */
+  probabilitatPrecipitacio: number | null;
+  /** Velocitat del vent a 10 m, en km/h. */
+  ventVelocitat: number | null;
+  /** Ràfegues de vent a 10 m, en km/h. */
+  ventRafegues: number | null;
+  /** Direcció d'on ve el vent a 10 m, en graus (0 = nord, 90 = est). */
+  ventDireccio: number | null;
 };
 
 /** Previsió horària d'un punt del catàleg: el resultat d'una ingesta. */
