@@ -1,13 +1,18 @@
-/**
- * Tipus de fenomen (`pluja_estels`, `eclipsi`…). Els valors es fixen a P14 (TG-106/109,
- * acordats amb Aprop); fins aleshores és un `string` i no se n'ha d'inventar cap.
- */
-export type TipusFenomen = string;
+/** Tipus de fenomen publicats al servei acordat amb Aprop (P14, TG-109). */
+export type TipusFenomen = 'pluja_estels' | 'eclipsi_solar' | 'eclipsi_llunar';
+
+export type IdiomaEsdeveniment = 'ca' | 'es' | 'en';
+
+/** Punt general recomanat perquè Aprop pugui situar l'esdeveniment al seu mapa. */
+export type UbicacioEsdeveniment = {
+  nom: string;
+  latitud: number;
+  longitud: number;
+};
 
 /**
  * Ocurrència concreta d'un fenomen astronòmic (`GET /api/v1/esdeveniments`).
- * Segueix la proposta de `docs/serveis-externs.md`, pendent de validar amb Aprop (TG-109).
- * Les dates són ISO 8601 en UTC.
+ * Contracte acordat amb Aprop a TG-109. Les dates són ISO 8601 en UTC.
  */
 export type Esdeveniment = {
   id: string;
@@ -15,11 +20,14 @@ export type Esdeveniment = {
   nom: string;
   inici: string;
   fi: string;
-  /** Moment de màxima visibilitat. */
-  maxim: string;
-  /** `previst`… Els valors es defineixen amb el contracte (TG-109). */
-  estat: string;
+  /** Moment de màxima visibilitat, si la font en publica un. */
+  maxim: string | null;
   descripcio: string;
+  ubicacio: UbicacioEsdeveniment;
   /** Origen de la dada (`IMO`, `NASA`, càlcul propi). */
   font: string;
+};
+
+export type EsdevenimentsResponse = {
+  data: Esdeveniment[];
 };

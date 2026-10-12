@@ -63,7 +63,10 @@ describe('OpenAPI', () => {
     expect(res.status).toBe(200);
     expect(res.body.openapi).toBe('3.0.3');
     expect(res.body.paths).toHaveProperty('/health');
+    expect(res.body.paths).toHaveProperty('/esdeveniments');
     expect(res.body.components.schemas).toHaveProperty('Error');
+    expect(res.body.components.schemas).toHaveProperty('Esdeveniment');
+    expect(res.body.components.securitySchemes).toHaveProperty('ApiKeyAprop');
   });
 
   it('serveix la UI a /api/v1/docs/', async () => {

@@ -6,7 +6,7 @@ Llegenda: **Recomanació** = la proposta inicial del sprint master; no és defin
 
 ## Tècniques (Sprint 1, scaffolds)
 
-P1, P2, P3, P7 i P8 ja estan decidides: [ADR-0010](0010-eines-app.md). P4: [ADR-0011](0011-validacio-openapi-zod.md). P5: [ADR-0013](0013-acces-bd-kysely.md). P22: [ADR-0014](0014-identificador-app-expo-go.md).
+P1, P2, P3, P7 i P8 ja estan decidides: [ADR-0010](0010-eines-app.md). P4: [ADR-0011](0011-validacio-openapi-zod.md). P5: [ADR-0013](0013-acces-bd-kysely.md). P14: contracte de TG-109 documentat a [`serveis-externs.md`](../serveis-externs.md). P22: [ADR-0014](0014-identificador-app-expo-go.md).
 
 | # | Decisió | Opcions | Recomanació | Quan / qui |
 |---|---|---|---|---|
@@ -21,7 +21,6 @@ P1, P2, P3, P7 i P8 ja estan decidides: [ADR-0010](0010-eines-app.md). P4: [ADR-
 |---|---|---|
 | P12 | Fórmula de l'índex v1: pesos de núvols / foscor / Lluna, i llindars de color | TG-98 (Hugo). Ha de ser explicable al desglossament (HU04). |
 | P13 | Catàleg inicial de ≥ 30 punts d'observació: quins i amb quines metadades | TG-87 (Mohamed). Criteris: accés en cotxe, foscor, horitzó obert. |
-| P14 | Valors de `tipus` de fenomen (enum compartit) | TG-106/109 (Victor), compartit amb Aprop. |
 | P15 | Sign in with Apple | Requereix compte de desenvolupador d'Apple de pagament. Si no n'hi ha, HU35 només Google + correu. |
 
 ## Infraestructura i organització

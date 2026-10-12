@@ -1,40 +1,149 @@
 # Serveis entre equips
 
-L'assignatura demana identificar quins equips consumeixen els nostres serveis i quins serveis consumim nosaltres. El contracte definitiu s'acorda a la tasca **TG-109** (Victor, fins al 14/10) i es documenta a l'OpenAPI de `services/api`.
+L'assignatura demana acordar els contractes dels serveis que Talaia ofereix i consumeix. La
+tasca **TG-109** (Victor, límit 14/10) cobreix dues integracions independents:
 
-## Oferim: servei d'esdeveniments astronòmics → equip Aprop
+| Integració | Rol de Talaia | Estat del contracte |
+|---|---|---|
+| Aprop | Proveïdor d'esdeveniments astronòmics | **Acordat**, amb les concrecions següents |
+| Mobilicat | Consumidor de rutes sostenibles | **Proposta enviada; pendent de resposta** |
 
-Història: **HU43** (E12). L'endpoint es construeix al Sprint 1 com a base del calendari (TG-108).
+## Oferim a Aprop: esdeveniments astronòmics
 
+Història: **HU43** (E12). TG-109 defineix el contracte i TG-108 implementarà l'endpoint. La
+font executable del contracte és l'OpenAPI generat per `services/api`, disponible a
+`GET /api/v1/openapi.json` i a la interfície `/api/v1/docs`.
+
+### Petició acordada
+
+```http
+GET /api/v1/esdeveniments?des_de=2027-08-01&fins_a=2027-08-31&tipus=eclipsi_solar&idioma=ca
+X-API-Key: <clau assignada a Aprop>
 ```
-GET /api/v1/esdeveniments?des_de=2026-10-01&fins_a=2026-10-31&tipus=pluja_estels
-Header: X-API-Key: <clau assignada a Aprop>
-```
 
-Proposta de resposta (a validar amb Aprop):
+| Paràmetre | Obligatori | Descripció |
+|---|---|---|
+| `des_de` | Sí | Primer dia de l'interval, inclòs, en format `YYYY-MM-DD`. |
+| `fins_a` | Sí | Últim dia de l'interval, inclòs, en format `YYYY-MM-DD`. |
+| `tipus` | No | `pluja_estels`, `eclipsi_solar` o `eclipsi_llunar`. |
+| `idioma` | No | `ca`, `es` o `en`; per defecte, `ca`. |
+
+Es retornen els esdeveniments que intersecten l'interval, ordenats per `inici`. No cal
+paginació per al volum previst del calendari. L'accés es protegeix amb una API key al header
+`X-API-Key`; la clau queda al backend d'Aprop i no en una aplicació client.
+
+### Resposta acordada
 
 ```json
 {
   "data": [
     {
-      "id": "e8f3…",
-      "tipus": "pluja_estels",
-      "nom": "Oriònides",
-      "inici": "2026-10-21T20:00:00Z",
-      "fi": "2026-10-22T05:00:00Z",
-      "maxim": "2026-10-22T02:00:00Z",
-      "estat": "previst",
-      "descripcio": "…",
-      "font": "IMO"
+      "id": "eclipsi-solar-total-2027-08-02",
+      "tipus": "eclipsi_solar",
+      "nom": "Eclipsi solar total",
+      "inici": "2027-08-02T07:30:00Z",
+      "fi": "2027-08-02T12:43:00Z",
+      "maxim": "2027-08-02T10:07:00Z",
+      "descripcio": "Eclipsi total globalment, visible de manera parcial des de Catalunya.",
+      "ubicacio": {
+        "nom": "Montseny",
+        "latitud": 41.759,
+        "longitud": 2.394
+      },
+      "font": "NASA"
     }
   ]
 }
 ```
 
-Decisions obertes: valors exactes de `tipus` (enum compartit a `packages/shared`), idioma dels textos (paràmetre `lang`?), paginació, límit de peticions per clau.
+Decisions incorporades arran de la resposta d'Aprop:
 
-## Consumim: servei de rutes → equip Mobilicat
+- Cada esdeveniment conté una ubicació general recomanada (`nom`, `latitud`, `longitud`) perquè
+  el puguin representar al mapa. No afirma que sigui l'únic lloc d'observació ni incorpora una
+  previsió de núvols.
+- El català és l'idioma per defecte. El paràmetre `idioma` prepara també castellà i anglès.
+- L'autenticació és mitjançant API key.
+- No es retorna `estat`: un fenomen astronòmic no es cancel·la i el període `inici`--`fi` ja
+  permet saber si és futur, actiu o passat. La meteorologia s'ha de tractar separadament.
+- `maxim` pot ser `null` quan la font no publica un instant de màxima activitat.
 
-Ús: mostrar **distància i temps** des de l'origen de l'usuari fins a un punt (HU08, fitxa del punt, rànquing de recomanacions). La navegació no la fem nosaltres: l'app obre l'app de mapes del mòbil amb un **deep link** a les coordenades.
+La ubicació forma part del contracte públic, però no del dataset estàtic de TG-106: TG-108
+l'obtindrà del catàleg de punts oficials o d'una regla de recomanació acordada. El contracte no
+promet que sigui el millor punt segons la meteorologia en temps real.
 
-Pendent de Mobilicat: URL base, autenticació, format de la petició (origen, destí, mode de transport) i de la resposta, límits. Mentre no estigui disponible, l'API de Talaia ha d'encapsular la crida darrere d'una interfície (`RouteProvider`) amb una implementació simulada (distància en línia recta i velocitat mitjana) perquè l'app no en depengui.
+## Consumim de Mobilicat: rutes sostenibles
+
+Talaia necessita calcular una ruta entre l'origen de l'usuari i les coordenades d'un punt
+d'observació, tant per a una sortida immediata com per a una hora futura. Per al MVP mostrarem
+la informació de la ruta i permetrem tornar-la a consultar; el seguiment continu i les
+notificacions de canvis queden fora d'aquest primer contracte.
+
+### Dades que Talaia ha proposat enviar
+
+- Coordenades d'origen: latitud i longitud.
+- Coordenades de destí: latitud i longitud.
+- Instant de sortida desitjat en ISO 8601, que pot ser futur.
+- Modes sostenibles acceptats, si Mobilicat permet filtrar-los.
+
+### Dades que Talaia ha proposat rebre
+
+```json
+{
+  "data": [
+    {
+      "id": "ruta-123",
+      "sortida": "2026-10-17T18:05:00Z",
+      "arribada": "2026-10-17T19:42:00Z",
+      "durada_minuts": 97,
+      "distancia_metres": 68400,
+      "fiabilitat_percentatge": 86,
+      "trams": [
+        {
+          "ordre": 1,
+          "mode": "a_peu",
+          "origen": { "nom": "Origen", "latitud": 41.387, "longitud": 2.17 },
+          "desti": { "nom": "Barcelona Sants", "latitud": 41.379, "longitud": 2.14 },
+          "inici": "2026-10-17T18:05:00Z",
+          "fi": "2026-10-17T18:20:00Z",
+          "durada_minuts": 15
+        },
+        {
+          "ordre": 2,
+          "mode": "tren",
+          "linia": "R2 Nord",
+          "origen": { "nom": "Barcelona Sants", "latitud": 41.379, "longitud": 2.14 },
+          "desti": { "nom": "Sant Celoni", "latitud": 41.69, "longitud": 2.489 },
+          "inici": "2026-10-17T18:27:00Z",
+          "fi": "2026-10-17T19:18:00Z",
+          "durada_minuts": 51,
+          "espera_minuts": 7
+        }
+      ],
+      "incidencies": []
+    }
+  ]
+}
+```
+
+Per cada alternativa necessitem la durada i distància totals, l'hora de sortida i arribada, el
+percentatge de fiabilitat i una seqüència ordenada de trams. Cada tram ha d'identificar el mode,
+els llocs d'inici i final amb coordenades, els instants d'inici i final, i la línia o servei quan
+sigui transport públic. Les esperes, transbordaments i incidències han de quedar explícits perquè
+Talaia no recalculi ni contradigui l'itinerari de Mobilicat.
+
+### Punts pendents de confirmació de Mobilicat
+
+- URL base, path i mètode HTTP definitius.
+- Noms exactes dels camps i format final de la petició i la resposta.
+- Mecanisme d'autenticació i gestió de credencials.
+- Modes de transport i valors enumerats.
+- Significat i càlcul del percentatge de fiabilitat.
+- Freqüència d'actualització de retards i incidències.
+- Errors, límits de peticions, timeout i disponibilitat del servei.
+- Possibilitat de recalcular una ruta conservant el mateix identificador.
+
+Fins que Mobilicat confirmi el contracte, aquesta secció és una **proposta**, no una dependència
+implementable. Quan responguin, s'actualitzaran els noms i exemples sense inventar-ne cap.
+
+La futura integració quedarà darrere d'una interfície `RouteProvider` a l'API de Talaia. Això
+permetrà simular el proveïdor durant el desenvolupament i substituir-lo sense afectar l'app.

@@ -9,7 +9,7 @@ Tipus de domini compartits per l'app, l'admin, l'API i el worker. Cada tipus s'e
 | `src/api.ts` | `ApiErrorBody`, `HealthResponse` | Decidits |
 | `src/indexVisibilitat.ts` | `IndexVisibilitat` (valor 0–100 + franja), `FranjaIndex` (`tap`/`jus`/`ras`) | Llindars de les franges pendents de P12 (TG-98) |
 | `src/punts.ts` | `PuntObservacio`, `PuntsMapaGeoJson` (el GeoJSON del mapa, ADR-0012) | Metadades del punt pendents de P13 (TG-87) i del model de TG-86 |
-| `src/esdeveniments.ts` | `Esdeveniment`, `TipusFenomen` | Valors de `tipus` pendents de P14; contracte amb Aprop a TG-109 |
+| `src/esdeveniments.ts` | `Esdeveniment`, `TipusFenomen`, `IdiomaEsdeveniment` | Contracte amb Aprop acordat a TG-109 |
 
 Un camp que depèn d'una decisió pendent porta un comentari que ho diu. No s'hi inventen valors: quan es decideixi, s'actualitza aquí i a l'ADR.
 

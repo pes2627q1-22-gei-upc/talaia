@@ -4,6 +4,7 @@ import swaggerUi from 'swagger-ui-express';
 import { version } from '../config/env';
 import { buildOpenApiDocument } from '../openapi';
 import { healthRouter } from './health';
+import './esdeveniments.contract';
 
 /** Router de `/api/v1`: un router per recurs (punts, recomanacions, esdeveniments…). */
 export function createApiRouter(): Router {
