@@ -27,15 +27,25 @@ function json(body: unknown, status = 200): Response {
   });
 }
 
-/** `fetch` fals que recorda les URL demanades. */
-function fakeFetch(handler: (url: URL, crida: number) => Response) {
+/** `fetch` fals que recorda les URL i les opcions de cada petició. */
+function fakeFetch(handler: (url: URL, crida: number) => Response | Promise<Response>) {
   const urls: URL[] = [];
-  const fetch: typeof globalThis.fetch = async (input) => {
+  const inits: (RequestInit | undefined)[] = [];
+  const fetch: typeof globalThis.fetch = async (input, init) => {
     const url = new URL(input instanceof Request ? input.url : input);
     urls.push(url);
+    inits.push(init);
     return handler(url, urls.length);
   };
-  return { fetch, urls };
+  return { fetch, urls, inits };
+}
+
+/** `fetch` que no respon mai: només acaba quan el senyal d'abort s'activa. */
+function fetchPenjat(): typeof globalThis.fetch {
+  return (_input, init) =>
+    new Promise((_resolve, reject) => {
+      init?.signal?.addEventListener('abort', () => reject(init.signal?.reason));
+    });
 }
 
 describe('toHores', () => {
@@ -62,10 +72,10 @@ describe('toHores', () => {
     ]);
   });
 
-  it('conserva els `null` de la font i en posa on falta el valor', () => {
-    const hores = toHores(lloc({ visibility: [null, 33180], relative_humidity_2m: [78] }).hourly);
-    expect(hores[0]).toMatchObject({ visibilitat: null, humitat: 78 });
-    expect(hores[1]).toMatchObject({ visibilitat: 33180, humitat: null });
+  it('conserva els `null` de la font (i els `0`)', () => {
+    const hores = toHores(lloc({ visibility: [null, 33180], cloud_cover_low: [0, null] }).hourly);
+    expect(hores[0]).toMatchObject({ visibilitat: null, nuvolsBaixos: 0 });
+    expect(hores[1]).toMatchObject({ visibilitat: 33180, nuvolsBaixos: null });
   });
 });
 
@@ -90,6 +100,13 @@ describe('createOpenMeteoClient', () => {
     expect(url.searchParams.get('timezone')).toBe('UTC');
     expect(url.searchParams.get('timeformat')).toBe('unixtime');
     expect(url.searchParams.get('forecast_days')).toBe('2');
+  });
+
+  it('per defecte demana 4 dies: amb 3, la nit de demà passat quedaria tallada (dies en UTC)', async () => {
+    const { fetch, urls, inits } = fakeFetch(() => json(lloc()));
+    await createOpenMeteoClient({ baseUrl: BASE_URL, fetch }).previsio([{ lat: 42, lon: 0.7 }]);
+    expect(urls[0]!.searchParams.get('forecast_days')).toBe('4');
+    expect(inits[0]?.signal).toBeInstanceOf(AbortSignal);
   });
 
   it('admet una URL base amb barra final', async () => {
@@ -140,6 +157,24 @@ describe('createOpenMeteoClient', () => {
     expect(urls.map((url) => url.searchParams.get('latitude'))).toEqual(['1,2', '3']);
   });
 
+  it('si falla un lot, `previsio` rebutja sencer i no retorna els lots que havien anat bé', async () => {
+    const { fetch, urls } = fakeFetch((_url, crida) =>
+      crida === 1
+        ? json([lloc(), lloc()])
+        : json({ error: true, reason: 'Too Many Requests' }, 429),
+    );
+    const client = createOpenMeteoClient({ baseUrl: BASE_URL, fetch, llocsPerPeticio: 2 });
+
+    await expect(
+      client.previsio([
+        { lat: 1, lon: 1 },
+        { lat: 2, lon: 2 },
+        { lat: 3, lon: 3 },
+      ]),
+    ).rejects.toMatchObject({ name: 'OpenMeteoError', status: 429 });
+    expect(urls).toHaveLength(2);
+  });
+
   it('sense llocs no fa cap petició', async () => {
     const { fetch, urls } = fakeFetch(() => json([]));
     await expect(createOpenMeteoClient({ baseUrl: BASE_URL, fetch }).previsio([])).resolves.toEqual(
@@ -170,6 +205,40 @@ describe('createOpenMeteoClient', () => {
     ).rejects.toMatchObject({ name: 'OpenMeteoError', status: 503 });
   });
 
+  it('si Open-Meteo no respon dins de `timeoutMs`, és un OpenMeteoError sense `status`', async () => {
+    const client = createOpenMeteoClient({
+      baseUrl: BASE_URL,
+      fetch: fetchPenjat(),
+      timeoutMs: 20,
+    });
+
+    const error = await client.previsio([{ lat: 42, lon: 0.7 }]).catch((e: unknown) => e);
+
+    expect(error).toBeInstanceOf(OpenMeteoError);
+    expect((error as OpenMeteoError).status).toBeUndefined();
+    expect((error as Error).message).toMatch(/contactar amb Open-Meteo.*timeout/i);
+  });
+
+  it('un error de xarxa (DNS, connexió tallada) també és un OpenMeteoError', async () => {
+    const fetch: typeof globalThis.fetch = async () => {
+      throw new TypeError('fetch failed');
+    };
+    await expect(
+      createOpenMeteoClient({ baseUrl: BASE_URL, fetch }).previsio([{ lat: 42, lon: 0.7 }]),
+    ).rejects.toMatchObject({
+      name: 'OpenMeteoError',
+      status: undefined,
+      message: expect.stringContaining('fetch failed'),
+    });
+  });
+
+  it('una sèrie més curta que `time` és una resposta mal formada, no hores amb `null`', async () => {
+    const { fetch } = fakeFetch(() => json(lloc({ relative_humidity_2m: [78] })));
+    await expect(
+      createOpenMeteoClient({ baseUrl: BASE_URL, fetch }).previsio([{ lat: 42, lon: 0.7 }]),
+    ).rejects.toThrow('mateixa llargada');
+  });
+
   it('un cos amb una forma inesperada és un OpenMeteoError', async () => {
     const { fetch } = fakeFetch(() => json({ hourly: { time: 'avui' } }));
     await expect(
@@ -195,5 +264,6 @@ describe('createOpenMeteoClient', () => {
     expect(() => createOpenMeteoClient({ baseUrl: BASE_URL, llocsPerPeticio: 0 })).toThrow(
       RangeError,
     );
+    expect(() => createOpenMeteoClient({ baseUrl: BASE_URL, timeoutMs: 0 })).toThrow(RangeError);
   });
 });

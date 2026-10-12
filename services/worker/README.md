@@ -46,12 +46,12 @@ src/
 ```
 
 - **Variables** (horàries): `cloud_cover`, `cloud_cover_low`, `cloud_cover_mid`, `cloud_cover_high`, `relative_humidity_2m` i `visibility`. Al domini (`@talaia/shared`, `PrevisioMeteoHora`): `nuvolsTotal`, `nuvolsBaixos`, `nuvolsMitjans`, `nuvolsAlts` (%), `humitat` (%) i `visibilitat` (m). La resta de variables (temperatura, vent, precipitació, punt de rosada) és TG-114: s'afegeixen a `VARIABLES_HORARIES`, a l'esquema zod i a `toHores`.
-- **Hores en UTC.** Es demana `timezone=UTC` i `timeformat=unixtime`, i cada hora es desa com a ISO 8601 (`2026-10-12T21:00:00.000Z`). Per defecte, 3 dies de previsió (la nit d'avui i les dues següents).
+- **Hores en UTC.** Es demana `timezone=UTC` i `timeformat=unixtime`, i cada hora es desa com a ISO 8601 (`2026-10-12T21:00:00.000Z`). Per defecte, **4 dies** de previsió: Open-Meteo compta els dies de 00:00 a 23:00 UTC, i amb 3 la nit de demà passat quedaria tallada a la 01:00 hora local; amb 4, la nit d'avui i les dues següents hi són senceres.
 - **Una petició per lot de llocs.** Open-Meteo admet llistes de coordenades: els punts es demanen en lots de 50 (`llocsPerPeticio`), en el mateix ordre, i cada lloc compta com una crida de la quota. Amb el catàleg del Sprint 1 (≥ 30 punts) i una execució per hora són menys de 1.000 crides al dia.
 - **Valors `null`.** Si el model no dóna un valor per a una hora, es desa `null` (no s'inventa res). La fórmula de l'índex (TG-98) decideix què fer-ne.
-- **Errors.** Un error HTTP, un cos inesperat o un nombre de llocs diferent del demanat llancen `OpenMeteoError` (amb `status`). La ingesta no desa res si la font falla.
+- **Errors.** Un error de xarxa o un timeout (`timeoutMs`, 15 s per defecte), un error HTTP, un cos inesperat (també una sèrie més curta que `time`) o un nombre de llocs diferent del demanat llancen `OpenMeteoError` (amb `status` quan hi ha resposta HTTP). Si falla un lot, `previsio` rebutja sencer: la ingesta no desa res i es conserva la previsió anterior. Un reintent per a 429, 5xx i errors de xarxa queda per a TG-99.
 - **Persistència.** `ingestaPrevisioMeteo` escriu a un `PrevisioMeteoRepository`. La implementació amb Kysely (`@talaia/db`, [ADR-0013](../../docs/decisions/0013-acces-bd-kysely.md)) i la migració de la taula de previsions es faran quan hi hagi la taula de punts (TG-86); fins aleshores hi ha la de memòria, que fan servir els tests i la CLI.
 
 ## Tests
 
-Jest, sense xarxa: el client es prova amb un `fetch` fals (URL construïda, resposta d'un lloc i de diversos, lots, `null`, errors HTTP i cossos inesperats) i la ingesta amb un client i un repositori falsos.
+Jest, sense xarxa: el client es prova amb un `fetch` fals (URL construïda, resposta d'un lloc i de diversos, lots i un lot que falla, `null`, timeout, errors de xarxa i HTTP, cossos inesperats) i la ingesta amb un client i un repositori falsos.
