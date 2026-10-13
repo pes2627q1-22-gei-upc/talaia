@@ -17,12 +17,12 @@ P1, P2, P3, P7 i P8 ja estan decidides: [ADR-0010](0010-eines-app.md). P4: [ADR-
 
 ## Producte i índex
 
+P13: [ADR-0017](0017-cataleg-inicial-punts.md). P15 (Sign in with Apple): [ADR-0016](0016-sign-in-with-apple-ios.md).
+
 | # | Decisió | Notes |
 |---|---|---|
 | P12 | Fórmula de l'índex v1: pesos de núvols / foscor / Lluna, i llindars de color | TG-98 (Hugo). Ha de ser explicable al desglossament (HU04). |
-| P13 | Catàleg inicial de ≥ 30 punts d'observació: quins i amb quines metadades | TG-87 (Mohamed). Criteris: accés en cotxe, foscor, horitzó obert. |
 | P14 | Valors de `tipus` de fenomen (enum compartit) | TG-106/109 (Victor), compartit amb Aprop. |
-| P15 | Sign in with Apple | Requereix compte de desenvolupador d'Apple de pagament. Si no n'hi ha, HU35 només Google + correu. |
 
 ## Infraestructura i organització
 
