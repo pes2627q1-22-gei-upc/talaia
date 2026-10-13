@@ -33,12 +33,16 @@ function RootStack() {
   const { t } = useTranslation();
   return (
     <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.nit } }}>
-      <Stack.Screen name="(tabs)" />
+      {/* Des de la benvinguda, l'app entra amb una fosa (la benvinguda ja ha fet la seva sortida). */}
+      <Stack.Screen name="(tabs)" options={{ animation: 'fade' }} />
       <Stack.Screen
         name="punt/[id]"
         options={{ headerShown: true, title: t('point.title'), headerTintColor: colors.lluna }}
       />
-      <Stack.Screen name="benvinguda" options={{ presentation: 'fullScreenModal' }} />
+      <Stack.Screen
+        name="benvinguda"
+        options={{ presentation: 'fullScreenModal', animation: 'fade' }}
+      />
     </Stack>
   );
 }

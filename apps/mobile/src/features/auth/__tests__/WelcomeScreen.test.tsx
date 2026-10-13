@@ -1,13 +1,25 @@
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { useRouter } from 'expo-router';
 import { Platform } from 'react-native';
+import { useReducedMotion } from 'react-native-reanimated';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import i18n from '@/core/i18n';
+import { motion } from '@/core/theme/tokens';
 
 import { WelcomeScreen } from '../WelcomeScreen';
 
 jest.mock('expo-router', () => ({ useRouter: jest.fn() }));
+// Tota la resta de Reanimated és la real; només es pot activar «reduir moviment».
+jest.mock('react-native-reanimated', () => {
+  const actual = jest.requireActual('react-native-reanimated');
+  return {
+    __esModule: true,
+    ...actual,
+    default: actual.default,
+    useReducedMotion: jest.fn(() => false),
+  };
+});
 const replace = jest.fn();
 jest.mocked(useRouter).mockReturnValue({ replace } as unknown as ReturnType<typeof useRouter>);
 
@@ -46,10 +58,19 @@ describe('WelcomeScreen', () => {
     restore.restore();
   });
 
-  it("prémer una opció entra a l'app", async () => {
+  it("prémer una opció fa la sortida i després entra a l'app, només un cop", async () => {
+    jest.useFakeTimers();
     await renderWelcome();
-    await fireEvent.press(screen.getByRole('button', { name: 'Continua amb el correu' }));
+    const email = screen.getByRole('button', { name: 'Continua amb el correu' });
+
+    await fireEvent.press(email);
+    await fireEvent.press(screen.getByRole('button', { name: 'Continua amb Google' }));
+    expect(replace).not.toHaveBeenCalled();
+
+    await act(() => jest.advanceTimersByTime(motion.leave));
+    expect(replace).toHaveBeenCalledTimes(1);
     expect(replace).toHaveBeenCalledWith('/');
+    jest.useRealTimers();
   });
 
   it('pinta la il·lustració un cop sap quant ocupa el contingut', async () => {
@@ -65,5 +86,24 @@ describe('WelcomeScreen', () => {
     expect(
       screen.getByTestId('welcome-illustration', { includeHiddenElements: true }),
     ).toBeOnTheScreen();
+  });
+
+  it('amb «reduir moviment», tot és quiet i la sortida és més curta', async () => {
+    jest.useFakeTimers();
+    jest.mocked(useReducedMotion).mockReturnValue(true);
+    await renderWelcome();
+    await fireEvent(screen.getByTestId('welcome-content'), 'layout', {
+      nativeEvent: { layout: { x: 0, y: 392, width: 393, height: 460 } },
+    });
+    expect(
+      screen.getByTestId('welcome-illustration', { includeHiddenElements: true }),
+    ).toBeOnTheScreen();
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Continua amb Google' }));
+    await act(() => jest.advanceTimersByTime(motion.fast));
+    expect(replace).toHaveBeenCalledWith('/');
+
+    jest.mocked(useReducedMotion).mockReturnValue(false);
+    jest.useRealTimers();
   });
 });

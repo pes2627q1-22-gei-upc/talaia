@@ -1,8 +1,14 @@
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
-import { type ReactNode, useState } from 'react';
+import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { StyleSheet, useWindowDimensions, View } from 'react-native';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import Animated, {
+  FadeInDown,
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { gradients, motion, sizes, spacing } from '@/core/theme/tokens';
@@ -10,19 +16,27 @@ import { AppText } from '@/shared/ui/AppText';
 import { Button } from '@/shared/ui/Button';
 
 import { useWelcomeViewModel } from './useWelcomeViewModel';
-import { ILLUSTRATION, illustrationScale, WelcomeIllustration } from './WelcomeIllustration';
+import {
+  ILLUSTRATION,
+  illustrationScale,
+  TIMELINE,
+  WelcomeIllustration,
+} from './WelcomeIllustration';
 
 const logotip = require('@/assets/images/welcome/logotip.svg');
 const mailIcon = require('@/assets/images/welcome/mail.svg');
 
-/** Entra en cascada: fosa i 8 pt de pujada, `motion.stagger` després de l'anterior. */
+/** El contingut entra quan la torre ja s'ha alçat: en cascada i amb un spring suau. */
+const CONTENT_START = TIMELINE.window + motion.stagger * 2;
+
 function Appear({ index, children }: { index: number; children: ReactNode }) {
   return (
     <Animated.View
-      entering={FadeInDown.duration(motion.base)
-        .delay(index * motion.stagger)
-        .easing(motion.enter)
-        .withInitialValues({ opacity: 0, transform: [{ translateY: spacing.sm }] })}
+      entering={FadeInDown.delay(CONTENT_START + index * motion.stagger * 1.5)
+        .springify()
+        .damping(motion.spring.damping)
+        .stiffness(motion.spring.stiffness)
+        .withInitialValues({ opacity: 0, transform: [{ translateY: spacing.ms }] })}
     >
       {children}
     </Animated.View>
@@ -38,6 +52,22 @@ export function WelcomeScreen() {
 
   const scale = illustrationScale({ width, height, topInset: insets.top }, contentHeight);
 
+  // En triar una opció: el contingut baixa i s'esvaeix, el cel s'apropa i després es navega.
+  const reduceMotion = useReducedMotion();
+  const exit = useSharedValue(0);
+  const leaving = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => clearTimeout(leaving.current ?? undefined), []);
+  const leave = (action: () => void) => {
+    if (leaving.current) return;
+    const duration = reduceMotion ? motion.fast : motion.leave;
+    exit.set(withTiming(1, { duration, easing: motion.exit }));
+    leaving.current = setTimeout(action, duration);
+  };
+  const contentStyle = useAnimatedStyle(() => ({
+    opacity: 1 - exit.get(),
+    transform: [{ translateY: reduceMotion ? 0 : exit.get() * spacing.lg }],
+  }));
+
   return (
     <LinearGradient
       colors={gradients.cel.colors}
@@ -49,13 +79,18 @@ export function WelcomeScreen() {
           scale={scale}
           screenWidth={width}
           bottom={contentHeight - ILLUSTRATION.contentOverlap * scale}
+          exit={exit}
         />
       ) : null}
 
-      <View
+      <Animated.View
         testID="welcome-content"
         onLayout={(event) => setContentHeight(event.nativeEvent.layout.height)}
-        style={[styles.content, { paddingBottom: Math.max(insets.bottom, spacing.lg) }]}
+        style={[
+          styles.content,
+          { paddingBottom: Math.max(insets.bottom, spacing.lg) },
+          contentStyle,
+        ]}
       >
         <Appear index={0}>
           <Image
@@ -78,14 +113,19 @@ export function WelcomeScreen() {
         </Appear>
         <View style={styles.buttons}>
           <Appear index={3}>
-            <Button variant="light" label={vm.googleLabel} onPress={vm.continueWithGoogle} haptic />
+            <Button
+              variant="light"
+              label={vm.googleLabel}
+              onPress={() => leave(vm.continueWithGoogle)}
+              haptic
+            />
           </Appear>
           {vm.showApple ? (
             <Appear index={4}>
               <Button
                 variant="secondary"
                 label={vm.appleLabel}
-                onPress={vm.continueWithApple}
+                onPress={() => leave(vm.continueWithApple)}
                 haptic
               />
             </Appear>
@@ -94,7 +134,7 @@ export function WelcomeScreen() {
             <Button
               variant="secondary"
               label={vm.emailLabel}
-              onPress={vm.continueWithEmail}
+              onPress={() => leave(vm.continueWithEmail)}
               haptic
               icon={
                 <View style={styles.icon}>
@@ -109,7 +149,7 @@ export function WelcomeScreen() {
             {vm.legal}
           </AppText>
         </Appear>
-      </View>
+      </Animated.View>
     </LinearGradient>
   );
 }

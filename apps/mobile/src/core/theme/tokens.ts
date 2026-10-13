@@ -102,6 +102,18 @@ export const motion = {
   pressedScale: 0.97,
   /** Retard entre elements que entren en cascada. */
   stagger: 40,
+  /** Sortida d'una pantalla amb coreografia (benvinguda) abans de navegar. */
+  leave: 320,
+  /**
+   * Corbes de GSAP per a les coreografies (la benvinguda), com a Bézier de Reanimated perquè
+   * corrin al fil de la interfície.
+   */
+  ease: {
+    expoOut: Easing.bezier(0.16, 1, 0.3, 1),
+    power2Out: Easing.bezier(0.215, 0.61, 0.355, 1),
+    backOut: Easing.bezier(0.34, 1.56, 0.64, 1),
+    sineInOut: Easing.bezier(0.37, 0, 0.63, 1),
+  },
 } as const;
 
 export type ColorToken = keyof typeof colors;
