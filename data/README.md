@@ -25,9 +25,9 @@ Les coordenades venen del [geocodificador de l'ICGC](https://eines.icgc.cat/geoc
 
 ```bash
 node data/scripts/fill-altitudes.ts           # omple les altituds que falten (Open-Meteo, Copernicus DEM 90 m)
-node data/scripts/build-seed-punts.ts --check # valida: ≥ 30 punts, slugs únics, coordenades dins de Catalunya…
+node data/scripts/build-seed-punts.ts --check # valida el GeoJSON i comprova que el seed versionat està al dia
 node data/scripts/build-seed-punts.ts         # genera supabase/seeds/01_punts_observacio.sql
 npx supabase db reset                         # aplica migracions + seeds a la base local
 ```
 
-Node 22 executa els `.ts` directament, sense dependències. El fitxer SQL generat es versiona (és el que executa el CLI de Supabase), però no s'edita a mà: es canvia el GeoJSON i es torna a generar.
+Node 22 executa els `.ts` directament, sense dependències. Els tipus es comproven amb `npx tsc -p data` (encara no és a la CI). El fitxer SQL generat es versiona (és el que executa el CLI de Supabase), però no s'edita a mà: es canvia el GeoJSON i es torna a generar.

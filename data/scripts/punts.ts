@@ -37,6 +37,17 @@ export function llegirPunts(path: string): PuntsFC {
   return JSON.parse(readFileSync(path, 'utf8')) as PuntsFC;
 }
 
+/** Text del GeoJSON tal com el deixa Prettier: les llistes de valors simples en una sola línia. */
+export function serialitzarPunts(fc: PuntsFC): string {
+  const text = JSON.stringify(fc, null, 2).replace(
+    /\[\n\s+([^[\]{}]*?)\n\s+\]/g,
+    (_, dins: string) => {
+      return `[${dins.split(/,\n\s+/).join(', ')}]`;
+    },
+  );
+  return `${text}\n`;
+}
+
 /** Retorna la llista d'errors (buida si el catàleg és vàlid). */
 export function validarPunts(fc: PuntsFC, { exigirAltitud = false } = {}): string[] {
   const errors: string[] = [];
@@ -68,12 +79,18 @@ export function validarPunts(fc: PuntsFC, { exigirAltitud = false } = {}): strin
     for (const camp of ['nom', 'municipi', 'descripcio'] as const) {
       if (!p[camp]?.trim()) errors.push(`${id}: falta ${camp}`);
     }
-    if (p.altitud === null || p.altitud === undefined) {
+    if (p.altitud === undefined) {
+      errors.push(`${id}: falta la propietat altitud (null si encara no se sap)`);
+    } else if (p.altitud === null) {
       if (exigirAltitud) errors.push(`${id}: falta l'altitud (executa fill-altitudes)`);
-    } else if (!Number.isFinite(p.altitud) || p.altitud < -10 || p.altitud > 3200) {
-      errors.push(`${id}: altitud fora de rang (${p.altitud})`);
+    } else if (!Number.isInteger(p.altitud) || p.altitud < -10 || p.altitud > 3200) {
+      errors.push(`${id}: l'altitud ha de ser un enter entre -10 i 3200 (${p.altitud})`);
     }
-    if (p.horitzo_obert !== null && p.horitzo_obert !== undefined) {
+    if (p.horitzo_obert === undefined) {
+      errors.push(`${id}: falta la propietat horitzo_obert (null si no és clar)`);
+    } else if (p.horitzo_obert !== null && !Array.isArray(p.horitzo_obert)) {
+      errors.push(`${id}: horitzo_obert ha de ser una llista de direccions o null`);
+    } else if (p.horitzo_obert !== null) {
       const dolentes = p.horitzo_obert.filter(
         (d) => !(DIRECCIONS as readonly string[]).includes(d),
       );

@@ -2,7 +2,7 @@
  * Genera el seed SQL dels punts d'observació a partir del GeoJSON (TG-87).
  *
  *   node data/scripts/build-seed-punts.ts            # escriu supabase/seeds/01_punts_observacio.sql
- *   node data/scripts/build-seed-punts.ts --check    # només valida (per a la CI o abans del commit)
+ *   node data/scripts/build-seed-punts.ts --check    # valida i comprova que el seed versionat està al dia
  *
  * Node 22 executa TypeScript directament (type stripping), sense dependències.
  * El seed és idempotent: `on conflict (slug) do update`, així `supabase db reset`
@@ -10,7 +10,7 @@
  *
  * Les columnes han de coincidir amb la migració de TG-86 (taula punts_observacio).
  */
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { llegirPunts, validarPunts, type PuntFeature } from './punts.ts';
@@ -61,7 +61,9 @@ on conflict (slug) do update set
   altitud = excluded.altitud,
   horitzo_obert = excluded.horitzo_obert,
   accessibilitat = excluded.accessibilitat,
-  ubicacio = excluded.ubicacio;
+  ubicacio = excluded.ubicacio
+-- Un punt de la comunitat amb el mateix slug no se sobreescriu.
+where punts_observacio.origen = 'OFICIAL';
 `;
 }
 
@@ -78,12 +80,19 @@ function main(): void {
       `Avís: ${senseAltitud} punts sense altitud. Executa data/scripts/fill-altitudes.ts.`,
     );
   }
+  const sql = generarSql(fc.features);
   if (process.argv.includes('--check')) {
-    console.log(`OK: ${fc.features.length} punts vàlids.`);
+    if (!existsSync(SORTIDA) || readFileSync(SORTIDA, 'utf8') !== sql) {
+      console.error(
+        `${SORTIDA} no coincideix amb el GeoJSON. Torna a executar el script sense --check.`,
+      );
+      process.exit(1);
+    }
+    console.log(`OK: ${fc.features.length} punts vàlids i el seed està al dia.`);
     return;
   }
   mkdirSync(dirname(SORTIDA), { recursive: true });
-  writeFileSync(SORTIDA, generarSql(fc.features));
+  writeFileSync(SORTIDA, sql);
   console.log(`Escrit ${SORTIDA} amb ${fc.features.length} punts.`);
 }
 

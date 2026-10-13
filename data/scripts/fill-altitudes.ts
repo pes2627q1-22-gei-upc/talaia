@@ -11,7 +11,7 @@
 import { writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { llegirPunts } from './punts.ts';
+import { llegirPunts, serialitzarPunts } from './punts.ts';
 
 const ARREL = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const FITXER = resolve(ARREL, 'data/punts_observacio.geojson');
@@ -36,10 +36,13 @@ async function main(): Promise<void> {
     const { elevation } = (await resposta.json()) as { elevation: number[] };
     if (elevation?.length !== lot.length) throw new Error("Resposta inesperada d'Open-Meteo");
     lot.forEach((f, j) => {
-      f.properties.altitud = Math.round(elevation[j]);
+      const metres = elevation[j];
+      if (typeof metres !== 'number')
+        throw new Error(`Open-Meteo no ha tornat l'altitud del punt ${j}`);
+      f.properties.altitud = Math.round(metres);
     });
   }
-  writeFileSync(FITXER, JSON.stringify(fc, null, 2) + '\n');
+  writeFileSync(FITXER, serialitzarPunts(fc));
   for (const f of pendents) console.log(`${f.properties.altitud} m\t${f.properties.nom}`);
   console.log(`\nAltitud omplerta per a ${pendents.length} punts. Revisa que siguin raonables.`);
 }
