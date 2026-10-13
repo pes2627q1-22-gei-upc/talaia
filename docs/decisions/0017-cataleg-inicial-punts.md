@@ -9,7 +9,7 @@ HU06 demana com a mínim 30 punts d'observació de Catalunya al mapa. Cal decidi
 ## Decisió
 
 - **Font de veritat: `data/punts_observacio.geojson`** (RFC 7946, WGS84, `[lon, lat]`). Es pot editar visualment (geojson.io, QGIS) i GitHub el mostra com a mapa a les PR. És el mateix format que serveix `GET /punts` ([ADR-0012](0012-punts-mapa-geojson.md)).
-- **32 punts** repartits per tot el territori: les zones Starlight (Montsec, Muntanyes de Prades i Montsant, Aigüestortes), la plana de la Noguera, colls del Pirineu i el Prepirineu, Montseny, els Ports, el delta de l'Ebre, l'Empordà i observatoris d'aficionats de la Catalunya central.
+- **32 punts** repartits per tot el territori: les zones Starlight (Montsec, Muntanyes de Prades i Montsant, Aigüestortes), Montgai (Destinació Turística Starlight pròpia des del juliol de 2022, independent de la del Montsec; [llista de certificacions de la Fundación Starlight](https://fundacionstarlight.org/docs/files/255_255-1-listado-certificaciones-dtrs-actualizado.pdf)), colls del Pirineu i el Prepirineu, Montseny, els Ports, el delta de l'Ebre, l'Empordà i observatoris d'aficionats de la Catalunya central.
 - **Excepcions als criteris de P13**, acceptades pel cel fosc al zenit: Santa Fe de Montseny i el pantà de Cavallers tenen l'horitzó tapat per les muntanyes (`horitzo_obert` és `null` i la descripció ho diu), i a Sant Joan de l'Erm s'hi arriba per pista forestal (ho diu `accessibilitat`).
 - **Coordenades del geocodificador de l'ICGC**, no escrites a mà. Cada punt guarda d'on surten (`font_coordenades`, que no va a la base de dades).
 - **Metadades:** `slug` (únic i estable), `nom`, `municipi`, `descripcio`, `altitud`, `horitzo_obert` i `accessibilitat`. Tots són `OFICIAL` (sense creador) i `PUBLICAT`.
