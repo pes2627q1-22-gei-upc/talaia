@@ -45,7 +45,7 @@
         "slug": "prades",
         "nom": "Prades",
         "municipi": "Prades",
-        "descripcio": "Vila a l'altiplà de les Muntanyes de Prades, Reserva Starlight juntament amb la serra de Montsant. Seu del Parc Astronòmic Muntanyes de Prades; cal allunyar-se del nucli per evitar l'enllumenat.",
+        "descripcio": "Vila a l'altiplà de les Muntanyes de Prades, Destinació Turística Starlight juntament amb la serra de Montsant. Seu del Parc Astronòmic Muntanyes de Prades; cal allunyar-se del nucli per evitar l'enllumenat.",
         "altitud": 955,
         "horitzo_obert": null,
         "accessibilitat": "Accés en cotxe",
@@ -96,7 +96,7 @@
         "slug": "la-morera-de-montsant",
         "nom": "la Morera de Montsant",
         "municipi": "la Morera de Montsant",
-        "descripcio": "Poble al peu dels cingles de la serra de Montsant, dins la Reserva Starlight. Els cingles tapen el nord; cap al sud la vista s'obre sobre el Priorat.",
+        "descripcio": "Poble al peu dels cingles de la serra de Montsant, dins la Destinació Turística Starlight. Els cingles tapen el nord; cap al sud la vista s'obre sobre el Priorat.",
         "altitud": 749,
         "horitzo_obert": ["SE", "S", "SW"],
         "accessibilitat": "Accés en cotxe",
@@ -113,7 +113,7 @@
         "slug": "montgai",
         "nom": "Montgai",
         "municipi": "Montgai",
-        "descripcio": "Municipi de la Noguera amb certificació de Destinació Turística Starlight. Terreny planer amb poques llums al voltant.",
+        "descripcio": "Municipi de la plana de la Noguera. Terreny planer amb poques llums al voltant.",
         "altitud": 288,
         "horitzo_obert": null,
         "accessibilitat": "Accés en cotxe",
@@ -161,8 +161,8 @@
         "coordinates": [2.464282, 41.774127]
       },
       "properties": {
-        "slug": "santa-fe-del-montseny",
-        "nom": "Santa Fe del Montseny",
+        "slug": "santa-fe-de-montseny",
+        "nom": "Santa Fe de Montseny",
         "municipi": "Fogars de Montclús",
         "descripcio": "Clot al cor del Montseny envoltat de fagedes. Cel fosc al zenit, però l'horitzó queda tapat pels cims del voltant.",
         "altitud": 1131,
@@ -181,10 +181,10 @@
         "slug": "collformic",
         "nom": "Collformic",
         "municipi": "el Brull",
-        "descripcio": "Coll del Montseny entre Osona i el Vallès, amb aparcament. Accessible i amb vista a la plana de Vic, que aporta llum cap a l'oest.",
+        "descripcio": "Coll del Montseny entre Osona i el Vallès, amb aparcament. Accessible i amb vista a la plana de Vic, que aporta llum cap al nord-nord-oest.",
         "altitud": 1129,
         "horitzo_obert": null,
-        "accessibilitat": "Accés en cotxe per la BV-5114",
+        "accessibilitat": "Accés en cotxe per la BV-5301",
         "font_coordenades": "ICGC geocodificador: «Collformic»"
       }
     },
@@ -303,7 +303,7 @@
         "descripcio": "Sostre del massís dels Ports, amb vista de 360° sobre el delta de l'Ebre i el Matarranya. Lluny de nuclis grans, amb el cel fosc dels Ports.",
         "altitud": 1407,
         "horitzo_obert": ["N", "NE", "E", "SE", "S", "SW", "W", "NW"],
-        "accessibilitat": "Carretera asfaltada des de Roquetes; comprovar l'accés fins al cim",
+        "accessibilitat": "Carretera asfaltada des de Roquetes; l'últim tram fins al cim pot estar tancat",
         "font_coordenades": "ICGC geocodificador: «Caro»"
       }
     },
@@ -450,7 +450,7 @@
         "coordinates": [0.963968, 42.723151]
       },
       "properties": {
-        "slug": "pla-de-beret",
+        "slug": "plan-de-beret",
         "nom": "Plan de Beret",
         "municipi": "Naut Aran",
         "descripcio": "Altiplà d'alta muntanya a la Val d'Aran, a prop de les fonts de la Garona i la Noguera Pallaresa. Espai ample i obert, molt fosc fora de temporada d'esquí.",
