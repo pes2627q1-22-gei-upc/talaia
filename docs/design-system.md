@@ -84,9 +84,8 @@ L'app ha de ser molt estètica i anar sempre fluida: és part del producte, no u
 | `motion.base` | 250 ms | Aparèixer i desaparèixer elements, canvi de càrrega a contingut |
 | `motion.slow` | 400 ms | Fulls inferiors, transicions pròpies entre vistes |
 | `motion.spring` | `damping` 18 · `stiffness` 180 | El que l'usuari arrossega o el que «arriba» (full inferior, targetes) |
-| `motion.stagger` | 40 ms | Retard entre elements que entren en cascada (contingut de la benvinguda) |
-| `motion.leave` | 320 ms | Sortida d'una pantalla amb coreografia abans de navegar (benvinguda) |
-| `motion.ease` | `expoOut` · `power2Out` · `backOut` · `sineInOut` | Corbes de GSAP com a Bézier de Reanimated, per a les coreografies |
+| `motion.stagger` | 40 ms | Retard entre elements que entren en cascada (llistes, targetes) |
+| `motion.leave` | 720 ms | Sortida d'una pantalla amb coreografia abans de navegar (el salt de la benvinguda) |
 
 Corbes: en entrar, desacceleració (`Easing.out(Easing.cubic)`); en sortir, acceleració (`Easing.in(Easing.cubic)`). Mai lineal.
 
@@ -104,23 +103,36 @@ Corbes: en entrar, desacceleració (`Easing.out(Easing.cubic)`); en sortir, acce
 
 ## Il·lustracions
 
-Es fan servir els SVG exportats del Figma tal com són, sense redibuixar-los, i es pinten amb `expo-image` (funciona a Expo Go). La benvinguda (TG-82) és a `apps/mobile/assets/images/welcome/`: resplendor, estels fugaços, turó, logotip, la icona del correu i, a `torre/`, els vectors de la torre per separat (cos, muralla, merlet, finestra i estel) perquè es puguin animar. Els 42 estels surten de l'export del Figma com a dades (`features/auth/stars.ts`): cadascun és un punt `lluna` amb la seva posició, mida i opacitat. Les capes es col·loquen amb les coordenades del frame de 393 d'amplada. En pantalles baixes la il·lustració s'encongeix perquè la torre no quedi tallada (`illustrationScale`, amb test).
+Es fan servir els SVG exportats del Figma tal com són, sense redibuixar-los, i es pinten amb `expo-image` (funciona a Expo Go). La benvinguda (TG-82) és a `apps/mobile/assets/images/welcome/`: resplendor, turó, logotip, la icona del correu i, a `torre/`, els vectors de la torre per separat (cos, muralla, merlet, finestra i estel) perquè es puguin animar. Els 42 estels surten de l'export del Figma com a dades (`features/auth/stars.ts`): cadascun és un punt `lluna` amb la seva posició, mida i opacitat. Les capes es col·loquen amb les coordenades del frame de 393 d'amplada. En pantalles baixes la il·lustració s'encongeix perquè la torre no quedi tallada (`illustrationScale`, amb test).
 
 ### La benvinguda: coreografia
 
-La pantalla d'accés és l'única amb una coreografia pròpia, perquè es veu poques vegades i és la primera impressió de la marca. Funciona com una línia de temps de GSAP (`TIMELINE` a `features/auth/WelcomeIllustration.tsx`), però amb Reanimated al fil de la interfície:
+La pantalla d'accés és l'única amb una coreografia pròpia: és la primera impressió de la marca. És una línia de temps a l'estil de GSAP (`TL` a `features/auth/intro/timeline.ts`, amb les corbes `expoOut`, `power2Out`, `backOut` i `sineInOut`), però amb un sol rellotge de Reanimated al fil de la interfície. El cel és un shader de **Skia** (`@shopify/react-native-skia`, que va a Expo Go): degradat de la marca, Via Làctia amb pols i franges fosques, tres capes d'estels que parpellegen i el feix del far.
 
 | t | Què passa |
 |---|---|
-| 0–0,9 s | Els 42 estels del Figma s'encenen un a un (`power2Out`) |
-| 0,1 s | El resplendor floreix darrere la torre (`expoOut`) |
-| 0,15 s | El turó puja |
-| 0,25 s | La torre s'alça de darrere el turó (`expoOut`, 0,9 s) |
-| 0,65 s | L'estel de la torre s'encén girant, amb un petit rebot (`backOut`), i el resplendor fa un pols |
-| 0,8 s | La finestra s'il·lumina amb un parpelleig, com un fanal |
-| 0,88 s | El contingut entra en cascada amb `motion.spring` |
+| 0 s | Un sol estel batega on hi haurà l'estel de la torre (dues vibracions suaus) |
+| 0,4 s | El cel s'obre: una ona que surt de la torre encén els estels (`power2Out`, 1,3 s) |
+| 1 s | Apareix la Via Làctia (`sineInOut`, 1,4 s) |
+| 1,5 s | Floreix el resplendor, puja el turó i la torre s'alça de darrere seu (`expoOut`, 0,9 s) |
+| 2,05 s | L'estel de la torre s'encén girant (`backOut`) amb un esclat de lent (vibració mitjana) |
+| 2,25 s | La finestra s'il·lumina amb un parpelleig, com un fanal |
+| 2,5 s | El feix del far escombra el cel de dreta a esquerra (1,1 s) i aviva els estels per on passa |
+| 3,15 s | El feix dibuixa Cassiopea, la «W» (un toc per cada estel que s'uneix) |
+| 3,35 s | El logotip puja del seu marc i l'estel de la «i» fa una espurna (vibració lleu) |
+| 3,55 s | El contingut entra en cascada, 60 ms entre elements |
+| 4,5 s | Fi |
 
-Després continua viva: cada estel parpelleja al seu ritme, l'estel de la torre respira i es balanceja, el resplendor batega i cada 6 s passa un estel fugaç. En triar una opció, el contingut baixa i s'esvaeix, el cel s'apropa i l'estel fa un esclat durant `motion.leave`; després l'app entra amb una fosa. Amb «reduir moviment» tot és quiet i la sortida és una fosa curta.
+- **Modes** (`useIntro`): sencera el primer cop (es guarda a AsyncStorage, `talaia:intro-vista`), curta a partir de 3,15 s les altres vegades, i quieta i ja acabada amb «reduir moviment». Un toc al cel la salta (350 ms). Per veure-la sencera: `/benvinguda?intro=sencera`.
+- **Després continua viva:** els estels parpellegen i es mouen amb el giroscopi (paral·laxi de ±14 px), l'estel de la torre respira, cada 5,2 s passa un estel fugaç i, si es toca el cel, en surt un des del dit.
+- **Sortida** (`motion.leave`): salt a la velocitat de la llum cap a l'estel de la torre, amb raigs, el cel que s'hi apropa i un flaix; després l'app entra amb una fosa. Amb «reduir moviment», una fosa curta.
+
+**El que hem après amb Skia i els worklets**
+
+- Skia compila els pipelines de la GPU el primer cop que dibuixa una cosa, i això atura la imatge (~0,7 s al simulador). Per això el que surt més tard es dibuixa des del principi amb opacitat 1/255 (`WARM` a `SkyCanvas.tsx`) i la línia de temps espera 300 ms (`INTRO_LEAD`).
+- Dins d'un worklet, cap funció fletxa que no capturi res: el React Compiler la treu fora del component (`_temp`), deixa de ser worklet i l'app peta al fil de la interfície. Cal fer-ne una funció de mòdul amb `'worklet'`.
+- Res d'`usePathValue`: es torna a disparar a si mateix. Un camí fix es passa com a text SVG; un d'animat, amb `useDerivedValue` i `Skia.PathBuilder`.
+- A Jest, Skia corre sobre CanvasKit (`@shopify/react-native-skia/jestEnv.js`): els shaders es compilen de debò als tests.
 
 ## Mapa
 
