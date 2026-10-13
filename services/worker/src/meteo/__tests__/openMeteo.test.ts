@@ -1,12 +1,16 @@
-import { OpenMeteoError, createOpenMeteoClient, toHores } from '../openMeteo';
+import { OpenMeteoError, UNITATS_ESPERADES, createOpenMeteoClient, toHores } from '../openMeteo';
 
 const BASE_URL = 'https://api.open-meteo.com/v1';
 
 /** Un lloc tal com el retorna Open-Meteo amb `timeformat=unixtime` (2 hores). */
-function lloc(overrides: Partial<Record<string, (number | null)[]>> = {}) {
+function lloc(
+  overrides: Partial<Record<string, (number | null)[]>> = {},
+  unitats: Partial<Record<string, string>> = {},
+) {
   return {
     latitude: 42.0294,
     longitude: 0.7112,
+    hourly_units: { ...UNITATS_ESPERADES, ...unitats },
     hourly: {
       time: [1791763200, 1791766800],
       cloud_cover: [11, 90],
@@ -268,6 +272,15 @@ describe('createOpenMeteoClient', () => {
     await expect(
       createOpenMeteoClient({ baseUrl: BASE_URL, fetch }).previsio([{ lat: 42, lon: 0.7 }]),
     ).rejects.toThrow('mateixa llargada');
+  });
+
+  it("si Open-Meteo declara una unitat diferent de l'esperada, rebutja la resposta", async () => {
+    const { fetch } = fakeFetch(() => json(lloc({}, { wind_speed_10m: 'm/s' })));
+    const error = await createOpenMeteoClient({ baseUrl: BASE_URL, fetch })
+      .previsio([{ lat: 42, lon: 0.7 }])
+      .catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(OpenMeteoError);
+    expect((error as Error).message).toContain('wind_speed_10m');
   });
 
   it('un cos amb una forma inesperada és un OpenMeteoError', async () => {

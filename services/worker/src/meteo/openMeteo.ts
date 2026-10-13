@@ -37,6 +37,29 @@ export const UNITATS = {
 } as const;
 
 /**
+ * Unitat que ha de declarar Open-Meteo (`hourly_units`) per a cada sèrie. Si no coincideix (per
+ * exemple perquè algú canvia `UNITATS` sense tocar el tipus), la resposta es rebutja.
+ */
+export const UNITATS_ESPERADES: Readonly<
+  Record<(typeof VARIABLES_HORARIES)[number] | 'time', string>
+> = {
+  time: 'unixtime',
+  cloud_cover: '%',
+  cloud_cover_low: '%',
+  cloud_cover_mid: '%',
+  cloud_cover_high: '%',
+  relative_humidity_2m: '%',
+  visibility: 'm',
+  temperature_2m: '°C',
+  dew_point_2m: '°C',
+  precipitation: 'mm',
+  precipitation_probability: '%',
+  wind_speed_10m: 'km/h',
+  wind_gusts_10m: 'km/h',
+  wind_direction_10m: '°',
+};
+
+/**
  * Dies de previsió per defecte. Open-Meteo compta els dies de 00:00 a 23:00 UTC: amb 3 dies, la
  * nit de demà passat quedaria tallada a la 01:00 hora local. Amb 4, la nit d'avui i les dues
  * següents hi són senceres.
@@ -109,16 +132,24 @@ const HourlySchema = z
     message: 'Totes les sèries horàries han de tenir la mateixa llargada que `time`',
   });
 
+const HourlyUnitsSchema = z.object(
+  Object.fromEntries(
+    Object.entries(UNITATS_ESPERADES).map(([serie, unitat]) => [serie, z.literal(unitat)]),
+  ),
+);
+
 const LlocSchema = z.object({
   latitude: z.number(),
   longitude: z.number(),
+  hourly_units: HourlyUnitsSchema,
   hourly: HourlySchema,
 });
 
 type Lloc = z.infer<typeof LlocSchema>;
 
-// Amb un sol lloc respon un objecte; amb més d'un, un array en el mateix ordre.
-const RespostaSchema = z.union([z.array(LlocSchema), LlocSchema]);
+// Amb un sol lloc respon un objecte; amb més d'un, un array en el mateix ordre. Es normalitza a
+// array abans de validar perquè l'error digui quina sèrie o unitat falla (una unió ho amagaria).
+const RespostaSchema = z.array(LlocSchema);
 
 const ErrorSchema = z.object({ error: z.literal(true), reason: z.string() });
 
@@ -196,7 +227,7 @@ export function createOpenMeteoClient(options: OpenMeteoClientOptions): OpenMete
       );
     }
 
-    const parsed = RespostaSchema.safeParse(cos);
+    const parsed = RespostaSchema.safeParse(Array.isArray(cos) ? cos : [cos]);
     if (!parsed.success) {
       throw new OpenMeteoError(
         `Resposta d'Open-Meteo inesperada:\n${z.prettifyError(parsed.error)}`,
@@ -204,7 +235,7 @@ export function createOpenMeteoClient(options: OpenMeteoClientOptions): OpenMete
       );
     }
 
-    const resultats = Array.isArray(parsed.data) ? parsed.data : [parsed.data];
+    const resultats = parsed.data;
     if (resultats.length !== llocs.length) {
       throw new OpenMeteoError(
         `S'han demanat ${llocs.length} llocs i Open-Meteo n'ha retornat ${resultats.length}`,

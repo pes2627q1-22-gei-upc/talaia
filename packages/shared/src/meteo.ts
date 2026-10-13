@@ -10,7 +10,12 @@ export type FontMeteo = 'open_meteo';
  * Un `null` vol dir que la font no dóna el valor per a aquella hora.
  */
 export type PrevisioMeteoHora = {
-  /** Inici de l'hora, ISO 8601 en UTC (`2026-10-12T21:00:00.000Z`). */
+  /**
+   * Inici de l'hora, ISO 8601 en UTC (`2026-10-12T21:00:00.000Z`). Els valors instantanis
+   * (núvols, humitat, visibilitat, temperatura, punt de rosada, vent) són d'aquest instant;
+   * `precipitacio`, `probabilitatPrecipitacio` i `ventRafegues` resumeixen l'hora **anterior**
+   * (de `hora` − 1 h a `hora`), tal com les dóna Open-Meteo.
+   */
   hora: string;
   /** Cobertura total de núvols, en % (0–100). */
   nuvolsTotal: number | null;
@@ -31,13 +36,13 @@ export type PrevisioMeteoHora = {
    * condensació a l'òptica.
    */
   puntRosada: number | null;
-  /** Precipitació acumulada durant l'hora (pluja, neu, calabruix), en mm. */
+  /** Precipitació acumulada a l'hora anterior (de `hora` − 1 h a `hora`; pluja, neu, calabruix), en mm. */
   precipitacio: number | null;
-  /** Probabilitat de precipitació durant l'hora, en %. */
+  /** Probabilitat de precipitació a l'hora anterior (de `hora` − 1 h a `hora`), en %. */
   probabilitatPrecipitacio: number | null;
   /** Velocitat del vent a 10 m, en km/h. */
   ventVelocitat: number | null;
-  /** Ràfegues de vent a 10 m, en km/h. */
+  /** Ràfega màxima de vent a 10 m a l'hora anterior (de `hora` − 1 h a `hora`), en km/h. */
   ventRafegues: number | null;
   /** Direcció d'on ve el vent a 10 m, en graus (0 = nord, 90 = est). */
   ventDireccio: number | null;
