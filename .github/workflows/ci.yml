@@ -61,6 +61,10 @@ jobs:
         if: ${{ !cancelled() && matrix.check == 'tests' }}
         run: npm run test --workspace services/api -- --ci
 
+      - name: Tests del worker
+        if: ${{ !cancelled() && matrix.check == 'tests' }}
+        run: npm run test --workspace services/worker -- --ci
+
       - name: Tests de @talaia/db
         if: ${{ !cancelled() && matrix.check == 'tests' }}
         run: npm run test --workspace packages/db -- --ci

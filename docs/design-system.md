@@ -23,6 +23,8 @@ Font de veritat visual: els mockups de **Figma** (16 pantalles). Aquest document
 
 `vel` i `vora` surten del Figma (TG-113): `vora` unifica tres vores gairebé iguals (`#2E3875`, `#333D7A`, `#36408A`).
 
+**Degradats** (`gradients` a `tokens.ts`): `cel`, el fons de la benvinguda, de `#0B1030` a `#17205A` (58 %) i `#2F3680`, amb `expo-linear-gradient`. Els seus colors només existeixen dins del degradat.
+
 Escala de l'índex de visibilitat: `tap` (0–39) → `jus` (40–69) → `ras` (70–100). *Llindars a confirmar amb la fórmula v1 (TG-98).* L'app no els calcula: la franja arriba de l'API (`IndexVisibilitat.franja`) i és el nom del token de color.
 
 ## Tipografia
@@ -48,7 +50,7 @@ Es carreguen amb `@expo-google-fonts` al layout arrel. Cada pes és una família
 | `tag` | Atkinson 700 | 12 / 16 | Etiquetes |
 | `overline` | Atkinson 800 | 10,5 / 14, majúscules | Franja sota la xifra («CEL RAS») |
 
-Espaiats (`spacing`): 4 · 8 · 12 · 16 · 20 · 24 · 32. Radis (`radii`): 10 (etiquetes) · 16 (botons, targetes) · 20 (targeta de l'índex) · píndola. Mides fixes (`sizes`): botó 54, xip 34, tacte mínim 44.
+Espaiats (`spacing`): 4 · 8 · 12 · 16 · 20 · 24 · 32. Radis (`radii`): 10 (etiquetes) · 16 (botons, targetes) · 20 (targeta de l'índex) · píndola. Mides fixes (`sizes`): botó 54, xip 34, tacte mínim 44, icona 22.
 
 ## Components base (TG-113)
 
@@ -82,6 +84,7 @@ L'app ha de ser molt estètica i anar sempre fluida: és part del producte, no u
 | `motion.base` | 250 ms | Aparèixer i desaparèixer elements, canvi de càrrega a contingut |
 | `motion.slow` | 400 ms | Fulls inferiors, transicions pròpies entre vistes |
 | `motion.spring` | `damping` 18 · `stiffness` 180 | El que l'usuari arrossega o el que «arriba» (full inferior, targetes) |
+| `motion.stagger` | 40 ms | Retard entre elements que entren en cascada (contingut de la benvinguda) |
 
 Corbes: en entrar, desacceleració (`Easing.out(Easing.cubic)`); en sortir, acceleració (`Easing.in(Easing.cubic)`). Mai lineal.
 
@@ -96,6 +99,10 @@ Corbes: en entrar, desacceleració (`Easing.out(Easing.cubic)`); en sortir, acce
 7. Res de càlcul pesat mentre s'anima: les dades arriben preparades del ViewModel (`useMemo`), no es transformen a la View.
 8. Es respecta l'opció del sistema de reduir el moviment (`useReducedMotion` de Reanimated): les animacions es converteixen en fosos curts.
 9. **Objectiu: 60 fps.** Es comprova al dispositiu, amb Expo Go en mode de producció (`npx expo start --no-dev --minify`). El mode de desenvolupament va més lent i no serveix per jutjar-ho. El mapa és un WebView (ADR-0015): mira-hi els fps en un Android de gamma mitjana, i sense el mode d'estalvi d'energia.
+
+## Il·lustracions
+
+Es fan servir els SVG exportats del Figma tal com són, sense redibuixar-los, i es pinten amb `expo-image` (funciona a Expo Go). La benvinguda (TG-82) és a `apps/mobile/assets/images/welcome/`: resplendor, estels, estels fugaços, torre, turó, logotip i la icona del correu. Les capes es col·loquen amb les coordenades del frame de 393 d'amplada. En pantalles baixes la il·lustració s'encongeix perquè la torre no quedi tallada (`illustrationScale`, amb test).
 
 ## Mapa
 
