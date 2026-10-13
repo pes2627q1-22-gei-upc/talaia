@@ -96,9 +96,29 @@ procedència.
 seleccionar l'idioma i retornar camps plans (`nom`, `descripcio`) sense exposar l'estructura
 interna de traduccions.
 
-## Validacions de la futura ingesta
+## Ingesta local
 
-A més de validar el JSON contra l'esquema, l'importador comprovarà:
+El fitxer JSON és la font de veritat. `build-seed-astronomia.ts` valida les dades i genera
+`supabase/seeds/02_calendari_astronomic.sql`. El seed carrega primer les fonts, després els
+fenòmens i finalment els esdeveniments. Fa `upsert` pel codi estable i només actualitza les
+files que han canviat; repetir-lo no crea duplicats ni modifica les dates d'actualització.
+
+```bash
+node data/scripts/build-seed-astronomia.ts
+node data/scripts/build-seed-astronomia.ts --check
+npx supabase db reset
+npm run db:types
+```
+
+L'ordre dels seeds està garantit pels noms `01_punts_observacio.sql` i
+`02_calendari_astronomic.sql`. Les quatre taules noves tenen RLS activat i s'accedeix a les
+dades des del backend. El catàleg `tipus_fenomen` inclou els tipus de TG-107, però aquesta
+ingesta només aporta pluges i eclipsis. Una correcció d'una font es fa canviant el JSON i
+regenerant el seed; no s'edita el SQL generat.
+
+## Validacions de la ingesta
+
+El generador valida les regles essencials del contracte abans de construir el seed:
 
 - que cada `fenomen_codi` i `font_codi` existeixi;
 - que no hi hagi codis duplicats;
@@ -107,4 +127,5 @@ A més de validar el JSON contra l'esquema, l'importador comprovarà:
 - que totes les entrades siguin rellevants per a Catalunya;
 - que una reexecució produeixi el mateix resultat sense duplicats.
 
-La migració SQL i l'importador s'afegiran quan TG-69 estigui integrada a `snapshot`.
+La migració afegeix restriccions de claus, intervals i valors numèrics a les comprovacions
+del generador. Els tipus Kysely es regeneren a partir de la base local després d'aplicar-la.

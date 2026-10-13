@@ -6,7 +6,7 @@ seeds de punts i fenòmens). Els fitxers grans no es versionen.
 - [`astronomia/`](astronomia/README.md): format normalitzat dels calendaris oficials d'IMO i
   NASA (TG-106).
 
-**Pendent:** TG-97 i la càrrega a la base de dades de TG-106.
+**Pendent:** TG-97.
 
 ## Punts d'observació (TG-87, P13)
 
