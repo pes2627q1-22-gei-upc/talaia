@@ -13,6 +13,7 @@ import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { AppProviders } from '@/core/providers/AppProviders';
+import { stackOptions } from '@/core/navigation/transitions';
 import { colors } from '@/core/theme/tokens';
 
 void SplashScreen.preventAutoHideAsync();
@@ -32,7 +33,7 @@ const navigationTheme = {
 function RootStack() {
   const { t } = useTranslation();
   return (
-    <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.nit } }}>
+    <Stack screenOptions={stackOptions}>
       <Stack.Screen name="(tabs)" />
       <Stack.Screen
         name="punt/[id]"

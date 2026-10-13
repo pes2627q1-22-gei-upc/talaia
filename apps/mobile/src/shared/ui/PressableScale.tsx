@@ -5,6 +5,7 @@ import Animated, {
   useAnimatedStyle,
   useReducedMotion,
   useSharedValue,
+  withSpring,
   withTiming,
 } from 'react-native-reanimated';
 
@@ -14,11 +15,17 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 export type PressableScaleProps = Omit<PressableProps, 'style'> & {
   style?: StyleProp<ViewStyle>;
-  /** Vibració lleu en prémer: només per a les accions clau (desar, activar una alerta…). */
-  haptic?: boolean;
+  /**
+   * Vibració en prémer. `true`: un cop lleu, per a les accions clau (desar, activar una alerta…).
+   * `'selection'`: el tic de seleccionar, per a xips i controls segmentats.
+   */
+  haptic?: boolean | 'selection';
 };
 
-/** Base de tot el que es pot prémer: s'encongeix a `motion.pressedScale` al fil de la interfície. */
+/**
+ * Base de tot el que es pot prémer: s'enfonsa a `motion.press.scale` de seguida i torna amb un
+ * spring, tot al fil de la interfície.
+ */
 export function PressableScale({
   haptic = false,
   onPressIn,
@@ -31,24 +38,24 @@ export function PressableScale({
   const scale = useSharedValue(1);
   const animatedStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.get() }] }));
 
-  const animateTo = (value: number) => {
-    if (reduceMotion) return;
-    scale.set(withTiming(value, { duration: motion.fast, easing: motion.enter }));
-  };
-
   return (
     <AnimatedPressable
       accessibilityRole="button"
       onPressIn={(event: GestureResponderEvent) => {
-        animateTo(motion.pressedScale);
+        if (!reduceMotion) {
+          scale.set(
+            withTiming(motion.press.scale, { duration: motion.press.in, easing: motion.enter }),
+          );
+        }
         onPressIn?.(event);
       }}
       onPressOut={(event: GestureResponderEvent) => {
-        animateTo(1);
+        if (!reduceMotion) scale.set(withSpring(1, motion.press.release));
         onPressOut?.(event);
       }}
       onPress={(event: GestureResponderEvent) => {
-        if (haptic) void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        if (haptic === 'selection') void Haptics.selectionAsync();
+        else if (haptic) void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         onPress?.(event);
       }}
       style={[style, animatedStyle]}
