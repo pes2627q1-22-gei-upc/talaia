@@ -12,6 +12,9 @@ begin
 end;
 $$;
 
+-- Supabase dona EXECUTE a anon i authenticated sobre les funcions noves de public. El trigger no el necessita.
+revoke execute on function public.set_data_actualitzacio() from public, anon, authenticated;
+
 create table public.punts_observacio (
   id uuid primary key default gen_random_uuid(),
   slug text not null unique,
@@ -21,8 +24,12 @@ create table public.punts_observacio (
   -- Metres sobre el nivell del mar.
   altitud integer,
   -- Direccions amb l'horitzó obert (aproximat). El perfil real el calcula TG-116.
+  -- Si no és clar, null (no una llista buida).
   horitzo_obert text[]
-    check (horitzo_obert <@ array['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW']::text[]),
+    check (
+      horitzo_obert <@ array['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW']::text[]
+      and cardinality(horitzo_obert) > 0
+    ),
   accessibilitat text,
   origen text not null check (origen in ('OFICIAL', 'COMUNITAT')),
   estat text not null default 'PENDENT'

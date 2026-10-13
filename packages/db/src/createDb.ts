@@ -13,8 +13,11 @@ export type CreateDbOptions = {
  * No connecta fins a la primera consulta; en acabar, `await db.destroy()`.
  */
 export function createDb(databaseUrl: string, { max = 5 }: CreateDbOptions = {}): Kysely<DB> {
+  const pool = new Pool({ connectionString: databaseUrl, max });
+  // El pooler de Supabase tanca connexions inactives: sense aquest listener, l'error atura el procés.
+  pool.on('error', (err) => console.error('[db]', err));
   return new Kysely<DB>({
-    dialect: new PostgresDialect({ pool: new Pool({ connectionString: databaseUrl, max }) }),
+    dialect: new PostgresDialect({ pool }),
     plugins: [new CamelCasePlugin()],
   });
 }
