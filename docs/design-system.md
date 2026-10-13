@@ -85,6 +85,8 @@ L'app ha de ser molt estètica i anar sempre fluida: és part del producte, no u
 | `motion.slow` | 400 ms | Fulls inferiors, transicions pròpies entre vistes |
 | `motion.spring` | `damping` 18 · `stiffness` 180 | El que l'usuari arrossega o el que «arriba» (full inferior, targetes) |
 | `motion.stagger` | 40 ms | Retard entre elements que entren en cascada (contingut de la benvinguda) |
+| `motion.leave` | 320 ms | Sortida d'una pantalla amb coreografia abans de navegar (benvinguda) |
+| `motion.ease` | `expoOut` · `power2Out` · `backOut` · `sineInOut` | Corbes de GSAP com a Bézier de Reanimated, per a les coreografies |
 
 Corbes: en entrar, desacceleració (`Easing.out(Easing.cubic)`); en sortir, acceleració (`Easing.in(Easing.cubic)`). Mai lineal.
 
@@ -102,7 +104,23 @@ Corbes: en entrar, desacceleració (`Easing.out(Easing.cubic)`); en sortir, acce
 
 ## Il·lustracions
 
-Es fan servir els SVG exportats del Figma tal com són, sense redibuixar-los, i es pinten amb `expo-image` (funciona a Expo Go). La benvinguda (TG-82) és a `apps/mobile/assets/images/welcome/`: resplendor, estels, estels fugaços, torre, turó, logotip i la icona del correu. Les capes es col·loquen amb les coordenades del frame de 393 d'amplada. En pantalles baixes la il·lustració s'encongeix perquè la torre no quedi tallada (`illustrationScale`, amb test).
+Es fan servir els SVG exportats del Figma tal com són, sense redibuixar-los, i es pinten amb `expo-image` (funciona a Expo Go). La benvinguda (TG-82) és a `apps/mobile/assets/images/welcome/`: resplendor, estels fugaços, turó, logotip, la icona del correu i, a `torre/`, els vectors de la torre per separat (cos, muralla, merlet, finestra i estel) perquè es puguin animar. Els 42 estels surten de l'export del Figma com a dades (`features/auth/stars.ts`): cadascun és un punt `lluna` amb la seva posició, mida i opacitat. Les capes es col·loquen amb les coordenades del frame de 393 d'amplada. En pantalles baixes la il·lustració s'encongeix perquè la torre no quedi tallada (`illustrationScale`, amb test).
+
+### La benvinguda: coreografia
+
+La pantalla d'accés és l'única amb una coreografia pròpia, perquè es veu poques vegades i és la primera impressió de la marca. Funciona com una línia de temps de GSAP (`TIMELINE` a `features/auth/WelcomeIllustration.tsx`), però amb Reanimated al fil de la interfície:
+
+| t | Què passa |
+|---|---|
+| 0–0,9 s | Els 42 estels del Figma s'encenen un a un (`power2Out`) |
+| 0,1 s | El resplendor floreix darrere la torre (`expoOut`) |
+| 0,15 s | El turó puja |
+| 0,25 s | La torre s'alça de darrere el turó (`expoOut`, 0,9 s) |
+| 0,65 s | L'estel de la torre s'encén girant, amb un petit rebot (`backOut`), i el resplendor fa un pols |
+| 0,8 s | La finestra s'il·lumina amb un parpelleig, com un fanal |
+| 0,88 s | El contingut entra en cascada amb `motion.spring` |
+
+Després continua viva: cada estel parpelleja al seu ritme, l'estel de la torre respira i es balanceja, el resplendor batega i cada 6 s passa un estel fugaç. En triar una opció, el contingut baixa i s'esvaeix, el cel s'apropa i l'estel fa un esclat durant `motion.leave`; després l'app entra amb una fosa. Amb «reduir moviment» tot és quiet i la sortida és una fosa curta.
 
 ## Mapa
 
