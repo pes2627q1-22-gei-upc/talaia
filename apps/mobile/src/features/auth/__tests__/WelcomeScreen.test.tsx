@@ -1,3 +1,4 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { useRouter } from 'expo-router';
 import { Platform } from 'react-native';
@@ -7,9 +8,14 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import i18n from '@/core/i18n';
 import { motion } from '@/core/theme/tokens';
 
+import { TL } from '../intro/timeline';
+import { INTRO_LEAD, INTRO_SEEN_KEY, SKIP_DURATION } from '../intro/useIntro';
 import { WelcomeScreen } from '../WelcomeScreen';
 
-jest.mock('expo-router', () => ({ useRouter: jest.fn() }));
+jest.mock('expo-router', () => ({
+  useRouter: jest.fn(),
+  useLocalSearchParams: jest.fn(() => ({})),
+}));
 // Tota la resta de Reanimated és la real; només es pot activar «reduir moviment».
 jest.mock('react-native-reanimated', () => {
   const actual = jest.requireActual('react-native-reanimated');
@@ -28,17 +34,26 @@ const METRICS = {
   insets: { top: 59, left: 0, right: 0, bottom: 34 },
 };
 
-function renderWelcome() {
-  return render(
+async function renderWelcome() {
+  await render(
     <SafeAreaProvider initialMetrics={METRICS}>
       <WelcomeScreen />
     </SafeAreaProvider>,
   );
 }
 
+/** El contingut es mesura i la intro sap quin mode toca: llavors es pinten el cel i la torre. */
+async function layOut() {
+  await fireEvent(screen.getByTestId('welcome-content'), 'layout', {
+    nativeEvent: { layout: { x: 0, y: 392, width: 393, height: 460 } },
+  });
+  await act(async () => {});
+}
+
 describe('WelcomeScreen', () => {
   beforeEach(async () => {
-    replace.mockReset();
+    jest.clearAllMocks();
+    await AsyncStorage.clear();
     await i18n.changeLanguage('ca');
   });
 
@@ -61,9 +76,9 @@ describe('WelcomeScreen', () => {
   it("prémer una opció fa la sortida i després entra a l'app, només un cop", async () => {
     jest.useFakeTimers();
     await renderWelcome();
-    const email = screen.getByRole('button', { name: 'Continua amb el correu' });
+    await layOut();
 
-    await fireEvent.press(email);
+    await fireEvent.press(screen.getByRole('button', { name: 'Continua amb el correu' }));
     await fireEvent.press(screen.getByRole('button', { name: 'Continua amb Google' }));
     expect(replace).not.toHaveBeenCalled();
 
@@ -73,32 +88,49 @@ describe('WelcomeScreen', () => {
     jest.useRealTimers();
   });
 
-  it('pinta la il·lustració un cop sap quant ocupa el contingut', async () => {
+  it('pinta el cel i la torre un cop sap quant ocupa el contingut', async () => {
     await renderWelcome();
     expect(
       screen.queryByTestId('welcome-illustration', { includeHiddenElements: true }),
     ).toBeNull();
+    expect(screen.queryByTestId('welcome-sky')).toBeNull();
 
-    await fireEvent(screen.getByTestId('welcome-content'), 'layout', {
-      nativeEvent: { layout: { x: 0, y: 392, width: 393, height: 460 } },
-    });
+    await layOut();
 
     expect(
       screen.getByTestId('welcome-illustration', { includeHiddenElements: true }),
     ).toBeOnTheScreen();
+    expect(screen.getByTestId('welcome-sky')).toBeOnTheScreen();
+  });
+
+  it('tocar el cel salta la intro; quan ja ha acabat, en fa sortir un estel fugaç', async () => {
+    jest.useFakeTimers();
+    await renderWelcome();
+    await layOut();
+    const touch = { nativeEvent: { locationX: 120, locationY: 90 } };
+
+    await fireEvent.press(screen.getByTestId('welcome-sky'), touch);
+    expect(AsyncStorage.setItem).toHaveBeenCalledWith(INTRO_SEEN_KEY, '1');
+
+    await act(() => jest.advanceTimersByTime(INTRO_LEAD + SKIP_DURATION + TL.end));
+    jest.mocked(AsyncStorage.setItem).mockClear();
+    await fireEvent.press(screen.getByTestId('welcome-sky'), touch);
+    expect(AsyncStorage.setItem).not.toHaveBeenCalled();
+    jest.useRealTimers();
   });
 
   it('amb «reduir moviment», tot és quiet i la sortida és més curta', async () => {
     jest.useFakeTimers();
     jest.mocked(useReducedMotion).mockReturnValue(true);
     await renderWelcome();
-    await fireEvent(screen.getByTestId('welcome-content'), 'layout', {
-      nativeEvent: { layout: { x: 0, y: 392, width: 393, height: 460 } },
-    });
+    await layOut();
     expect(
       screen.getByTestId('welcome-illustration', { includeHiddenElements: true }),
     ).toBeOnTheScreen();
 
+    await fireEvent.press(screen.getByTestId('welcome-sky'), {
+      nativeEvent: { locationX: 120, locationY: 90 },
+    });
     await fireEvent.press(screen.getByRole('button', { name: 'Continua amb Google' }));
     await act(() => jest.advanceTimersByTime(motion.fast));
     expect(replace).toHaveBeenCalledWith('/');

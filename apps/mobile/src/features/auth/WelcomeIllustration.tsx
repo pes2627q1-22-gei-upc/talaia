@@ -1,25 +1,13 @@
 import { Image } from 'expo-image';
-import { useEffect } from 'react';
 import { StyleSheet } from 'react-native';
-import Animated, {
-  interpolate,
-  type SharedValue,
-  useAnimatedStyle,
-  useReducedMotion,
-  useSharedValue,
-  withDelay,
-  withRepeat,
-  withSequence,
-  withTiming,
-} from 'react-native-reanimated';
+import Animated, { type SharedValue, useAnimatedStyle } from 'react-native-reanimated';
 
-import { colors, motion } from '@/core/theme/tokens';
-
-import { STARS } from './stars';
+import { beat, curve, TL } from './intro/timeline';
 
 /**
- * Il·lustració de la benvinguda: les peces del frame «01 Benvinguda i accés» del Figma, a la
- * mateixa posició (coordenades d'un frame de 393 d'amplada) i multiplicades per `scale`.
+ * La torre de la benvinguda, damunt del cel de Skia: les peces del frame «01 Benvinguda i accés»
+ * del Figma, a la mateixa posició (coordenades d'un frame de 393 d'amplada) multiplicades per
+ * `scale`. Tot es mou amb la línia de temps de la intro (`t`).
  */
 export const ILLUSTRATION = {
   width: 393,
@@ -43,26 +31,12 @@ export function illustrationScale({ width, height, topInset }: Screen, contentHe
 }
 
 /**
- * Guió de l'entrada, en ms, com una línia de temps de GSAP: cada peça comença quan toca i se
- * superposa amb l'anterior. A `settle` acaba l'entrada i comencen les animacions de fons.
+ * Distàncies del Figma (punts del frame de 393) que recorren les peces en entrar. La torre surt
+ * de prou avall perquè ni els merlets (a 210) es vegin abans d'hora.
  */
-export const TIMELINE = {
-  stars: 0,
-  glow: 100,
-  hill: 150,
-  tower: 250,
-  star: 650,
-  window: 800,
-  settle: 1400,
-  meteor: 1800,
-  meteorEvery: 6000,
-} as const;
-
-/** Distàncies del Figma (punts del frame de 393) que recorren les peces en entrar. */
-const TRAVEL = { hill: 30, tower: 170, meteorX: 64, meteorY: 48 } as const;
+const TRAVEL = { hill: 30, tower: 215 } as const;
 
 const resplendor = require('@/assets/images/welcome/resplendor.svg');
-const estelsFugacos = require('@/assets/images/welcome/estels-fugacos.svg');
 const turo = require('@/assets/images/welcome/turo.svg');
 
 /** El grup «Talaia» (node 3:50) i els seus vectors, en coordenades del grup. */
@@ -124,57 +98,19 @@ const TOWER_STAR = {
   h: 63.8,
 } as const;
 
-/** Pseudoaleatori estable: cada estel té sempre el mateix ritme, render rere render. */
-function noise(index: number, salt: number) {
-  const value = Math.sin(index * 12.9898 + salt * 78.233) * 43758.5453;
-  return value - Math.floor(value);
-}
-
-const sine = { easing: motion.ease.sineInOut };
-
-type StarProps = (typeof STARS)[number] & { index: number; scale: number; still: boolean };
-
-/** Un estel: s'encén en un moment aleatori de la primera part i després parpelleja al seu ritme. */
-function Star({ x, y, r, o, index, scale, still }: StarProps) {
-  const opacity = useSharedValue(still ? o : 0);
-
-  useEffect(() => {
-    if (still) return;
-    const half = 1400 + noise(index, 2) * 1600;
-    opacity.set(
-      withSequence(
-        withDelay(
-          TIMELINE.stars + noise(index, 1) * 900,
-          withTiming(o, { duration: 600, easing: motion.ease.power2Out }),
-        ),
-        withRepeat(
-          withSequence(
-            withTiming(o * 0.3, { duration: half, ...sine }),
-            withTiming(o, { duration: half, ...sine }),
-          ),
-          -1,
-        ),
-      ),
-    );
-  }, [index, o, opacity, still]);
-
-  const style = useAnimatedStyle(() => ({ opacity: opacity.get() }));
-  const size = 2 * r * scale;
-  return (
-    <Animated.View
-      style={[
-        styles.star,
-        {
-          left: (x - r) * scale,
-          top: (y - r) * scale,
-          width: size,
-          height: size,
-          borderRadius: size,
-        },
-        style,
-      ]}
-    />
-  );
+/** La finestra s'encén com un fanal: un parpelleig i després una llum que respira. */
+export function windowLight(t: number, clock: number, still: boolean) {
+  'worklet';
+  const ms = t - TL.window;
+  if (ms <= 0) return 0;
+  let light = 1;
+  if (ms < 90) light = ms / 90;
+  else if (ms < 180) light = 1 - 0.65 * ((ms - 90) / 90);
+  else if (ms < 340) light = 0.35 + 0.65 * ((ms - 180) / 160);
+  const breath = still
+    ? 0
+    : 0.09 * (1 + Math.sin((clock / 3600) * Math.PI * 2)) * beat(t, TL.end - 400, 400);
+  return light - breath;
 }
 
 type WelcomeIllustrationProps = {
@@ -182,143 +118,61 @@ type WelcomeIllustrationProps = {
   screenWidth: number;
   /** Distància fins a baix de la pantalla on ha de quedar el peu de la il·lustració. */
   bottom: number;
-  /** De 0 a 1 quan l'usuari tria una opció: el cel s'apropa i l'estel fa un esclat. */
+  t: SharedValue<number>;
+  clock: SharedValue<number>;
+  /** De 0 a 1 en triar una opció: la torre s'esvaeix mentre el cel salta cap a l'estel. */
   exit: SharedValue<number>;
+  still: boolean;
 };
 
-export function WelcomeIllustration({
-  scale,
-  screenWidth,
-  bottom,
-  exit,
-}: WelcomeIllustrationProps) {
-  const still = useReducedMotion();
-  const done = still ? 1 : 0;
-
-  const glowIn = useSharedValue(done);
-  const glowPulse = useSharedValue(0);
-  const glowBreath = useSharedValue(0);
-  const hillIn = useSharedValue(done);
-  const towerIn = useSharedValue(done);
-  const windowLight = useSharedValue(done);
-  const starIn = useSharedValue(done);
-  const starTurn = useSharedValue(still ? 0 : -120);
-  const starBreath = useSharedValue(0);
-  const starSway = useSharedValue(0);
-  const meteor = useSharedValue(0);
-
-  useEffect(() => {
-    if (still) return;
-    const expo = (duration: number) => ({ duration, easing: motion.ease.expoOut });
-    const loop = (amplitude: number, duration: number) =>
-      withDelay(
-        TIMELINE.settle,
-        withRepeat(
-          withSequence(
-            withTiming(amplitude, { duration, ...sine }),
-            withTiming(-amplitude, { duration, ...sine }),
-          ),
-          -1,
-          true,
-        ),
-      );
-
-    glowIn.set(withDelay(TIMELINE.glow, withTiming(1, expo(900))));
-    glowPulse.set(
-      withDelay(
-        TIMELINE.star,
-        withSequence(
-          withTiming(1, { duration: 250, easing: motion.ease.power2Out }),
-          withTiming(0, { duration: 700, ...sine }),
-        ),
-      ),
-    );
-    glowBreath.set(loop(1, 4000));
-    hillIn.set(withDelay(TIMELINE.hill, withTiming(1, expo(700))));
-    towerIn.set(withDelay(TIMELINE.tower, withTiming(1, expo(900))));
-    // La finestra s'encén com un fanal: un parpelleig i després una llum que respira.
-    windowLight.set(
-      withDelay(
-        TIMELINE.window,
-        withSequence(
-          withTiming(1, { duration: 90 }),
-          withTiming(0.35, { duration: 90 }),
-          withTiming(1, { duration: 160 }),
-          withRepeat(
-            withSequence(
-              withTiming(0.82, { duration: 1800, ...sine }),
-              withTiming(1, { duration: 1800, ...sine }),
-            ),
-            -1,
-          ),
-        ),
-      ),
-    );
-    starIn.set(
-      withDelay(TIMELINE.star, withTiming(1, { duration: 700, easing: motion.ease.backOut })),
-    );
-    starTurn.set(withDelay(TIMELINE.star, withTiming(0, expo(900))));
-    starBreath.set(loop(1, 2800));
-    starSway.set(loop(4, 3600));
-    meteor.set(
-      withDelay(
-        TIMELINE.meteor,
-        withRepeat(
-          withSequence(
-            withTiming(1, expo(1100)),
-            withDelay(TIMELINE.meteorEvery - 1100, withTiming(0, { duration: 0 })),
-          ),
-          -1,
-        ),
-      ),
-    );
-  }, [
-    still,
-    glowIn,
-    glowPulse,
-    glowBreath,
-    hillIn,
-    towerIn,
-    windowLight,
-    starIn,
-    starTurn,
-    starBreath,
-    starSway,
-    meteor,
-  ]);
+export function WelcomeIllustration(props: WelcomeIllustrationProps) {
+  const { scale, screenWidth, bottom, t, clock, exit, still } = props;
 
   const sceneStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: 1 + 0.05 * exit.get() }],
+    opacity: 1 - exit.get(),
+    transform: [{ scale: 1 + 0.12 * exit.get() }],
   }));
-  const glowStyle = useAnimatedStyle(() => ({
-    opacity: Math.min(1, glowIn.get() * (0.85 + 0.15 * glowBreath.get()) + 0.3 * exit.get()),
+  const glowStyle = useAnimatedStyle(() => {
+    const now = t.get();
+    const grow = beat(now, TL.glow, 900, curve.expoOut);
+    const pulse = beat(now, TL.ignite, 250) * (1 - beat(now, TL.ignite + 250, 700));
+    const breath = still
+      ? 0
+      : Math.sin((clock.get() / 4000) * Math.PI * 2) * beat(now, TL.end - 400, 400);
+    return {
+      opacity: Math.min(1, grow * (0.85 + 0.15 * breath)),
+      transform: [{ scale: 0.6 + 0.4 * grow + 0.08 * pulse + 0.03 * breath }],
+    };
+  });
+  const hillStyle = useAnimatedStyle(() => ({
     transform: [
-      { scale: 0.6 + 0.4 * glowIn.get() + 0.08 * glowPulse.get() + 0.03 * glowBreath.get() },
+      { translateY: (1 - beat(t.get(), TL.hill, 700, curve.expoOut)) * TRAVEL.hill * scale },
     ],
   }));
-  const hillStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: (1 - hillIn.get()) * TRAVEL.hill * scale }],
-  }));
   const towerStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: (1 - towerIn.get()) * TRAVEL.tower * scale }],
-  }));
-  const windowStyle = useAnimatedStyle(() => ({ opacity: windowLight.get() }));
-  const starStyle = useAnimatedStyle(() => ({
-    opacity: Math.min(1, starIn.get() * 2),
     transform: [
-      { rotate: `${starTurn.get() + starSway.get()}deg` },
       {
-        scale: (0.2 + 0.8 * starIn.get()) * (1 + 0.07 * starBreath.get()) * (1 + 0.5 * exit.get()),
+        translateY:
+          (1 - beat(t.get(), TL.tower, TL.towerFor, curve.expoOut)) * TRAVEL.tower * scale,
       },
     ],
   }));
-  const meteorStyle = useAnimatedStyle(() => {
-    const p = meteor.get();
+  const windowStyle = useAnimatedStyle(() => ({
+    opacity: windowLight(t.get(), clock.get(), still),
+  }));
+  const starStyle = useAnimatedStyle(() => {
+    const now = t.get();
+    const ignite = beat(now, TL.ignite, 700, curve.backOut);
+    const turn = -120 * (1 - beat(now, TL.ignite, 900, curve.expoOut));
+    const alive = still ? 0 : beat(now, TL.end - 400, 400);
+    const seconds = clock.get() / 1000;
+    const breath = Math.sin((seconds / 2.8) * Math.PI * 2) * alive;
+    const sway = 4 * Math.sin((seconds / 3.6) * Math.PI * 2) * alive;
     return {
-      opacity: interpolate(p, [0, 0.12, 0.6, 1], [0, 1, 1, 0]),
+      opacity: Math.min(1, ignite * 2),
       transform: [
-        { translateX: (p * TRAVEL.meteorX - TRAVEL.meteorX * 0.75) * scale },
-        { translateY: (p * TRAVEL.meteorY - TRAVEL.meteorY * 0.75) * scale },
+        { rotate: `${turn + sway}deg` },
+        { scale: (0.2 + 0.8 * ignite) * (1 + 0.07 * breath) * (1 + 0.6 * exit.get()) },
       ],
     };
   });
@@ -344,14 +198,6 @@ export function WelcomeIllustration({
     >
       <Animated.View style={[styles.layer, at(-63, 240, 520, 300), glowStyle]}>
         <Image source={resplendor} contentFit="fill" style={styles.fill} />
-      </Animated.View>
-
-      {STARS.map((star, index) => (
-        <Star key={index} {...star} index={index} scale={scale} still={still} />
-      ))}
-
-      <Animated.View style={[styles.layer, at(0, 0, 393, 200), meteorStyle]}>
-        <Image source={estelsFugacos} contentFit="fill" style={styles.fill} />
       </Animated.View>
 
       <Animated.View
@@ -399,5 +245,4 @@ const styles = StyleSheet.create({
   box: { position: 'absolute', overflow: 'hidden' },
   layer: { position: 'absolute' },
   fill: { width: '100%', height: '100%' },
-  star: { position: 'absolute', backgroundColor: colors.lluna },
 });
