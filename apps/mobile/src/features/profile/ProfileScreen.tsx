@@ -1,7 +1,9 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
-import { colors, fontSizes, radii, spacing } from '@/core/theme/tokens';
+import { spacing } from '@/core/theme/tokens';
 import { ApiStatusCard } from '@/features/apiStatus/ApiStatusCard';
+import { AppText } from '@/shared/ui/AppText';
+import { Chip } from '@/shared/ui/Chip';
 import { Screen } from '@/shared/ui/Screen';
 
 import { useProfileViewModel } from './useProfileViewModel';
@@ -10,20 +12,17 @@ export function ProfileScreen() {
   const vm = useProfileViewModel();
   return (
     <Screen title={vm.title}>
-      <Text style={styles.label}>{vm.languageLabel}</Text>
+      <AppText variant="small" color="boira">
+        {vm.languageLabel}
+      </AppText>
       <View style={styles.row}>
         {vm.languages.map((language) => (
-          <Pressable
+          <Chip
             key={language.code}
-            accessibilityRole="button"
-            accessibilityState={{ selected: language.selected }}
+            label={language.label}
+            selected={language.selected}
             onPress={() => void vm.selectLanguage(language.code)}
-            style={[styles.chip, language.selected && styles.chipSelected]}
-          >
-            <Text style={[styles.chipText, language.selected && styles.chipTextSelected]}>
-              {language.label}
-            </Text>
-          </Pressable>
+          />
         ))}
       </View>
       <ApiStatusCard />
@@ -32,17 +31,5 @@ export function ProfileScreen() {
 }
 
 const styles = StyleSheet.create({
-  label: { color: colors.boira, fontSize: fontSizes.caption },
   row: { flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap' },
-  chip: {
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    borderRadius: radii.pill,
-    borderWidth: 1,
-    borderColor: colors.linia,
-    backgroundColor: colors.card,
-  },
-  chipSelected: { backgroundColor: colors.crep, borderColor: colors.far },
-  chipText: { color: colors.boira, fontSize: fontSizes.body },
-  chipTextSelected: { color: colors.lluna },
 });

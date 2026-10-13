@@ -8,7 +8,9 @@
   "workspaces": [
     "apps/mobile",
     "services/api",
-    "packages/shared"
+    "services/worker",
+    "packages/shared",
+    "packages/db"
   ],
   "scripts": {
     "mobile": "npm run start --workspace apps/mobile",
@@ -18,7 +20,9 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "prepare": "husky",
-    "api": "npm run dev --workspace services/api"
+    "api": "npm run dev --workspace services/api",
+    "db:types": "kysely-codegen --url postgresql://postgres:postgres@127.0.0.1:54322/postgres",
+    "db:types:verify": "kysely-codegen --verify"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.2.3",
@@ -39,5 +43,25 @@
       "prettier --write"
     ],
     "*.{json,yml,yaml,css}": "prettier --write"
+  },
+  "overrides": {
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "kysely": "^0.28.17"
+  },
+  "kysely-codegen": {
+    "dialect": "postgres",
+    "camelCase": true,
+    "defaultSchemas": [
+      "public"
+    ],
+    "includePattern": "public.*",
+    "outFile": "packages/db/src/schema.ts",
+    "overrides": {
+      "columns": {
+        "punts_observacio.origen": "\"OFICIAL\" | \"COMUNITAT\"",
+        "punts_observacio.estat": "Generated<\"PENDENT\" | \"PUBLICAT\" | \"REBUTJAT\" | \"DESACTIVAT\">"
+      }
+    }
   }
 }

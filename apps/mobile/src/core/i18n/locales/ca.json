@@ -9,8 +9,7 @@
     "profile": "Perfil"
   },
   "map": {
-    "title": "On mirem el cel?",
-    "subtitle": "Els millors punts per observar el cel de Catalunya, amb el seu índex de visibilitat."
+    "a11y": "Mapa nocturn de Catalunya amb el relleu"
   },
   "calendar": {
     "title": "Calendari",
@@ -36,9 +35,22 @@
     "title": "Punt d'observació",
     "subtitle": "Fitxa del punt {{id}}: índex per hores i factors."
   },
+  "index": {
+    "level": {
+      "ras": "Cel ras",
+      "jus": "Justet",
+      "tap": "Tapat"
+    },
+    "a11y": "Índex de visibilitat: {{value}} de 100, {{level}}"
+  },
   "welcome": {
-    "title": "Talaia",
-    "subtitle": "On i quan mirar el cel."
+    "appName": "Talaia",
+    "tagline": "On i quan mirar el cel.",
+    "description": "Et diem quin és el millor lloc a prop teu per veure postes de sol, pluges d'estels i nits clares.",
+    "continueGoogle": "Continua amb Google",
+    "continueApple": "Continua amb Apple",
+    "continueEmail": "Continua amb el correu",
+    "legal": "En continuar acceptes les condicions d'ús i la política de privacitat de Talaia."
   },
   "notFound": {
     "title": "Aquesta pantalla no existeix",

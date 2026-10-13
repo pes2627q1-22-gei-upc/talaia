@@ -6,7 +6,7 @@ Llegenda: **Recomanació** = la proposta inicial del sprint master; no és defin
 
 ## Tècniques (Sprint 1, scaffolds)
 
-P1, P2, P3, P7 i P8 ja estan decidides: [ADR-0010](0010-eines-app.md). P4: [ADR-0011](0011-validacio-openapi-zod.md). P5: [ADR-0013](0013-acces-bd-kysely.md).
+P1, P2, P3, P7 i P8 ja estan decidides: [ADR-0010](0010-eines-app.md). P4: [ADR-0011](0011-validacio-openapi-zod.md). P5: [ADR-0013](0013-acces-bd-kysely.md). P22: [ADR-0014](0014-identificador-app-expo-go.md).
 
 | # | Decisió | Opcions | Recomanació | Quan / qui |
 |---|---|---|---|---|
@@ -17,12 +17,12 @@ P1, P2, P3, P7 i P8 ja estan decidides: [ADR-0010](0010-eines-app.md). P4: [ADR-
 
 ## Producte i índex
 
+P13: [ADR-0017](0017-cataleg-inicial-punts.md). P15 (Sign in with Apple): [ADR-0016](0016-sign-in-with-apple-ios.md).
+
 | # | Decisió | Notes |
 |---|---|---|
 | P12 | Fórmula de l'índex v1: pesos de núvols / foscor / Lluna, i llindars de color | TG-98 (Hugo). Ha de ser explicable al desglossament (HU04). |
-| P13 | Catàleg inicial de ≥ 30 punts d'observació: quins i amb quines metadades | TG-87 (Mohamed). Criteris: accés en cotxe, foscor, horitzó obert. |
 | P14 | Valors de `tipus` de fenomen (enum compartit) | TG-106/109 (Victor), compartit amb Aprop. |
-| P15 | Sign in with Apple | Requereix compte de desenvolupador d'Apple de pagament. Si no n'hi ha, HU35 només Google + correu. |
 
 ## Infraestructura i organització
 
@@ -34,4 +34,3 @@ P1, P2, P3, P7 i P8 ja estan decidides: [ADR-0010](0010-eines-app.md). P4: [ADR-
 | P19 | Integració Taiga ↔ GitHub | Activar el webhook de Taiga perquè els commits amb `TG-<ref>` quedin enllaçats a les tasques. |
 | P20 | Correu de l'equip i propietat dels serveis | Compte `talaia.pes@gmail.com` creat (2026-10-04). Serà el **propietari** de Supabase, Expo/EAS, Google Cloud (OAuth), Resend, SonarCloud i domini; cada membre hi entra amb el seu compte com a membre de l'organització. Credencials en un gestor de contrasenyes compartit pels admins (Joan, Mohamed), **mai al repo ni al xat**. |
 | P21 | Servidor de correu per a Supabase Auth | El correu integrat de Supabase només serveix per a proves. Proposta: **Resend** com a SMTP, que requereix el domini de P17. |
-| P22 | Identificador de l'app | `ios.bundleIdentifier` i `android.package` (p. ex. `cat.talaia.app` si hi ha domini, o un altre). Cal abans del primer build d'EAS; no es pot canviar un cop publicada. |

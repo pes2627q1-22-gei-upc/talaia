@@ -1,54 +1,40 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
-import { colors, fontSizes, radii, spacing } from '@/core/theme/tokens';
+import { type ColorToken, colors, radii, spacing } from '@/core/theme/tokens';
+import { AppText } from '@/shared/ui/AppText';
+import { Button } from '@/shared/ui/Button';
+import { Card } from '@/shared/ui/Card';
 
 import { type ApiStatus, useApiStatusViewModel } from './useApiStatusViewModel';
 
-const statusColor: Record<ApiStatus, string> = {
-  loading: colors.boira,
-  ok: colors.ras,
-  error: colors.tap,
+const statusColor: Record<ApiStatus, ColorToken> = {
+  loading: 'boira',
+  ok: 'ras',
+  error: 'tap',
 };
 
 /** View de l'indicador d'estat de l'API: només pinta el que li dona el ViewModel. */
 export function ApiStatusCard() {
   const vm = useApiStatusViewModel();
   return (
-    <View style={styles.card} accessibilityLiveRegion="polite">
-      <View style={[styles.dot, { backgroundColor: statusColor[vm.status] }]} />
+    <Card style={styles.card}>
+      <View
+        style={[styles.dot, { backgroundColor: colors[statusColor[vm.status]] }]}
+        accessibilityLiveRegion="polite"
+      />
       <View style={styles.texts}>
-        <Text style={styles.title}>{vm.title}</Text>
-        <Text style={styles.message}>{vm.message}</Text>
+        <AppText variant="label">{vm.title}</AppText>
+        <AppText variant="small" color="boira">
+          {vm.message}
+        </AppText>
       </View>
-      {vm.canRetry ? (
-        <Pressable accessibilityRole="button" onPress={vm.retry} style={styles.retry}>
-          <Text style={styles.retryText}>{vm.retryLabel}</Text>
-        </Pressable>
-      ) : null}
-    </View>
+      {vm.canRetry ? <Button variant="text" label={vm.retryLabel} onPress={vm.retry} /> : null}
+    </Card>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    padding: spacing.md,
-    borderRadius: radii.md,
-    borderWidth: 1,
-    borderColor: colors.linia,
-    backgroundColor: colors.card,
-  },
+  card: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   dot: { width: spacing.sm, height: spacing.sm, borderRadius: radii.pill },
   texts: { flex: 1, gap: spacing.xs },
-  title: { color: colors.lluna, fontSize: fontSizes.body },
-  message: { color: colors.boira, fontSize: fontSizes.caption },
-  retry: {
-    paddingVertical: spacing.xs,
-    paddingHorizontal: spacing.md,
-    borderRadius: radii.pill,
-    backgroundColor: colors.crep,
-  },
-  retryText: { color: colors.far, fontSize: fontSizes.caption },
 });

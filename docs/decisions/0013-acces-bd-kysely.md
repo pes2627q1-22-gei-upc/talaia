@@ -39,7 +39,7 @@ TG-69 ja ha fixat el primer punt: l'esquema es versiona amb **migracions SQL del
   npm run db:types          # kysely-codegen → packages/db/src/schema.ts
   ```
 - `schema.ts` va a la mateixa PR que la migració: el revisor veu l'SQL i els tipus que en surten. La CI no necessita cap base de dades.
-- Després del `db push` a la base de dades de l'equip (només quan la PR ja és a `snapshot`), `npm run db:types -- --verify` contra `DATABASE_URL` comprova que el remot coincideix amb el repo.
+- Després del `db push` a la base de dades de l'equip (només quan la PR ja és a `snapshot`), `npm run db:types:verify` contra `DATABASE_URL` comprova que el remot coincideix amb el repo.
 
 ### Empaquetat
 

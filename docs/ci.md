@@ -12,8 +12,9 @@ configuració és per a la CI; no canvia la instal·lació local ni els hooks de
 Les accions estan fixades al SHA complet del commit, amb la versió en un comentari.
 Per actualitzar-les, cal verificar el nou commit al repositori oficial i canviar el SHA.
 El check `tests` executa els tests d'`apps/mobile` amb cobertura i després els de
-`services/api` (aquests, encara que fallin els de l'app). La cobertura és només la
-de l'app: es desa durant 7 dies a l'artefacte `mobile-coverage`, també si Jest falla
+`services/api`, `services/worker` i `packages/db` (aquests, encara que fallin els de
+l'app). La cobertura és només la de l'app: es desa durant 7 dies a l'artefacte
+`mobile-coverage`, també si Jest falla
 i ha generat informes. `packages/shared` només té tipus i el cobreix `typecheck`.
 
 ## Activar SonarCloud quan hi hagi accés
@@ -72,7 +73,7 @@ Per tant, aquests casos no validen el Quality Gate amb aquest workflow.
 ## Abast i ampliacions
 
 Actualment l'anàlisi cobreix `apps/mobile/src`, distingint els tests del codi de
-producció. Els tests de `services/api` ja s'executen a la CI, però sense cobertura.
+producció. Els tests de `services/api` i `services/worker` ja s'executen a la CI, però sense cobertura.
 Per portar l'API a Sonar cal afegir-hi `--coverage`, adaptar-ne les rutes de
 `lcov.info` com es fa amb les de l'app i ampliar l'abast de
 `sonar-project.properties`.

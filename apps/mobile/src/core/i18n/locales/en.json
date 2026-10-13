@@ -9,8 +9,7 @@
     "profile": "Profile"
   },
   "map": {
-    "title": "Where shall we look up?",
-    "subtitle": "The best spots to watch the sky in Catalonia, with their visibility index."
+    "a11y": "Night map of Catalonia with its terrain"
   },
   "calendar": {
     "title": "Calendar",
@@ -36,9 +35,22 @@
     "title": "Observation spot",
     "subtitle": "Spot {{id}}: hourly index and factors."
   },
+  "index": {
+    "level": {
+      "ras": "Clear",
+      "jus": "Fair",
+      "tap": "Overcast"
+    },
+    "a11y": "Visibility index: {{value}} out of 100, {{level}}"
+  },
   "welcome": {
-    "title": "Talaia",
-    "subtitle": "Where and when to look at the sky."
+    "appName": "Talaia",
+    "tagline": "Where and when to look at the sky.",
+    "description": "We tell you the best place near you to watch sunsets, meteor showers and clear nights.",
+    "continueGoogle": "Continue with Google",
+    "continueApple": "Continue with Apple",
+    "continueEmail": "Continue with email",
+    "legal": "By continuing, you accept Talaia's terms of use and privacy policy."
   },
   "notFound": {
     "title": "This screen doesn't exist",

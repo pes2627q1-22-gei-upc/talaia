@@ -5,7 +5,7 @@
       "@/*": ["./src/*"],
       "@/assets/*": ["./assets/*"]
     },
-    "types": ["jest"]
+    "types": ["jest", "expo/types"]
   },
   "include": ["**/*.ts", "**/*.tsx", ".expo/types/**/*.ts", "expo-env.d.ts"]
 }

@@ -1,9 +1,28 @@
-import { Screen } from '@/shared/ui/Screen';
+import { colors } from '@/core/theme/tokens';
 
+import NightMap from './NightMap';
 import { useMapViewModel } from './useMapViewModel';
 
-/** Pantalla del mapa (HU06, HU01). El mapa MapLibre + ICGC arriba amb TG-89. */
+const chrome = { background: colors.nit, text: colors.boira, link: colors.lluna };
+
+/** Pantalla del mapa (HU06): cartografia nocturna de l'ICGC amb relleu 3D. Els punts arriben amb TG-90. */
 export function MapScreen() {
   const vm = useMapViewModel();
-  return <Screen title={vm.title} subtitle={vm.subtitle} />;
+  return (
+    <NightMap
+      mapStyle={vm.mapStyle}
+      camera={vm.camera}
+      chrome={chrome}
+      accessibilityLabel={vm.accessibilityLabel}
+      dom={{
+        style: { flex: 1, backgroundColor: colors.nit },
+        scrollEnabled: false,
+        bounces: false,
+        overScrollMode: 'never',
+        // De vora a vora. ponytail: l'Expo Go actual ho ignora i deixa una franja `nit` a dalt i a baix.
+        contentInsetAdjustmentBehavior: 'never',
+        automaticallyAdjustContentInsets: false,
+      }}
+    />
+  );
 }

@@ -45,7 +45,7 @@ Demana'ls a l'sprint master si et falta algun:
 - **GitHub**: membre de l'organització `pes2627q1-22-gei-upc` amb permís d'escriptura al repo `talaia`.
 - **Taiga**: membre del projecte.
 - **Supabase** (només si fas backend): membre de l'organització de Talaia (el propietari és `talaia.pes@gmail.com`).
-- **Expo**: membre de l'organització de l'equip (caldrà per als *development builds*).
+- **Expo**: membre de l'organització de l'equip (per als builds d'EAS quan es publiqui l'app).
 - **Figma**: els mockups, per a qui faci pantalles.
 
 ---
@@ -128,15 +128,14 @@ S'obre Metro amb un codi QR. Tria on la vols veure:
 
 Si canvies el `.env` de l'app, atura Metro (`Ctrl+C`) i torna'l a engegar.
 
+Tota l'app es prova a **Expo Go**, mapa inclòs: el mapa és MapLibre GL JS dins d'una DOM component, no un mòdul natiu ([ADR-0015](decisions/0015-mapa-dom-component.md)). No instal·lis mòduls natius que Expo Go no porti ([ADR-0014](decisions/0014-identificador-app-expo-go.md)).
+
 **Comprovació final:** a la pestanya **Perfil**, la targeta «Estat del servidor» diu **«Connectat · API v0.1.0»** en verd. Si diu «No es pot connectar amb el servidor», l'app no arriba a l'API: mira que l'API estigui engegada i l'adreça de la taula.
 
-> **Quan arribi el mapa (MapLibre, TG-89), Expo Go ja no servirà:** MapLibre té codi natiu que Expo Go no porta. Caldrà un *development build* de l'app (s'explicarà aquí quan estigui a punt). Fins aleshores, Expo Go.
 
 ---
 
 ## 5. Supabase: base de dades i migracions
-
-> **Aquesta secció s'aplica quan es fusioni TG-69** ([PR #12](https://github.com/pes2627q1-22-gei-upc/talaia/pull/12)), que porta `supabase/config.toml` i la primera migració. Fins aleshores, la carpeta `supabase/` no existeix a `snapshot`.
 
 La base de dades és a Supabase (Postgres 17 amb PostGIS, a Irlanda). **L'esquema només canvia amb migracions** versionades a `supabase/migrations/`: res de crear taules ni columnes des del panell web. Un canvi fet al panell no queda al repo, ningú el pot revisar i la resta de l'equip no el tindrà.
 
