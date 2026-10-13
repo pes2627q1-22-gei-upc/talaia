@@ -51,7 +51,7 @@ export default function NightMap({ mapStyle, camera, chrome, accessibilityLabel 
       attributionControl: { compact: true },
     });
     // L'atribució compacta arrenca desplegada: es plega i queda al botó (i).
-    map.once('load', () =>
+    map.on('load', () =>
       container.current
         ?.querySelector('.maplibregl-ctrl-attrib')
         ?.classList.remove('maplibregl-compact-show'),
