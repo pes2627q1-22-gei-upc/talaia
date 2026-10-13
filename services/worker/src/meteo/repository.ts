@@ -2,7 +2,7 @@ import type { PrevisioMeteoPunt } from '@talaia/shared';
 
 /**
  * Port de persistència de les previsions. La implementació amb Kysely (`@talaia/db`, ADR-0013)
- * arriba quan existeixi la taula de punts (TG-86) i es pugui escriure la migració de previsions;
+ * arriba amb la migració de la taula de previsions, ara que hi ha `punts_observacio` (TG-86);
  * mentrestant, la de memòria serveix per als tests i per a la CLI.
  */
 export type PrevisioMeteoRepository = {

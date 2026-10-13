@@ -5,8 +5,9 @@ import { z } from 'zod';
 export type Coordenades = { lat: number; lon: number };
 
 /**
- * Variables horàries d'Open-Meteo que demana TG-95. Les de TG-114 (temperatura, vent,
- * precipitació, punt de rosada) s'afegeixen aquí i al mapatge de `toHores`.
+ * Variables horàries d'Open-Meteo: les de TG-95 (núvols, humitat, visibilitat) i les de TG-114
+ * (temperatura, punt de rosada, precipitació, vent). Una variable nova va aquí, a `HourlySchema`
+ * i al mapatge de `toHores`; el typecheck avisa si en falta alguna.
  * Referència: https://open-meteo.com/en/docs
  */
 export const VARIABLES_HORARIES = [
@@ -16,7 +17,47 @@ export const VARIABLES_HORARIES = [
   'cloud_cover_high',
   'relative_humidity_2m',
   'visibility',
+  'temperature_2m',
+  'dew_point_2m',
+  'precipitation',
+  'precipitation_probability',
+  'wind_speed_10m',
+  'wind_gusts_10m',
+  'wind_direction_10m',
 ] as const;
+
+/**
+ * Unitats demanades explícitament, perquè el domini (`PrevisioMeteoHora`) no depengui dels valors
+ * per defecte de la font: °C, mm i km/h. Els percentatges, els metres i els graus no es configuren.
+ */
+export const UNITATS = {
+  temperature_unit: 'celsius',
+  precipitation_unit: 'mm',
+  wind_speed_unit: 'kmh',
+} as const;
+
+/**
+ * Unitat que ha de declarar Open-Meteo (`hourly_units`) per a cada sèrie. Si no coincideix (per
+ * exemple perquè algú canvia `UNITATS` sense tocar el tipus), la resposta es rebutja.
+ */
+export const UNITATS_ESPERADES: Readonly<
+  Record<(typeof VARIABLES_HORARIES)[number] | 'time', string>
+> = {
+  time: 'unixtime',
+  cloud_cover: '%',
+  cloud_cover_low: '%',
+  cloud_cover_mid: '%',
+  cloud_cover_high: '%',
+  relative_humidity_2m: '%',
+  visibility: 'm',
+  temperature_2m: '°C',
+  dew_point_2m: '°C',
+  precipitation: 'mm',
+  precipitation_probability: '%',
+  wind_speed_10m: 'km/h',
+  wind_gusts_10m: 'km/h',
+  wind_direction_10m: '°',
+};
 
 /**
  * Dies de previsió per defecte. Open-Meteo compta els dies de 00:00 a 23:00 UTC: amb 3 dies, la
@@ -78,22 +119,37 @@ const HourlySchema = z
     cloud_cover_high: Serie,
     relative_humidity_2m: Serie,
     visibility: Serie,
+    temperature_2m: Serie,
+    dew_point_2m: Serie,
+    precipitation: Serie,
+    precipitation_probability: Serie,
+    wind_speed_10m: Serie,
+    wind_gusts_10m: Serie,
+    wind_direction_10m: Serie,
   })
   // Les sèries són paral·leles a `time`: una de més curta és una resposta mal formada.
   .refine((hourly) => VARIABLES_HORARIES.every((v) => hourly[v].length === hourly.time.length), {
     message: 'Totes les sèries horàries han de tenir la mateixa llargada que `time`',
   });
 
+const HourlyUnitsSchema = z.object(
+  Object.fromEntries(
+    Object.entries(UNITATS_ESPERADES).map(([serie, unitat]) => [serie, z.literal(unitat)]),
+  ),
+);
+
 const LlocSchema = z.object({
   latitude: z.number(),
   longitude: z.number(),
+  hourly_units: HourlyUnitsSchema,
   hourly: HourlySchema,
 });
 
 type Lloc = z.infer<typeof LlocSchema>;
 
-// Amb un sol lloc respon un objecte; amb més d'un, un array en el mateix ordre.
-const RespostaSchema = z.union([z.array(LlocSchema), LlocSchema]);
+// Amb un sol lloc respon un objecte; amb més d'un, un array en el mateix ordre. Es normalitza a
+// array abans de validar perquè l'error digui quina sèrie o unitat falla (una unió ho amagaria).
+const RespostaSchema = z.array(LlocSchema);
 
 const ErrorSchema = z.object({ error: z.literal(true), reason: z.string() });
 
@@ -110,6 +166,13 @@ export function toHores(hourly: Lloc['hourly']): PrevisioMeteoHora[] {
     nuvolsAlts: hourly.cloud_cover_high[i] ?? null,
     humitat: hourly.relative_humidity_2m[i] ?? null,
     visibilitat: hourly.visibility[i] ?? null,
+    temperatura: hourly.temperature_2m[i] ?? null,
+    puntRosada: hourly.dew_point_2m[i] ?? null,
+    precipitacio: hourly.precipitation[i] ?? null,
+    probabilitatPrecipitacio: hourly.precipitation_probability[i] ?? null,
+    ventVelocitat: hourly.wind_speed_10m[i] ?? null,
+    ventRafegues: hourly.wind_gusts_10m[i] ?? null,
+    ventDireccio: hourly.wind_direction_10m[i] ?? null,
   }));
 }
 
@@ -140,6 +203,7 @@ export function createOpenMeteoClient(options: OpenMeteoClientOptions): OpenMete
     url.searchParams.set('timezone', 'UTC');
     url.searchParams.set('timeformat', 'unixtime');
     url.searchParams.set('forecast_days', String(diesPrevisio));
+    for (const [param, unitat] of Object.entries(UNITATS)) url.searchParams.set(param, unitat);
     return url;
   }
 
@@ -163,7 +227,7 @@ export function createOpenMeteoClient(options: OpenMeteoClientOptions): OpenMete
       );
     }
 
-    const parsed = RespostaSchema.safeParse(cos);
+    const parsed = RespostaSchema.safeParse(Array.isArray(cos) ? cos : [cos]);
     if (!parsed.success) {
       throw new OpenMeteoError(
         `Resposta d'Open-Meteo inesperada:\n${z.prettifyError(parsed.error)}`,
@@ -171,7 +235,7 @@ export function createOpenMeteoClient(options: OpenMeteoClientOptions): OpenMete
       );
     }
 
-    const resultats = Array.isArray(parsed.data) ? parsed.data : [parsed.data];
+    const resultats = parsed.data;
     if (resultats.length !== llocs.length) {
       throw new OpenMeteoError(
         `S'han demanat ${llocs.length} llocs i Open-Meteo n'ha retornat ${resultats.length}`,
