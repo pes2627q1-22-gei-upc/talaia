@@ -7,7 +7,7 @@ Accés a la base de dades de l'API i el worker: [Kysely](https://kysely.dev) sob
 | Fitxer | Què és |
 |---|---|
 | `src/createDb.ts` | `createDb(databaseUrl, { max })`: `Kysely<DB>` amb un `Pool` de `pg` i el `CamelCasePlugin` |
-| `src/schema.ts` | Tipus `DB` generats amb `kysely-codegen`. **No s'edita a mà** |
+| `src/schema.ts` | Tipus `DB` generats amb `kysely-codegen`. **No s'edita a mà**. Les columnes amb un `check` de valors (`estat`, `origen`) es tipen com a unions a `kysely-codegen.overrides` del `package.json` de l'arrel |
 | `src/postgis.ts` | Helpers de PostGIS: `puntDesDeLonLat`, `lon`, `lat`, `dinsBbox`, `distancia` |
 
 El codi treballa en camelCase (`puntsObservacio.dataCreacio`) i la base de dades en snake_case (`punts_observacio.data_creacio`).

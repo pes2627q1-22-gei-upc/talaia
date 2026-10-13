@@ -46,7 +46,8 @@
   },
   "overrides": {
     "react": "19.2.3",
-    "react-dom": "19.2.3"
+    "react-dom": "19.2.3",
+    "kysely": "^0.28.17"
   },
   "kysely-codegen": {
     "dialect": "postgres",
@@ -55,6 +56,12 @@
       "public"
     ],
     "includePattern": "public.*",
-    "outFile": "packages/db/src/schema.ts"
+    "outFile": "packages/db/src/schema.ts",
+    "overrides": {
+      "columns": {
+        "punts_observacio.origen": "\"OFICIAL\" | \"COMUNITAT\"",
+        "punts_observacio.estat": "Generated<\"PENDENT\" | \"PUBLICAT\" | \"REBUTJAT\" | \"DESACTIVAT\">"
+      }
+    }
   }
 }

@@ -18,12 +18,12 @@ export interface PuntsObservacio {
   dataActualitzacio: Generated<Timestamp>;
   dataCreacio: Generated<Timestamp>;
   descripcio: string;
-  estat: Generated<string>;
+  estat: Generated<"PENDENT" | "PUBLICAT" | "REBUTJAT" | "DESACTIVAT">;
   horitzoObert: string[] | null;
   id: Generated<string>;
   municipi: string;
   nom: string;
-  origen: string;
+  origen: "OFICIAL" | "COMUNITAT";
   slug: string;
   ubicacio: string;
 }
