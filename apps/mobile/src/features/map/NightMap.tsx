@@ -51,7 +51,8 @@ export default function NightMap({ mapStyle, camera, chrome, accessibilityLabel 
       attributionControl: { compact: true },
     });
     // L'atribució compacta arrenca desplegada: es plega i queda al botó (i).
-    map.once('load', () =>
+    // `once` amb listener retorna el mapa, però està tipat `this | Promise`: el `void` ho deixa clar.
+    void map.once('load', () =>
       container.current
         ?.querySelector('.maplibregl-ctrl-attrib')
         ?.classList.remove('maplibregl-compact-show'),
