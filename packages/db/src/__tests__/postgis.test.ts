@@ -35,12 +35,12 @@ describe('postgis', () => {
     expect(compila(lat(ubicacio)).sql).toBe('select st_y("ubicacio"::geometry) as "v"');
   });
 
-  it("dinsBbox compara amb l'operador && (índex GIST) i l'ordre minLon, minLat, maxLon, maxLat", () => {
+  it("dinsBbox compara com a geometry, amb l'ordre minLon, minLat, maxLon, maxLat", () => {
     const q = compila(
       dinsBbox(ubicacio, { minLon: 0.15, minLat: 40.5, maxLon: 3.35, maxLat: 42.9 }),
     );
     expect(q.sql).toBe(
-      'select "ubicacio" && st_makeenvelope($1, $2, $3, $4, 4326)::geography as "v"',
+      'select "ubicacio"::geometry && st_makeenvelope($1, $2, $3, $4, 4326) as "v"',
     );
     expect(q.parameters).toEqual([0.15, 40.5, 3.35, 42.9]);
   });
