@@ -59,14 +59,14 @@ A `apps/mobile/src/shared/ui/`. Cap pantalla torna a definir un botó, una targe
 | Component | Què és |
 |---|---|
 | `AppText` | Text amb una variant tipogràfica i un color de token |
-| `PressableScale` | Base de tot el que es pot prémer: s'encongeix a 0,97 i accepta `haptic` |
+| `PressableScale` | Base de tot el que es pot prémer: s'enfonsa a 0,96 i torna amb un spring; `haptic` (`true` o `'selection'`) |
 | `Button` | `primary` (`far`, una per pantalla) · `secondary` (`sheet` + `vora`) · `light` (`lluna`, «Continua amb Google») · `text` (enllaç `far`). Icona opcional |
 | `Card` | Targeta `card` + `linia`; amb `selected`, `vel` + `vora`; amb `onPress`, es pot prémer |
 | `Chip` | Xip de filtre de 34 d'alçada (seleccionat: `far`), amb `hitSlop` fins a 44 |
 | `IndexIndicator` | Xifra de l'índex amb el color de la franja; `md` hi afegeix la franja a sota, `lg` és només la xifra |
 | `Skeleton` | Esquelet de càrrega que batega en opacitat |
 | `StateMessage` | Estat buit o d'error, amb acció opcional |
-| `Screen` | Esquelet de pantalla: fons, títol `display` i subtítol |
+| `Screen` | Esquelet de pantalla: fons, títol `display` i subtítol; el primer cop que es munta, entra amb una fosa i 6 pt |
 
 L'índex, al Figma, és només la xifra amb el color de la franja i l'etiqueta: ni anell ni barra. L'anell és dels marcadors del mapa (capa de MapLibre, TG-90) i les barres, del desglossament per factors (TG-105).
 
@@ -84,6 +84,7 @@ L'app ha de ser molt estètica i anar sempre fluida: és part del producte, no u
 | `motion.base` | 250 ms | Aparèixer i desaparèixer elements, canvi de càrrega a contingut |
 | `motion.slow` | 400 ms | Fulls inferiors, transicions pròpies entre vistes |
 | `motion.spring` | `damping` 18 · `stiffness` 180 | El que l'usuari arrossega o el que «arriba» (full inferior, targetes) |
+| `motion.press` | 0,96 en 90 ms · spring `damping` 19, `stiffness` 320, `mass` 0,6 | Prémer: s'enfonsa de seguida i torna amb un rebot mínim |
 | `motion.stagger` | 40 ms | Retard entre elements que entren en cascada (contingut de la benvinguda) |
 
 Corbes: en entrar, desacceleració (`Easing.out(Easing.cubic)`); en sortir, acceleració (`Easing.in(Easing.cubic)`). Mai lineal.
@@ -92,13 +93,14 @@ Corbes: en entrar, desacceleració (`Easing.out(Easing.cubic)`); en sortir, acce
 
 1. **Reanimated** (ja instal·lat) per a tota animació: corre al fil de la interfície. Res d'`Animated` de React Native ni de `setState` a cada fotograma.
 2. S'animen només `transform` i `opacity`. Animar mides o posicions (`width`, `height`, `top`…) obliga a recalcular el disseny i talla.
-3. **Resposta immediata al tacte:** tot element que es pot prémer s'encongeix lleugerament (≈ 0,97) amb `motion.fast`. A les accions clau (desar un pla, activar una alerta, triar un punt al mapa), vibració lleu (`haptic` de `PressableScale` i `Button`, amb `expo-haptics`).
-4. **Càrregues sense salts:** un esquelet amb la forma del contingut, que ocupa el mateix espai, i fosa de `motion.base` quan arriben les dades. No hi ha spinners a pantalla completa ni textos «Carregant…».
-5. **Mai una pantalla buida si ja hi havia dades:** TanStack Query ensenya les de la memòria cau mentre refresca.
-6. Les llistes que poden créixer van virtualitzades (`FlatList`), mai amb un `map` dins d'un `ScrollView`.
-7. Res de càlcul pesat mentre s'anima: les dades arriben preparades del ViewModel (`useMemo`), no es transformen a la View.
-8. Es respecta l'opció del sistema de reduir el moviment (`useReducedMotion` de Reanimated): les animacions es converteixen en fosos curts.
-9. **Objectiu: 60 fps.** Es comprova al dispositiu, amb Expo Go en mode de producció (`npx expo start --no-dev --minify`). El mode de desenvolupament va més lent i no serveix per jutjar-ho. El mapa és un WebView (ADR-0015): mira-hi els fps en un Android de gamma mitjana, i sense el mode d'estalvi d'energia.
+3. **Resposta immediata al tacte:** tot element que es pot prémer s'enfonsa a 0,96 en 90 ms i torna amb un spring que s'assenta amb un rebot mínim (`motion.press`). A les accions clau (desar un pla, activar una alerta, triar un punt al mapa), un cop de vibració lleu (`haptic`); als xips i controls de selecció, el tic de selecció (`haptic="selection"`, ja ho fa `Chip`).
+4. **Moure's entre pantalles:** la pila fa el lliscament d'iOS a les dues plataformes i, a iOS, es torna enrere lliscant des de qualsevol punt (`core/navigation/transitions.ts`). Les pestanyes canvien a l'instant, sense animació: es fan servir desenes de vegades al dia i animar-les les faria lentes. El contingut d'una pantalla entra amb una fosa curta només el primer cop que es munta (`Screen`).
+5. **Càrregues sense salts:** un esquelet amb la forma del contingut, que ocupa el mateix espai, i fosa de `motion.base` quan arriben les dades. No hi ha spinners a pantalla completa ni textos «Carregant…».
+6. **Mai una pantalla buida si ja hi havia dades:** TanStack Query ensenya les de la memòria cau mentre refresca.
+7. Les llistes que poden créixer van virtualitzades (`FlatList`), mai amb un `map` dins d'un `ScrollView`.
+8. Res de càlcul pesat mentre s'anima: les dades arriben preparades del ViewModel (`useMemo`), no es transformen a la View.
+9. Es respecta l'opció del sistema de reduir el moviment (`useReducedMotion` de Reanimated): les animacions es converteixen en fosos curts.
+10. **Objectiu: 60 fps.** Es comprova al dispositiu, amb Expo Go en mode de producció (`npx expo start --no-dev --minify`). El mode de desenvolupament va més lent i no serveix per jutjar-ho. El mapa és un WebView (ADR-0015): mira-hi els fps en un Android de gamma mitjana, i sense el mode d'estalvi d'energia.
 
 ## Il·lustracions
 
