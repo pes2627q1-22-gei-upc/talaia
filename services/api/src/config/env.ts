@@ -3,6 +3,13 @@ import packageJson from '../../package.json';
 
 const EnvSchema = z.object({
   API_PORT: z.coerce.number().int().min(1).max(65535).default(3000),
+  // Opcional: sense ella l'API arrenca (amb un avís) i /punts respon 503. Buida compta com a absent.
+  DATABASE_URL: z.preprocess(
+    (v) => (v === '' ? undefined : v),
+    z
+      .url({ protocol: /^postgres(ql)?$/, error: 'DATABASE_URL ha de ser una URL postgresql://' })
+      .optional(),
+  ),
 });
 
 export type Env = z.infer<typeof EnvSchema>;
