@@ -120,9 +120,9 @@ talaia/
 
 ```mermaid
 flowchart LR
-  F["🌿 <b>feature/TG-‹ref›</b><br/>una per tasca"]:::branca -->|"PR · CI en verd · 1 revisió"| S["<b>snapshot</b><br/>desenvolupament"]:::base
-  S -->|"release/0.N.0"| ST["<b>stable</b><br/>v0.N.0, una per sprint"]:::base
-  ST --> P["🚀 <b>prod</b><br/>publicada"]:::prod
+  F["🌿 <b>feature/TG-‹ref›</b>"]:::branca -->|"PR + revisió"| S["<b>snapshot</b><br/>desenvolupament"]:::base
+  S -->|"release/0.N.0"| ST["<b>stable</b><br/>v0.N.0"]:::base
+  ST --> P["🚀 <b>prod</b>"]:::prod
   HF["🩹 <b>hotfix/0.N.x</b>"]:::branca --> ST
   HF -.-> S
 
