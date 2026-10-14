@@ -5,7 +5,7 @@ import { Platform } from 'react-native';
 import { colors } from '@/core/theme/tokens';
 
 // Icones provisionals: SF Symbols a iOS i les del template a Android/web.
-// El design system (TG-113) hi posarà les icones de Talaia.
+// La barra pròpia del mockup (icones de Talaia) queda per a una tasca a part.
 const mapIcon = require('@/assets/images/tabIcons/home.png');
 const calendarIcon = require('@/assets/images/tabIcons/explore.png');
 
@@ -17,12 +17,13 @@ export default function TabsLayout() {
     <NativeTabs
       backgroundColor={colors.card}
       indicatorColor={colors.crep}
-      labelStyle={{ default: { color: colors.boira }, selected: { color: colors.lluna } }}
+      tintColor={colors.far}
+      labelStyle={{ default: { color: colors.boira }, selected: { color: colors.far } }}
     >
-      <NativeTabs.Trigger name="index">
-        <NativeTabs.Trigger.Label>{t('tabs.map')}</NativeTabs.Trigger.Label>
+      <NativeTabs.Trigger name="(explora)">
+        <NativeTabs.Trigger.Label>{t('tabs.explore')}</NativeTabs.Trigger.Label>
         {ios ? (
-          <NativeTabs.Trigger.Icon sf="map" />
+          <NativeTabs.Trigger.Icon sf="safari" />
         ) : (
           <NativeTabs.Trigger.Icon src={mapIcon} renderingMode="template" />
         )}
@@ -31,6 +32,14 @@ export default function TabsLayout() {
         <NativeTabs.Trigger.Label>{t('tabs.calendar')}</NativeTabs.Trigger.Label>
         {ios ? (
           <NativeTabs.Trigger.Icon sf="calendar" />
+        ) : (
+          <NativeTabs.Trigger.Icon src={calendarIcon} renderingMode="template" />
+        )}
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="alertes">
+        <NativeTabs.Trigger.Label>{t('tabs.alerts')}</NativeTabs.Trigger.Label>
+        {ios ? (
+          <NativeTabs.Trigger.Icon sf="bell" />
         ) : (
           <NativeTabs.Trigger.Icon src={calendarIcon} renderingMode="template" />
         )}
