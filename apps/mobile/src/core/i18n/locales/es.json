@@ -4,8 +4,9 @@
     "comingSoon": "Muy pronto, aquí."
   },
   "tabs": {
-    "map": "Mapa",
+    "explore": "Explorar",
     "calendar": "Calendario",
+    "alerts": "Alertas",
     "profile": "Perfil"
   },
   "map": {
@@ -55,5 +56,67 @@
   "notFound": {
     "title": "Esta pantalla no existe",
     "back": "Volver al inicio"
+  },
+  "explore": {
+    "greeting": {
+      "morning": "Buenos días",
+      "afternoon": "Buenas tardes",
+      "night": "Buenas noches"
+    },
+    "title": "¿Qué quieres ver?",
+    "goals": {
+      "pluja_estels": "Lluvia de estrellas",
+      "eclipsi": "Eclipse",
+      "via_lactia": "Vía Láctea",
+      "posta_sol": "Puesta de sol",
+      "sortida_sol": "Salida del sol",
+      "cel_estrellat": "Cielo estrellado",
+      "constellacions": "Constelaciones"
+    },
+    "constellationsHint": "Con el mito que hay detrás",
+    "new": "Nuevo",
+    "origin": {
+      "title": "Desde dónde sales",
+      "current": "Ubicación actual",
+      "here": "Donde estás ahora",
+      "locating": "Buscando dónde estás…",
+      "denied": "Activa la ubicación",
+      "settings": "Ajustes",
+      "error": "No hemos encontrado dónde estás",
+      "retry": "Vuelve a intentarlo"
+    },
+    "when": {
+      "title": "Cuándo",
+      "tonight": "Esta noche",
+      "tomorrow": "Mañana",
+      "pick": "Elige el día",
+      "range": "De {{from}} a {{to}}",
+      "rangeHint": "Franja horaria"
+    },
+    "weekdays": ["dom.", "lun.", "mar.", "mié.", "jue.", "vie.", "sáb."],
+    "rangeSheet": {
+      "title": "Franja horaria",
+      "from": "Desde",
+      "to": "Hasta",
+      "earlier": "una hora antes",
+      "later": "una hora más tarde",
+      "duration_one": "{{count}} hora de observación",
+      "duration_other": "{{count}} horas de observación",
+      "done": "Hecho"
+    },
+    "travel": {
+      "title": "Hasta qué distancia",
+      "minutes": "{{minutes}} min en coche",
+      "hours": "{{hours}} h en coche",
+      "hoursMinutes": "{{hours}} h {{minutes}} min en coche",
+      "min": "30 min",
+      "max": "4 h"
+    },
+    "cta": "Encuentra el mejor lugar"
+  },
+  "alerts": {
+    "title": "Alertas",
+    "soonTitle": "Pronto",
+    "soonMessage": "Aquí podrás crear alertas para que te avisemos cuando haya buenas condiciones para lo que quieres ver."
   }
 }

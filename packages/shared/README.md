@@ -11,6 +11,7 @@ Tipus de domini compartits per l'app, l'admin, l'API i el worker. Cada tipus s'e
 | `src/meteo.ts` | `PrevisioMeteoHora`, `PrevisioMeteoPunt`, `FontMeteo` (previsió d'Open-Meteo per punt) | Variables de TG-95 i TG-114; TG-115 afegeix la font de Meteocat |
 | `src/astronomia.ts` | `EfemeridesHora`, `NitAstronomica`, `PosicioAstre`, `EstatLluna`, `FranjaCrepuscle`, `FaseLunar` (Sol, Lluna, fase i crepuscles per punt, calculats pel worker) | TG-96; els consumeix la fórmula de l'índex (TG-98) |
 | `src/punts.ts` | `PuntObservacio`, `PuntsMapaGeoJson` (el GeoJSON del mapa, ADR-0012) | Metadades del punt pendents de P13 (TG-87) i del model de TG-86 |
+| `src/recomanacions.ts` | `ObjectiuObservacio`, `ConsultaRecomanacions` (el que es tria a «Què vols veure?», TG-101) | Paràmetres de `GET /recomanacions` (TG-100) |
 | `src/esdeveniments.ts` | `Esdeveniment`, `TipusFenomen` | Valors de `tipus` pendents de P14; contracte amb Aprop a TG-109 |
 
 Un camp que depèn d'una decisió pendent porta un comentari que ho diu. No s'hi inventen valors: quan es decideixi, s'actualitza aquí i a l'ADR.

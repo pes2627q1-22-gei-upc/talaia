@@ -4,8 +4,9 @@
     "comingSoon": "Aviat, aquí."
   },
   "tabs": {
-    "map": "Mapa",
+    "explore": "Explora",
     "calendar": "Calendari",
+    "alerts": "Alertes",
     "profile": "Perfil"
   },
   "map": {
@@ -55,5 +56,67 @@
   "notFound": {
     "title": "Aquesta pantalla no existeix",
     "back": "Torna a l'inici"
+  },
+  "explore": {
+    "greeting": {
+      "morning": "Bon dia",
+      "afternoon": "Bona tarda",
+      "night": "Bona nit"
+    },
+    "title": "Què vols veure?",
+    "goals": {
+      "pluja_estels": "Pluja d'estels",
+      "eclipsi": "Eclipsi",
+      "via_lactia": "Via Làctia",
+      "posta_sol": "Posta de sol",
+      "sortida_sol": "Sortida de sol",
+      "cel_estrellat": "Cel estrellat",
+      "constellacions": "Constel·lacions"
+    },
+    "constellationsHint": "Amb el mite que hi ha al darrere",
+    "new": "Nou",
+    "origin": {
+      "title": "Des d'on surts",
+      "current": "Ubicació actual",
+      "here": "On ets ara",
+      "locating": "Buscant on ets…",
+      "denied": "Activa la ubicació",
+      "settings": "Configuració",
+      "error": "No hem trobat on ets",
+      "retry": "Torna-ho a provar"
+    },
+    "when": {
+      "title": "Quan",
+      "tonight": "Aquesta nit",
+      "tomorrow": "Demà",
+      "pick": "Tria el dia",
+      "range": "De {{from}} a {{to}}",
+      "rangeHint": "Franja horària"
+    },
+    "weekdays": ["dg.", "dl.", "dt.", "dc.", "dj.", "dv.", "ds."],
+    "rangeSheet": {
+      "title": "Franja horària",
+      "from": "Des de",
+      "to": "Fins a",
+      "earlier": "una hora abans",
+      "later": "una hora més tard",
+      "duration_one": "{{count}} hora d'observació",
+      "duration_other": "{{count}} hores d'observació",
+      "done": "Fet"
+    },
+    "travel": {
+      "title": "Fins a quina distància",
+      "minutes": "{{minutes}} min en cotxe",
+      "hours": "{{hours}} h en cotxe",
+      "hoursMinutes": "{{hours}} h {{minutes}} min en cotxe",
+      "min": "30 min",
+      "max": "4 h"
+    },
+    "cta": "Troba el millor lloc"
+  },
+  "alerts": {
+    "title": "Alertes",
+    "soonTitle": "Aviat",
+    "soonMessage": "Aquí podràs crear alertes perquè t'avisem quan hi hagi bones condicions per al que vols veure."
   }
 }

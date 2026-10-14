@@ -4,8 +4,9 @@
     "comingSoon": "Coming soon."
   },
   "tabs": {
-    "map": "Map",
+    "explore": "Explore",
     "calendar": "Calendar",
+    "alerts": "Alerts",
     "profile": "Profile"
   },
   "map": {
@@ -55,5 +56,67 @@
   "notFound": {
     "title": "This screen doesn't exist",
     "back": "Back to start"
+  },
+  "explore": {
+    "greeting": {
+      "morning": "Good morning",
+      "afternoon": "Good afternoon",
+      "night": "Good evening"
+    },
+    "title": "What do you want to see?",
+    "goals": {
+      "pluja_estels": "Meteor shower",
+      "eclipsi": "Eclipse",
+      "via_lactia": "Milky Way",
+      "posta_sol": "Sunset",
+      "sortida_sol": "Sunrise",
+      "cel_estrellat": "Starry sky",
+      "constellacions": "Constellations"
+    },
+    "constellationsHint": "With the myth behind them",
+    "new": "New",
+    "origin": {
+      "title": "Where you start from",
+      "current": "Current location",
+      "here": "Where you are now",
+      "locating": "Finding where you are…",
+      "denied": "Turn on location",
+      "settings": "Settings",
+      "error": "We couldn't find where you are",
+      "retry": "Try again"
+    },
+    "when": {
+      "title": "When",
+      "tonight": "Tonight",
+      "tomorrow": "Tomorrow",
+      "pick": "Pick a day",
+      "range": "From {{from}} to {{to}}",
+      "rangeHint": "Time range"
+    },
+    "weekdays": ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+    "rangeSheet": {
+      "title": "Time range",
+      "from": "From",
+      "to": "To",
+      "earlier": "one hour earlier",
+      "later": "one hour later",
+      "duration_one": "{{count}} hour of observing",
+      "duration_other": "{{count}} hours of observing",
+      "done": "Done"
+    },
+    "travel": {
+      "title": "How far",
+      "minutes": "{{minutes}} min by car",
+      "hours": "{{hours}} h by car",
+      "hoursMinutes": "{{hours}} h {{minutes}} min by car",
+      "min": "30 min",
+      "max": "4 h"
+    },
+    "cta": "Find the best spot"
+  },
+  "alerts": {
+    "title": "Alerts",
+    "soonTitle": "Coming soon",
+    "soonMessage": "Here you'll be able to create alerts so we can tell you when conditions are good for what you want to see."
   }
 }

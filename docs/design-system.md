@@ -50,7 +50,7 @@ Es carreguen amb `@expo-google-fonts` al layout arrel. Cada pes és una família
 | `tag` | Atkinson 700 | 12 / 16 | Etiquetes |
 | `overline` | Atkinson 800 | 10,5 / 14, majúscules | Franja sota la xifra («CEL RAS») |
 
-Espaiats (`spacing`): 4 · 8 · 12 · 16 · 20 · 24 · 32. Radis (`radii`): 10 (etiquetes) · 16 (botons, targetes) · 20 (targeta de l'índex) · píndola. Mides fixes (`sizes`): botó 54, xip 34, tacte mínim 44, icona 22.
+Espaiats (`spacing`): 4 · 8 · 12 · 16 · 20 · 24 · 32. Radis (`radii`): 10 (etiquetes) · 14 (camps i controls de formulari) · 16 (botons, targetes) · 20 (targeta de l'índex) · píndola. Mides fixes (`sizes`): botó 54, xip 34, tacte mínim 44, icona 22.
 
 ## Components base (TG-113)
 
@@ -67,10 +67,13 @@ A `apps/mobile/src/shared/ui/`. Cap pantalla torna a definir un botó, una targe
 | `Skeleton` | Esquelet de càrrega que batega en opacitat |
 | `StateMessage` | Estat buit o d'error, amb acció opcional |
 | `Screen` | Esquelet de pantalla: fons, títol `display` i subtítol; el primer cop que es munta, entra amb una fosa i 6 pt |
+| `SegmentedControl` | Control segmentat (TG-101): la peça triada (`crep`) llisca darrere el text sense rebot; cada opció és una pestanya accessible |
+| `Slider` | Barra lliscant (TG-101): pista `crep`, valor `far` i control `lluna`. Segueix el dit al fil de la interfície, avança per passos amb un tic de vibració a cada pas i s'hi ajusta en deixar-la; amb un lector de pantalla, puja i baixa un pas |
+| `Sheet` | Full inferior (TG-101): puja sobre un fons `nit` enfosquit i es tanca tocant fora, amb el botó enrere d'Android o amb el gest d'escapament de VoiceOver. Amb «reduir moviment», només una fosa |
 
 L'índex, al Figma, és només la xifra amb el color de la franja i l'etiqueta: ni anell ni barra. L'anell és dels marcadors del mapa (capa de MapLibre, TG-90) i les barres, del desglossament per factors (TG-105).
 
-Encara no hi són: el full inferior (TG-90, amb el gest), les etiquetes i la llegenda del mapa (TG-89/TG-90/TG-102) i les icones de Talaia (`Button` ja accepta `icon`). La barra de pestanyes és la nativa (`NativeTabs`) amb els colors del tema.
+Encara no hi són: el gest d'arrossegar el full inferior (TG-102), les etiquetes i la llegenda del mapa (TG-89/TG-90/TG-102) i les icones de Talaia (`Button` ja accepta `icon`). La barra de pestanyes és la nativa (`NativeTabs`), amb quatre pestanyes (Explora, Calendari, Alertes i Perfil) i l'activa en `far`.
 
 ## Moviment i fluïdesa
 
