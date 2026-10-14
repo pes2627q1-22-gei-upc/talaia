@@ -119,7 +119,7 @@ talaia/
 **Gitflow** amb els noms de l'assignatura, i tot entra per pull request amb la CI en verd i una revisió aprovada.
 
 ```mermaid
-flowchart LR
+flowchart TB
   F["🌿 <b>feature/TG-‹ref›</b>"]:::branca -->|"PR + revisió"| S["<b>snapshot</b><br/>desenvolupament"]:::base
   S -->|"release/0.N.0"| ST["<b>stable</b><br/>v0.N.0"]:::base
   ST --> P["🚀 <b>prod</b>"]:::prod
