@@ -46,6 +46,8 @@ export const spacing = {
 
 export const radii = {
   sm: 10,
+  /** Camps i controls de formulari: origen, franja horària, control segmentat (mockup 02). */
+  field: 14,
   md: 16,
   lg: 20,
   pill: 999,
