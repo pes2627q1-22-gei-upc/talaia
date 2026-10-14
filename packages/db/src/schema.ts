@@ -9,7 +9,58 @@ export type Generated<T> = T extends ColumnType<infer S, infer I, infer U>
   ? ColumnType<S, I | undefined, U>
   : ColumnType<T, T | undefined, T>;
 
+export type Json = JsonValue;
+
+export type JsonArray = JsonValue[];
+
+export type JsonObject = {
+  [x: string]: JsonValue | undefined;
+};
+
+export type JsonPrimitive = boolean | number | string | null;
+
+export type JsonValue = JsonArray | JsonObject | JsonPrimitive;
+
+export type Numeric = ColumnType<string, number | string, number | string>;
+
 export type Timestamp = ColumnType<Date, Date | string, Date | string>;
+
+export interface EsdevenimentsAstronomics {
+  codi: string;
+  dataActualitzacio: Generated<Timestamp>;
+  dificultatObservacio: "baixa" | "mitjana" | "alta";
+  fenomenCodi: string;
+  fi: Timestamp;
+  fontCodi: string;
+  inici: Timestamp;
+  maxim: Timestamp | null;
+  precisio: Json;
+  radiantMaxim: Json | null;
+  referenciaFont: string | null;
+  rellevancia: "principal" | "secundari";
+  rellevantCatalunya: boolean;
+  textos: Json;
+  zhr: Json | null;
+}
+
+export interface FenomensAstronomics {
+  codi: string;
+  dataActualitzacio: Generated<Timestamp>;
+  periodicitat: "anual" | "ocasional";
+  publicableCalendari: boolean;
+  textos: Json;
+  tipusCodi: string;
+  velocitatKmS: Numeric | null;
+}
+
+export interface FontsAstronomiques {
+  anyPublicacio: number | null;
+  codi: string;
+  consultatEl: Timestamp;
+  organitzacio: "IMO" | "NASA";
+  titol: string;
+  url: string;
+}
 
 export interface PuntsObservacio {
   accessibilitat: string | null;
@@ -28,6 +79,15 @@ export interface PuntsObservacio {
   ubicacio: string;
 }
 
+export interface TipusFenomen {
+  codi: string;
+  nomCa: string;
+}
+
 export interface DB {
+  esdevenimentsAstronomics: EsdevenimentsAstronomics;
+  fenomensAstronomics: FenomensAstronomics;
+  fontsAstronomiques: FontsAstronomiques;
   puntsObservacio: PuntsObservacio;
+  tipusFenomen: TipusFenomen;
 }

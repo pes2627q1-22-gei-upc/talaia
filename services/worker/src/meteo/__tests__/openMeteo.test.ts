@@ -1,12 +1,16 @@
-import { OpenMeteoError, createOpenMeteoClient, toHores } from '../openMeteo';
+import { OpenMeteoError, UNITATS_ESPERADES, createOpenMeteoClient, toHores } from '../openMeteo';
 
 const BASE_URL = 'https://api.open-meteo.com/v1';
 
 /** Un lloc tal com el retorna Open-Meteo amb `timeformat=unixtime` (2 hores). */
-function lloc(overrides: Partial<Record<string, (number | null)[]>> = {}) {
+function lloc(
+  overrides: Partial<Record<string, (number | null)[]>> = {},
+  unitats: Partial<Record<string, string>> = {},
+) {
   return {
     latitude: 42.0294,
     longitude: 0.7112,
+    hourly_units: { ...UNITATS_ESPERADES, ...unitats },
     hourly: {
       time: [1791763200, 1791766800],
       cloud_cover: [11, 90],
@@ -15,6 +19,13 @@ function lloc(overrides: Partial<Record<string, (number | null)[]>> = {}) {
       cloud_cover_high: [11, 90],
       relative_humidity_2m: [78, 80],
       visibility: [35720, 33180],
+      temperature_2m: [13.5, 13.2],
+      dew_point_2m: [9.7, 9.8],
+      precipitation: [0, 0.3],
+      precipitation_probability: [0, 15],
+      wind_speed_10m: [4.1, 4.6],
+      wind_gusts_10m: [11.9, 11.5],
+      wind_direction_10m: [45, 39],
       ...overrides,
     },
   };
@@ -59,6 +70,13 @@ describe('toHores', () => {
         nuvolsAlts: 11,
         humitat: 78,
         visibilitat: 35720,
+        temperatura: 13.5,
+        puntRosada: 9.7,
+        precipitacio: 0,
+        probabilitatPrecipitacio: 0,
+        ventVelocitat: 4.1,
+        ventRafegues: 11.9,
+        ventDireccio: 45,
       },
       {
         hora: '2026-10-12T01:00:00.000Z',
@@ -68,19 +86,29 @@ describe('toHores', () => {
         nuvolsAlts: 90,
         humitat: 80,
         visibilitat: 33180,
+        temperatura: 13.2,
+        puntRosada: 9.8,
+        precipitacio: 0.3,
+        probabilitatPrecipitacio: 15,
+        ventVelocitat: 4.6,
+        ventRafegues: 11.5,
+        ventDireccio: 39,
       },
     ]);
   });
 
   it('conserva els `null` de la font (i els `0`)', () => {
-    const hores = toHores(lloc({ visibility: [null, 33180], cloud_cover_low: [0, null] }).hourly);
-    expect(hores[0]).toMatchObject({ visibilitat: null, nuvolsBaixos: 0 });
-    expect(hores[1]).toMatchObject({ visibilitat: 33180, nuvolsBaixos: null });
+    const hores = toHores(
+      lloc({ visibility: [null, 33180], cloud_cover_low: [0, null], wind_gusts_10m: [null, 0] })
+        .hourly,
+    );
+    expect(hores[0]).toMatchObject({ visibilitat: null, nuvolsBaixos: 0, ventRafegues: null });
+    expect(hores[1]).toMatchObject({ visibilitat: 33180, nuvolsBaixos: null, ventRafegues: 0 });
   });
 });
 
 describe('createOpenMeteoClient', () => {
-  it('demana les variables de TG-95 en UTC i unixtime, amb els llocs en llistes', async () => {
+  it('demana totes les variables en UTC i unixtime, amb unitats fixes i els llocs en llistes', async () => {
     const { fetch, urls } = fakeFetch(() => json([lloc(), lloc()]));
     const client = createOpenMeteoClient({ baseUrl: BASE_URL, fetch, diesPrevisio: 2 });
 
@@ -95,8 +123,15 @@ describe('createOpenMeteoClient', () => {
     expect(url.searchParams.get('latitude')).toBe('42.0294,41.3851');
     expect(url.searchParams.get('longitude')).toBe('0.7112,2.1734');
     expect(url.searchParams.get('hourly')).toBe(
-      'cloud_cover,cloud_cover_low,cloud_cover_mid,cloud_cover_high,relative_humidity_2m,visibility',
+      [
+        'cloud_cover,cloud_cover_low,cloud_cover_mid,cloud_cover_high,relative_humidity_2m,visibility',
+        'temperature_2m,dew_point_2m,precipitation,precipitation_probability',
+        'wind_speed_10m,wind_gusts_10m,wind_direction_10m',
+      ].join(','),
     );
+    expect(url.searchParams.get('temperature_unit')).toBe('celsius');
+    expect(url.searchParams.get('precipitation_unit')).toBe('mm');
+    expect(url.searchParams.get('wind_speed_unit')).toBe('kmh');
     expect(url.searchParams.get('timezone')).toBe('UTC');
     expect(url.searchParams.get('timeformat')).toBe('unixtime');
     expect(url.searchParams.get('forecast_days')).toBe('2');
@@ -233,10 +268,19 @@ describe('createOpenMeteoClient', () => {
   });
 
   it('una sèrie més curta que `time` és una resposta mal formada, no hores amb `null`', async () => {
-    const { fetch } = fakeFetch(() => json(lloc({ relative_humidity_2m: [78] })));
+    const { fetch } = fakeFetch(() => json(lloc({ wind_direction_10m: [45] })));
     await expect(
       createOpenMeteoClient({ baseUrl: BASE_URL, fetch }).previsio([{ lat: 42, lon: 0.7 }]),
     ).rejects.toThrow('mateixa llargada');
+  });
+
+  it("si Open-Meteo declara una unitat diferent de l'esperada, rebutja la resposta", async () => {
+    const { fetch } = fakeFetch(() => json(lloc({}, { wind_speed_10m: 'm/s' })));
+    const error = await createOpenMeteoClient({ baseUrl: BASE_URL, fetch })
+      .previsio([{ lat: 42, lon: 0.7 }])
+      .catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(OpenMeteoError);
+    expect((error as Error).message).toContain('wind_speed_10m');
   });
 
   it('un cos amb una forma inesperada és un OpenMeteoError', async () => {

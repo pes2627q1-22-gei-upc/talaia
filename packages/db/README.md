@@ -10,6 +10,11 @@ Accés a la base de dades de l'API i el worker: [Kysely](https://kysely.dev) sob
 | `src/schema.ts` | Tipus `DB` generats amb `kysely-codegen`. **No s'edita a mà**. Les columnes amb un `check` de valors (`estat`, `origen`) es tipen com a unions a `kysely-codegen.overrides` del `package.json` de l'arrel |
 | `src/postgis.ts` | Helpers de PostGIS: `puntDesDeLonLat`, `lon`, `lat`, `dinsBbox`, `distancia` |
 
+TG-106 afegeix `tipus_fenomen`, `fonts_astronomiques`, `fenomens_astronomics` i
+`esdeveniments_astronomics`. Els seus registres inicials venen del JSON de
+`data/astronomia/` mitjançant `supabase/seeds/02_calendari_astronomic.sql`. Els codis de
+fenomen i esdeveniment són claus estables per a l'API i per a les recàrregues del calendari.
+
 El codi treballa en camelCase (`puntsObservacio.dataCreacio`) i la base de dades en snake_case (`punts_observacio.data_creacio`).
 
 ## Com es fa servir

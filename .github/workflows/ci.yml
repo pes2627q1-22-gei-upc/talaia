@@ -47,6 +47,12 @@ jobs:
         if: matrix.check == 'lint'
         run: npm run lint
 
+      - name: Valida el calendari i el seed astronòmic
+        if: matrix.check == 'lint'
+        run: |
+          npx tsc -p data --noEmit
+          node data/scripts/build-seed-astronomia.ts --check
+
       - name: Typecheck
         if: matrix.check == 'typecheck'
         run: npm run typecheck
