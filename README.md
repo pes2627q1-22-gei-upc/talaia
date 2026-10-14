@@ -119,22 +119,16 @@ talaia/
 **Gitflow** amb els noms de l'assignatura, i tot entra per pull request amb la CI en verd i una revisió aprovada.
 
 ```mermaid
-%%{init: {'gitGraph': {'mainBranchName': 'stable', 'showCommitLabel': false}} }%%
-gitGraph
-  commit
-  branch snapshot
-  commit
-  branch "feature/TG-82"
-  commit
-  commit
-  checkout snapshot
-  merge "feature/TG-82"
-  branch "release/0.1.0"
-  commit
-  checkout stable
-  merge "release/0.1.0" tag: "v0.1.0"
-  checkout snapshot
-  merge "release/0.1.0"
+flowchart LR
+  F["🌿 <b>feature/TG-‹ref›</b><br/>una per tasca"]:::branca -->|"PR · CI en verd · 1 revisió"| S["<b>snapshot</b><br/>desenvolupament"]:::base
+  S -->|"release/0.N.0"| ST["<b>stable</b><br/>v0.N.0, una per sprint"]:::base
+  ST --> P["🚀 <b>prod</b><br/>publicada"]:::prod
+  HF["🩹 <b>hotfix/0.N.x</b>"]:::branca --> ST
+  HF -.-> S
+
+  classDef branca fill:#141B42,stroke:#333D7A,color:#EEF0F7
+  classDef base fill:#1E2657,stroke:#333D7A,color:#EEF0F7
+  classDef prod fill:#FFB547,stroke:#FFB547,color:#0E1433
 ```
 
 - **`snapshot`** és la branca de desenvolupament; **`stable`** té una versió etiquetada per sprint; **`prod`** és la publicada.
@@ -150,11 +144,23 @@ Tot el detall: [flux de Git](docs/git-workflow.md) i [com contribuir](CONTRIBUTI
 
 ## ✦ Documentació
 
-| | | |
-|---|---|---|
-| 🚀 [**Onboarding**](docs/onboarding.md)<br><sub>Entorn local i flux d'una tasca</sub> | 🎯 [**Producte**](docs/producte.md)<br><sub>Abast, MVP i el que no farem</sub> | 🏛️ [**Arquitectura**](docs/arquitectura.md)<br><sub>Peces i per què</sub> |
-| 📜 [**Decisions (ADR)**](docs/decisions/README.md)<br><sub>I les [pendents](docs/decisions/pendents.md)</sub> | 🏃 [**Sprint 1**](docs/sprint-1.md)<br><sub>Tasques, dates i dependències</sub> | 📋 [**Backlog**](docs/backlog.md)<br><sub>Històries d'usuari</sub> |
-| 🎨 [**Design system**](docs/design-system.md)<br><sub>Tokens, moviment i il·lustracions</sub> | 🌿 [**Flux de Git**](docs/git-workflow.md)<br><sub>Branques, commits i PR</sub> | 🤝 [**Serveis entre equips**](docs/serveis-externs.md)<br><sub>Aprop i Mobilicat</sub> |
+<table>
+  <tr>
+    <td width="33%">🚀 <a href="docs/onboarding.md"><b>Onboarding</b></a><br><sub>Entorn local i flux d'una tasca</sub></td>
+    <td width="33%">🎯 <a href="docs/producte.md"><b>Producte</b></a><br><sub>Abast, MVP i el que no farem</sub></td>
+    <td width="33%">🏛️ <a href="docs/arquitectura.md"><b>Arquitectura</b></a><br><sub>Peces i per què</sub></td>
+  </tr>
+  <tr>
+    <td width="33%">📜 <a href="docs/decisions/README.md"><b>Decisions (ADR)</b></a><br><sub>I les <a href="docs/decisions/pendents.md">pendents</a></sub></td>
+    <td width="33%">🏃 <a href="docs/sprint-1.md"><b>Sprint 1</b></a><br><sub>Tasques, dates i dependències</sub></td>
+    <td width="33%">📋 <a href="docs/backlog.md"><b>Backlog</b></a><br><sub>Històries d'usuari</sub></td>
+  </tr>
+  <tr>
+    <td width="33%">🎨 <a href="docs/design-system.md"><b>Design system</b></a><br><sub>Tokens, moviment i il·lustracions</sub></td>
+    <td width="33%">🌿 <a href="docs/git-workflow.md"><b>Flux de Git</b></a><br><sub>Branques, commits i PR</sub></td>
+    <td width="33%">🤝 <a href="docs/serveis-externs.md"><b>Serveis entre equips</b></a><br><sub>Aprop i Mobilicat</sub></td>
+  </tr>
+</table>
 
 Per a agents: [`CLAUDE.md`](CLAUDE.md).
 
