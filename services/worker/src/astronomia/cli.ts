@@ -48,6 +48,7 @@ function main(): void {
     iniciCrepuscleNautic: nit.iniciCrepuscleNautic,
     iniciCrepuscleCivil: nit.iniciCrepuscleCivil,
     sortidaSol: nit.sortidaSol,
+    llunaSobreHoritzoALaPosta: nit.llunaSobreHoritzoALaPosta,
     sortidaLluna: nit.sortidaLluna,
     postaLluna: nit.postaLluna,
   });

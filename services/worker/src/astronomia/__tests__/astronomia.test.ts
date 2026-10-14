@@ -93,9 +93,24 @@ describe('faseLunar', () => {
     expect(fase.angleFase).toBe(Number(fase.angleFase.toFixed(1)));
   });
 
-  it('rebutja un instant que no és ISO 8601', () => {
-    expect(() => faseLunar('ahir a la nit')).toThrow(RangeError);
+  it.each([
+    'ahir a la nit',
+    'Oct 14 2026 22:00',
+    '2026-10-14',
+    // Sense zona, JavaScript ho llegiria com a hora local de la màquina: el resultat dependria de TZ.
+    '2026-10-14T22:00',
+    '2026-10-14T22:00:00',
+    '2026-10-14T22:00:00+0200',
+  ])('rebutja l’instant %p (no és ISO 8601 amb zona)', (hora) => {
+    expect(() => faseLunar(hora)).toThrow(RangeError);
   });
+
+  it.each(['2026-10-14T22:00Z', '2026-10-14T22:00:00Z', '2026-10-14T22:00:00.000Z'])(
+    'accepta %p',
+    (hora) => {
+      expect(faseLunar(hora)).toEqual(faseLunar('2026-10-14T22:00:00.000Z'));
+    },
+  );
 });
 
 describe('posicioSol', () => {
@@ -128,6 +143,13 @@ describe('posicioSol', () => {
 });
 
 describe('estatLluna', () => {
+  it('coincideix amb JPL Horizons a Barcelona el 20/10/2026 a les 20:00Z', () => {
+    // Horizons (sense refracció): alçada 32,475°, azimut 188,668°.
+    const lluna = estatLluna(BARCELONA, '2026-10-20T20:00:00Z');
+    expect(lluna.alcada).toBeCloseTo(32.48, 1);
+    expect(lluna.azimut).toBeCloseTo(188.67, 1);
+  });
+
   it('ajunta posició i fase', () => {
     const lluna = estatLluna(BARCELONA, '2026-10-14T17:00:00Z');
     expect(lluna).toEqual({
@@ -159,6 +181,12 @@ describe('efemeridesHora', () => {
     expect(efemeridesHora(BARCELONA, '2026-10-14T19:00:00+02:00').hora).toBe(
       '2026-10-14T17:00:00.000Z',
     );
+  });
+
+  it('no depèn de la zona horària de la màquina', () => {
+    // Amb zona obligatòria, el mateix text dóna el mateix instant amb qualsevol TZ.
+    expect(() => efemeridesHora(BARCELONA, '2026-10-14T22:00')).toThrow(/zona/);
+    expect(efemeridesHora(BARCELONA, '2026-10-14T22:00:00Z').sol.alcada).toBeCloseTo(-50.6, 0);
   });
 
   it('classifica el crepuscle segons l’hora de la nit', () => {
@@ -213,11 +241,27 @@ describe('efemeridesHores', () => {
 describe('nitAstronomica', () => {
   const nit = nitAstronomica(BARCELONA, '2026-10-14');
 
-  it('dóna la posta i la sortida del Sol de la nit del 14 d’octubre de 2026 a Barcelona', () => {
-    // Referència: 19:12 i 08:03 hora local (CEST, UTC+2), amb un marge de 2 minuts.
+  it('coincideix amb l’USNO la nit del 14 d’octubre de 2026 a Barcelona', () => {
+    // USNO (hora local CEST, UTC+2): posta 19:12, fi del crepuscle civil 19:40, posta de la
+    // Lluna 20:58, sortida del Sol 08:03. Marge d'un minut, que és la precisió de la font.
     expect(nit.data).toBe('2026-10-14');
-    expect(minuts(nit.postaSol, '2026-10-14T17:12:00Z')).toBeLessThan(2);
-    expect(minuts(nit.sortidaSol, '2026-10-15T06:03:00Z')).toBeLessThan(2);
+    expect(minuts(nit.postaSol, '2026-10-14T17:12:00Z')).toBeLessThan(1);
+    expect(minuts(nit.fiCrepuscleCivil!, '2026-10-14T17:40:00Z')).toBeLessThan(1);
+    expect(minuts(nit.postaLluna!, '2026-10-14T18:58:00Z')).toBeLessThan(1);
+    expect(minuts(nit.sortidaSol, '2026-10-15T06:03:00Z')).toBeLessThan(1);
+  });
+
+  it('coincideix amb JPL Horizons als crepuscles nàutic i astronòmic', () => {
+    // Horizons dóna el Sol a −12,01° a les 18:12Z i a −18,01° a les 18:44Z.
+    expect(minuts(nit.fiCrepuscleNautic!, '2026-10-14T18:12:00Z')).toBeLessThan(1);
+    expect(minuts(nit.fiCrepuscleAstronomic!, '2026-10-14T18:44:00Z')).toBeLessThan(1);
+  });
+
+  it('la nit del canvi d’hora (24 → 25/10/2026) no fa cap salt perquè tot és UTC', () => {
+    // USNO: el Sol surt a les 07:14 CET (UTC+1) el 25/10, és a dir, 06:14Z.
+    const canvi = nitAstronomica(BARCELONA, '2026-10-24');
+    expect(minuts(canvi.sortidaSol, '2026-10-25T06:14:00Z')).toBeLessThan(1);
+    expect(minuts(canvi.postaSol, canvi.sortidaSol) / 60).toBeCloseTo(13, 0);
   });
 
   it('ordena els crepuscles entre la posta i la sortida del Sol', () => {
@@ -252,25 +296,38 @@ describe('nitAstronomica', () => {
     expect(Date.parse(nit.postaLluna!)).toBeGreaterThan(Date.parse(nit.postaSol));
     expect(Date.parse(nit.postaLluna!)).toBeLessThan(Date.parse(nit.sortidaSol));
     expect(nit.sortidaLluna).toBeNull();
+    expect(nit.llunaSobreHoritzoALaPosta).toBe(true);
     expect(nit.lluna.fase).toBe('creixent');
     expect(nit.lluna.fraccioIlluminada).toBeGreaterThan(0.1);
     expect(nit.lluna.fraccioIlluminada).toBeLessThan(0.3);
   });
 
-  it('amb Lluna plena, la Lluna ni surt ni es pon dins la nit', () => {
+  it('amb Lluna plena, la Lluna hi és tota la nit: ni surt ni es pon', () => {
     // Lluna plena el 26/10/2026: surt abans de la posta del Sol i es pon després de la sortida.
     const plena = nitAstronomica(BARCELONA, '2026-10-25');
     expect(plena.lluna.fase).toBe('plena');
     expect(plena.lluna.fraccioIlluminada).toBeGreaterThan(0.99);
+    expect(plena.llunaSobreHoritzoALaPosta).toBe(true);
     expect(plena.sortidaLluna).toBeNull();
     expect(plena.postaLluna).toBeNull();
   });
 
-  it('amb Lluna nova, la Lluna surt de matinada poc abans que el Sol', () => {
-    const nova = nitAstronomica(BARCELONA, '2026-10-09');
+  it('amb Lluna nova, no hi ha Lluna en tota la nit', () => {
+    // Lluna nova el 10/10/2026: es pon abans que el Sol i surt després de l'alba.
+    const nova = nitAstronomica(BARCELONA, '2026-10-10');
     expect(nova.lluna.fase).toBe('nova');
-    expect(nova.sortidaLluna).not.toBeNull();
-    expect(minuts(nova.sortidaLluna!, nova.sortidaSol)).toBeLessThan(30);
+    expect(nova.llunaSobreHoritzoALaPosta).toBe(false);
+    expect(nova.sortidaLluna).toBeNull();
+    expect(nova.postaLluna).toBeNull();
+  });
+
+  it('la vigília de la Lluna nova, la Lluna surt de matinada poc abans que el Sol', () => {
+    const vigilia = nitAstronomica(BARCELONA, '2026-10-09');
+    expect(vigilia.lluna.fase).toBe('nova');
+    expect(vigilia.llunaSobreHoritzoALaPosta).toBe(false);
+    expect(vigilia.sortidaLluna).not.toBeNull();
+    expect(vigilia.postaLluna).toBeNull();
+    expect(minuts(vigilia.sortidaLluna!, vigilia.sortidaSol)).toBeLessThan(30);
   });
 
   it('les nits d’estiu són curtes i les d’hivern llargues', () => {
@@ -313,7 +370,13 @@ describe('nitAstronomica', () => {
     expect(() => nitAstronomica(TROMSO, '2026-06-21')).toThrow(/no es pon/);
   });
 
-  it.each(['14/10/2026', '2026-10-14T00:00:00Z', '2026-13-01', ''])(
+  it('a 66° N, quan el Sol només frega l’horitzó, la sortida ve després de la posta', () => {
+    const polar = nitAstronomica({ lat: 66, lon: 18.96 }, '2026-06-03');
+    expect(Date.parse(polar.sortidaSol)).toBeGreaterThan(Date.parse(polar.postaSol));
+    expect(minuts(polar.postaSol, polar.sortidaSol)).toBeLessThan(180);
+  });
+
+  it.each(['14/10/2026', '2026-10-14T00:00:00Z', '2026-13-01', '2026-02-30', ''])(
     'rebutja la data invàlida %p',
     (data) => {
       expect(() => nitAstronomica(BARCELONA, data)).toThrow(RangeError);

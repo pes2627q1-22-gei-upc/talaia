@@ -43,8 +43,17 @@ export const ALCADA_SOL_HORITZO = -0.8333;
 /** Llindars estàndard dels crepuscles, en graus d'alçada geomètrica del Sol. */
 export const ALCADA_CREPUSCLE = { civil: -6, nautic: -12, astronomic: -18 } as const;
 
-const MS_PER_DIA = 86_400_000;
 const DATA_ISO = /^\d{4}-\d{2}-\d{2}$/;
+/**
+ * Instant ISO 8601 amb zona obligatòria (`Z` o `±hh:mm`). Sense zona, JavaScript llegiria
+ * `2026-10-14T22:00` com a hora local de la màquina, i el resultat dependria de la `TZ`.
+ */
+const INSTANT_ISO = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:\d{2})$/;
+/**
+ * Cada cerca del Sol comença un minut després de l'esdeveniment anterior: just a l'esdeveniment
+ * el Sol és al llindar i, a latituds altes, la cerca el podria tornar a trobar a la mateixa hora.
+ */
+const MARGE_CERCA_DIES = 1 / 1440;
 
 /**
  * Franja de llum del cel a partir de l'alçada geomètrica del Sol, amb els llindars estàndard
@@ -99,8 +108,10 @@ function observerDe(lloc: LlocObservacio): Observer {
 
 function dataDe(hora: string): Date {
   const data = new Date(hora);
-  if (Number.isNaN(data.getTime())) {
-    throw new RangeError(`hora ha de ser un instant ISO 8601 (rebut: "${hora}")`);
+  if (!INSTANT_ISO.test(hora) || Number.isNaN(data.getTime())) {
+    throw new RangeError(
+      `hora ha de ser un instant ISO 8601 amb zona, com 2026-10-14T22:00:00Z (rebut: "${hora}")`,
+    );
   }
   return data;
 }
@@ -179,7 +190,8 @@ export function efemeridesHores(lloc: LlocObservacio, hores: string[]): Efemerid
  * (`YYYY-MM-DD`) en un lloc. La posta de sol es busca a partir del migdia solar mitjà del lloc
  * (12:00 UTC corregit per la longitud), de manera que la nit queda ben delimitada a qualsevol
  * longitud sense dependre de la zona horària. La sortida i la posta de la Lluna només es donen
- * si cauen entre la posta i la sortida del Sol.
+ * si cauen entre la posta i la sortida del Sol; `llunaSobreHoritzoALaPosta` distingeix la Lluna
+ * que hi és tota la nit de la que no hi és en cap moment.
  */
 export function nitAstronomica(lloc: LlocObservacio, data: string): NitAstronomica {
   const observer = observerDe(lloc);
@@ -187,13 +199,16 @@ export function nitAstronomica(lloc: LlocObservacio, data: string): NitAstronomi
     throw new RangeError(`data ha de tenir el format YYYY-MM-DD (rebut: "${data}")`);
   }
   const migdiaUtc = Date.parse(`${data}T12:00:00Z`);
-  if (Number.isNaN(migdiaUtc)) throw new RangeError(`data no és un dia vàlid (rebut: "${data}")`);
+  // `Date.parse` accepta dies impossibles (`2026-02-30` → 2 de març): es comprova el viatge d'anada i tornada.
+  if (Number.isNaN(migdiaUtc) || new Date(migdiaUtc).toISOString().slice(0, 10) !== data) {
+    throw new RangeError(`data no és un dia vàlid (rebut: "${data}")`);
+  }
   // Migdia solar mitjà: 12:00 UTC menys 4 minuts per cada grau de longitud est.
   const migdiaSolar = new Date(migdiaUtc - (lloc.lon / 15) * 3_600_000);
 
   const postaSol = SearchRiseSet(Body.Sun, observer, -1, migdiaSolar, 1);
   if (!postaSol) throw new RangeError(`El Sol no es pon el ${data} a (${lloc.lat}, ${lloc.lon})`);
-  const sortidaSol = SearchRiseSet(Body.Sun, observer, +1, postaSol, 1);
+  const sortidaSol = SearchRiseSet(Body.Sun, observer, +1, postaSol.AddDays(MARGE_CERCA_DIES), 1);
   if (!sortidaSol)
     throw new RangeError(`El Sol no surt després del ${data} a (${lloc.lat}, ${lloc.lon})`);
 
@@ -201,9 +216,9 @@ export function nitAstronomica(lloc: LlocObservacio, data: string): NitAstronomi
   // no agafa el crepuscle d'una altra nit). Matinada: torna a pujar pel mateix llindar; la
   // primera pujada després de la baixada del vespre és, per força, la d'aquesta nit.
   const baixaFinsA = (alcada: number, desDe: AstroTime | null) =>
-    desDe && SearchAltitude(Body.Sun, observer, -1, desDe, 1, alcada);
+    desDe && SearchAltitude(Body.Sun, observer, -1, desDe.AddDays(MARGE_CERCA_DIES), 1, alcada);
   const pujaFinsA = (alcada: number, desDe: AstroTime | null) =>
-    desDe && SearchAltitude(Body.Sun, observer, +1, desDe, 1, alcada);
+    desDe && SearchAltitude(Body.Sun, observer, +1, desDe.AddDays(MARGE_CERCA_DIES), 1, alcada);
 
   const fiCivil = baixaFinsA(ALCADA_CREPUSCLE.civil, postaSol);
   const fiNautic = baixaFinsA(ALCADA_CREPUSCLE.nautic, fiCivil);
@@ -212,9 +227,19 @@ export function nitAstronomica(lloc: LlocObservacio, data: string): NitAstronomi
   const iniciNautic = pujaFinsA(ALCADA_CREPUSCLE.nautic, fiNautic);
   const iniciCivil = pujaFinsA(ALCADA_CREPUSCLE.civil, fiCivil);
 
-  const duradaNit = (sortidaSol.date.getTime() - postaSol.date.getTime()) / MS_PER_DIA;
-  const sortidaLluna = SearchRiseSet(Body.Moon, observer, +1, postaSol, duradaNit);
-  const postaLluna = SearchRiseSet(Body.Moon, observer, -1, postaSol, duradaNit);
+  // La Lluna surt i es pon cada dia (menys de 25 h entre dues sortides) fora de les regions
+  // polars: la primera sortida i la primera posta després de la posta de sol diuen si és sobre
+  // l'horitzó en aquell moment (la posta ve abans que la sortida). Si alguna no es troba en dos
+  // dies, es mira l'alçada directament. Només es retornen les que cauen dins de la nit.
+  const seguentSortidaLluna = SearchRiseSet(Body.Moon, observer, +1, postaSol, 2);
+  const seguentPostaLluna = SearchRiseSet(Body.Moon, observer, -1, postaSol, 2);
+  const llunaSobreHoritzoALaPosta =
+    seguentSortidaLluna && seguentPostaLluna
+      ? seguentPostaLluna.ut < seguentSortidaLluna.ut
+      : posicioDe(Body.Moon, observer, postaSol.date).alcada > 0;
+  const dinsLaNit = (time: AstroTime | null) => (time && time.ut < sortidaSol.ut ? time : null);
+  const sortidaLluna = dinsLaNit(seguentSortidaLluna);
+  const postaLluna = dinsLaNit(seguentPostaLluna);
 
   const mitjaNit = new Date((postaSol.date.getTime() + sortidaSol.date.getTime()) / 2);
   const iso = (time: AstroTime | null) => (time ? isoAlSegon(time.date) : null);
@@ -229,6 +254,7 @@ export function nitAstronomica(lloc: LlocObservacio, data: string): NitAstronomi
     iniciCrepuscleNautic: iso(iniciNautic),
     iniciCrepuscleCivil: iso(iniciCivil),
     sortidaSol: isoAlSegon(sortidaSol.date),
+    llunaSobreHoritzoALaPosta,
     sortidaLluna: iso(sortidaLluna),
     postaLluna: iso(postaLluna),
     lluna: faseLunar(mitjaNit.toISOString()),

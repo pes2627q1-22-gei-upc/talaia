@@ -49,7 +49,11 @@ export type EstatLluna = PosicioAstre & {
   fase: FaseLunar;
 };
 
-/** Efemèrides d'un instant en un punt: el que la fórmula de l'índex necessita de cada hora. */
+/**
+ * Efemèrides d'un instant en un punt: el que la fórmula de l'índex necessita de cada hora.
+ * Tots els valors són els de l'instant `hora` exacte, no un resum de l'hora que comença: a les
+ * 18:00Z pot ser `nautic` i a les 18:44Z ja `nit`.
+ */
 export type EfemeridesHora = {
   /** Instant del càlcul, ISO 8601 en UTC; coincideix amb `PrevisioMeteoHora.hora` quan s'alineen. */
   hora: string;
@@ -79,7 +83,16 @@ export type NitAstronomica = {
   iniciCrepuscleNautic: string | null;
   iniciCrepuscleCivil: string | null;
   sortidaSol: string;
+  /**
+   * Si la Lluna ja és sobre l'horitzó quan es pon el Sol. Combinat amb la sortida i la posta:
+   * `true` i cap posta dins la nit → Lluna tota la nit (plena); `false` i cap sortida → cap
+   * Lluna en tota la nit (nova); `true` i posta → només al començament; `false` i sortida →
+   * només al final.
+   */
+  llunaSobreHoritzoALaPosta: boolean;
+  /** Sortida de la Lluna, només si cau entre la posta i la sortida del Sol. */
   sortidaLluna: string | null;
+  /** Posta de la Lluna, només si cau entre la posta i la sortida del Sol. */
   postaLluna: string | null;
   /** Fase de la Lluna a mitja nit (punt mitjà entre la posta i la sortida del Sol). */
   lluna: Pick<EstatLluna, 'fraccioIlluminada' | 'angleFase' | 'fase'>;
