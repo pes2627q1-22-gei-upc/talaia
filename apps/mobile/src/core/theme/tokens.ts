@@ -106,6 +106,8 @@ export const motion = {
   press: { scale: 0.96, in: 90, release: { damping: 19, stiffness: 320, mass: 0.6 } },
   /** Retard entre elements que entren en cascada. */
   stagger: 40,
+  /** Sortida d'una pantalla amb coreografia (el salt a la velocitat de la llum de la benvinguda). */
+  leave: 720,
 } as const;
 
 export type ColorToken = keyof typeof colors;

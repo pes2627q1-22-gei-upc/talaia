@@ -6,6 +6,8 @@
     "@expo-google-fonts/atkinson-hyperlegible-next": "^0.4.1",
     "@expo-google-fonts/big-shoulders-display": "^0.2.3",
     "@expo/ui": "~57.0.21",
+    "@react-native-async-storage/async-storage": "2.2.0",
+    "@shopify/react-native-skia": "2.6.2",
     "@talaia/shared": "*",
     "@tanstack/react-query": "^5.104.1",
     "expo": "~57.0.26",
@@ -59,6 +61,18 @@
   "private": true,
   "jest": {
     "preset": "jest-expo",
+    "testEnvironment": "@shopify/react-native-skia/jestEnv.js",
+    "testEnvironmentOptions": {
+      "customExportConditions": [
+        "require",
+        "react-native"
+      ]
+    },
+    "transformIgnorePatterns": [
+      "/node_modules/(?!(.pnpm|react-native|@react-native|@react-native-community|expo|@expo|@expo-google-fonts|react-navigation|@react-navigation|@sentry/react-native|native-base|standard-navigation|@shopify/react-native-skia))",
+      "/node_modules/react-native-reanimated/plugin/",
+      "/node_modules/@react-native/babel-preset/"
+    ],
     "moduleNameMapper": {
       "^@/assets/(.*)$": "<rootDir>/assets/$1",
       "^@/(.*)$": "<rootDir>/src/$1"
