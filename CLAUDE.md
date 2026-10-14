@@ -28,6 +28,7 @@ Més context: `docs/producte.md` (abast, MVP, NOT list), `docs/arquitectura.md`,
 - **Design system** (TG-113): tokens del Figma (colors, tipografia, moviment) i components base a `apps/mobile/src/shared/ui`. Taula i regles: `docs/design-system.md`.
 - **Worker · meteo** (TG-95, TG-114): `services/worker` amb la ingesta de la previsió d'Open-Meteo per punt (núvols per capes, humitat, visibilitat, temperatura, punt de rosada, precipitació i vent; tipus `PrevisioMeteoHora` a `@talaia/shared`). Prova manual: `npm run meteo -w services/worker -- lat,lon`. La persistència amb `@talaia/db` (taula de previsions) encara no hi és; la planificació horària és TG-99. Vegeu `services/worker/README.md`.
 - **CI** (TG-70): lint, typecheck i tests de l'app, de l'API, del worker i de `@talaia/db` a cada PR; SonarCloud preparat (`docs/ci.md`).
+- **Explora** (TG-101): la pestanya d'inici és «Què vols veure?» (mockup 02): què, des d'on (ubicació actual amb `expo-location`), quan i fins a quant temps en cotxe. «Troba el millor lloc» obre el mapa a `/recomanacions`, on TG-102 hi posarà el rànquing. La consulta és `ConsultaRecomanacions` a `@talaia/shared`.
 - **Mapa** (TG-89): MapLibre GL JS en una DOM component d'Expo, amb l'estil nocturn de l'ICGC, terreny 3D i cel de nit (ADR-0015). Tota l'app es prova a **Expo Go**; cap mòdul natiu que Expo Go no porti sense ADR (ADR-0014). Identificador: `cat.talaia.app`.
 
 ## Stack (decidit, no reobrir sense ADR)
