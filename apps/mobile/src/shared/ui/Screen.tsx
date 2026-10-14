@@ -1,8 +1,9 @@
 import type { PropsWithChildren } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet } from 'react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { colors, spacing } from '@/core/theme/tokens';
+import { colors, motion, spacing } from '@/core/theme/tokens';
 
 import { AppText } from './AppText';
 
@@ -11,11 +12,18 @@ type ScreenProps = PropsWithChildren<{
   subtitle?: string;
 }>;
 
+/** Entrada del primer cop que es munta una pantalla: fosa i 6 pt, sense fer esperar. */
+const enter = (delay: number) =>
+  FadeInDown.duration(motion.base)
+    .delay(delay)
+    .easing(motion.enter)
+    .withInitialValues({ opacity: 0, transform: [{ translateY: 6 }] });
+
 /** Esquelet comú d'una pantalla: fons de nit, títol de la marca i subtítol. */
 export function Screen({ title, subtitle, children }: ScreenProps) {
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.header}>
+      <Animated.View entering={enter(0)} style={styles.header}>
         <AppText variant="display" accessibilityRole="header">
           {title}
         </AppText>
@@ -24,8 +32,10 @@ export function Screen({ title, subtitle, children }: ScreenProps) {
             {subtitle}
           </AppText>
         ) : null}
-      </View>
-      <View style={styles.body}>{children}</View>
+      </Animated.View>
+      <Animated.View entering={enter(motion.stagger)} style={styles.body}>
+        {children}
+      </Animated.View>
     </SafeAreaView>
   );
 }

@@ -19,6 +19,7 @@ export function Chip({ label, selected, onPress }: ChipProps) {
   return (
     <PressableScale
       onPress={onPress}
+      haptic="selection"
       accessibilityState={{ selected }}
       hitSlop={{ top: hitSlop, bottom: hitSlop }}
       style={[styles.chip, selected && styles.selected]}

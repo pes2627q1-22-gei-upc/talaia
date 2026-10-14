@@ -99,7 +99,11 @@ export const motion = {
   spring: { damping: 18, stiffness: 180 },
   enter: Easing.out(Easing.cubic),
   exit: Easing.in(Easing.cubic),
-  pressedScale: 0.97,
+  /**
+   * Prémer: s'enfonsa de seguida (`in`) i torna amb un spring que s'assenta amb un rebot mínim
+   * (relació d'amortiment ≈ 0,7). És el que fa que un botó es noti físic.
+   */
+  press: { scale: 0.96, in: 90, release: { damping: 19, stiffness: 320, mass: 0.6 } },
   /** Retard entre elements que entren en cascada. */
   stagger: 40,
 } as const;
