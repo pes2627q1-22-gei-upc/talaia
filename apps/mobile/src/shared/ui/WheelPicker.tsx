@@ -116,8 +116,10 @@ export function WheelPicker({
   useEffect(() => {
     if (data[current.current] === value) return;
     const base = current.current - (current.current % count) + Math.max(0, values.indexOf(value));
-    const target = [base - count, base, base + count].reduce((best, candidate) =>
-      Math.abs(candidate - current.current) < Math.abs(best - current.current) ? candidate : best,
+    const target = [base - count, base + count].reduce(
+      (best, candidate) =>
+        Math.abs(candidate - current.current) < Math.abs(best - current.current) ? candidate : best,
+      base,
     );
     current.current = target;
     list.current?.scrollToOffset({ offset: target * WHEEL_ITEM, animated: true });
