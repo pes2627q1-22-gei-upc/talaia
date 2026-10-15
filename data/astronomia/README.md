@@ -14,7 +14,9 @@ resultat normalitzat, revisable i traçable.
 - Dates en UTC i format ISO 8601.
 
 Les fases lunars, les conjuncions i les superllunes es calculen a TG-107 i no formen part
-d'aquesta ingesta.
+d'aquesta ingesta de fonts externes. El resultat calculat i el seu seed són
+[`calculats-2026-2027.json`](calculats-2026-2027.json) i
+`supabase/seeds/03_fenomens_calculats.sql`.
 
 ## Fitxers
 
@@ -129,3 +131,33 @@ El generador valida les regles essencials del contracte abans de construir el se
 
 La migració afegeix restriccions de claus, intervals i valors numèrics a les comprovacions
 del generador. Els tipus Kysely es regeneren a partir de la base local després d'aplicar-la.
+
+## Fenòmens calculats (TG-107)
+
+`npm run astronomia:calendari --workspace services/worker` calcula el calendari d'octubre de
+2026 a desembre de 2027 amb Astronomy Engine 2.1.19 i escriu el JSON i el seed 03. Amb `-- --check`
+comprova que tots dos coincideixen amb el càlcul actual. No cal copiar efemèrides a mà ni
+consultar una API. Els codis estables i els `upsert` fan el seed idempotent. La migració de TG-107
+permet `font_codi` **o** `metode_calcul` (mai tots dos ni cap), i afegeix `detall_calcul` per als
+valors útils de revisió. Les fonts IMO/NASA del seed 02 no canvien.
+
+Es publiquen la Lluna nova i la Lluna plena; si una plena compleix el criteri de superlluna,
+es publica **com a superlluna en comptes d'una plena duplicada**. La Lluna nova no és visible:
+serveix per planificar observacions amb menys llum lunar. Una «Lluna de sang» és un eclipsi
+llunar total, no una fase més: s'identificaria a la ingesta d'eclipsis si n'hi hagués un de
+visible des de Catalunya. No se'n genera cap de manera artificial.
+
+El criteri editorial de superlluna és: distància geocèntrica de la Lluna en la fase plena
+`<= apogeu - 0,9 × (apogeu - perigeu)`, prenent els extrems orbitals més propers. La definició
+de «superlluna» no és oficial ni universal; aquest llindar queda versionat al JSON.
+
+Per a les aproximacions del MVP es consideren la Lluna i Mercuri, Venus, Mart, Júpiter i
+Saturn. Es mostregen les posicions **topocèntriques** cada hora des d'un lloc de referència al
+Montseny (41,77° N, 2,44° E; 1700 m). Es publica el millor instant observable d'un acostament
+continu si la separació és `<= 3°`, els dos astres són a `>= 10°` d'altura, tenen magnitud
+aparent `<= 2,5` i el Sol és a `<= -6°`. S'agrupen les mostres separades per menys de 48 hores
+per evitar repetir el mateix acostament en nits consecutives. La cerca és horària, no una
+resolució analítica del mínim; per això la precisió del màxim és `hora`. És una selecció
+conservadora per al MVP, **no** un catàleg complet de conjuncions per a astrònoms experts.
+Altres llocs de Catalunya, un horitzó local, els núvols i la contaminació lumínica poden
+canviar la visibilitat real.

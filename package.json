@@ -62,7 +62,7 @@
         "punts_observacio.origen": "\"OFICIAL\" | \"COMUNITAT\"",
         "punts_observacio.estat": "Generated<\"PENDENT\" | \"PUBLICAT\" | \"REBUTJAT\" | \"DESACTIVAT\">",
         "fonts_astronomiques.organitzacio": "\"IMO\" | \"NASA\"",
-        "fenomens_astronomics.periodicitat": "\"anual\" | \"ocasional\"",
+        "fenomens_astronomics.periodicitat": "\"mensual\" | \"anual\" | \"ocasional\"",
         "esdeveniments_astronomics.rellevancia": "\"principal\" | \"secundari\"",
         "esdeveniments_astronomics.dificultat_observacio": "\"baixa\" | \"mitjana\" | \"alta\""
       }

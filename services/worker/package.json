@@ -5,6 +5,7 @@
   "description": "Worker de Talaia: ingesta de dades externes i recàlcul horari de l'índex de visibilitat.",
   "scripts": {
     "meteo": "tsx --env-file-if-exists=../../.env src/meteo/cli.ts",
+    "astronomia:calendari": "tsx src/astronomia/calendari-cli.ts",
     "astro": "tsx src/astronomia/cli.ts",
     "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc --noEmit",
