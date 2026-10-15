@@ -239,9 +239,9 @@ Backlog del sprint i gestió [GES], per persona. L'acumulat inclou el Sprint 1 i
 
 | Persona | Sprint 3 | Acumulat |
 |---|---|---|
-| Joan | 28 | 102 |
-| Vinyet | 12 | 57 |
+| Joan | 28 | 99 |
+| Vinyet | 12 | 59 |
 | Martina | 13 | 55 |
 | Mohamed | 12 | 60 |
 | Hugo | 23 | 62 |
-| Victor | 14 | 55 |
+| Victor | 14 | 56 |

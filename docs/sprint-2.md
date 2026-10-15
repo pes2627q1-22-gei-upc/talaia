@@ -174,7 +174,7 @@ Les tasques del Sprint 1 que no es tanquin el 28/10 s'hi afegeixen a la planning
 |---|---|---|---|---|---|
 | TG-156 | Model de dades de plans i endpoints POST/GET /api/v1/plans | Mohamed | 12/11 | 16/11 | 3 |
 | TG-157 | Pantalla «Pla d'observació» (mockup 06): punt, fenomen, data i hora | Mohamed | 16/11 | 18/11 | 3 |
-| TG-158 | Afegir el pla al calendari del mòbil (expo-calendar), que el sincronitza amb Google Calendar | Joan | 18/11 | 20/11 | 2 |
+| TG-158 | Afegir el pla al calendari del mòbil (expo-calendar), que el sincronitza amb Google Calendar | Vinyet | 18/11 | 20/11 | 2 |
 | TG-159 | Tests dels endpoints de plans i del ViewModel | Mohamed | 18/11 | 20/11 | 1 |
 
 ## HU13 · Consultar els plans d'observació desats · [TG-34](https://tree.taiga.io/project/mohamed-dari-pes_22_c_talaia/us/34)
@@ -341,7 +341,7 @@ Història tècnica del Sprint 2: aspectes metodològics (desplegament automàtic
 | TG-180 | Desplegament automàtic a la VM en cada push a stable (GitHub Actions) | Mohamed | 16/11 | 18/11 | 3 |
 | TG-181 | Informe de cobertura a la CI i a SonarCloud, amb llindar mínim al codi nou | Vinyet | 10/11 | 12/11 | 2 |
 | TG-182 | Primera mesura dels RNF de Taiga (càrrega del mapa, p95 de l'API, cobertura, accessibilitat) | Hugo | 18/11 | 20/11 | 2 |
-| TG-183 | Procés de bugs a Taiga (issues amb tipus i severitat, enllaç a la PR) i triatge dels del Sprint 1 | Joan | 09/11 | 10/11 | 1 |
+| TG-183 | Procés de bugs a Taiga (issues amb tipus i severitat, enllaç a la PR) i triatge dels del Sprint 1 | Victor | 09/11 | 10/11 | 1 |
 | TG-184 | Índex v2: perfil d'horitzó i ajust amb les observacions de Meteocat | Hugo | 19/11 | 24/11 | 4 |
 | TG-185 | Tests de l'índex v2 | Hugo | 24/11 | 26/11 | 1 |
 | TG-186 | Sessió de feedback amb usuaris reals (aficionats a l'astronomia) amb l'app del Sprint 2 | Victor | 23/11 | 26/11 | 2 |
@@ -367,9 +367,9 @@ Backlog del sprint i gestió [GES], per persona. L'acumulat inclou el Sprint 1 i
 
 | Persona | Sprint 2 | Acumulat |
 |---|---|---|
-| Joan | 28 | 74 |
-| Vinyet | 19 | 45 |
+| Joan | 25 | 71 |
+| Vinyet | 21 | 47 |
 | Martina | 27 | 42 |
 | Mohamed | 25 | 48 |
 | Hugo | 25 | 39 |
-| Victor | 25 | 41 |
+| Victor | 26 | 42 |
