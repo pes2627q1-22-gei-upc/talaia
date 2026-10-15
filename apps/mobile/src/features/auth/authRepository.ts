@@ -38,14 +38,15 @@ export const authRepository = {
     const client = getAuthClient();
     if (!client || Platform.OS === 'web') return () => {};
     const update = (state: string) => {
-      if (state === 'active') client.auth.startAutoRefresh();
-      else client.auth.stopAutoRefresh();
+      // AppState no espera promeses: deleguem el temporitzador al SDK.
+      if (state === 'active') void client.auth.startAutoRefresh();
+      else void client.auth.stopAutoRefresh();
     };
     update(AppState.currentState);
     const listener = AppState.addEventListener('change', update);
     return () => {
       listener.remove();
-      client.auth.stopAutoRefresh();
+      void client.auth.stopAutoRefresh();
     };
   },
 };
