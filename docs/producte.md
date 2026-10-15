@@ -56,6 +56,8 @@ Decisions de producte preses:
 - Component comunitària bàsica.
 - Constel·lacions amb curiositats i mitologia grega.
 - **[Canvi 2026-10-15]** Gamificació amb trofeus privats per les observacions registrades (HU44, Sprint 3). Abans era a «Pendent de decidir».
+- **[Canvi 2026-10-15]** Vista del cel en realitat augmentada per saber on mirar (HU46, Sprint 3). Abans era a «Pendent de decidir».
+- **[Canvi 2026-10-15]** Mode nit vermell sobre negre en arribar al punt d'un pla (HU45, Sprint 2).
 - Compte d'usuari; app en ca/es/en.
 - Web d'administració: moderació, bloqueig de comptes, gestió de punts.
 - Servei d'esdeveniments astronòmics per a altres aplicacions (API).
@@ -76,7 +78,6 @@ Decisions de producte preses:
 - Plans compartits amb altres usuaris.
 - Ressenyes públiques dels punts.
 - Creació de punts per part dels usuaris.
-- Identificació d'estrelles amb la càmera (realitat augmentada).
 - Funcionalitats socials (participants en una sortida, invitacions).
 - Cercar què es pot veure en un lloc i moment sense triar fenomen.
 - Punts favorits dins del perfil.

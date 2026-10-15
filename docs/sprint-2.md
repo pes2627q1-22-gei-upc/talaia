@@ -2,7 +2,7 @@
 
 **Objectiu:** Tancar el MVP (ubicació triada al mapa, com arribar, fitxa del fenomen) i tenir a punt per a la demo del 23/11 els aspectes transversals: alertes amb notificacions push, plans sincronitzats amb el calendari, canvi d'idioma, web d'administració amb gestió de punts i bloqueig de comptes, i el servei d'esdeveniments per a Aprop; i els metodològics: desplegament automàtic, cobertura, RNF mesurables i gestió de bugs a Taiga.
 
-**Compromís:** 123 story points en 24 històries (23 d'usuari + la tècnica [TEC]) · 57 tasques · 123 h estimades. Sprint master: **Martina**.
+**Compromís:** 132 story points en 25 històries (24 d'usuari + la tècnica [TEC]) · 61 tasques · 132 h estimades. Sprint master: **Martina**.
 
 **Criteri d'estimació:** 1 story point = 1 hora. Els story points d'una història són la suma de les hores estimades de les seves tasques.
 
@@ -210,6 +210,23 @@ Les tasques del Sprint 1 que no es tanquin el 28/10 s'hi afegeixen a la planning
 |---|---|---|---|---|---|
 | TG-162 | Eliminar un pla: DELETE /api/v1/plans/{id}, des de la llista i del calendari | Joan | 23/11 | 24/11 | 1 |
 
+## HU45 · Activar el mode nit en arribar al punt d'observació · [TG-237](https://tree.taiga.io/project/mohamed-dari-pes_22_c_talaia/us/237)
+Èpica E04 · Plans personals d'observació · **9 SP**  
+*Com a usuari, vull que l'app passi a un mode nit vermell sobre negre quan arribo al punt d'un pla, de manera que la pantalla no m'enlluerni ni em faci perdre l'adaptació a la foscor mentre observo.*
+
+**Criteris d'acceptació**
+- [ ] Quan l'usuari és a menys de 500 m del punt d'un pla seu durant la franja horària del pla, l'app passa sola al mode nit i ho avisa.
+- [ ] Al mode nit, tota l'app (també el mapa) fa servir només vermells foscos sobre negre, i la brillantor de la pantalla baixa.
+- [ ] L'usuari el pot activar i desactivar a mà en qualsevol moment, i la seva tria mana fins a la nit següent.
+- [ ] Sense permís de localització, només hi ha l'interruptor manual.
+
+| Ref | Tasca | Responsable | Inici | Límit | h |
+|---|---|---|---|---|---|
+| TG-238 | ADR del mode nit: paleta vermella dels tokens i com s'aplica a tota l'app i al mapa | Joan | 16/11 | 16/11 | 1 |
+| TG-239 | Tema nocturn: tokens vermell sobre negre a tota l'app i al mapa, i brillantor baixa (expo-brightness) | Joan | 18/11 | 23/11 | 4 |
+| TG-240 | Activació automàtica a prop del punt d'un pla durant la seva franja (expo-location en primer pla) i interruptor manual | Joan | 24/11 | 26/11 | 3 |
+| TG-241 | Tests de l'activació (distància i franja horària) i del canvi de tema | Joan | 26/11 | 27/11 | 1 |
+
 ## HU37 · Canviar l'idioma de l'aplicació · [TG-42](https://tree.taiga.io/project/mohamed-dari-pes_22_c_talaia/us/42)
 Èpica E10 · Compte i perfil d'usuari · **5 SP**  
 *Com a usuari, vull canviar l'idioma (català, castellà, anglès), de manera que utilitzi l'app en la meva llengua.*
@@ -346,11 +363,11 @@ Fora del sprint backlog (sense story points, no compta al burndown). Les hores e
 
 ## Repartiment d'hores
 
-Backlog del sprint i gestió [GES], per persona. L'acumulat inclou el Sprint 1 i serveix per equilibrar la càrrega del curs. Joan porta més pantalles de disseny a petició seva.
+Backlog del sprint i gestió [GES], per persona. L'acumulat inclou el Sprint 1 i serveix per equilibrar la càrrega del curs. Joan porta, a petició seva, més pantalles de disseny i les tasques del mode nit i de la vista AR.
 
 | Persona | Sprint 2 | Acumulat |
 |---|---|---|
-| Joan | 19 | 65 |
+| Joan | 28 | 74 |
 | Vinyet | 19 | 45 |
 | Martina | 27 | 42 |
 | Mohamed | 25 | 48 |

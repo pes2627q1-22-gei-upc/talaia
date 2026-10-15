@@ -1,6 +1,6 @@
 # Product backlog
 
-44 històries d'usuari en 12 èpiques · 149 story points (repartits entre rol Back i Front a Taiga). Ordre = prioritat.
+46 històries d'usuari en 12 èpiques · 172 story points (repartits entre rol Back i Front a Taiga). Ordre = prioritat.
 
 Planificació: [Sprint 1](sprint-1.md) · [Sprint 2](sprint-2.md) · [Sprint 3](sprint-3.md). Als sprints, els story points es recalculen com la suma de les hores de les tasques. HU29 queda fora de tots dos: publicar valoracions contradiu la decisió que siguin privades.
 
@@ -36,6 +36,8 @@ Llegenda: ✅ = compromesa al Sprint 1.
   *Com a usuari, vull obrir la fitxa d'un fenomen amb l'explicació i l'horari, de manera que sàpiga què veuré i a quina hora.*
 - **HU11** Cercar punts d'observació per a un fenomen del calendari — 3 SP · [TG-31](https://tree.taiga.io/project/mohamed-dari-pes_22_c_talaia/us/31)  
   *Com a usuari, vull obtenir els millors punts per a un fenomen concret, de manera que pugui planificar on veure'l.*
+- **HU46** Saber on mirar amb la vista del cel en realitat augmentada — 14 SP · [TG-242](https://tree.taiga.io/project/mohamed-dari-pes_22_c_talaia/us/242)  
+  *Com a usuari, vull apuntar el mòbil al cel i veure-hi on és cada fenomen i constel·lació, de manera que sàpiga exactament cap on he de mirar.*
 
 ## E04 · Plans personals d'observació
 
@@ -47,6 +49,8 @@ Llegenda: ✅ = compromesa al Sprint 1.
   *Com a usuari, vull editar un pla, de manera que l'adapti si canvien les condicions.*
 - **HU15** Eliminar un pla d'observació — 1 SP · [TG-36](https://tree.taiga.io/project/mohamed-dari-pes_22_c_talaia/us/36)  
   *Com a usuari, vull eliminar un pla, de manera que mantingui la llista neta.*
+- **HU45** Activar el mode nit en arribar al punt d'observació — 9 SP · [TG-237](https://tree.taiga.io/project/mohamed-dari-pes_22_c_talaia/us/237)  
+  *Com a usuari, vull que l'app passi a un mode nit vermell sobre negre quan arribo al punt d'un pla, de manera que la pantalla no m'enlluerni mentre observo.*
 
 ## E05 · Alertes personalitzades
 

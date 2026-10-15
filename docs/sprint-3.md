@@ -2,7 +2,7 @@
 
 **Objectiu:** Completar el volum funcional (registre d'observacions, constel·lacions, aportacions de la comunitat amb moderació, comparar punts i trofeus), deixar els RNF complerts, publicar la release final i fer la presentació tècnica del 16/12.
 
-**Compromís:** 74 story points en 15 històries (14 d'usuari + la tècnica [TEC]) · 32 tasques · 74 h estimades. Sprint master: **Hugo**.
+**Compromís:** 88 story points en 16 històries (15 d'usuari + la tècnica [TEC]) · 38 tasques · 88 h estimades. Sprint master: **Hugo**.
 
 **Criteri d'estimació:** 1 story point = 1 hora. Els story points d'una història són la suma de les hores estimades de les seves tasques.
 
@@ -134,6 +134,26 @@ Font de veritat: [taulell de Taiga](https://tree.taiga.io/project/mohamed-dari-p
 | TG-212 | Recomanacions per a una constel·lació (alçada sobre l'horitzó com a factor) | Hugo | 03/12 | 09/12 | 2 |
 | TG-213 | Botó «On veure-la» a la fitxa de la constel·lació | Mohamed | 10/12 | 11/12 | 1 |
 
+## HU46 · Saber on mirar amb la vista del cel en realitat augmentada · [TG-242](https://tree.taiga.io/project/mohamed-dari-pes_22_c_talaia/us/242)
+Èpica E03 · Calendari de fenòmens astronòmics · **14 SP**  
+*Com a usuari, vull apuntar el mòbil al cel i veure-hi on és cada fenomen i constel·lació, de manera que sàpiga exactament cap on he de mirar.*
+
+**Criteris d'acceptació**
+- [ ] Apuntant el mòbil al cel, la vista mostra sobre la càmera la Lluna, els planetes, el radiant de les pluges d'estels i les constel·lacions visibles, amb el seu nom.
+- [ ] Si l'objectiu triat és fora de la pantalla, una fletxa indica cap on girar-se.
+- [ ] Després de calibrar, l'error de posició és inferior a 10° (es comprova amb la Lluna o un planeta brillant).
+- [ ] Funciona a Expo Go (iOS i Android), sense ARKit ni ARCore, i fa servir el mode nit.
+- [ ] Sense permís de càmera, es mostra el mateix cel sobre fons negre.
+
+| Ref | Tasca | Responsable | Inici | Límit | h |
+|---|---|---|---|---|---|
+| TG-243 | ADR de la vista AR a Expo Go: expo-camera, sensors i Skia, sense ARKit ni ARCore | Joan | 30/11 | 30/11 | 1 |
+| TG-244 | Orientació del mòbil: azimut i alçada on apunta la càmera (DeviceMotion i rumb), amb filtre i calibratge manual | Joan | 01/12 | 04/12 | 4 |
+| TG-245 | Posició al cel dels objectius (Lluna, planetes, radiants i constel·lacions) amb Astronomy Engine a l'app | Joan | 02/12 | 04/12 | 3 |
+| TG-246 | Vista AR: càmera amb la superposició (Skia) i fletxa cap a l'objectiu quan és fora de la pantalla | Joan | 09/12 | 11/12 | 4 |
+| TG-247 | Botó «On mirar» des de la fitxa de l'esdeveniment i de la constel·lació cap a la vista AR | Joan | 11/12 | 11/12 | 1 |
+| TG-248 | Tests de la conversió de coordenades (alçada i azimut a posició a la pantalla) | Joan | 11/12 | 14/12 | 1 |
+
 ## HU28 · Proposar un nou punt d'observació · [TG-56](https://tree.taiga.io/project/mohamed-dari-pes_22_c_talaia/us/56)
 Èpica E08 · Aportacions de la comunitat · **5 SP**  
 *Com a usuari, vull proposar un punt nou perquè el revisin, de manera que la comunitat pugui descobrir-lo.*
@@ -215,11 +235,11 @@ Fora del sprint backlog (sense story points, no compta al burndown). Les hores e
 
 ## Repartiment d'hores
 
-Backlog del sprint i gestió [GES], per persona. L'acumulat inclou el Sprint 1 i serveix per equilibrar la càrrega del curs. Joan porta més pantalles de disseny a petició seva. La presentació final (4 h, TG-236) la fan els tres membres que no han presentat abans i encara no està assignada: suma 4 h a cadascun.
+Backlog del sprint i gestió [GES], per persona. L'acumulat inclou el Sprint 1 i serveix per equilibrar la càrrega del curs. Joan porta, a petició seva, més pantalles de disseny i les tasques del mode nit i de la vista AR. La presentació final (4 h, TG-236) la fan els tres membres que no han presentat abans i encara no està assignada: suma 4 h a cadascun.
 
 | Persona | Sprint 3 | Acumulat |
 |---|---|---|
-| Joan | 14 | 79 |
+| Joan | 28 | 102 |
 | Vinyet | 12 | 57 |
 | Martina | 13 | 55 |
 | Mohamed | 12 | 60 |
