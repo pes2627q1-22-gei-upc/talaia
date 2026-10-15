@@ -7,13 +7,16 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { queryClient } from '@/core/api/queryClient';
+import { AuthProvider } from '@/features/auth/AuthProvider';
 
 /** Tots els proveïdors globals de l'app, en un sol lloc. */
 export function AppProviders({ children }: PropsWithChildren) {
   return (
     <GestureHandlerRootView style={styles.root}>
       <SafeAreaProvider>
-        <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+        <QueryClientProvider client={queryClient}>
+          <AuthProvider>{children}</AuthProvider>
+        </QueryClientProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );

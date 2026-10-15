@@ -48,6 +48,85 @@ src/
 
 Els tipus de domini (`PuntObservacio`, `Esdeveniment`, `IndexVisibilitat`…) no es defineixen a l'app: vénen de [`@talaia/shared`](../../packages/shared/README.md), sempre amb `import type`.
 
+## Sessió (TG-83)
+
+`AppProviders` munta un únic `AuthProvider`. `useAuthViewModel` exposa l'usuari
+(identificador i correu), l'estat de restauració, els errors traduïts i les accions
+`restore` i `signOut`. Els tokens queden dins del client de Supabase, accessible
+als repositories mitjançant `core/auth/supabase.ts`.
+
+El client restaura i renova la sessió amb Supabase Auth. A iOS i Android, desa
+la sessió completa a Expo SecureStore; els errors del magatzem es propaguen,
+incloent-hi el rebuig de valors massa grans. Al web només es desa en memòria:
+recarregar la previsualització tanca la sessió. La renovació automàtica nativa
+s'activa amb l'app en primer pla i s'atura quan passa a segon pla.
+
+El perfil ofereix el logout quan hi ha sessió. Es fa servir `scope: 'local'`
+per tancar la sessió d'aquest dispositiu. Si falla sense eliminar la sessió,
+es mostra un error i es pot reintentar. Si Supabase ja ha notificat `SIGNED_OUT`,
+es respecta el tancament local encara que falli la revocació remota. Els canvis
+d'usuari i el logout buiden la memòria cau de React Query.
+
+Configura `EXPO_PUBLIC_SUPABASE_URL` i `EXPO_PUBLIC_SUPABASE_ANON_KEY` al `.env`
+de l'app. Sense aquestes variables, l'app continua en mode anònim. Mai no hi
+posis la clau `service_role`.
+
+TG-81 aporta la configuració de Google OAuth a Supabase. Aquesta implementació
+es limita a la gestió de sessió: **els botons de la benvinguda encara no inicien
+sessió real**, i no s'hi afegeix cap barrera d'accés. Quan s'implementi el login,
+el seu repository ha d'utilitzar el mateix client; `onAuthStateChange`
+actualitzarà automàticament el ViewModel.
+
+El punt d'entrada per al repository del futur login és:
+
+```ts
+import { getAuthClient } from '@/core/auth/supabase';
+
+const supabase = getAuthClient();
+if (!supabase) throw new Error('Supabase Auth no està configurat');
+// Fer servir supabase.auth.* per iniciar sessió o completar el callback OAuth.
+// No crear un altre client ni desar els tokens manualment.
+```
+
+`AuthProvider` ja està muntat globalment i escolta els canvis de sessió a través
+del repository. El login només ha de completar l'autenticació amb aquest client:
+la sessió es persistirà i el ViewModel rebrà l'usuari automàticament.
+
+### Contracte amb les tasques que consumeixen la sessió
+
+- Els repositories fan servir `apiGet` o `apiPost` de `core/api/httpClient`.
+  El client consulta `getSession()` abans de cada petició i hi afegeix el token
+  vigent com a `Authorization: Bearer …`. Sense sessió, no envia autorització.
+  Els errors de restauració/renovació es propaguen abans de fer la petició.
+  Es conserven les capçaleres addicionals i el senyal de cancel·lació, però no
+  una autorització antiga proporcionada pel caller. Es rebutgen URLs d'altres orígens.
+- TG-84 espera aquest format Bearer. El contracte confirmat pel sprint master
+  és `POST /api/v1/profile/ensure`, idempotent: el futur flux de login cridarà
+  `apiPost('/profile/ensure')` després d'autenticar-se. La crida i la gestió dels
+  seus errors corresponen a la nova tasca de login; TG-83 deixa preparat el transport.
+- TG-85 pot provar la sessió mitjançant `AuthProvider` sota `QueryClientProvider`;
+  les proves existents simulen el repository i no necessiten credencials.
+- Les consultes de dades privades han d'esperar que `loading` sigui `false` i
+  `isAuthenticated` sigui `true`, i incloure l'identificador d'usuari a la clau
+  de React Query. Un canvi de compte buida la memòria cau; renovar el mateix
+  compte no la buida.
+
+**Pendent abans de donar HU35 per acabada:** connectar el login real, executar
+la creació/recuperació del perfil i validar el flux en dispositiu contra l'API.
+L'abast de TG-83 confirmat pel sprint master és restauració i persistència
+segura de la sessió, logout i JWT a l'API. El login real de Google, Apple i
+correu i la crida de creació del perfil es faran en una tasca nova de la Martina.
+El sprint master actualitzarà l'assignació anterior de l'ADR-0016.
+
+Validació pendent en dispositiu, quan hi hagi el login connectat: iniciar sessió,
+tancar i reobrir l'app, passar-la a segon pla i tornar-hi després de caducar el
+token, fer logout des del perfil i verificar que no es restaura en reobrir.
+Les proves unitàries cobreixen restauració, canvis de compte, errors,
+restauracions obsoletes i persistència amb el magatzem simulat.
+
+Referències: [Supabase Auth per React Native](https://supabase.com/docs/guides/auth/quickstarts/react-native)
+i [Expo SecureStore](https://docs.expo.dev/versions/latest/sdk/securestore/).
+
 ## Regles
 
 - **MVVM:** cap pantalla ni ViewModel crida `fetch`; només els Repository, a través de `core/api`.

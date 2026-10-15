@@ -4,6 +4,10 @@ import i18n from '@/core/i18n';
 
 import { useProfileViewModel } from '../useProfileViewModel';
 
+jest.mock('@/features/auth/useAuthViewModel', () => ({
+  useAuthViewModel: () => ({ isAuthenticated: false }),
+}));
+
 describe('useProfileViewModel', () => {
   beforeEach(async () => {
     await i18n.changeLanguage('ca');
