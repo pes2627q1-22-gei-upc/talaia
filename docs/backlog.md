@@ -1,6 +1,8 @@
 # Product backlog
 
-43 històries d'usuari en 12 èpiques · 143 story points (repartits entre rol Back i Front a Taiga). Ordre = prioritat.
+44 històries d'usuari en 12 èpiques · 149 story points (repartits entre rol Back i Front a Taiga). Ordre = prioritat.
+
+Planificació: [Sprint 1](sprint-1.md) · [Sprint 2](sprint-2.md) · [Sprint 3](sprint-3.md). Als sprints, els story points es recalculen com la suma de les hores de les tasques. HU29 queda fora de tots dos: publicar valoracions contradiu la decisió que siguin privades.
 
 Llegenda: ✅ = compromesa al Sprint 1.
 
@@ -69,6 +71,8 @@ Llegenda: ✅ = compromesa al Sprint 1.
   *Com a usuari, vull editar una observació, de manera que corregeixi o completi la informació.*
 - **HU24** Eliminar una observació registrada — 1 SP · [TG-51](https://tree.taiga.io/project/mohamed-dari-pes_22_c_talaia/us/51)  
   *Com a usuari, vull eliminar una observació, de manera que controli les meves dades.*
+- **HU44** Aconseguir trofeus per les observacions registrades — 6 SP · [TG-119](https://tree.taiga.io/project/mohamed-dari-pes_22_c_talaia/us/119)  
+  *Com a usuari, vull guanyar trofeus pel que observo, de manera que em motivi a sortir a observar més sovint.*
 
 ## E07 · Punts favorits
 
@@ -126,3 +130,15 @@ Llegenda: ✅ = compromesa al Sprint 1.
 - **HU43** Consultar per API els esdeveniments astronòmics d'un període — 3 SP · [TG-26](https://tree.taiga.io/project/mohamed-dari-pes_22_c_talaia/us/26)  
   *Com a equip extern (Aprop), vull consultar per API els esdeveniments d'un període i tipus, de manera que els pugui integrar a la meva aplicació.*
 
+## Requisits no funcionals
+
+A Taiga, amb l'etiqueta `rnf` i sense story points. Cadascun diu com es mesura.
+
+- [TG-122](https://tree.taiga.io/project/mohamed-dari-pes_22_c_talaia/us/122) RNF01 · Rendiment del mapa: punts de l'àrea visible en menys de 2 s
+- [TG-123](https://tree.taiga.io/project/mohamed-dari-pes_22_c_talaia/us/123) RNF02 · Temps de resposta de l'API: p95 per sota de 500 ms
+- [TG-124](https://tree.taiga.io/project/mohamed-dari-pes_22_c_talaia/us/124) RNF03 · Qualitat del codi: Quality Gate de SonarCloud en verd
+- [TG-125](https://tree.taiga.io/project/mohamed-dari-pes_22_c_talaia/us/125) RNF04 · Disponibilitat de l'API: com a mínim el 99 %
+- [TG-126](https://tree.taiga.io/project/mohamed-dari-pes_22_c_talaia/us/126) RNF05 · Accessibilitat: tacte, contrast i lector de pantalla
+- [TG-127](https://tree.taiga.io/project/mohamed-dari-pes_22_c_talaia/us/127) RNF06 · Privadesa (RGPD): cap usuari veu dades d'un altre
+- [TG-128](https://tree.taiga.io/project/mohamed-dari-pes_22_c_talaia/us/128) RNF07 · Multiidioma: tots els textos en ca, es i en
+- [TG-129](https://tree.taiga.io/project/mohamed-dari-pes_22_c_talaia/us/129) RNF08 · Frescor de l'índex: menys d'1 h 15 min d'antiguitat

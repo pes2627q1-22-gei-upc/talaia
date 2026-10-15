@@ -55,6 +55,7 @@ Decisions de producte preses:
 - Plans personals d'observació; registre d'observacions realitzades.
 - Component comunitària bàsica.
 - Constel·lacions amb curiositats i mitologia grega.
+- **[Canvi 2026-10-15]** Gamificació amb trofeus privats per les observacions registrades (HU44, Sprint 3). Abans era a «Pendent de decidir».
 - Compte d'usuari; app en ca/es/en.
 - Web d'administració: moderació, bloqueig de comptes, gestió de punts.
 - Servei d'esdeveniments astronòmics per a altres aplicacions (API).
@@ -79,7 +80,6 @@ Decisions de producte preses:
 - Funcionalitats socials (participants en una sortida, invitacions).
 - Cercar què es pot veure en un lloc i moment sense triar fenomen.
 - Punts favorits dins del perfil.
-- Gamificació (trofeus i progrés).
 - Planetes.
 
 ## Èpiques
