@@ -27,6 +27,7 @@ Criteris d'acceptació:
 | TG-82 | Pantalla de benvinguda i accés (mockup 01) | Joan | 14/10 | 16/10 | 2 |
 | TG-83 | Gestió de la sessió a l'app: AuthViewModel, emmagatzematge segur del token i logout | Vinyet | 14/10 | 19/10 | 3 |
 | TG-85 | Tests del flux d'autenticació (ViewModel i middleware) | Vinyet | 20/10 | 23/10 | 2 |
+| TG-249 | Inici de sessió real a la benvinguda: Google, Apple (natiu, iOS) i correu amb codi, i creació del perfil després del login · *afegida el 15/10* | Martina | 16/10 | 21/10 | 4 |
 
 ## HU06 · Explorar els punts d'observació en un mapa · [TG-21](https://tree.taiga.io/project/mohamed-dari-pes_22_c_talaia/us/21)
 Èpica E02 · Exploració de punts d'observació · **17 SP**  
