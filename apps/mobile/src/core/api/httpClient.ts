@@ -1,5 +1,6 @@
 import type { ApiErrorBody } from '@talaia/shared';
 
+import { getAccessToken } from '@/core/auth/accessToken';
 import { env } from '@/core/config/env';
 
 /** Error de l'API de Talaia: el servidor sempre respon `{ error: { code, message } }`. */
@@ -29,9 +30,35 @@ export function buildUrl(path: string, query?: Query, baseUrl: string = env.apiU
  * les pantalles i els ViewModels no criden mai `fetch` directament.
  */
 export async function apiGet<T>(path: string, query?: Query, init?: RequestInit): Promise<T> {
-  const response = await fetch(buildUrl(path, query), {
+  return apiRequest<T>(buildUrl(path, query), { ...init, method: 'GET' });
+}
+
+/** Per als endpoints amb cos JSON, inclòs el primer accés de TG-84. */
+export async function apiPost<T>(path: string, body?: unknown, init?: RequestInit): Promise<T> {
+  const headers = new Headers(init?.headers);
+  headers.set('Content-Type', 'application/json');
+  return apiRequest<T>(buildUrl(path), {
     ...init,
-    headers: { Accept: 'application/json', ...init?.headers },
+    method: 'POST',
+    headers,
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
+}
+
+async function apiRequest<T>(url: string, init: RequestInit): Promise<T> {
+  // Els repositories només poden enviar el JWT a l'API configurada.
+  if (new URL(url).origin !== new URL(env.apiUrl).origin) {
+    throw new Error('API requests must target the configured API origin');
+  }
+  const headers = new Headers(init.headers);
+  if (!headers.has('Accept')) headers.set('Accept', 'application/json');
+  const token = await getAccessToken();
+  // La sessió actual és l'única font d'autorització, també després d'un logout.
+  headers.delete('Authorization');
+  if (token) headers.set('Authorization', `Bearer ${token}`);
+  const response = await fetch(url, {
+    ...init,
+    headers,
   });
   if (!response.ok) throw await toApiError(response);
   return (await response.json()) as T;

@@ -118,5 +118,12 @@
     "title": "Alertes",
     "soonTitle": "Aviat",
     "soonMessage": "Aquí podràs crear alertes perquè t'avisem quan hi hagi bones condicions per al que vols veure."
+  },
+  "auth": {
+    "signOut": "Tanca la sessió",
+    "signingOut": "Tancant la sessió…",
+    "restoreError": "No s’ha pogut recuperar la sessió. Torna-ho a provar.",
+    "logoutError": "No s’ha pogut tancar la sessió. Torna-ho a provar.",
+    "retry": "Torna-ho a provar"
   }
 }

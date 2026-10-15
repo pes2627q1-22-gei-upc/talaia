@@ -118,5 +118,12 @@
     "title": "Alertas",
     "soonTitle": "Pronto",
     "soonMessage": "Aquí podrás crear alertas para que te avisemos cuando haya buenas condiciones para lo que quieres ver."
+  },
+  "auth": {
+    "signOut": "Cerrar sesión",
+    "signingOut": "Cerrando sesión…",
+    "restoreError": "No se ha podido recuperar la sesión. Inténtalo de nuevo.",
+    "logoutError": "No se ha podido cerrar la sesión. Inténtalo de nuevo.",
+    "retry": "Reintentar"
   }
 }

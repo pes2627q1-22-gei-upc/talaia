@@ -118,5 +118,12 @@
     "title": "Alerts",
     "soonTitle": "Coming soon",
     "soonMessage": "Here you'll be able to create alerts so we can tell you when conditions are good for what you want to see."
+  },
+  "auth": {
+    "signOut": "Sign out",
+    "signingOut": "Signing out…",
+    "restoreError": "Could not restore your session. Please try again.",
+    "logoutError": "Could not sign out. Please try again.",
+    "retry": "Try again"
   }
 }

@@ -3,6 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import { spacing } from '@/core/theme/tokens';
 import { ApiStatusCard } from '@/features/apiStatus/ApiStatusCard';
 import { AppText } from '@/shared/ui/AppText';
+import { Button } from '@/shared/ui/Button';
 import { Chip } from '@/shared/ui/Chip';
 import { Screen } from '@/shared/ui/Screen';
 
@@ -26,6 +27,22 @@ export function ProfileScreen() {
         ))}
       </View>
       <ApiStatusCard />
+      {vm.auth.isAuthenticated ? (
+        <Button
+          label={vm.auth.logoutLabel}
+          variant="secondary"
+          disabled={vm.auth.signingOut || vm.auth.loading}
+          onPress={() => void vm.auth.signOut()}
+        />
+      ) : null}
+      {vm.auth.errorMessage ? (
+        <View style={{ gap: spacing.sm }}>
+          <AppText accessibilityRole="alert">{vm.auth.errorMessage}</AppText>
+          {vm.auth.error === 'restore' ? (
+            <Button label={vm.auth.retryLabel} onPress={() => void vm.auth.restore()} />
+          ) : null}
+        </View>
+      ) : null}
     </Screen>
   );
 }
