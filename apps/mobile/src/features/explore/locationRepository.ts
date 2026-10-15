@@ -7,15 +7,18 @@ export type Place = {
   lon: number;
 };
 
-export type CurrentPlace = { status: 'ready'; place: Place } | { status: 'denied' };
+export type CurrentPlace =
+  | { status: 'ready'; place: Place }
+  /** `canAskAgain`: el sistema encara deixa tornar a demanar el permís (si no, cal la configuració). */
+  | { status: 'denied'; canAskAgain: boolean };
 
 /** Una posició de fa menys de 10 min serveix: per triar punts a hores de cotxe, sobra. */
 const MAX_AGE_MS = 10 * 60 * 1000;
 
 /** On és l'usuari ara, amb el municipi. Demana permís el primer cop. */
 export async function getCurrentPlace(): Promise<CurrentPlace> {
-  const { status } = await Location.requestForegroundPermissionsAsync();
-  if (status !== Location.PermissionStatus.GRANTED) return { status: 'denied' };
+  const { status, canAskAgain } = await Location.requestForegroundPermissionsAsync();
+  if (status !== Location.PermissionStatus.GRANTED) return { status: 'denied', canAskAgain };
 
   const position =
     (await Location.getLastKnownPositionAsync({ maxAge: MAX_AGE_MS })) ??

@@ -83,7 +83,8 @@
       "denied": "Activa la ubicació",
       "settings": "Configuració",
       "error": "No hem trobat on ets",
-      "retry": "Torna-ho a provar"
+      "retry": "Torna-ho a provar",
+      "allow": "Permet-ho"
     },
     "when": {
       "title": "Quan",
@@ -91,15 +92,64 @@
       "tomorrow": "Demà",
       "pick": "Tria el dia",
       "range": "De {{from}} a {{to}}",
-      "rangeHint": "Franja horària"
+      "rangeHint": "Franja horària",
+      "picked": "{{weekday}} {{day}} {{month}}"
     },
     "weekdays": ["dg.", "dl.", "dt.", "dc.", "dj.", "dv.", "ds."],
+    "calendar": {
+      "title": "Tria el dia",
+      "close": "Tanca",
+      "month": "{{month}} de {{year}}",
+      "day": "{{day}} {{month}}",
+      "previous": "Mes anterior",
+      "next": "Mes següent",
+      "months": [
+        "gener",
+        "febrer",
+        "març",
+        "abril",
+        "maig",
+        "juny",
+        "juliol",
+        "agost",
+        "setembre",
+        "octubre",
+        "novembre",
+        "desembre"
+      ],
+      "monthsShort": [
+        "gen.",
+        "febr.",
+        "març",
+        "abr.",
+        "maig",
+        "juny",
+        "jul.",
+        "ag.",
+        "set.",
+        "oct.",
+        "nov.",
+        "des."
+      ],
+      "monthsOf": [
+        "de gener",
+        "de febrer",
+        "de març",
+        "d'abril",
+        "de maig",
+        "de juny",
+        "de juliol",
+        "d'agost",
+        "de setembre",
+        "d'octubre",
+        "de novembre",
+        "de desembre"
+      ]
+    },
     "rangeSheet": {
       "title": "Franja horària",
       "from": "Des de",
       "to": "Fins a",
-      "earlier": "una hora abans",
-      "later": "una hora més tard",
       "duration_one": "{{count}} hora d'observació",
       "duration_other": "{{count}} hores d'observació",
       "done": "Fet"

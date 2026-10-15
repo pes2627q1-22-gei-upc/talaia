@@ -2,15 +2,15 @@ import type { ObjectiuObservacio } from '@talaia/shared';
 import { Image } from 'expo-image';
 import type { PropsWithChildren } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
-import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 
 import { colors, motion, sizes, spacing } from '@/core/theme/tokens';
 import { AppText } from '@/shared/ui/AppText';
 import { Button } from '@/shared/ui/Button';
-import { Chip } from '@/shared/ui/Chip';
 import { SegmentedControl } from '@/shared/ui/SegmentedControl';
 import { Slider } from '@/shared/ui/Slider';
 
+import { CalendarSheet } from './CalendarSheet';
 import { FieldRow } from './FieldRow';
 import { GoalCard } from './GoalCard';
 import { TimeRangeSheet } from './TimeRangeSheet';
@@ -112,25 +112,8 @@ export function ExploreScreen() {
             options={vm.days.options}
             selectedIndex={vm.days.selectedIndex}
             onChange={vm.days.onChange}
+            onReselect={vm.days.onReselect}
           />
-          {vm.pickableNights.length > 0 ? (
-            <Animated.View entering={FadeIn.duration(motion.base)}>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.nights}
-              >
-                {vm.pickableNights.map((night) => (
-                  <Chip
-                    key={night.date}
-                    label={night.label}
-                    selected={night.selected}
-                    onPress={night.onPress}
-                  />
-                ))}
-              </ScrollView>
-            </Animated.View>
-          ) : null}
           <View style={styles.gap}>
             <FieldRow
               icon={clockIcon}
@@ -179,6 +162,7 @@ export function ExploreScreen() {
         </Enter>
       </ScrollView>
 
+      <CalendarSheet {...vm.calendar} />
       <TimeRangeSheet {...vm.rangeSheet} />
     </View>
   );
@@ -192,7 +176,6 @@ const styles = StyleSheet.create({
   goalRow: { flexDirection: 'row', gap: spacing.sm + 2 },
   sectionTitle: { marginTop: spacing.sm + 2, marginBottom: spacing.sm - 1 },
   gap: { marginTop: spacing.sm },
-  nights: { gap: spacing.sm, paddingTop: spacing.sm },
   travelHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' },
   limits: { flexDirection: 'row', justifyContent: 'space-between' },
   ctaIcon: { width: sizes.icon, height: sizes.icon },
