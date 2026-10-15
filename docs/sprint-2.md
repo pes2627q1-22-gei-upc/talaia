@@ -66,7 +66,7 @@ Les tasques del Sprint 1 que no es tanquin el 28/10 s'hi afegeixen a la planning
 | Ref | Tasca | Responsable | Inici | Límit | h |
 |---|---|---|---|---|---|
 | TG-138 | Endpoint GET /api/v1/esdeveniments/{id} amb l'explicació i l'horari | Victor | 10/11 | 12/11 | 2 |
-| TG-139 | Pantalla de la fitxa de l'esdeveniment (mockup 09) | Vinyet | 11/11 | 16/11 | 3 |
+| TG-139 | Pantalla de la fitxa de l'esdeveniment (mockup 09) | Joan | 11/11 | 16/11 | 3 |
 
 ## HU11 · Cercar punts d'observació per a un fenomen del calendari · [TG-31](https://tree.taiga.io/project/mohamed-dari-pes_22_c_talaia/us/31)
 Èpica E03 · Calendari de fenòmens astronòmics · **3 SP**  
@@ -107,7 +107,7 @@ Les tasques del Sprint 1 que no es tanquin el 28/10 s'hi afegeixen a la planning
 | Ref | Tasca | Responsable | Inici | Límit | h |
 |---|---|---|---|---|---|
 | TG-145 | Model de dades d'alertes i endpoints POST/GET /api/v1/alertes (només les de l'usuari) | Mohamed | 09/11 | 11/11 | 3 |
-| TG-146 | Pantalla «Nova alerta» (mockup 11): fenomen, distància i índex mínim | Martina | 11/11 | 16/11 | 3 |
+| TG-146 | Pantalla «Nova alerta» (mockup 11): fenomen, distància i índex mínim | Joan | 11/11 | 16/11 | 3 |
 
 ## HU19 · Activar o desactivar una alerta · [TG-40](https://tree.taiga.io/project/mohamed-dari-pes_22_c_talaia/us/40)
 Èpica E05 · Alertes personalitzades · **4 SP**  
@@ -346,13 +346,13 @@ Fora del sprint backlog (sense story points, no compta al burndown). Les hores e
 
 ## Repartiment d'hores
 
-Backlog del sprint i gestió [GES], per persona. L'acumulat inclou el Sprint 1 i serveix per equilibrar la càrrega del curs.
+Backlog del sprint i gestió [GES], per persona. L'acumulat inclou el Sprint 1 i serveix per equilibrar la càrrega del curs. Joan porta més pantalles de disseny a petició seva.
 
 | Persona | Sprint 2 | Acumulat |
 |---|---|---|
-| Joan | 13 | 59 |
-| Vinyet | 22 | 48 |
-| Martina | 30 | 45 |
+| Joan | 19 | 65 |
+| Vinyet | 19 | 45 |
+| Martina | 27 | 42 |
 | Mohamed | 25 | 48 |
 | Hugo | 25 | 39 |
 | Victor | 25 | 41 |

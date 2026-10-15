@@ -109,7 +109,7 @@ Font de veritat: [taulell de Taiga](https://tree.taiga.io/project/mohamed-dari-p
 |---|---|---|---|---|---|
 | TG-208 | Catàleg de constel·lacions visibles des de Catalunya, amb mite i curiositats en ca/es/en (fonts obertes, sense IA) | Victor | 30/11 | 03/12 | 4 |
 | TG-209 | Constel·lacions visibles aquesta nit (Astronomy Engine) i endpoint | Hugo | 30/11 | 02/12 | 3 |
-| TG-210 | Pantalla de constel·lacions (mockup 15) | Mohamed | 03/12 | 09/12 | 3 |
+| TG-210 | Pantalla de constel·lacions (mockup 15) | Joan | 03/12 | 09/12 | 3 |
 
 ## HU33 · Consultar la fitxa d'una constel·lació amb el mite i les curiositats · [TG-61](https://tree.taiga.io/project/mohamed-dari-pes_22_c_talaia/us/61)
 Èpica E09 · Constel·lacions i mitologia · **2 SP**  
@@ -120,7 +120,7 @@ Font de veritat: [taulell de Taiga](https://tree.taiga.io/project/mohamed-dari-p
 
 | Ref | Tasca | Responsable | Inici | Límit | h |
 |---|---|---|---|---|---|
-| TG-211 | Fitxa de la constel·lació (mockup 16) | Mohamed | 09/12 | 10/12 | 2 |
+| TG-211 | Fitxa de la constel·lació (mockup 16) | Joan | 09/12 | 10/12 | 2 |
 
 ## HU34 · Cercar els millors punts per observar una constel·lació · [TG-62](https://tree.taiga.io/project/mohamed-dari-pes_22_c_talaia/us/62)
 Èpica E09 · Constel·lacions i mitologia · **3 SP**  
@@ -215,13 +215,13 @@ Fora del sprint backlog (sense story points, no compta al burndown). Les hores e
 
 ## Repartiment d'hores
 
-Backlog del sprint i gestió [GES], per persona. L'acumulat inclou el Sprint 1 i serveix per equilibrar la càrrega del curs. La presentació final (4 h, TG-236) la fan els tres membres que no han presentat abans i encara no està assignada: suma 4 h a cadascun.
+Backlog del sprint i gestió [GES], per persona. L'acumulat inclou el Sprint 1 i serveix per equilibrar la càrrega del curs. Joan porta més pantalles de disseny a petició seva. La presentació final (4 h, TG-236) la fan els tres membres que no han presentat abans i encara no està assignada: suma 4 h a cadascun.
 
 | Persona | Sprint 3 | Acumulat |
 |---|---|---|
-| Joan | 9 | 68 |
-| Vinyet | 12 | 60 |
-| Martina | 13 | 58 |
-| Mohamed | 17 | 65 |
+| Joan | 14 | 79 |
+| Vinyet | 12 | 57 |
+| Martina | 13 | 55 |
+| Mohamed | 12 | 60 |
 | Hugo | 23 | 62 |
 | Victor | 14 | 55 |
