@@ -1,12 +1,15 @@
 import type { ConsultaRecomanacions, ObjectiuObservacio } from '@talaia/shared';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Linking } from 'react-native';
+import { AppState, Linking } from 'react-native';
+
+import type { CalendarMonth } from '@/shared/ui/calendarGrid';
 
 import {
   addDays,
+  CALENDAR_DAYS,
   DAY_CHOICES,
   type DayChoice,
   dayParts,
@@ -14,9 +17,10 @@ import {
   formatHour,
   greetingFor,
   GRID_GOALS,
+  HOURS,
   nightOf,
-  PICKABLE_NIGHTS,
   rangeHours,
+  roundCoord,
   stepHour,
   TRAVEL,
   travelParts,
@@ -27,14 +31,15 @@ export const CURRENT_PLACE_KEY = ['ubicacio-actual'] as const;
 
 /** «Què vols veure?» (HU01, mockup 02): què, des d'on, quan i fins on. */
 export function useExploreViewModel() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const router = useRouter();
-  const [now] = useState(() => new Date());
+  const [now, setNow] = useState(() => new Date());
   const tonight = nightOf(now);
 
   const [goal, setGoal] = useState<ObjectiuObservacio>('cel_estrellat');
   const [day, setDay] = useState<DayChoice>('tonight');
   const [pickedNight, setPickedNight] = useState(() => addDays(tonight, 2));
+  const [calendarOpen, setCalendarOpen] = useState(false);
   const [range, setRange] = useState<{ from: number; to: number }>(DEFAULT_RANGE);
   const [rangeOpen, setRangeOpen] = useState(false);
   const [travel, setTravel] = useState<number>(TRAVEL.initial);
@@ -45,9 +50,23 @@ export function useExploreViewModel() {
     staleTime: 5 * 60 * 1000,
     retry: false,
   });
+  const { refetch } = location;
+  const placeReady = location.data?.status === 'ready';
 
-  const night =
-    day === 'tonight' ? tonight : day === 'tomorrow' ? addDays(tonight, 1) : pickedNight;
+  // La pestanya es queda muntada hores: en tornar a l'app, «aquesta nit» i la salutació es
+  // recalculen, i si faltava la ubicació (permís, GPS) es torna a provar.
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state !== 'active') return;
+      setNow(new Date());
+      if (!placeReady) void refetch();
+    });
+    return () => subscription.remove();
+  }, [placeReady, refetch]);
+
+  // Una nit triada que ja ha passat (l'app ha estat oberta dies) torna a ser aquesta nit.
+  const picked = pickedNight < tonight ? tonight : pickedNight;
+  const night = day === 'tonight' ? tonight : day === 'tomorrow' ? addDays(tonight, 1) : picked;
   const place = location.data?.status === 'ready' ? location.data.place : null;
 
   const origin = (() => {
@@ -59,20 +78,22 @@ export function useExploreViewModel() {
         state: 'error' as const,
         label: t('explore.origin.error'),
         hint: t('explore.origin.retry'),
-        onPress: () => void location.refetch(),
+        onPress: () => void refetch(),
       };
     }
-    if (!place) {
+    if (location.data.status === 'denied') {
+      const { canAskAgain } = location.data;
       return {
         state: 'denied' as const,
         label: t('explore.origin.denied'),
-        hint: t('explore.origin.settings'),
-        onPress: () => void Linking.openSettings(),
+        hint: canAskAgain ? t('explore.origin.allow') : t('explore.origin.settings'),
+        // Si el sistema encara ho deixa, es torna a demanar el permís; si no, a la configuració.
+        onPress: () => void (canAskAgain ? refetch() : Linking.openSettings()),
       };
     }
     return {
       state: 'ready' as const,
-      label: place.name || t('explore.origin.here'),
+      label: location.data.place.name || t('explore.origin.here'),
       hint: t('explore.origin.current'),
     };
   })();
@@ -85,16 +106,27 @@ export function useExploreViewModel() {
       : t('explore.travel.hours', { hours });
 
   const weekdays = t('explore.weekdays', { returnObjects: true }) as string[];
-  const nightLabel = (date: string) => {
-    const { weekday, day: dayOfMonth } = dayParts(date);
-    return `${weekdays[weekday]} ${dayOfMonth}`;
+  const months = t('explore.calendar.months', { returnObjects: true }) as string[];
+  const monthsShort = t('explore.calendar.monthsShort', { returnObjects: true }) as string[];
+  const monthsOf = t('explore.calendar.monthsOf', { returnObjects: true }) as string[];
+  const monthOfDate = (date: string) => Number(date.slice(5, 7)) - 1;
+
+  const chooseNight = (date: string) => {
+    if (date === tonight) setDay('tonight');
+    else if (date === addDays(tonight, 1)) setDay('tomorrow');
+    else {
+      setPickedNight(date);
+      setDay('pick');
+    }
+    setCalendarOpen(false);
   };
 
-  const moveRange = (end: 'from' | 'to', delta: number) =>
+  // La franja dura almenys una hora: si una roda arriba a l'hora de l'altra, és l'altra la que es mou.
+  const setRangeEnd = (end: 'from' | 'to', hour: number) =>
     setRange((current) => {
-      const next = { ...current, [end]: stepHour(current[end], delta) };
-      // La franja dura almenys una hora: si els dos extrems es troben, es passa de llarg.
-      if (next.from === next.to) next[end] = stepHour(next[end], delta);
+      const other = end === 'from' ? 'to' : 'from';
+      const next = { ...current, [end]: hour };
+      if (next[other] === hour) next[other] = stepHour(hour, end === 'from' ? 1 : -1);
       return next;
     });
 
@@ -102,7 +134,7 @@ export function useExploreViewModel() {
     if (!place) return;
     const query: ConsultaRecomanacions = {
       objectiu: goal,
-      origen: { lat: place.lat, lon: place.lon },
+      origen: { lat: roundCoord(place.lat), lon: roundCoord(place.lon) },
       data: night,
       desDe: range.from,
       finsA: range.to,
@@ -142,22 +174,48 @@ export function useExploreViewModel() {
     origin,
     whenTitle: t('explore.when.title'),
     days: {
-      options: DAY_CHOICES.map((choice) => t(`explore.when.${choice}`)),
+      options: DAY_CHOICES.map((choice) => {
+        if (choice !== 'pick' || day !== 'pick') return t(`explore.when.${choice}`);
+        const { weekday, day: dayOfMonth } = dayParts(picked);
+        return t('explore.when.picked', {
+          weekday: weekdays[weekday],
+          day: dayOfMonth,
+          month: monthsShort[monthOfDate(picked)],
+        });
+      }),
       selectedIndex: DAY_CHOICES.indexOf(day),
-      onChange: (index: number) => setDay(DAY_CHOICES[index] ?? 'tonight'),
+      // «Tria el dia» obre el calendari; fins que no se'n tria un, es queda la nit d'abans.
+      onChange: (index: number) => {
+        const choice = DAY_CHOICES[index] ?? 'tonight';
+        if (choice === 'pick') setCalendarOpen(true);
+        else setDay(choice);
+      },
+      onReselect: (index: number) => {
+        if (DAY_CHOICES[index] === 'pick') setCalendarOpen(true);
+      },
     },
-    pickableNights:
-      day === 'pick'
-        ? Array.from({ length: PICKABLE_NIGHTS }, (_, i) => {
-            const date = addDays(tonight, i + 2);
-            return {
-              date,
-              label: nightLabel(date),
-              selected: date === pickedNight,
-              onPress: () => setPickedNight(date),
-            };
-          })
-        : [],
+    calendar: {
+      visible: calendarOpen,
+      title: t('explore.calendar.title'),
+      closeLabel: t('explore.calendar.close'),
+      value: night,
+      today: tonight,
+      min: tonight,
+      max: addDays(tonight, CALENDAR_DAYS),
+      firstDay: (i18n.language === 'en' ? 0 : 1) as 0 | 1,
+      weekdayNames: weekdays,
+      formatTitle: ({ year, month }: CalendarMonth) =>
+        t('explore.calendar.month', { month: months[month], year }),
+      dayLabel: (date: string) =>
+        t('explore.calendar.day', {
+          day: Number(date.slice(8, 10)),
+          month: monthsOf[monthOfDate(date)],
+        }),
+      previousLabel: t('explore.calendar.previous'),
+      nextLabel: t('explore.calendar.next'),
+      onChange: chooseNight,
+      onClose: () => setCalendarOpen(false),
+    },
     range: {
       label: t('explore.when.range', { from: formatHour(range.from), to: formatHour(range.to) }),
       hint: t('explore.when.rangeHint'),
@@ -166,14 +224,13 @@ export function useExploreViewModel() {
     rangeSheet: {
       visible: rangeOpen,
       title: t('explore.rangeSheet.title'),
-      rows: (['from', 'to'] as const).map((end) => ({
+      hours: HOURS,
+      format: formatHour,
+      wheels: (['from', 'to'] as const).map((end) => ({
         end,
         label: t(`explore.rangeSheet.${end}`),
-        value: formatHour(range[end]),
-        earlierLabel: t('explore.rangeSheet.earlier'),
-        laterLabel: t('explore.rangeSheet.later'),
-        onEarlier: () => moveRange(end, -1),
-        onLater: () => moveRange(end, 1),
+        value: range[end],
+        onChange: (hour: number) => setRangeEnd(end, hour),
       })),
       duration: t('explore.rangeSheet.duration', { count: rangeHours(range.from, range.to) }),
       doneLabel: t('explore.rangeSheet.done'),

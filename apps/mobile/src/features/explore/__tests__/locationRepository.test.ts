@@ -26,8 +26,9 @@ describe('getCurrentPlace', () => {
   it('sense permís, ho diu i no busca la posició', async () => {
     location.requestForegroundPermissionsAsync.mockResolvedValue({
       status: 'denied',
+      canAskAgain: true,
     } as Location.LocationPermissionResponse);
-    await expect(getCurrentPlace()).resolves.toEqual({ status: 'denied' });
+    await expect(getCurrentPlace()).resolves.toEqual({ status: 'denied', canAskAgain: true });
     expect(location.getCurrentPositionAsync).not.toHaveBeenCalled();
   });
 

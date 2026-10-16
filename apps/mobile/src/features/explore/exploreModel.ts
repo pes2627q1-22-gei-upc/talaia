@@ -16,8 +16,11 @@ export const TRAVEL = { min: 30, max: 240, step: 15, initial: 150 } as const;
 /** Franja per defecte: de 22:00 a 06:00, el gruix de la nit fosca a la tardor. */
 export const DEFAULT_RANGE = { from: 22, to: 6 } as const;
 
-/** Nits que es poden triar amb «Tria el dia», a partir de demà passat. */
-export const PICKABLE_NIGHTS = 14;
+/** Fins on arriba el calendari de «Tria el dia»: un any (els eclipsis s'anuncien amb mesos). */
+export const CALENDAR_DAYS = 365;
+
+/** Les hores de les rodes de la franja horària. */
+export const HOURS = Array.from({ length: 24 }, (_, hour) => hour);
 
 /** Abans d'aquesta hora, «aquesta nit» és la que va començar ahir al vespre. */
 const NIGHT_ENDS_AT = 6;
@@ -66,3 +69,9 @@ export const rangeHours = (from: number, to: number) => (to - from + 24) % 24;
 export function travelParts(minutes: number): { hours: number; minutes: number } {
   return { hours: Math.floor(minutes / 60), minutes: minutes % 60 };
 }
+
+/**
+ * Coordenada amb 3 decimals (~100 m): per triar punts a hores de cotxe n'hi ha prou, i la posició
+ * exacta de l'usuari no acaba a la URL ni als logs de l'API.
+ */
+export const roundCoord = (degrees: number) => Math.round(degrees * 1000) / 1000;
