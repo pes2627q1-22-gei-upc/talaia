@@ -1,0 +1,47 @@
+name: Deploy check
+
+# Comprova a cada PR que toca el desplegament que les imatges es construeixen i que el compose
+# arrenca sencer (amb el certificat autosignat): un deploy trencat no ha d'arribar a `stable`.
+on:
+  pull_request:
+    paths:
+      - 'deploy/**'
+      - 'services/*/Dockerfile'
+      - '.dockerignore'
+      - 'package-lock.json'
+      - '.github/workflows/deploy*.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-check-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  compose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      COMPOSE: docker compose -f deploy/compose.yaml --env-file .env.example
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Valida el compose
+        run: $COMPOSE --profile worker config -q
+
+      - name: Construeix les imatges
+        run: $COMPOSE --profile worker build
+
+      - name: Arrenca i comprova /api/v1/health per Nginx
+        run: |
+          $COMPOSE up -d --wait
+          curl -fsS -k --resolve talaia.duckdns.org:8080:127.0.0.1 https://talaia.duckdns.org:8080/api/v1/health
+
+      - name: Logs
+        if: failure()
+        run: $COMPOSE logs

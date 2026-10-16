@@ -1,0 +1,48 @@
+name: Deploy
+
+# Desplega `stable` a la VM de la FIB (TG-71, ADR-0019, docs/desplegament.md).
+# El job s'executa al runner self-hosted de la mateixa VM: el runner obre una connexió de sortida
+# cap a GitHub i no cal cap port d'entrada. Mai s'activa per PR: el repo és públic i el runner
+# executaria codi de qualsevol branca a la VM.
+on:
+  push:
+    branches: [stable]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-vm
+  cancel-in-progress: false
+
+env:
+  # Els secrets viuen a la VM, fora del repo i del workspace del runner.
+  ENV_FILE: /opt/talaia/.env
+
+jobs:
+  deploy:
+    if: github.ref == 'refs/heads/stable'
+    runs-on: [self-hosted, talaia-vm]
+    environment: production
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Construeix i arrenca els serveis
+        run: docker compose -f deploy/compose.yaml --env-file "$ENV_FILE" up -d --build --remove-orphans --wait
+
+      # El certificat és per a PUBLIC_HOST: amb --resolve, curl el valida contra el 8080 local.
+      - name: Healthcheck per HTTPS
+        run: |
+          host=$(sed -n 's/^PUBLIC_HOST=\([^[:space:]#]*\).*/\1/p' "$ENV_FILE")
+          curl -fsS --retry 10 --retry-delay 3 --retry-all-errors \
+            --resolve "$host:8080:127.0.0.1" "https://$host:8080/api/v1/health"
+
+      - name: Esborra imatges antigues
+        if: always()
+        run: docker image prune -f
