@@ -31,6 +31,7 @@ Es llegeixen del `.env` de l'**arrel** del repo (`dev` i `start` el carreguen am
 |---|---|---|
 | `API_PORT` | `3000` | Port on escolta l'API |
 | `DATABASE_URL` | — | Postgres (`postgresql://…`). **Opcional:** sense ella l'API arrenca amb un avís, `/health` funciona i `/punts` respon 503 `database_unavailable`. Amb Supabase local: `postgresql://postgres:postgres@127.0.0.1:54322/postgres` |
+| `SUPABASE_URL` | `http://127.0.0.1:54321` | Base URL de Supabase Auth per validar JWTs |
 
 Una variable nova s'afegeix a l'esquema de `src/config/env.ts` i a `.env.example`. Cap secret al repo.
 

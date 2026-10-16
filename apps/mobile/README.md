@@ -101,8 +101,8 @@ la sessió es persistirà i el ViewModel rebrà l'usuari automàticament.
   Es conserven les capçaleres addicionals i el senyal de cancel·lació, però no
   una autorització antiga proporcionada pel caller. Es rebutgen URLs d'altres orígens.
 - TG-84 espera aquest format Bearer. El contracte confirmat pel sprint master
-  és `POST /api/v1/profile/ensure`, idempotent: el futur flux de login cridarà
-  `apiPost('/profile/ensure')` després d'autenticar-se. La crida i la gestió dels
+  és `POST /api/v1/perfil`, idempotent: el futur flux de login cridarà
+  `apiPost('/perfil')` després d'autenticar-se. La crida i la gestió dels
   seus errors corresponen a la nova tasca de login; TG-83 deixa preparat el transport.
 - TG-85 pot provar la sessió mitjançant `AuthProvider` sota `QueryClientProvider`;
   les proves existents simulen el repository i no necessiten credencials.
