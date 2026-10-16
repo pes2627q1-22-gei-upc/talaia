@@ -29,7 +29,7 @@ export const FORMULA_V1 = {
   >,
   /** Brillantor del cel (SQM, mag/arcsec²): 17,5 és cel de ciutat (0) i 21,5 o més, cel fosc (1). */
   sqm: { min: 17.5, rang: 4 },
-  /** Foscor mentre no hi hagi la del mapa de contaminació lumínica (TG-97). */
+  /** Foscor dels punts sense SQM: fora del mapa de contaminació lumínica (ADR-0020). */
   foscorEstimada: 0.6,
   /** Alçada a partir de la qual la Lluna fa tota la llum que pot, en graus. */
   llunaAlcadaPlena: 30,
@@ -82,7 +82,7 @@ export function factorLluna(efemerides: EfemeridesHora): number {
 export type EntradaIndex = {
   meteo: PrevisioMeteoHora;
   efemerides: EfemeridesHora;
-  /** SQM del punt (TG-97), o `null` mentre no n'hi hagi. */
+  /** SQM del punt (`punts_observacio.sqm`, TG-97), o `null` si és fora del mapa. */
   sqm: number | null;
 };
 
