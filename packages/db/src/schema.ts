@@ -62,6 +62,16 @@ export interface FontsAstronomiques {
   url: string;
 }
 
+export interface IndexVisibilitat {
+  calculatEl: Generated<Timestamp>;
+  factors: Json;
+  foscorEstimada: boolean;
+  franja: "tap" | "jus" | "ras";
+  hora: Timestamp;
+  puntId: string;
+  valor: number;
+}
+
 export interface PuntsObservacio {
   accessibilitat: string | null;
   altitud: number | null;
@@ -88,6 +98,7 @@ export interface DB {
   esdevenimentsAstronomics: EsdevenimentsAstronomics;
   fenomensAstronomics: FenomensAstronomics;
   fontsAstronomiques: FontsAstronomiques;
+  indexVisibilitat: IndexVisibilitat;
   puntsObservacio: PuntsObservacio;
   tipusFenomen: TipusFenomen;
 }

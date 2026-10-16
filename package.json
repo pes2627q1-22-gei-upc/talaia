@@ -64,7 +64,8 @@
         "fonts_astronomiques.organitzacio": "\"IMO\" | \"NASA\"",
         "fenomens_astronomics.periodicitat": "\"anual\" | \"ocasional\"",
         "esdeveniments_astronomics.rellevancia": "\"principal\" | \"secundari\"",
-        "esdeveniments_astronomics.dificultat_observacio": "\"baixa\" | \"mitjana\" | \"alta\""
+        "esdeveniments_astronomics.dificultat_observacio": "\"baixa\" | \"mitjana\" | \"alta\"",
+        "index_visibilitat.franja": "\"tap\" | \"jus\" | \"ras\""
       }
     }
   }
