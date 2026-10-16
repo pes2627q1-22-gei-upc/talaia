@@ -112,7 +112,8 @@
       "min": "30 min",
       "max": "4 h"
     },
-    "cta": "Find the best spot"
+    "cta": "Find the best spot",
+    "browse": "See the map"
   },
   "alerts": {
     "title": "Alerts",
