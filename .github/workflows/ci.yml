@@ -47,10 +47,11 @@ jobs:
         if: matrix.check == 'lint'
         run: npm run lint
 
-      - name: Valida el calendari i el seed astronòmic
+      - name: Valida els seeds de punts i d'astronomia
         if: matrix.check == 'lint'
         run: |
           npx tsc -p data --noEmit
+          node data/scripts/build-seed-punts.ts --check
           node data/scripts/build-seed-astronomia.ts --check
           npm run astronomia:calendari --workspace services/worker -- --check
 
@@ -75,6 +76,10 @@ jobs:
       - name: Tests de @talaia/db
         if: ${{ !cancelled() && matrix.check == 'tests' }}
         run: npm run test --workspace packages/db -- --ci
+
+      - name: Tests dels scripts de dades
+        if: ${{ !cancelled() && matrix.check == 'tests' }}
+        run: npm run test --workspace data
 
       - name: Desa la cobertura
         if: ${{ !cancelled() && matrix.check == 'tests' && (steps.tests.outcome == 'success' || steps.tests.outcome == 'failure') }}

@@ -13,6 +13,7 @@
         "municipi": "Àger",
         "descripcio": "Equipament del Parc Astronòmic del Montsec, al vessant sud de la serra. El Montsec és Reserva i Destinació Turística Starlight i té un dels cels més foscos de Catalunya.",
         "altitud": 817,
+        "sqm": 21.56,
         "horitzo_obert": ["SE", "S", "SW"],
         "accessibilitat": "Accés en cotxe fins a l'equipament",
         "font_coordenades": "ICGC geocodificador: «Centre d'Observació de l'Univers»"
@@ -30,6 +31,7 @@
         "municipi": "Àger",
         "descripcio": "Coll de la carretera C-12 que dona entrada a la vall d'Àger. Bon punt d'aturada a la zona protegida del Montsec, lluny de nuclis grans.",
         "altitud": 904,
+        "sqm": 21.39,
         "horitzo_obert": null,
         "accessibilitat": "Accés en cotxe per la C-12",
         "font_coordenades": "ICGC geocodificador: «Port d'Àger»"
@@ -47,6 +49,7 @@
         "municipi": "Prades",
         "descripcio": "Vila a l'altiplà de les Muntanyes de Prades, Destinació Turística Starlight juntament amb la serra de Montsant. Seu del Parc Astronòmic Muntanyes de Prades; cal allunyar-se del nucli per evitar l'enllumenat.",
         "altitud": 955,
+        "sqm": 18.04,
         "horitzo_obert": null,
         "accessibilitat": "Accés en cotxe",
         "font_coordenades": "ICGC geocodificador: «Prades»"
@@ -64,6 +67,7 @@
         "municipi": "Vilaplana",
         "descripcio": "Poble abandonat al caire dels cingles de la serra de la Mussara, amb vista oberta cap al Camp de Tarragona. El cel és fosc cap al nord, però cap al sud es veu la llum de l'àrea urbana.",
         "altitud": 981,
+        "sqm": 21.13,
         "horitzo_obert": ["SE", "S", "SW"],
         "accessibilitat": "Accés en cotxe per la carretera de la Mussara",
         "font_coordenades": "ICGC geocodificador: «la Mussara»"
@@ -81,6 +85,7 @@
         "municipi": "Cornudella de Montsant",
         "descripcio": "Nucli enfilat en un esperó rocós sobre el pantà de Siurana, a tocar de la serra de Montsant. Poca contaminació lumínica i horitzó obert cap al sud-oest.",
         "altitud": 726,
+        "sqm": 21.15,
         "horitzo_obert": ["S", "SW", "W"],
         "accessibilitat": "Accés en cotxe",
         "font_coordenades": "ICGC geocodificador: «Siurana»"
@@ -98,6 +103,7 @@
         "municipi": "la Morera de Montsant",
         "descripcio": "Poble al peu dels cingles de la serra de Montsant, dins la Destinació Turística Starlight. Els cingles tapen el nord; cap al sud la vista s'obre sobre el Priorat.",
         "altitud": 749,
+        "sqm": 21.19,
         "horitzo_obert": ["SE", "S", "SW"],
         "accessibilitat": "Accés en cotxe",
         "font_coordenades": "ICGC geocodificador: «la Morera de Montsant»"
@@ -115,6 +121,7 @@
         "municipi": "Montgai",
         "descripcio": "Municipi de la plana de la Noguera, certificat com a Destinació Turística Starlight des del 2022. Terreny planer amb poques llums al voltant.",
         "altitud": 288,
+        "sqm": 20.64,
         "horitzo_obert": null,
         "accessibilitat": "Accés en cotxe",
         "font_coordenades": "ICGC geocodificador: «Montgai»"
@@ -132,6 +139,7 @@
         "municipi": "Sant Mateu de Bages",
         "descripcio": "Observatori d'aficionats a la serra de Castelltallat, al Bages. Punt alt i allunyat de les poblacions de la comarca.",
         "altitud": 873,
+        "sqm": 21.39,
         "horitzo_obert": null,
         "accessibilitat": "Accés en cotxe fins a l'observatori",
         "font_coordenades": "ICGC geocodificador: «Observatori Astronòmic de Castelltallat»"
@@ -149,6 +157,7 @@
         "municipi": "Pujalt",
         "descripcio": "Observatori astronòmic al poble de Pujalt, a l'Alta Anoia, en un turó amb el cel de la Catalunya central.",
         "altitud": 747,
+        "sqm": 21.08,
         "horitzo_obert": null,
         "accessibilitat": "Accés en cotxe",
         "font_coordenades": "ICGC geocodificador: «Observatori de Pujalt»"
@@ -166,6 +175,7 @@
         "municipi": "Fogars de Montclús",
         "descripcio": "Clot al cor del Montseny envoltat de fagedes. Cel fosc al zenit, però l'horitzó queda tapat pels cims del voltant.",
         "altitud": 1131,
+        "sqm": 21.03,
         "horitzo_obert": null,
         "accessibilitat": "Accés en cotxe per la BV-5114",
         "font_coordenades": "ICGC geocodificador: «Santa Fe de Montseny»"
@@ -183,6 +193,7 @@
         "municipi": "el Brull",
         "descripcio": "Coll del Montseny entre Osona i el Vallès, amb aparcament. Accessible i amb vista a la plana de Vic, que aporta llum cap al nord-nord-oest.",
         "altitud": 1129,
+        "sqm": 20.99,
         "horitzo_obert": null,
         "accessibilitat": "Accés en cotxe per la BV-5301",
         "font_coordenades": "ICGC geocodificador: «Collformic»"
@@ -200,6 +211,7 @@
         "municipi": "Bagà",
         "descripcio": "Coll d'alta muntanya al Parc Natural del Cadí-Moixeró, per sobre dels 2.000 m. Cel molt fosc i aire sec; carretera de muntanya que pot tenir neu a l'hivern.",
         "altitud": 2099,
+        "sqm": 21.55,
         "horitzo_obert": ["N", "S"],
         "accessibilitat": "Accés en cotxe per la BV-4024",
         "font_coordenades": "ICGC geocodificador: «Coll de Pal»"
@@ -217,6 +229,7 @@
         "municipi": "Fígols",
         "descripcio": "Altiplà d'alta muntanya al nord del Berguedà. Vista oberta cap al sud sobre la Catalunya central.",
         "altitud": 1786,
+        "sqm": 21.59,
         "horitzo_obert": ["SE", "S", "SW"],
         "accessibilitat": "Accés en cotxe per la carretera dels Rasos",
         "font_coordenades": "ICGC geocodificador: «Rasos de Peguera»"
@@ -234,6 +247,7 @@
         "municipi": "la Coma i la Pedra",
         "descripcio": "Zona de l'estació d'esquí del Port del Comte, al Solsonès. Alçada elevada i poques llums a prop fora de temporada.",
         "altitud": 1650,
+        "sqm": 20.97,
         "horitzo_obert": null,
         "accessibilitat": "Accés en cotxe fins a l'estació d'esquí",
         "font_coordenades": "ICGC geocodificador: «el Port del Comte»"
@@ -251,6 +265,7 @@
         "municipi": "Sant Pere de Torelló",
         "descripcio": "Santuari al cim de Bellmunt, sobre la plana de Vic. Panoràmica de 360°; la llum d'Osona es nota cap al sud.",
         "altitud": 1221,
+        "sqm": 21.11,
         "horitzo_obert": ["N", "NE", "E", "SE", "S", "SW", "W", "NW"],
         "accessibilitat": "Accés en cotxe fins al santuari",
         "font_coordenades": "ICGC geocodificador: «Bellmunt»"
@@ -268,6 +283,7 @@
         "municipi": "Molló",
         "descripcio": "Coll fronterer del Ripollès, lluny de grans poblacions. Vista oberta cap al Vallespir i cap a la vall de Camprodon.",
         "altitud": 1515,
+        "sqm": 21.55,
         "horitzo_obert": ["N", "S"],
         "accessibilitat": "Accés en cotxe per la C-38",
         "font_coordenades": "ICGC geocodificador: «Coll d'Ares»"
@@ -285,6 +301,7 @@
         "municipi": "Setcases",
         "descripcio": "Circ glacial a la capçalera del Ter, per sobre dels 2.000 m. Cel molt fosc; les carenes tanquen el nord i l'oest.",
         "altitud": 2163,
+        "sqm": 21.64,
         "horitzo_obert": ["SE", "S"],
         "accessibilitat": "Accés en cotxe per la GIV-5264",
         "font_coordenades": "ICGC geocodificador: «Estació d'esquí de Vallter 2000»"
@@ -302,6 +319,7 @@
         "municipi": "Roquetes",
         "descripcio": "Sostre del massís dels Ports, amb vista de 360° sobre el delta de l'Ebre i el Matarranya. Lluny de nuclis grans, amb el cel fosc dels Ports.",
         "altitud": 1407,
+        "sqm": 21.53,
         "horitzo_obert": ["N", "NE", "E", "SE", "S", "SW", "W", "NW"],
         "accessibilitat": "Carretera asfaltada des de Roquetes; l'últim tram fins al cim pot estar tancat",
         "font_coordenades": "ICGC geocodificador: «Caro»"
@@ -319,6 +337,7 @@
         "municipi": "la Ràpita",
         "descripcio": "Barra de sorra del delta de l'Ebre amb mar a banda i banda. Horitzó pla i net, ideal per a sortides i postes d'astres arran d'aigua.",
         "altitud": 0,
+        "sqm": 21.45,
         "horitzo_obert": ["N", "NE", "E", "SE", "S", "SW", "W", "NW"],
         "accessibilitat": "Accés en cotxe fins a l'inici de la barra",
         "font_coordenades": "ICGC geocodificador: «Platja del Trabucador»"
@@ -336,6 +355,7 @@
         "municipi": "Castelló d'Empúries",
         "descripcio": "Centre del Parc Natural dels Aiguamolls de l'Empordà. Terreny pla i obert cap al golf de Roses; la costa aporta llum en temporada alta.",
         "altitud": 3,
+        "sqm": 20.58,
         "horitzo_obert": ["E", "SE", "S"],
         "accessibilitat": "Accés en cotxe fins al centre d'informació",
         "font_coordenades": "ICGC geocodificador: «el Cortalet»"
@@ -353,6 +373,7 @@
         "municipi": "Cadaqués",
         "descripcio": "Punta més oriental de la península, al Parc Natural del Cap de Creus. Horitzó de mar molt ampli cap a l'est, bo per a sortides de la Lluna i del Sol.",
         "altitud": 74,
+        "sqm": 21.35,
         "horitzo_obert": ["N", "NE", "E", "SE", "S"],
         "accessibilitat": "Accés en cotxe fins al far",
         "font_coordenades": "ICGC geocodificador: «Far de Cap de Creus»"
@@ -370,6 +391,7 @@
         "municipi": "Alt Àneu",
         "descripcio": "Port de muntanya a més de 2.000 m entre el Pallars Sobirà i la Val d'Aran. Cel d'alta muntanya; la carretera pot tancar per neu.",
         "altitud": 2066,
+        "sqm": 21.65,
         "horitzo_obert": null,
         "accessibilitat": "Accés en cotxe per la C-28",
         "font_coordenades": "ICGC geocodificador: «Port de la Bonaigua»"
@@ -387,6 +409,7 @@
         "municipi": "Artesa de Segre",
         "descripcio": "Coll entre la Noguera i el Pallars Jussà, en una zona molt poc poblada al nord-est del Montsec.",
         "altitud": 1104,
+        "sqm": 21.63,
         "horitzo_obert": null,
         "accessibilitat": "Accés en cotxe",
         "font_coordenades": "ICGC geocodificador: «Coll de Comiols»"
@@ -404,6 +427,7 @@
         "municipi": "Riner",
         "descripcio": "Santuari del Solsonès en un altiplà agrícola amb poques llums, a la Catalunya central.",
         "altitud": 826,
+        "sqm": 21.51,
         "horitzo_obert": null,
         "accessibilitat": "Accés en cotxe fins al santuari",
         "font_coordenades": "ICGC geocodificador: «Santuari el Miracle»"
@@ -421,6 +445,7 @@
         "municipi": "Alp",
         "descripcio": "Coll de la N-260 entre el Ripollès i la Cerdanya, a uns 1.800 m. Accessible tot l'any, amb aparcaments a la vora.",
         "altitud": 1772,
+        "sqm": 21.3,
         "horitzo_obert": null,
         "accessibilitat": "Accés en cotxe per la N-260",
         "font_coordenades": "ICGC geocodificador: «Collada de Toses»"
@@ -438,6 +463,7 @@
         "municipi": "Susqueda",
         "descripcio": "Santuari al caire d'un cingle de les Guilleries, amb vista cap a l'est sobre la Selva. Cel fosc cap a l'oest, cap al massís.",
         "altitud": 1119,
+        "sqm": 21.32,
         "horitzo_obert": ["E", "SE", "S"],
         "accessibilitat": "Accés en cotxe fins al santuari",
         "font_coordenades": "ICGC geocodificador: «Zona de pícnic del Santuari del Far»"
@@ -455,6 +481,7 @@
         "municipi": "Naut Aran",
         "descripcio": "Altiplà d'alta muntanya a la Val d'Aran, a prop de les fonts de la Garona i la Noguera Pallaresa. Espai ample i obert, molt fosc fora de temporada d'esquí.",
         "altitud": 1843,
+        "sqm": 21.6,
         "horitzo_obert": null,
         "accessibilitat": "Accés en cotxe per la carretera de Beret",
         "font_coordenades": "ICGC geocodificador: «Plan de Beret»"
@@ -472,6 +499,7 @@
         "municipi": "la Vall de Boí",
         "descripcio": "Embassament d'alta muntanya a la porta del Parc Nacional d'Aigüestortes i Estany de Sant Maurici, Reserva Starlight. Cel molt fosc; les muntanyes limiten l'horitzó.",
         "altitud": 1756,
+        "sqm": 21.71,
         "horitzo_obert": null,
         "accessibilitat": "Accés en cotxe fins a la presa",
         "font_coordenades": "ICGC geocodificador: «Pantà de Cavallers»"
@@ -489,6 +517,7 @@
         "municipi": "Gandesa",
         "descripcio": "Turó de la Terra Alta amb un poblat ibèric al cim i vista de 360° sobre la comarca, molt poc poblada.",
         "altitud": 476,
+        "sqm": 21.49,
         "horitzo_obert": ["N", "NE", "E", "SE", "S", "SW", "W", "NW"],
         "accessibilitat": "Accés en cotxe fins al poblat ibèric",
         "font_coordenades": "ICGC geocodificador: «Coll del Moro»"
@@ -506,6 +535,7 @@
         "municipi": "Coll de Nargó",
         "descripcio": "Mirador al coll de Bóixols, entre l'Alt Urgell i el Pallars Jussà, en una de les zones més despoblades de Catalunya.",
         "altitud": 1339,
+        "sqm": 21.68,
         "horitzo_obert": null,
         "accessibilitat": "Accés en cotxe per la L-511",
         "font_coordenades": "ICGC geocodificador: «Mirador de Coll de Bóixols»"
@@ -523,6 +553,7 @@
         "municipi": "Albanyà",
         "descripcio": "Santuari al cim del Mont, entre la Garrotxa i l'Alt Empordà, amb panoràmica de 360° del Pirineu al mar.",
         "altitud": 1099,
+        "sqm": 21.41,
         "horitzo_obert": ["N", "NE", "E", "SE", "S", "SW", "W", "NW"],
         "accessibilitat": "Accés en cotxe per una carretera estreta des de Beuda",
         "font_coordenades": "ICGC geocodificador: «Santuari de la Mare de Déu del Mont»"
@@ -540,6 +571,7 @@
         "municipi": "Montferrer i Castellbò",
         "descripcio": "Clariana en un bosc de l'Alt Urgell, a tocar del Parc Natural de l'Alt Pirineu. Molt lluny de qualsevol nucli gran.",
         "altitud": 1732,
+        "sqm": 21.61,
         "horitzo_obert": null,
         "accessibilitat": "Pista forestal des de Castellbò",
         "font_coordenades": "ICGC geocodificador: «Sant Joan de l'Erm»"
