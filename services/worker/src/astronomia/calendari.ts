@@ -55,7 +55,7 @@ export type EsdevenimentCalculat = {
   inici: string;
   fi: string;
   maxim: string;
-  precisio: { inici: 'hora'; fi: 'hora'; maxim: 'segon' | 'hora' };
+  precisio: { inici: 'dia' | 'hora'; fi: 'dia' | 'hora'; maxim: 'segon' | 'hora' };
   rellevant_catalunya: true;
   rellevancia: 'principal' | 'secundari';
   dificultat_observacio: 'baixa' | 'mitjana';
@@ -106,6 +106,16 @@ function instant(
     dificultat_observacio: 'baixa',
     textos,
   };
+}
+
+/** Una fase és un instant exacte, però no una franja d'observació de ±30 minuts. */
+function faseDelDia(event: EsdevenimentCalculat): EsdevenimentCalculat {
+  const dia = event.maxim.slice(0, 10);
+  event.inici = `${dia}T00:00:00Z`;
+  event.fi = `${dia}T23:59:59Z`;
+  event.precisio.inici = 'dia';
+  event.precisio.fi = 'dia';
+  return event;
 }
 
 function apsidesPropers(ms: number): { perigeu: number; apogeu: number } {
@@ -184,14 +194,16 @@ function afegeixFases(desDe: number, finsA: number, events: EsdevenimentCalculat
       const data = iso(ms).slice(0, 10);
       if (fase.quarter === 0) {
         events.push(
-          instant(`lluna-nova-${data}`, 'lluna-nova', ms, {
-            ca: {
-              nota_visibilitat:
-                'La Lluna nova no es veu; la seva absència afavoreix un cel fosc a Catalunya.',
-              consell_observacio:
-                'Trieu un indret amb poca llum artificial i consulteu la previsió de núvols.',
-            },
-          }),
+          faseDelDia(
+            instant(`lluna-nova-${data}`, 'lluna-nova', ms, {
+              ca: {
+                nota_visibilitat:
+                  'La Lluna nova no es veu; la seva absència afavoreix un cel fosc a Catalunya.',
+                consell_observacio:
+                  'Trieu un indret amb poca llum artificial i consulteu la previsió de núvols.',
+              },
+            }),
+          ),
         );
       } else {
         const { perigeu, apogeu } = apsidesPropers(ms);
@@ -216,7 +228,7 @@ function afegeixFases(desDe: number, finsA: number, events: EsdevenimentCalculat
             distancia_lluna_km: Math.round(distancia),
             llindar_superlluna_km: Math.round(llindar),
           };
-        events.push(event);
+        events.push(faseDelDia(event));
       }
     }
     fase = NextMoonQuarter(fase);

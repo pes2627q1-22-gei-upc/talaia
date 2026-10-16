@@ -147,6 +147,12 @@ serveix per planificar observacions amb menys llum lunar. Una «Lluna de sang» 
 llunar total, no una fase més: s'identificaria a la ingesta d'eclipsis si n'hi hagués un de
 visible des de Catalunya. No se'n genera cap de manera artificial.
 
+Per a les fases, `maxim` és l'instant astronòmic exacte, però `inici` i `fi` delimiten el
+dia UTC (`00:00:00Z`–`23:59:59Z`) amb precisió `dia`. Aquest interval representa una entrada
+del calendari, **no** una finestra d'observació: l'instant de la fase pot caure de dia. La nit
+recomanada s'ha de calcular posteriorment segons el lloc i el fenomen, no inferir-la de
+`inici` i `fi`.
+
 El criteri editorial de superlluna és: distància geocèntrica de la Lluna en la fase plena
 `<= apogeu - 0,9 × (apogeu - perigeu)`, prenent els extrems orbitals més propers. La definició
 de «superlluna» no és oficial ni universal; aquest llindar queda versionat al JSON.

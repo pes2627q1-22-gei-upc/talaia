@@ -12,6 +12,17 @@ describe('calendari astronòmic calculat (TG-107)', () => {
     expect(fases.filter((e) => e.fenomen_codi !== 'lluna-nova')).toHaveLength(15);
     expect(new Set(dades.esdeveniments.map((e) => e.codi)).size).toBe(dades.esdeveniments.length);
     expect(dades.esdeveniments.every((e) => e.maxim >= e.inici && e.maxim <= e.fi)).toBe(true);
+    for (const fase of fases) {
+      const dia = fase.maxim.slice(0, 10);
+      expect(fase.inici).toBe(`${dia}T00:00:00Z`);
+      expect(fase.fi).toBe(`${dia}T23:59:59Z`);
+      expect(fase.precisio).toEqual({ inici: 'dia', fi: 'dia', maxim: 'segon' });
+    }
+    expect(
+      dades.esdeveniments
+        .filter((e) => e.fenomen_codi.startsWith('conjuncio-'))
+        .every((e) => e.precisio.inici === 'hora' && e.precisio.fi === 'hora'),
+    ).toBe(true);
   });
 
   test('superllunes: distància per sota del llindar i sense lluna plena duplicada', () => {

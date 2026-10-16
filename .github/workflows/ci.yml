@@ -52,6 +52,7 @@ jobs:
         run: |
           npx tsc -p data --noEmit
           node data/scripts/build-seed-astronomia.ts --check
+          npm run astronomia:calendari --workspace services/worker -- --check
 
       - name: Typecheck
         if: matrix.check == 'typecheck'
