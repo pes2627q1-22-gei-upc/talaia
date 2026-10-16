@@ -2,7 +2,7 @@
 
 Procés de Talaia que ingesta les dades externes i recalcula l'índex de visibilitat de tots els punts **cada hora** ([ADR-0004](../../docs/decisions/0004-index-precalculat.md)). Node 22 + TypeScript (strict), mateixes eines que l'API.
 
-Estat: hi ha la **ingesta de la previsió d'Open-Meteo** (TG-95 i TG-114) i el **càlcul astronòmic** amb Astronomy Engine (TG-96). La planificació horària i el contenidor Docker arriben amb TG-99; la fórmula de l'índex, amb TG-98.
+Estat: hi ha la **ingesta de la previsió d'Open-Meteo** (TG-95 i TG-114), el **càlcul astronòmic** amb Astronomy Engine (TG-96) i la **fórmula de l'índex v1** amb la seva persistència (TG-98). La planificació horària i el contenidor Docker arriben amb TG-99.
 
 ## Ordres
 
@@ -92,6 +92,32 @@ src/
 - **La nit.** `nitAstronomica` és la nit que **comença el vespre** del dia `data`: la posta de sol es busca a partir del migdia solar mitjà del lloc (12:00 UTC corregit per la longitud), de manera que no cal cap zona horària. La sortida i la posta de la Lluna només s'informen si cauen entre la posta i la sortida del Sol (`null` si no), i `llunaSobreHoritzoALaPosta` desfà l'ambigüitat dels dos `null`: amb Lluna plena hi és tota la nit (`true`: surt abans de la posta i es pon després de l'alba) i amb Lluna nova no hi és mai (`false`). Un crepuscle és `null` si el Sol no arriba a l'alçada (a Catalunya sempre hi arriba; a latituds altes, no); si el Sol no es pon o no surt, llança `RangeError`. Cada cerca del Sol comença un minut després de l'esdeveniment anterior, perquè a latituds altes (el Sol fregant l'horitzó) no torni a trobar el mateix instant; el càlcul s'ha comprovat fins a 66° N.
 - **Errors.** Un lloc fora de rang, una `altitud` que no és un nombre, un instant que no és ISO 8601 **amb zona** (`2026-10-14T22:00:00Z` o `…+02:00`; sense zona, JavaScript el llegiria amb la zona de la màquina) o una `data` que no és un dia real en format `YYYY-MM-DD` (`2026-02-30` es rebutja) llancen `RangeError` abans de calcular res.
 
+## Índex de visibilitat v1 (TG-98)
+
+```
+src/
+  index/
+    formula.ts             Càlcul pur: factors, índex de 0 a 100 i franja (ADR-0018)
+    repository.ts          Persistència a `index_visibilitat`: Kysely i en memòria
+    cli.ts                 `npm run index`: prova manual amb la previsió real
+```
+
+`índex = 100 × N × S × (0,6 · F + 0,4 · L)`, cada factor de 0 a 1: **N** núvols (la capa que més tapa; 0 si plou), **S** Sol (1 de nit o en el crepuscle astronòmic, 0,5 en el nàutic, 0 si no), **F** foscor (de l'SQM del punt; 0,6 provisional fins a TG-97) i **L** Lluna (la llum que fa segons la fracció il·luminada i l'alçada). Franges: 0–39 `tap`, 40–69 `jus`, 70–100 `ras`. Els pesos i els llindars són a `FORMULA_V1`; per què, a l'[ADR-0018](../../docs/decisions/0018-formula-index-v1.md).
+
+| Funció | Què fa |
+|---|---|
+| `calculaIndex({ meteo, efemerides, sqm })` | `IndexHora` d'una hora: valor, franja, `factors` (`FactorsIndex`, per al desglossament de HU04) i `foscorEstimada`. Llança `RangeError` si la previsió i les efemèrides no són del mateix instant |
+| `calculaIndexHores(meteo, efemerides, sqm)` | L'índex de cada hora que tenen totes dues llistes, en l'ordre de la previsió |
+| `factorNuvols`, `factorSol`, `factorFoscor`, `factorLluna`, `franjaDe` | Les peces per separat |
+| `createKyselyIndexRepository(db)` | `desaIndexs(puntId, hores)` (recalcular una hora la substitueix) i `indexsDe(puntId)` |
+
+Prova manual, sense base de dades:
+
+```bash
+npm run index -w services/worker -- 42.0294,0.7112          # el Montsec, foscor estimada
+npm run index -w services/worker -- 42.0294,0.7112 21.6     # amb l'SQM del lloc
+```
+
 ## Tests
 
-Jest, sense xarxa: el client d'Open-Meteo es prova amb un `fetch` fals (URL construïda, resposta d'un lloc i de diversos, lots i un lot que falla, `null`, unitats inesperades, timeout, errors de xarxa i HTTP, cossos inesperats) i la ingesta amb un client i un repositori falsos. El càlcul astronòmic es contrasta amb fets independents de la llibreria: l'alçada del Sol al migdia del solstici (90° − latitud + 23,44°), la Lluna nova durant l'eclipsi solar del 12/08/2026 i la plena durant l'eclipsi lunar del 03/03/2026, les hores de l'USNO i de JPL Horizons a Barcelona (posta, crepuscles, Lluna i la nit del canvi d'hora), l'ordre i la durada dels crepuscles i el Sol just al llindar en cada esdeveniment.
+Jest, sense xarxa: el client d'Open-Meteo es prova amb un `fetch` fals (URL construïda, resposta d'un lloc i de diversos, lots i un lot que falla, `null`, unitats inesperades, timeout, errors de xarxa i HTTP, cossos inesperats) i la ingesta amb un client i un repositori falsos. El càlcul astronòmic es contrasta amb fets independents de la llibreria: l'alçada del Sol al migdia del solstici (90° − latitud + 23,44°), la Lluna nova durant l'eclipsi solar del 12/08/2026 i la plena durant l'eclipsi lunar del 03/03/2026, les hores de l'USNO i de JPL Horizons a Barcelona (posta, crepuscles, Lluna i la nit del canvi d'hora), l'ordre i la durada dels crepuscles i el Sol just al llindar en cada esdeveniment. La fórmula de l'índex es prova factor a factor, amb l'exemple de l'ADR-0018, les franges i el repositori en memòria.
