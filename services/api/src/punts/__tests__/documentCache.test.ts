@@ -1,0 +1,70 @@
+import type { PuntsMapaGeoJson } from '@talaia/shared';
+
+import { createContentHashCache } from '../documentCache';
+
+const doc = (n: number): PuntsMapaGeoJson => ({
+  type: 'FeatureCollection',
+  features: Array.from({ length: n }, (_, i) => ({
+    type: 'Feature',
+    geometry: { type: 'Point', coordinates: [1, 41 + i] },
+    properties: { id: String(i), nom: 'n', municipi: 'm', index: null },
+  })),
+});
+
+describe('createContentHashCache', () => {
+  afterEach(() => jest.restoreAllMocks());
+
+  it('no torna a carregar abans de ttlMs, i després sí', async () => {
+    let t = 0;
+    const load = jest.fn().mockResolvedValueOnce(doc(1)).mockResolvedValueOnce(doc(2));
+    const cache = createContentHashCache(load, { ttlMs: 1000, now: () => t });
+    const first = await cache.get();
+    t = 999;
+    expect(await cache.get()).toBe(first);
+    t = 1000;
+    const second = await cache.get();
+    expect(load).toHaveBeenCalledTimes(2);
+    expect(second.etag).not.toBe(first.etag);
+  });
+
+  it("l'ETag només canvia si canvia el contingut", async () => {
+    let t = 0;
+    const cache = createContentHashCache(async () => doc(1), { ttlMs: 10, now: () => t });
+    const { etag } = await cache.get();
+    t = 100;
+    expect((await cache.get()).etag).toBe(etag);
+  });
+
+  it('les peticions simultànies comparteixen una sola càrrega', async () => {
+    const load = jest.fn(async () => doc(1));
+    const cache = createContentHashCache(load);
+    const [a, b, c] = await Promise.all([cache.get(), cache.get(), cache.get()]);
+    expect(load).toHaveBeenCalledTimes(1);
+    expect(a).toBe(b);
+    expect(b).toBe(c);
+  });
+
+  it('si la càrrega falla, serveix el document anterior i no hi torna fins al cap de ttlMs', async () => {
+    jest.spyOn(console, 'error').mockImplementation(() => {});
+    let t = 0;
+    const load = jest
+      .fn()
+      .mockResolvedValueOnce(doc(1))
+      .mockRejectedValueOnce(new Error('caiguda'))
+      .mockResolvedValueOnce(doc(2));
+    const cache = createContentHashCache(load, { ttlMs: 10, now: () => t });
+    const first = await cache.get();
+    t = 10;
+    expect(await cache.get()).toBe(first);
+    t = 15;
+    expect(await cache.get()).toBe(first);
+    expect(load).toHaveBeenCalledTimes(2);
+    t = 20;
+    expect((await cache.get()).geojson.features).toHaveLength(2);
+  });
+
+  it("sense document anterior, l'error arriba a qui crida", async () => {
+    const cache = createContentHashCache(() => Promise.reject(new Error('caiguda')));
+    await expect(cache.get()).rejects.toThrow('caiguda');
+  });
+});

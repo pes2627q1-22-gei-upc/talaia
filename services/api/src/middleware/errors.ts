@@ -21,7 +21,8 @@ export const notFound: RequestHandler = (req, _res, next) => {
 /** Únic lloc on es construeixen les respostes d'error de l'API. */
 export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
   const { status, code, message } = toApiError(err);
-  if (status >= 500) console.error(err);
+  // Un ApiError és un error previst (p. ex. 503 sense base de dades): qui el llança ja n'ha deixat rastre.
+  if (status >= 500 && !(err instanceof ApiError)) console.error(err);
   res.status(status).json({ error: { code, message } } satisfies ApiErrorBody);
 };
 
