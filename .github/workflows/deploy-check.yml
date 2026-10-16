@@ -31,6 +31,9 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Sintaxi de l'script de deploy
+        run: sh -n deploy/scripts/desplega.sh
+
       - name: Valida el compose
         run: $COMPOSE --profile worker config -q
 

@@ -1,6 +1,6 @@
 # ADR-0019: VM de la FIB, HTTPS amb DuckDNS i deploy amb un runner self-hosted
 
-**Estat:** Acceptada · **Data:** 2026-10-16 · Resol les decisions pendents P16 i P17 · TG-71 · Concreta [ADR-0006](0006-infra-vm-docker.md)
+**Estat:** Acceptada; el deploy i la seguretat del runner els substitueix l'[ADR-0020](0020-deploy-per-pull-des-de-la-vm.md) · **Data:** 2026-10-16 · Resol les decisions pendents P16 i P17 · TG-71 · Concreta [ADR-0006](0006-infra-vm-docker.md)
 
 ## Context
 
