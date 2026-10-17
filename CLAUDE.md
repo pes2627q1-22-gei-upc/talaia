@@ -33,7 +33,7 @@ Més context: `docs/producte.md` (abast, MVP, NOT list), `docs/arquitectura.md`,
 - **CI** (TG-70): lint, typecheck i tests de l'app, de l'API, del worker i de `@talaia/db` a cada PR; SonarCloud preparat (`docs/ci.md`).
 - **Explora** (TG-101): la pestanya d'inici és «Què vols veure?» (mockup 02): què, des d'on (ubicació actual amb `expo-location`), quan i fins a quant temps en cotxe. «Troba el millor lloc» obre el mapa a `/recomanacions`, on TG-102 hi posarà el rànquing. La consulta és `ConsultaRecomanacions` a `@talaia/shared`.
 - **Mapa** (TG-89): MapLibre GL JS en una DOM component d'Expo, amb l'estil nocturn de l'ICGC, terreny 3D i cel de nit (ADR-0015). Tota l'app es prova a **Expo Go**; cap mòdul natiu que Expo Go no porti sense ADR (ADR-0014). Identificador: `cat.talaia.app`.
-- **Desplegament** (TG-71): `deploy/compose.yaml` (Nginx + API + acme.sh; worker amb `profiles: [worker]` fins a TG-99) a la VM de la FIB, HTTPS al 8080 amb DuckDNS + Let's Encrypt DNS-01, i deploy de `stable` per pull: un cron de la VM executa `deploy/scripts/desplega.sh` cada 5 minuts, sense runner (ADR-0020). Secrets a `/opt/talaia/.env` a la VM. Vegeu `docs/desplegament.md` i ADR-0019.
+- **Desplegament** (TG-71): `deploy/compose.yaml` (Nginx + API + acme.sh; worker amb `profiles: [worker]` fins a TG-99) a la VM de la FIB, HTTPS al 8080 amb DuckDNS + Let's Encrypt DNS-01, i deploy de `stable` per pull: un cron de la VM executa `deploy/scripts/desplega.sh` cada 5 minuts, sense runner (ADR-0021). Secrets a `/opt/talaia/.env` a la VM. Vegeu `docs/desplegament.md` i ADR-0019.
 
 ## Stack (decidit, no reobrir sense ADR)
 

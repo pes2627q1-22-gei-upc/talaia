@@ -1,5 +1,5 @@
 #!/bin/sh
-# Deploy de `stable` a la VM (TG-71, ADR-0020, docs/desplegament.md). L'executa el cron de la VM
+# Deploy de `stable` a la VM (TG-71, ADR-0021, docs/desplegament.md). L'executa el cron de la VM
 # cada 5 minuts: si `origin/stable` ha canviat, posa el checkout al dia, refà el compose i comprova
 # el healthcheck per HTTPS. Si no ha canviat, no fa res. GitHub no executa res a la VM.
 #

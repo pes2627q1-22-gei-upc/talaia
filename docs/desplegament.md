@@ -1,6 +1,6 @@
 # Desplegament a la VM (TG-71)
 
-L'API es desplega a la VM de la FIB amb Docker Compose. Nginx hi fa d'únic punt d'entrada amb HTTPS de Let's Encrypt. Cada canvi a `stable` (una release o un hotfix) es desplega sol en menys de 5 minuts: un cron de la VM ho comprova i fa el deploy. Decisions: [ADR-0006](decisions/0006-infra-vm-docker.md), [ADR-0019](decisions/0019-allotjament-i-desplegament.md) i [ADR-0020](decisions/0020-deploy-per-pull-des-de-la-vm.md).
+L'API es desplega a la VM de la FIB amb Docker Compose. Nginx hi fa d'únic punt d'entrada amb HTTPS de Let's Encrypt. Cada canvi a `stable` (una release o un hotfix) es desplega sol en menys de 5 minuts: un cron de la VM ho comprova i fa el deploy. Decisions: [ADR-0006](decisions/0006-infra-vm-docker.md), [ADR-0019](decisions/0019-allotjament-i-desplegament.md) i [ADR-0021](decisions/0021-deploy-per-pull-des-de-la-vm.md).
 
 ```
 App / Aprop / Mobilicat

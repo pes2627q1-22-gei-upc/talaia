@@ -1,4 +1,4 @@
-# ADR-0020: Deploy de `stable` per pull des de la VM, sense runner
+# ADR-0021: Deploy de `stable` per pull des de la VM, sense runner
 
 **Estat:** Acceptada · **Data:** 2026-10-16 · TG-71 · Substitueix el deploy i la seguretat del runner de l'[ADR-0019](0019-allotjament-i-desplegament.md)
 
