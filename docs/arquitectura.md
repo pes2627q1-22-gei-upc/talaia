@@ -9,7 +9,7 @@ Principi: **concentrar l'esforç en el que fa únic el producte (l'índex de vis
  App mòbil (Expo) ─────┐              ┌──── Web admin (React, estàtica)
                        ▼              ▼
               ┌──────────────── VM Ubuntu · Docker Compose ───────────────┐
-              │  Nginx + Let's Encrypt (únic punt d'entrada)               │
+              │  Nginx :8080 + Let's Encrypt DNS-01 (únic punt d'entrada)  │
               │     ├── API REST Node/Express  /api/v1  (OpenAPI)          │
               │     └── fitxers estàtics de l'admin                        │
               │  Worker índex (cada hora) ── dades estàtiques preprocessades│
@@ -24,6 +24,8 @@ Principi: **concentrar l'esforç en el que fa únic el producte (l'índex de vis
    App ──deep link──▶ app de mapes del mòbil (navegació)
    Mapa a l'app: MapLibre ◀── tessel·les vectorials + relleu 3D de l'ICGC
 ```
+
+La VM és la de la FIB (`nattech.fib.upc.edu`, ports 8080–8089) i el nom públic és de DuckDNS: [ADR-0019](decisions/0019-allotjament-i-desplegament.md) i [desplegament.md](desplegament.md).
 
 La imatge oficial del diagrama és a la incepció 2 (Drive).
 

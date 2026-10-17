@@ -12,4 +12,15 @@ describe('loadEnv', () => {
   it('no arrenca amb un port invàlid', () => {
     expect(() => loadEnv({ API_PORT: 'abc' })).toThrow('API_PORT');
   });
+
+  it('DATABASE_URL és opcional, i buida compta com a absent', () => {
+    expect(loadEnv({}).DATABASE_URL).toBeUndefined();
+    expect(loadEnv({ DATABASE_URL: '' }).DATABASE_URL).toBeUndefined();
+  });
+
+  it('accepta una URL postgresql:// i rebutja la resta', () => {
+    const url = 'postgresql://postgres:postgres@127.0.0.1:54322/postgres';
+    expect(loadEnv({ DATABASE_URL: url }).DATABASE_URL).toBe(url);
+    expect(() => loadEnv({ DATABASE_URL: 'https://exemple.cat' })).toThrow('DATABASE_URL');
+  });
 });

@@ -83,7 +83,8 @@
       "denied": "Turn on location",
       "settings": "Settings",
       "error": "We couldn't find where you are",
-      "retry": "Try again"
+      "retry": "Try again",
+      "allow": "Allow"
     },
     "when": {
       "title": "When",
@@ -91,15 +92,64 @@
       "tomorrow": "Tomorrow",
       "pick": "Pick a day",
       "range": "From {{from}} to {{to}}",
-      "rangeHint": "Time range"
+      "rangeHint": "Time range",
+      "picked": "{{weekday}}, {{month}} {{day}}"
     },
     "weekdays": ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+    "calendar": {
+      "title": "Pick a day",
+      "close": "Close",
+      "month": "{{month}} {{year}}",
+      "day": "{{month}} {{day}}",
+      "previous": "Previous month",
+      "next": "Next month",
+      "months": [
+        "January",
+        "February",
+        "March",
+        "April",
+        "May",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "November",
+        "December"
+      ],
+      "monthsShort": [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul",
+        "Aug",
+        "Sep",
+        "Oct",
+        "Nov",
+        "Dec"
+      ],
+      "monthsOf": [
+        "January",
+        "February",
+        "March",
+        "April",
+        "May",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "November",
+        "December"
+      ]
+    },
     "rangeSheet": {
       "title": "Time range",
       "from": "From",
       "to": "To",
-      "earlier": "one hour earlier",
-      "later": "one hour later",
       "duration_one": "{{count}} hour of observing",
       "duration_other": "{{count}} hours of observing",
       "done": "Done"

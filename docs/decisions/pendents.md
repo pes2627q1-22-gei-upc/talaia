@@ -17,19 +17,18 @@ P1, P2, P3, P7 i P8 ja estan decidides: [ADR-0010](0010-eines-app.md). P4: [ADR-
 
 ## Producte i índex
 
-P13: [ADR-0017](0017-cataleg-inicial-punts.md). P15 (Sign in with Apple): [ADR-0016](0016-sign-in-with-apple-ios.md).
+P12: [ADR-0018](0018-formula-index-v1.md). P13: [ADR-0017](0017-cataleg-inicial-punts.md). P15 (Sign in with Apple): [ADR-0016](0016-sign-in-with-apple-ios.md).
 
 | # | Decisió | Notes |
 |---|---|---|
-| P12 | Fórmula de l'índex v1: pesos de núvols / foscor / Lluna, i llindars de color | TG-98 (Hugo). Ha de ser explicable al desglossament (HU04). |
 | P14 | Valors de `tipus` de fenomen (enum compartit) | TG-106/109 (Victor), compartit amb Aprop. |
 
 ## Infraestructura i organització
 
+P16 i P17: [ADR-0019](0019-allotjament-i-desplegament.md).
+
 | # | Decisió | Notes |
 |---|---|---|
-| P16 | On s'allotja la VM | Opcions: servidor de la FIB/UPC si n'ofereixen, crèdits d'estudiant (Azure, GitHub Student Pack), VPS barat. TG-71 (Mohamed). |
-| P17 | Domini i URL pública de l'API | Necessari per a Let's Encrypt i per als equips Aprop/Mobilicat. |
 | P18 | Accés al repositori | El repositori és a l'organització de l'assignatura, **`pes2627q1-22-gei-upc/talaia`**, i és **públic**. Tot l'equip és membre de l'organització i el professor ha fet administrador del repo en Joan (`Jsolee`). Falta afegir la resta de l'equip com a col·laboradors amb rol *Write* (usuaris a `equip.md`). **Mai cap secret al repo.** |
 | P19 | Integració Taiga ↔ GitHub | Activar el webhook de Taiga perquè els commits amb `TG-<ref>` quedin enllaçats a les tasques. |
 | P20 | Correu de l'equip i propietat dels serveis | Compte `talaia.pes@gmail.com` creat (2026-10-04). Serà el **propietari** de Supabase, Expo/EAS, Google Cloud (OAuth), Resend, SonarCloud i domini; cada membre hi entra amb el seu compte com a membre de l'organització. Credencials en un gestor de contrasenyes compartit pels admins (Joan, Mohamed), **mai al repo ni al xat**. |

@@ -3,8 +3,10 @@ import {
   dayParts,
   formatHour,
   greetingFor,
+  HOURS,
   nightOf,
   rangeHours,
+  roundCoord,
   stepHour,
   travelParts,
 } from '../exploreModel';
@@ -51,5 +53,12 @@ describe('exploreModel', () => {
     expect(travelParts(150)).toEqual({ hours: 2, minutes: 30 });
     expect(travelParts(45)).toEqual({ hours: 0, minutes: 45 });
     expect(travelParts(240)).toEqual({ hours: 4, minutes: 0 });
+  });
+
+  it('arrodoneix les coordenades a 3 decimals (~100 m) i dona les 24 hores', () => {
+    expect(roundCoord(41.387412)).toBe(41.387);
+    expect(roundCoord(2.168569)).toBe(2.169);
+    expect(HOURS).toHaveLength(24);
+    expect(HOURS[23]).toBe(23);
   });
 });

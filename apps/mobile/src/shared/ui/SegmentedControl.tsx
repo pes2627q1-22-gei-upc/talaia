@@ -16,6 +16,8 @@ type SegmentedControlProps = {
   options: readonly string[];
   selectedIndex: number;
   onChange: (index: number) => void;
+  /** Tornar a tocar l'opció triada (p. ex. per tornar a obrir el calendari de «Tria el dia»). */
+  onReselect?: (index: number) => void;
 };
 
 /** Mides del Figma (mockup 02): opcions de 38 dins un marc de 48. */
@@ -23,7 +25,12 @@ const SEGMENT_HEIGHT = 38;
 const INSET = spacing.xs;
 
 /** Control segmentat: la peça triada llisca darrere el text, sense rebot. */
-export function SegmentedControl({ options, selectedIndex, onChange }: SegmentedControlProps) {
+export function SegmentedControl({
+  options,
+  selectedIndex,
+  onChange,
+  onReselect,
+}: SegmentedControlProps) {
   const reduceMotion = useReducedMotion();
   const [width, setWidth] = useState(0);
   const segment = width > 0 ? (width - INSET * (options.length + 1)) / options.length : 0;
@@ -50,13 +57,11 @@ export function SegmentedControl({ options, selectedIndex, onChange }: Segmented
         const selected = index === selectedIndex;
         return (
           <PressableScale
-            key={option}
+            key={index}
             accessibilityRole="tab"
             accessibilityState={{ selected }}
             haptic="selection"
-            onPress={() => {
-              if (!selected) onChange(index);
-            }}
+            onPress={() => (selected ? onReselect?.(index) : onChange(index))}
             style={styles.segment}
           >
             <AppText variant="chip" color={selected ? 'lluna' : 'boira'}>
