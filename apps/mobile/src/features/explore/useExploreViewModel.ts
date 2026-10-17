@@ -27,7 +27,9 @@ import {
 } from './exploreModel';
 import { getCurrentPlace } from './locationRepository';
 
-export const CURRENT_PLACE_KEY = ['ubicacio-actual'] as const;
+import { CURRENT_PLACE_KEY } from './locationKeys';
+
+export { CURRENT_PLACE_KEY } from './locationKeys';
 
 /** «Què vols veure?» (HU01, mockup 02): què, des d'on, quan i fins on. */
 export function useExploreViewModel() {
