@@ -1,4 +1,7 @@
+import { useQuery } from '@tanstack/react-query';
 import * as Location from 'expo-location';
+
+import { CURRENT_PLACE_KEY } from './locationKeys';
 
 export type Place = {
   /** Municipi (o comarca) on és l'usuari; buit si el geocodificador del mòbil no en sap el nom. */
@@ -31,4 +34,14 @@ export async function getCurrentPlace(): Promise<CurrentPlace> {
   );
   const name = address?.city ?? address?.subregion ?? address?.region ?? '';
   return { status: 'ready', place: { name, lat, lon } };
+}
+
+/** Comparteix la ubicació entre Explora i el mapa, sense duplicar peticions. */
+export function useCurrentPlaceQuery() {
+  return useQuery({
+    queryKey: CURRENT_PLACE_KEY,
+    queryFn: getCurrentPlace,
+    staleTime: 5 * 60 * 1000,
+    retry: false,
+  });
 }
