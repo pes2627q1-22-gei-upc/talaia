@@ -150,6 +150,7 @@ La història [GES] no entra a la planificació del sprint (no té story points n
 | TG-79 | Actualitzar la memòria: descripció tècnica i decisions d'arquitectura | Mohamed | 23/10 | 28/10 | 2 |
 | TG-77 | Actualitzar la PRT i els gràfics de burndown i velocitat | Victor | 26/10 | 28/10 | 2 |
 | TG-80 | Preparar la demo del Sprint 1 per a la Review Meeting (09/11) | Vinyet | 26/10 | 28/10 | 2 |
+| TG-251 | Release 0.1.0 (snapshot → stable) i primer desplegament a la VM · *afegida el 17/10* | Hugo | 27/10 | 27/10 | 1 |
 | TG-76 | Retrospective Meeting (28/10) i lliurament de report_1.pdf | Joan (Jsolee) | 27/10 | 28/10 | 3 |
 
 ## Càrrega per persona (sprint backlog)
@@ -172,9 +173,9 @@ Comptant també la gestió del sprint ([GES], registrada al PRT):
 | Vinyet | 24 | 2 | 26 |
 | Mohamed | 19 | 4 | 23 |
 | Martina | 15 | — | 15 |
-| Hugo | 14 | — | 14 |
+| Hugo | 14 | 1 | 15 |
 | Victor | 14 | 2 | 16 |
-| **Total** | **124** | **16** | **140** |
+| **Total** | **124** | **17** | **141** |
 
 ## Dependències crítiques
 

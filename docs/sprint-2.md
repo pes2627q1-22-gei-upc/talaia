@@ -338,7 +338,7 @@ Història tècnica del Sprint 2: aspectes metodològics (desplegament automàtic
 
 | Ref | Tasca | Responsable | Inici | Límit | h |
 |---|---|---|---|---|---|
-| TG-180 | Desplegament automàtic a la VM en cada push a stable (GitHub Actions) | Mohamed | 16/11 | 18/11 | 3 |
+| TG-180 | Avís quan el deploy de la VM falla i prova de refer la VM des de zero (el deploy automàtic ja el fa el cron, ADR-0021) | Mohamed | 16/11 | 18/11 | 3 |
 | TG-181 | Informe de cobertura a la CI i a SonarCloud, amb llindar mínim al codi nou | Vinyet | 10/11 | 12/11 | 2 |
 | TG-182 | Primera mesura dels RNF de Taiga (càrrega del mapa, p95 de l'API, cobertura, accessibilitat) | Hugo | 18/11 | 20/11 | 2 |
 | TG-183 | Procés de bugs a Taiga (issues amb tipus i severitat, enllaç a la PR) i triatge dels del Sprint 1 | Victor | 09/11 | 10/11 | 1 |
