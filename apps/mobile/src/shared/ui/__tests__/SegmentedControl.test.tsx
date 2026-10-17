@@ -26,4 +26,20 @@ describe('SegmentedControl', () => {
     await fireEvent.press(screen.getByRole('tab', { name: 'Aquesta nit' }));
     expect(onChange).toHaveBeenCalledTimes(1);
   });
+
+  it('tornar a tocar la triada avisa amb onReselect (p. ex. per tornar a obrir el calendari)', async () => {
+    const onChange = jest.fn();
+    const onReselect = jest.fn();
+    await render(
+      <SegmentedControl
+        options={OPTIONS}
+        selectedIndex={2}
+        onChange={onChange}
+        onReselect={onReselect}
+      />,
+    );
+    await fireEvent.press(screen.getByRole('tab', { name: 'Tria el dia' }));
+    expect(onReselect).toHaveBeenCalledWith(2);
+    expect(onChange).not.toHaveBeenCalled();
+  });
 });

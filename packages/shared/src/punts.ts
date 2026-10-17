@@ -16,8 +16,11 @@ export type PuntObservacio = {
 
 /** Propietats de cada punt al GeoJSON del mapa: només el que cal per dibuixar-lo i cercar-lo. */
 export type PuntMapaPropietats = Pick<PuntObservacio, 'id' | 'nom' | 'municipi'> & {
-  /** Índex actual (l'última execució del worker). */
-  index: IndexVisibilitat;
+  /**
+   * Índex actual (l'última execució del worker). `null` = encara no s'ha calculat:
+   * la fórmula és TG-98 i el worker horari TG-99. L'app pinta el marcador en gris.
+   */
+  index: IndexVisibilitat | null;
 };
 
 export type PuntMapaFeature = {

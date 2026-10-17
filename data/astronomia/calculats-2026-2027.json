@@ -1,0 +1,1037 @@
+{
+  "versio_esquema": 1,
+  "periode": {
+    "des_de": "2026-10-01",
+    "fins_a": "2027-12-31"
+  },
+  "criteris": {
+    "lloc_referencia": {
+      "lat": 41.77,
+      "lon": 2.44,
+      "altitud_m": 1700
+    },
+    "separacio_maxima_graus": 3,
+    "altura_minima_graus": 10,
+    "altura_sol_maxima_graus": -6,
+    "magnitud_maxima": 2.5,
+    "llindar_superlluna_fraccio": 0.9
+  },
+  "fenomens": [
+    {
+      "codi": "conjuncio-lluna-jupiter",
+      "tipus_codi": "conjuncio",
+      "periodicitat": "ocasional",
+      "publicable_calendari": true,
+      "textos": {
+        "ca": {
+          "nom": "Aproximació de Lluna i Júpiter",
+          "descripcio": "Des de la Terra, Lluna i Júpiter semblen propers al cel, tot i que estan molt separats a l'espai.",
+          "consell_general": "Busqueu un horitzó clar i consulteu l'hora i les condicions locals; la proximitat és aparent."
+        }
+      }
+    },
+    {
+      "codi": "conjuncio-lluna-mart",
+      "tipus_codi": "conjuncio",
+      "periodicitat": "ocasional",
+      "publicable_calendari": true,
+      "textos": {
+        "ca": {
+          "nom": "Aproximació de Lluna i Mart",
+          "descripcio": "Des de la Terra, Lluna i Mart semblen propers al cel, tot i que estan molt separats a l'espai.",
+          "consell_general": "Busqueu un horitzó clar i consulteu l'hora i les condicions locals; la proximitat és aparent."
+        }
+      }
+    },
+    {
+      "codi": "conjuncio-lluna-venus",
+      "tipus_codi": "conjuncio",
+      "periodicitat": "ocasional",
+      "publicable_calendari": true,
+      "textos": {
+        "ca": {
+          "nom": "Aproximació de Lluna i Venus",
+          "descripcio": "Des de la Terra, Lluna i Venus semblen propers al cel, tot i que estan molt separats a l'espai.",
+          "consell_general": "Busqueu un horitzó clar i consulteu l'hora i les condicions locals; la proximitat és aparent."
+        }
+      }
+    },
+    {
+      "codi": "conjuncio-mart-jupiter",
+      "tipus_codi": "conjuncio",
+      "periodicitat": "ocasional",
+      "publicable_calendari": true,
+      "textos": {
+        "ca": {
+          "nom": "Aproximació de Mart i Júpiter",
+          "descripcio": "Des de la Terra, Mart i Júpiter semblen propers al cel, tot i que estan molt separats a l'espai.",
+          "consell_general": "Busqueu un horitzó clar i consulteu l'hora i les condicions locals; la proximitat és aparent."
+        }
+      }
+    },
+    {
+      "codi": "lluna-nova",
+      "tipus_codi": "fase_llunar",
+      "periodicitat": "mensual",
+      "publicable_calendari": true,
+      "textos": {
+        "ca": {
+          "nom": "Lluna nova",
+          "descripcio": "Fase en què la cara il·luminada de la Lluna no mira cap a la Terra. La Lluna no és observable, però el cel és més fosc.",
+          "consell_general": "Aprofiteu la foscor per observar objectes febles; la meteorologia i la contaminació lumínica continuen sent determinants."
+        }
+      }
+    },
+    {
+      "codi": "lluna-plena",
+      "tipus_codi": "fase_llunar",
+      "periodicitat": "mensual",
+      "publicable_calendari": true,
+      "textos": {
+        "ca": {
+          "nom": "Lluna plena",
+          "descripcio": "Fase en què veiem gairebé tot el disc lunar il·luminat.",
+          "consell_general": "La Lluna plena és fàcil de veure, però la seva llum dificulta observar objectes febles."
+        }
+      }
+    },
+    {
+      "codi": "superlluna-plena",
+      "tipus_codi": "superlluna",
+      "periodicitat": "ocasional",
+      "publicable_calendari": true,
+      "textos": {
+        "ca": {
+          "nom": "Superlluna plena",
+          "descripcio": "Lluna plena propera al perigeu segons el criteri del 90 % del recorregut entre apogeu i perigeu; la diferència aparent pot ser subtil.",
+          "consell_general": "Observeu-la a ull nu. No espereu un canvi de mida espectacular sense comparar fotografies preses amb el mateix equip."
+        }
+      }
+    }
+  ],
+  "esdeveniments": [
+    {
+      "codi": "conjuncio-lluna-mart-2026-10-05",
+      "fenomen_codi": "conjuncio-lluna-mart",
+      "metode_calcul": "Astronomy Engine 2.1.19",
+      "inici": "2026-10-05T04:30:00Z",
+      "fi": "2026-10-05T05:30:00Z",
+      "maxim": "2026-10-05T05:00:00Z",
+      "precisio": {
+        "inici": "hora",
+        "fi": "hora",
+        "maxim": "hora"
+      },
+      "rellevant_catalunya": true,
+      "rellevancia": "secundari",
+      "dificultat_observacio": "mitjana",
+      "textos": {
+        "ca": {
+          "nota_visibilitat": "Separació aparent aproximada de 0.9° des del Montseny, amb els dos astres a més de 10° d'altura i el Sol sota -6°. La visibilitat real depèn del lloc i dels núvols.",
+          "consell_observacio": "Observeu Lluna i Mart al voltant de l'hora indicada des d'un lloc amb l'horitzó lliure."
+        }
+      },
+      "detall_calcul": {
+        "separacio_graus": 0.9
+      }
+    },
+    {
+      "codi": "conjuncio-lluna-jupiter-2026-10-06",
+      "fenomen_codi": "conjuncio-lluna-jupiter",
+      "metode_calcul": "Astronomy Engine 2.1.19",
+      "inici": "2026-10-06T04:30:00Z",
+      "fi": "2026-10-06T05:30:00Z",
+      "maxim": "2026-10-06T05:00:00Z",
+      "precisio": {
+        "inici": "hora",
+        "fi": "hora",
+        "maxim": "hora"
+      },
+      "rellevant_catalunya": true,
+      "rellevancia": "secundari",
+      "dificultat_observacio": "mitjana",
+      "textos": {
+        "ca": {
+          "nota_visibilitat": "Separació aparent aproximada de 2.4° des del Montseny, amb els dos astres a més de 10° d'altura i el Sol sota -6°. La visibilitat real depèn del lloc i dels núvols.",
+          "consell_observacio": "Observeu Lluna i Júpiter al voltant de l'hora indicada des d'un lloc amb l'horitzó lliure."
+        }
+      },
+      "detall_calcul": {
+        "separacio_graus": 2.4
+      }
+    },
+    {
+      "codi": "lluna-nova-2026-10-10",
+      "fenomen_codi": "lluna-nova",
+      "metode_calcul": "Astronomy Engine 2.1.19",
+      "inici": "2026-10-10T00:00:00Z",
+      "fi": "2026-10-10T23:59:59Z",
+      "maxim": "2026-10-10T15:50:37Z",
+      "precisio": {
+        "inici": "dia",
+        "fi": "dia",
+        "maxim": "segon"
+      },
+      "rellevant_catalunya": true,
+      "rellevancia": "principal",
+      "dificultat_observacio": "baixa",
+      "textos": {
+        "ca": {
+          "nota_visibilitat": "La Lluna nova no es veu; la seva absència afavoreix un cel fosc a Catalunya.",
+          "consell_observacio": "Trieu un indret amb poca llum artificial i consulteu la previsió de núvols."
+        }
+      }
+    },
+    {
+      "codi": "lluna-plena-2026-10-26",
+      "fenomen_codi": "lluna-plena",
+      "metode_calcul": "Astronomy Engine 2.1.19",
+      "inici": "2026-10-26T00:00:00Z",
+      "fi": "2026-10-26T23:59:59Z",
+      "maxim": "2026-10-26T04:12:16Z",
+      "precisio": {
+        "inici": "dia",
+        "fi": "dia",
+        "maxim": "segon"
+      },
+      "rellevant_catalunya": true,
+      "rellevancia": "principal",
+      "dificultat_observacio": "baixa",
+      "textos": {
+        "ca": {
+          "nota_visibilitat": "Lluna plena observable des de Catalunya si el cel és clar.",
+          "consell_observacio": "Mireu cap a la Lluna al vespre o durant la nit i tingueu en compte que il·lumina el cel."
+        }
+      }
+    },
+    {
+      "codi": "conjuncio-lluna-jupiter-2026-11-03",
+      "fenomen_codi": "conjuncio-lluna-jupiter",
+      "metode_calcul": "Astronomy Engine 2.1.19",
+      "inici": "2026-11-03T01:30:00Z",
+      "fi": "2026-11-03T02:30:00Z",
+      "maxim": "2026-11-03T02:00:00Z",
+      "precisio": {
+        "inici": "hora",
+        "fi": "hora",
+        "maxim": "hora"
+      },
+      "rellevant_catalunya": true,
+      "rellevancia": "secundari",
+      "dificultat_observacio": "mitjana",
+      "textos": {
+        "ca": {
+          "nota_visibilitat": "Separació aparent aproximada de 2.8° des del Montseny, amb els dos astres a més de 10° d'altura i el Sol sota -6°. La visibilitat real depèn del lloc i dels núvols.",
+          "consell_observacio": "Observeu Lluna i Júpiter al voltant de l'hora indicada des d'un lloc amb l'horitzó lliure."
+        }
+      },
+      "detall_calcul": {
+        "separacio_graus": 2.8
+      }
+    },
+    {
+      "codi": "conjuncio-lluna-venus-2026-11-07",
+      "fenomen_codi": "conjuncio-lluna-venus",
+      "metode_calcul": "Astronomy Engine 2.1.19",
+      "inici": "2026-11-07T05:30:00Z",
+      "fi": "2026-11-07T06:30:00Z",
+      "maxim": "2026-11-07T06:00:00Z",
+      "precisio": {
+        "inici": "hora",
+        "fi": "hora",
+        "maxim": "hora"
+      },
+      "rellevant_catalunya": true,
+      "rellevancia": "secundari",
+      "dificultat_observacio": "mitjana",
+      "textos": {
+        "ca": {
+          "nota_visibilitat": "Separació aparent aproximada de 2.2° des del Montseny, amb els dos astres a més de 10° d'altura i el Sol sota -6°. La visibilitat real depèn del lloc i dels núvols.",
+          "consell_observacio": "Observeu Lluna i Venus al voltant de l'hora indicada des d'un lloc amb l'horitzó lliure."
+        }
+      },
+      "detall_calcul": {
+        "separacio_graus": 2.2
+      }
+    },
+    {
+      "codi": "lluna-nova-2026-11-09",
+      "fenomen_codi": "lluna-nova",
+      "metode_calcul": "Astronomy Engine 2.1.19",
+      "inici": "2026-11-09T00:00:00Z",
+      "fi": "2026-11-09T23:59:59Z",
+      "maxim": "2026-11-09T07:02:42Z",
+      "precisio": {
+        "inici": "dia",
+        "fi": "dia",
+        "maxim": "segon"
+      },
+      "rellevant_catalunya": true,
+      "rellevancia": "principal",
+      "dificultat_observacio": "baixa",
+      "textos": {
+        "ca": {
+          "nota_visibilitat": "La Lluna nova no es veu; la seva absència afavoreix un cel fosc a Catalunya.",
+          "consell_observacio": "Trieu un indret amb poca llum artificial i consulteu la previsió de núvols."
+        }
+      }
+    },
+    {
+      "codi": "conjuncio-mart-jupiter-2026-11-16",
+      "fenomen_codi": "conjuncio-mart-jupiter",
+      "metode_calcul": "Astronomy Engine 2.1.19",
+      "inici": "2026-11-16T01:30:00Z",
+      "fi": "2026-11-16T02:30:00Z",
+      "maxim": "2026-11-16T02:00:00Z",
+      "precisio": {
+        "inici": "hora",
+        "fi": "hora",
+        "maxim": "hora"
+      },
+      "rellevant_catalunya": true,
+      "rellevancia": "secundari",
+      "dificultat_observacio": "mitjana",
+      "textos": {
+        "ca": {
+          "nota_visibilitat": "Separació aparent aproximada de 1.2° des del Montseny, amb els dos astres a més de 10° d'altura i el Sol sota -6°. La visibilitat real depèn del lloc i dels núvols.",
+          "consell_observacio": "Observeu Mart i Júpiter al voltant de l'hora indicada des d'un lloc amb l'horitzó lliure."
+        }
+      },
+      "detall_calcul": {
+        "separacio_graus": 1.2
+      }
+    },
+    {
+      "codi": "superlluna-plena-2026-11-24",
+      "fenomen_codi": "superlluna-plena",
+      "metode_calcul": "Astronomy Engine 2.1.19",
+      "inici": "2026-11-24T00:00:00Z",
+      "fi": "2026-11-24T23:59:59Z",
+      "maxim": "2026-11-24T14:54:04Z",
+      "precisio": {
+        "inici": "dia",
+        "fi": "dia",
+        "maxim": "segon"
+      },
+      "rellevant_catalunya": true,
+      "rellevancia": "principal",
+      "dificultat_observacio": "baixa",
+      "textos": {
+        "ca": {
+          "nota_visibilitat": "Lluna plena propera al perigeu i visible des de Catalunya si el cel és clar; la mida aparent només canvia lleugerament.",
+          "consell_observacio": "Observeu-la quan surti; compareu fotografies amb la mateixa escala si voleu apreciar la diferència."
+        }
+      },
+      "detall_calcul": {
+        "distancia_lluna_km": 360754,
+        "llindar_superlluna_km": 363963
+      }
+    },
+    {
+      "codi": "conjuncio-lluna-jupiter-2026-11-30",
+      "fenomen_codi": "conjuncio-lluna-jupiter",
+      "metode_calcul": "Astronomy Engine 2.1.19",
+      "inici": "2026-11-30T05:30:00Z",
+      "fi": "2026-11-30T06:30:00Z",
+      "maxim": "2026-11-30T06:00:00Z",
+      "precisio": {
+        "inici": "hora",
+        "fi": "hora",
+        "maxim": "hora"
+      },
+      "rellevant_catalunya": true,
+      "rellevancia": "secundari",
+      "dificultat_observacio": "mitjana",
+      "textos": {
+        "ca": {
+          "nota_visibilitat": "Separació aparent aproximada de 2.1° des del Montseny, amb els dos astres a més de 10° d'altura i el Sol sota -6°. La visibilitat real depèn del lloc i dels núvols.",
+          "consell_observacio": "Observeu Lluna i Júpiter al voltant de l'hora indicada des d'un lloc amb l'horitzó lliure."
+        }
+      },
+      "detall_calcul": {
+        "separacio_graus": 2.1
+      }
+    },
+    {
+      "codi": "lluna-nova-2026-12-09",
+      "fenomen_codi": "lluna-nova",
+      "metode_calcul": "Astronomy Engine 2.1.19",
+      "inici": "2026-12-09T00:00:00Z",
+      "fi": "2026-12-09T23:59:59Z",
+      "maxim": "2026-12-09T00:52:31Z",
+      "precisio": {
+        "inici": "dia",
+        "fi": "dia",
+        "maxim": "segon"
+      },
+      "rellevant_catalunya": true,
+      "rellevancia": "principal",
+      "dificultat_observacio": "baixa",
+      "textos": {
+        "ca": {
+          "nota_visibilitat": "La Lluna nova no es veu; la seva absència afavoreix un cel fosc a Catalunya.",
+          "consell_observacio": "Trieu un indret amb poca llum artificial i consulteu la previsió de núvols."
+        }
+      }
+    },
+    {
+      "codi": "superlluna-plena-2026-12-24",
+      "fenomen_codi": "superlluna-plena",
+      "metode_calcul": "Astronomy Engine 2.1.19",
+      "inici": "2026-12-24T00:00:00Z",
+      "fi": "2026-12-24T23:59:59Z",
+      "maxim": "2026-12-24T01:28:45Z",
+      "precisio": {
+        "inici": "dia",
+        "fi": "dia",
+        "maxim": "segon"
+      },
+      "rellevant_catalunya": true,
+      "rellevancia": "principal",
+      "dificultat_observacio": "baixa",
+      "textos": {
+        "ca": {
+          "nota_visibilitat": "Lluna plena propera al perigeu i visible des de Catalunya si el cel és clar; la mida aparent només canvia lleugerament.",
+          "consell_observacio": "Observeu-la quan surti; compareu fotografies amb la mateixa escala si voleu apreciar la diferència."
+        }
+      },
+      "detall_calcul": {
+        "distancia_lluna_km": 356729,
+        "llindar_superlluna_km": 361618
+      }
+    },
+    {
+      "codi": "lluna-nova-2027-01-07",
+      "fenomen_codi": "lluna-nova",
+      "metode_calcul": "Astronomy Engine 2.1.19",
+      "inici": "2027-01-07T00:00:00Z",
+      "fi": "2027-01-07T23:59:59Z",
+      "maxim": "2027-01-07T20:25:06Z",
+      "precisio": {
+        "inici": "dia",
+        "fi": "dia",
+        "maxim": "segon"
+      },
+      "rellevant_catalunya": true,
+      "rellevancia": "principal",
+      "dificultat_observacio": "baixa",
+      "textos": {
+        "ca": {
+          "nota_visibilitat": "La Lluna nova no es veu; la seva absència afavoreix un cel fosc a Catalunya.",
+          "consell_observacio": "Trieu un indret amb poca llum artificial i consulteu la previsió de núvols."
+        }
+      }
+    },
+    {
+      "codi": "superlluna-plena-2027-01-22",
+      "fenomen_codi": "superlluna-plena",
+      "metode_calcul": "Astronomy Engine 2.1.19",
+      "inici": "2027-01-22T00:00:00Z",
+      "fi": "2027-01-22T23:59:59Z",
+      "maxim": "2027-01-22T12:17:50Z",
+      "precisio": {
+        "inici": "dia",
+        "fi": "dia",
+        "maxim": "segon"
+      },
+      "rellevant_catalunya": true,
+      "rellevancia": "principal",
+      "dificultat_observacio": "baixa",
+      "textos": {
+        "ca": {
+          "nota_visibilitat": "Lluna plena propera al perigeu i visible des de Catalunya si el cel és clar; la mida aparent només canvia lleugerament.",
+          "consell_observacio": "Observeu-la quan surti; compareu fotografies amb la mateixa escala si voleu apreciar la diferència."
+        }
+      },
+      "detall_calcul": {
+        "distancia_lluna_km": 357635,
+        "llindar_superlluna_km": 362163
+      }
+    },
+    {
+      "codi": "conjuncio-lluna-jupiter-2027-01-23",
+      "fenomen_codi": "conjuncio-lluna-jupiter",
+      "metode_calcul": "Astronomy Engine 2.1.19",
+      "inici": "2027-01-23T21:30:00Z",
+      "fi": "2027-01-23T22:30:00Z",
+      "maxim": "2027-01-23T22:00:00Z",
+      "precisio": {
+        "inici": "hora",
+        "fi": "hora",
+        "maxim": "hora"
+      },
+      "rellevant_catalunya": true,
+      "rellevancia": "secundari",
+      "dificultat_observacio": "mitjana",
+      "textos": {
+        "ca": {
+          "nota_visibilitat": "Separació aparent aproximada de 1.6° des del Montseny, amb els dos astres a més de 10° d'altura i el Sol sota -6°. La visibilitat real depèn del lloc i dels núvols.",
+          "consell_observacio": "Observeu Lluna i Júpiter al voltant de l'hora indicada des d'un lloc amb l'horitzó lliure."
+        }
+      },
+      "detall_calcul": {
+        "separacio_graus": 1.6
+      }
+    },
+    {
+      "codi": "lluna-nova-2027-02-06",
+      "fenomen_codi": "lluna-nova",
+      "metode_calcul": "Astronomy Engine 2.1.19",
+      "inici": "2027-02-06T00:00:00Z",
+      "fi": "2027-02-06T23:59:59Z",
+      "maxim": "2027-02-06T15:56:47Z",
+      "precisio": {
+        "inici": "dia",
+        "fi": "dia",
+        "maxim": "segon"
+      },
+      "rellevant_catalunya": true,
+      "rellevancia": "principal",
+      "dificultat_observacio": "baixa",
+      "textos": {
+        "ca": {
+          "nota_visibilitat": "La Lluna nova no es veu; la seva absència afavoreix un cel fosc a Catalunya.",
+          "consell_observacio": "Trieu un indret amb poca llum artificial i consulteu la previsió de núvols."
+        }
+      }
+    },
+    {
+      "codi": "conjuncio-lluna-jupiter-2027-02-20",
+      "fenomen_codi": "conjuncio-lluna-jupiter",
+      "metode_calcul": "Astronomy Engine 2.1.19",
+      "inici": "2027-02-20T04:30:00Z",
+      "fi": "2027-02-20T05:30:00Z",
+      "maxim": "2027-02-20T05:00:00Z",
+      "precisio": {
+        "inici": "hora",
+        "fi": "hora",
+        "maxim": "hora"
+      },
+      "rellevant_catalunya": true,
+      "rellevancia": "secundari",
+      "dificultat_observacio": "mitjana",
+      "textos": {
+        "ca": {
+          "nota_visibilitat": "Separació aparent aproximada de 2.0° des del Montseny, amb els dos astres a més de 10° d'altura i el Sol sota -6°. La visibilitat real depèn del lloc i dels núvols.",
+          "consell_observacio": "Observeu Lluna i Júpiter al voltant de l'hora indicada des d'un lloc amb l'horitzó lliure."
+        }
+      },
+      "detall_calcul": {
+        "separacio_graus": 2
+      }
+    },
+    {
+      "codi": "superlluna-plena-2027-02-20",
+      "fenomen_codi": "superlluna-plena",
+      "metode_calcul": "Astronomy Engine 2.1.19",
+      "inici": "2027-02-20T00:00:00Z",
+      "fi": "2027-02-20T23:59:59Z",
+      "maxim": "2027-02-20T23:24:07Z",
+      "precisio": {
+        "inici": "dia",
+        "fi": "dia",
+        "maxim": "segon"
+      },
+      "rellevant_catalunya": true,
+      "rellevancia": "principal",
+      "dificultat_observacio": "baixa",
+      "textos": {
+        "ca": {
+          "nota_visibilitat": "Lluna plena propera al perigeu i visible des de Catalunya si el cel és clar; la mida aparent només canvia lleugerament.",
+          "consell_observacio": "Observeu-la quan surti; compareu fotografies amb la mateixa escala si voleu apreciar la diferència."
+        }
+      },
+      "detall_calcul": {
+        "distancia_lluna_km": 363296,
+        "llindar_superlluna_km": 365424
+      }
+    },
+    {
+      "codi": "lluna-nova-2027-03-08",
+      "fenomen_codi": "lluna-nova",
+      "metode_calcul": "Astronomy Engine 2.1.19",
+      "inici": "2027-03-08T00:00:00Z",
+      "fi": "2027-03-08T23:59:59Z",
+      "maxim": "2027-03-08T09:30:07Z",
+      "precisio": {
+        "inici": "dia",
+        "fi": "dia",
+        "maxim": "segon"
+      },
+      "rellevant_catalunya": true,
+      "rellevancia": "principal",
+      "dificultat_observacio": "baixa",
+      "textos": {
+        "ca": {
+          "nota_visibilitat": "La Lluna nova no es veu; la seva absència afavoreix un cel fosc a Catalunya.",
+          "consell_observacio": "Trieu un indret amb poca llum artificial i consulteu la previsió de núvols."
+        }
+      }
+    },
+    {
+      "codi": "lluna-plena-2027-03-22",
+      "fenomen_codi": "lluna-plena",
+      "metode_calcul": "Astronomy Engine 2.1.19",
+      "inici": "2027-03-22T00:00:00Z",
+      "fi": "2027-03-22T23:59:59Z",
+      "maxim": "2027-03-22T10:44:19Z",
+      "precisio": {
+        "inici": "dia",
+        "fi": "dia",
+        "maxim": "segon"
+      },
+      "rellevant_catalunya": true,
+      "rellevancia": "principal",
+      "dificultat_observacio": "baixa",
+      "textos": {
+        "ca": {
+          "nota_visibilitat": "Lluna plena observable des de Catalunya si el cel és clar.",
+          "consell_observacio": "Mireu cap a la Lluna al vespre o durant la nit i tingueu en compte que il·lumina el cel."
+        }
+      }
+    },
+    {
+      "codi": "lluna-nova-2027-04-06",
+      "fenomen_codi": "lluna-nova",
+      "metode_calcul": "Astronomy Engine 2.1.19",
+      "inici": "2027-04-06T00:00:00Z",
+      "fi": "2027-04-06T23:59:59Z",
+      "maxim": "2027-04-06T23:51:45Z",
+      "precisio": {
+        "inici": "dia",
+        "fi": "dia",
+        "maxim": "segon"
+      },
+      "rellevant_catalunya": true,
+      "rellevancia": "principal",
+      "dificultat_observacio": "baixa",
+      "textos": {
+        "ca": {
+          "nota_visibilitat": "La Lluna nova no es veu; la seva absència afavoreix un cel fosc a Catalunya.",
+          "consell_observacio": "Trieu un indret amb poca llum artificial i consulteu la previsió de núvols."
+        }
+      }
+    },
+    {
+      "codi": "lluna-plena-2027-04-20",
+      "fenomen_codi": "lluna-plena",
+      "metode_calcul": "Astronomy Engine 2.1.19",
+      "inici": "2027-04-20T00:00:00Z",
+      "fi": "2027-04-20T23:59:59Z",
+      "maxim": "2027-04-20T22:27:45Z",
+      "precisio": {
+        "inici": "dia",
+        "fi": "dia",
+        "maxim": "segon"
+      },
+      "rellevant_catalunya": true,
+      "rellevancia": "principal",
+      "dificultat_observacio": "baixa",
+      "textos": {
+        "ca": {
+          "nota_visibilitat": "Lluna plena observable des de Catalunya si el cel és clar.",
+          "consell_observacio": "Mireu cap a la Lluna al vespre o durant la nit i tingueu en compte que il·lumina el cel."
+        }
+      }
+    },
+    {
+      "codi": "lluna-nova-2027-05-06",
+      "fenomen_codi": "lluna-nova",
+      "metode_calcul": "Astronomy Engine 2.1.19",
+      "inici": "2027-05-06T00:00:00Z",
+      "fi": "2027-05-06T23:59:59Z",
+      "maxim": "2027-05-06T10:59:11Z",
+      "precisio": {
+        "inici": "dia",
+        "fi": "dia",
+        "maxim": "segon"
+      },
+      "rellevant_catalunya": true,
+      "rellevancia": "principal",
+      "dificultat_observacio": "baixa",
+      "textos": {
+        "ca": {
+          "nota_visibilitat": "La Lluna nova no es veu; la seva absència afavoreix un cel fosc a Catalunya.",
+          "consell_observacio": "Trieu un indret amb poca llum artificial i consulteu la previsió de núvols."
+        }
+      }
+    },
+    {
+      "codi": "conjuncio-lluna-jupiter-2027-05-12",
+      "fenomen_codi": "conjuncio-lluna-jupiter",
+      "metode_calcul": "Astronomy Engine 2.1.19",
+      "inici": "2027-05-12T21:30:00Z",
+      "fi": "2027-05-12T22:30:00Z",
+      "maxim": "2027-05-12T22:00:00Z",
+      "precisio": {
+        "inici": "hora",
+        "fi": "hora",
+        "maxim": "hora"
+      },
+      "rellevant_catalunya": true,
+      "rellevancia": "secundari",
+      "dificultat_observacio": "mitjana",
+      "textos": {
+        "ca": {
+          "nota_visibilitat": "Separació aparent aproximada de 2.0° des del Montseny, amb els dos astres a més de 10° d'altura i el Sol sota -6°. La visibilitat real depèn del lloc i dels núvols.",
+          "consell_observacio": "Observeu Lluna i Júpiter al voltant de l'hora indicada des d'un lloc amb l'horitzó lliure."
+        }
+      },
+      "detall_calcul": {
+        "separacio_graus": 2
+      }
+    },
+    {
+      "codi": "lluna-plena-2027-05-20",
+      "fenomen_codi": "lluna-plena",
+      "metode_calcul": "Astronomy Engine 2.1.19",
+      "inici": "2027-05-20T00:00:00Z",
+      "fi": "2027-05-20T23:59:59Z",
+      "maxim": "2027-05-20T10:59:39Z",
+      "precisio": {
+        "inici": "dia",
+        "fi": "dia",
+        "maxim": "segon"
+      },
+      "rellevant_catalunya": true,
+      "rellevancia": "principal",
+      "dificultat_observacio": "baixa",
+      "textos": {
+        "ca": {
+          "nota_visibilitat": "Lluna plena observable des de Catalunya si el cel és clar.",
+          "consell_observacio": "Mireu cap a la Lluna al vespre o durant la nit i tingueu en compte que il·lumina el cel."
+        }
+      }
+    },
+    {
+      "codi": "lluna-nova-2027-06-04",
+      "fenomen_codi": "lluna-nova",
+      "metode_calcul": "Astronomy Engine 2.1.19",
+      "inici": "2027-06-04T00:00:00Z",
+      "fi": "2027-06-04T23:59:59Z",
+      "maxim": "2027-06-04T19:40:51Z",
+      "precisio": {
+        "inici": "dia",
+        "fi": "dia",
+        "maxim": "segon"
+      },
+      "rellevant_catalunya": true,
+      "rellevancia": "principal",
+      "dificultat_observacio": "baixa",
+      "textos": {
+        "ca": {
+          "nota_visibilitat": "La Lluna nova no es veu; la seva absència afavoreix un cel fosc a Catalunya.",
+          "consell_observacio": "Trieu un indret amb poca llum artificial i consulteu la previsió de núvols."
+        }
+      }
+    },
+    {
+      "codi": "lluna-plena-2027-06-19",
+      "fenomen_codi": "lluna-plena",
+      "metode_calcul": "Astronomy Engine 2.1.19",
+      "inici": "2027-06-19T00:00:00Z",
+      "fi": "2027-06-19T23:59:59Z",
+      "maxim": "2027-06-19T00:45:01Z",
+      "precisio": {
+        "inici": "dia",
+        "fi": "dia",
+        "maxim": "segon"
+      },
+      "rellevant_catalunya": true,
+      "rellevancia": "principal",
+      "dificultat_observacio": "baixa",
+      "textos": {
+        "ca": {
+          "nota_visibilitat": "Lluna plena observable des de Catalunya si el cel és clar.",
+          "consell_observacio": "Mireu cap a la Lluna al vespre o durant la nit i tingueu en compte que il·lumina el cel."
+        }
+      }
+    },
+    {
+      "codi": "lluna-nova-2027-07-04",
+      "fenomen_codi": "lluna-nova",
+      "metode_calcul": "Astronomy Engine 2.1.19",
+      "inici": "2027-07-04T00:00:00Z",
+      "fi": "2027-07-04T23:59:59Z",
+      "maxim": "2027-07-04T03:02:33Z",
+      "precisio": {
+        "inici": "dia",
+        "fi": "dia",
+        "maxim": "segon"
+      },
+      "rellevant_catalunya": true,
+      "rellevancia": "principal",
+      "dificultat_observacio": "baixa",
+      "textos": {
+        "ca": {
+          "nota_visibilitat": "La Lluna nova no es veu; la seva absència afavoreix un cel fosc a Catalunya.",
+          "consell_observacio": "Trieu un indret amb poca llum artificial i consulteu la previsió de núvols."
+        }
+      }
+    },
+    {
+      "codi": "lluna-plena-2027-07-18",
+      "fenomen_codi": "lluna-plena",
+      "metode_calcul": "Astronomy Engine 2.1.19",
+      "inici": "2027-07-18T00:00:00Z",
+      "fi": "2027-07-18T23:59:59Z",
+      "maxim": "2027-07-18T15:45:36Z",
+      "precisio": {
+        "inici": "dia",
+        "fi": "dia",
+        "maxim": "segon"
+      },
+      "rellevant_catalunya": true,
+      "rellevancia": "principal",
+      "dificultat_observacio": "baixa",
+      "textos": {
+        "ca": {
+          "nota_visibilitat": "Lluna plena observable des de Catalunya si el cel és clar.",
+          "consell_observacio": "Mireu cap a la Lluna al vespre o durant la nit i tingueu en compte que il·lumina el cel."
+        }
+      }
+    },
+    {
+      "codi": "lluna-nova-2027-08-02",
+      "fenomen_codi": "lluna-nova",
+      "metode_calcul": "Astronomy Engine 2.1.19",
+      "inici": "2027-08-02T00:00:00Z",
+      "fi": "2027-08-02T23:59:59Z",
+      "maxim": "2027-08-02T10:05:42Z",
+      "precisio": {
+        "inici": "dia",
+        "fi": "dia",
+        "maxim": "segon"
+      },
+      "rellevant_catalunya": true,
+      "rellevancia": "principal",
+      "dificultat_observacio": "baixa",
+      "textos": {
+        "ca": {
+          "nota_visibilitat": "La Lluna nova no es veu; la seva absència afavoreix un cel fosc a Catalunya.",
+          "consell_observacio": "Trieu un indret amb poca llum artificial i consulteu la previsió de núvols."
+        }
+      }
+    },
+    {
+      "codi": "lluna-plena-2027-08-17",
+      "fenomen_codi": "lluna-plena",
+      "metode_calcul": "Astronomy Engine 2.1.19",
+      "inici": "2027-08-17T00:00:00Z",
+      "fi": "2027-08-17T23:59:59Z",
+      "maxim": "2027-08-17T07:29:20Z",
+      "precisio": {
+        "inici": "dia",
+        "fi": "dia",
+        "maxim": "segon"
+      },
+      "rellevant_catalunya": true,
+      "rellevancia": "principal",
+      "dificultat_observacio": "baixa",
+      "textos": {
+        "ca": {
+          "nota_visibilitat": "Lluna plena observable des de Catalunya si el cel és clar.",
+          "consell_observacio": "Mireu cap a la Lluna al vespre o durant la nit i tingueu en compte que il·lumina el cel."
+        }
+      }
+    },
+    {
+      "codi": "lluna-nova-2027-08-31",
+      "fenomen_codi": "lluna-nova",
+      "metode_calcul": "Astronomy Engine 2.1.19",
+      "inici": "2027-08-31T00:00:00Z",
+      "fi": "2027-08-31T23:59:59Z",
+      "maxim": "2027-08-31T17:41:41Z",
+      "precisio": {
+        "inici": "dia",
+        "fi": "dia",
+        "maxim": "segon"
+      },
+      "rellevant_catalunya": true,
+      "rellevancia": "principal",
+      "dificultat_observacio": "baixa",
+      "textos": {
+        "ca": {
+          "nota_visibilitat": "La Lluna nova no es veu; la seva absència afavoreix un cel fosc a Catalunya.",
+          "consell_observacio": "Trieu un indret amb poca llum artificial i consulteu la previsió de núvols."
+        }
+      }
+    },
+    {
+      "codi": "lluna-plena-2027-09-15",
+      "fenomen_codi": "lluna-plena",
+      "metode_calcul": "Astronomy Engine 2.1.19",
+      "inici": "2027-09-15T00:00:00Z",
+      "fi": "2027-09-15T23:59:59Z",
+      "maxim": "2027-09-15T23:04:09Z",
+      "precisio": {
+        "inici": "dia",
+        "fi": "dia",
+        "maxim": "segon"
+      },
+      "rellevant_catalunya": true,
+      "rellevancia": "principal",
+      "dificultat_observacio": "baixa",
+      "textos": {
+        "ca": {
+          "nota_visibilitat": "Lluna plena observable des de Catalunya si el cel és clar.",
+          "consell_observacio": "Mireu cap a la Lluna al vespre o durant la nit i tingueu en compte que il·lumina el cel."
+        }
+      }
+    },
+    {
+      "codi": "lluna-nova-2027-09-30",
+      "fenomen_codi": "lluna-nova",
+      "metode_calcul": "Astronomy Engine 2.1.19",
+      "inici": "2027-09-30T00:00:00Z",
+      "fi": "2027-09-30T23:59:59Z",
+      "maxim": "2027-09-30T02:36:35Z",
+      "precisio": {
+        "inici": "dia",
+        "fi": "dia",
+        "maxim": "segon"
+      },
+      "rellevant_catalunya": true,
+      "rellevancia": "principal",
+      "dificultat_observacio": "baixa",
+      "textos": {
+        "ca": {
+          "nota_visibilitat": "La Lluna nova no es veu; la seva absència afavoreix un cel fosc a Catalunya.",
+          "consell_observacio": "Trieu un indret amb poca llum artificial i consulteu la previsió de núvols."
+        }
+      }
+    },
+    {
+      "codi": "lluna-plena-2027-10-15",
+      "fenomen_codi": "lluna-plena",
+      "metode_calcul": "Astronomy Engine 2.1.19",
+      "inici": "2027-10-15T00:00:00Z",
+      "fi": "2027-10-15T23:59:59Z",
+      "maxim": "2027-10-15T13:47:34Z",
+      "precisio": {
+        "inici": "dia",
+        "fi": "dia",
+        "maxim": "segon"
+      },
+      "rellevant_catalunya": true,
+      "rellevancia": "principal",
+      "dificultat_observacio": "baixa",
+      "textos": {
+        "ca": {
+          "nota_visibilitat": "Lluna plena observable des de Catalunya si el cel és clar.",
+          "consell_observacio": "Mireu cap a la Lluna al vespre o durant la nit i tingueu en compte que il·lumina el cel."
+        }
+      }
+    },
+    {
+      "codi": "lluna-nova-2027-10-29",
+      "fenomen_codi": "lluna-nova",
+      "metode_calcul": "Astronomy Engine 2.1.19",
+      "inici": "2027-10-29T00:00:00Z",
+      "fi": "2027-10-29T23:59:59Z",
+      "maxim": "2027-10-29T13:37:05Z",
+      "precisio": {
+        "inici": "dia",
+        "fi": "dia",
+        "maxim": "segon"
+      },
+      "rellevant_catalunya": true,
+      "rellevancia": "principal",
+      "dificultat_observacio": "baixa",
+      "textos": {
+        "ca": {
+          "nota_visibilitat": "La Lluna nova no es veu; la seva absència afavoreix un cel fosc a Catalunya.",
+          "consell_observacio": "Trieu un indret amb poca llum artificial i consulteu la previsió de núvols."
+        }
+      }
+    },
+    {
+      "codi": "lluna-plena-2027-11-14",
+      "fenomen_codi": "lluna-plena",
+      "metode_calcul": "Astronomy Engine 2.1.19",
+      "inici": "2027-11-14T00:00:00Z",
+      "fi": "2027-11-14T23:59:59Z",
+      "maxim": "2027-11-14T03:26:26Z",
+      "precisio": {
+        "inici": "dia",
+        "fi": "dia",
+        "maxim": "segon"
+      },
+      "rellevant_catalunya": true,
+      "rellevancia": "principal",
+      "dificultat_observacio": "baixa",
+      "textos": {
+        "ca": {
+          "nota_visibilitat": "Lluna plena observable des de Catalunya si el cel és clar.",
+          "consell_observacio": "Mireu cap a la Lluna al vespre o durant la nit i tingueu en compte que il·lumina el cel."
+        }
+      }
+    },
+    {
+      "codi": "lluna-nova-2027-11-28",
+      "fenomen_codi": "lluna-nova",
+      "metode_calcul": "Astronomy Engine 2.1.19",
+      "inici": "2027-11-28T00:00:00Z",
+      "fi": "2027-11-28T23:59:59Z",
+      "maxim": "2027-11-28T03:24:59Z",
+      "precisio": {
+        "inici": "dia",
+        "fi": "dia",
+        "maxim": "segon"
+      },
+      "rellevant_catalunya": true,
+      "rellevancia": "principal",
+      "dificultat_observacio": "baixa",
+      "textos": {
+        "ca": {
+          "nota_visibilitat": "La Lluna nova no es veu; la seva absència afavoreix un cel fosc a Catalunya.",
+          "consell_observacio": "Trieu un indret amb poca llum artificial i consulteu la previsió de núvols."
+        }
+      }
+    },
+    {
+      "codi": "lluna-plena-2027-12-13",
+      "fenomen_codi": "lluna-plena",
+      "metode_calcul": "Astronomy Engine 2.1.19",
+      "inici": "2027-12-13T00:00:00Z",
+      "fi": "2027-12-13T23:59:59Z",
+      "maxim": "2027-12-13T16:09:19Z",
+      "precisio": {
+        "inici": "dia",
+        "fi": "dia",
+        "maxim": "segon"
+      },
+      "rellevant_catalunya": true,
+      "rellevancia": "principal",
+      "dificultat_observacio": "baixa",
+      "textos": {
+        "ca": {
+          "nota_visibilitat": "Lluna plena observable des de Catalunya si el cel és clar.",
+          "consell_observacio": "Mireu cap a la Lluna al vespre o durant la nit i tingueu en compte que il·lumina el cel."
+        }
+      }
+    },
+    {
+      "codi": "lluna-nova-2027-12-27",
+      "fenomen_codi": "lluna-nova",
+      "metode_calcul": "Astronomy Engine 2.1.19",
+      "inici": "2027-12-27T00:00:00Z",
+      "fi": "2027-12-27T23:59:59Z",
+      "maxim": "2027-12-27T20:12:56Z",
+      "precisio": {
+        "inici": "dia",
+        "fi": "dia",
+        "maxim": "segon"
+      },
+      "rellevant_catalunya": true,
+      "rellevancia": "principal",
+      "dificultat_observacio": "baixa",
+      "textos": {
+        "ca": {
+          "nota_visibilitat": "La Lluna nova no es veu; la seva absència afavoreix un cel fosc a Catalunya.",
+          "consell_observacio": "Trieu un indret amb poca llum artificial i consulteu la previsió de núvols."
+        }
+      }
+    }
+  ]
+}

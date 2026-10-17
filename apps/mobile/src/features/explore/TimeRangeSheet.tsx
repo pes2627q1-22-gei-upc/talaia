@@ -1,69 +1,66 @@
 import { StyleSheet, View } from 'react-native';
 
-import { colors, radii, sizes, spacing } from '@/core/theme/tokens';
+import { colors, radii } from '@/core/theme/tokens';
 import { AppText } from '@/shared/ui/AppText';
 import { Button } from '@/shared/ui/Button';
-import { PressableScale } from '@/shared/ui/PressableScale';
 import { Sheet } from '@/shared/ui/Sheet';
+import { WHEEL_HEIGHT, WHEEL_ITEM, WheelPicker } from '@/shared/ui/WheelPicker';
 
 import type { useExploreViewModel } from './useExploreViewModel';
 
 type TimeRangeSheetProps = ReturnType<typeof useExploreViewModel>['rangeSheet'];
 
-function StepButton({
-  symbol,
-  label,
-  onPress,
-}: {
-  symbol: string;
-  label: string;
-  onPress: () => void;
-}) {
-  return (
-    <PressableScale
-      haptic="selection"
-      accessibilityLabel={label}
-      onPress={onPress}
-      style={styles.step}
-    >
-      <AppText variant="heading">{symbol}</AppText>
-    </PressableScale>
-  );
-}
+/** Amplada de la fletxa entre les dues rodes. */
+const ARROW = 32;
 
-/** Full per triar la franja horària: inici i final d'hora en hora; pot passar de mitjanit. */
+/**
+ * Full de la franja horària: dues rodes d'hores (des de, fins a) amb una sola banda, com les de
+ * l'alarma d'iOS. La franja pot passar de mitjanit.
+ */
 export function TimeRangeSheet({
   visible,
   title,
-  rows,
+  hours,
+  format,
+  wheels,
   duration,
   doneLabel,
   onClose,
 }: TimeRangeSheetProps) {
   return (
     <Sheet visible={visible} onClose={onClose} title={title} closeLabel={doneLabel}>
-      {rows.map((row) => (
-        <View key={row.end} style={styles.row}>
-          <AppText variant="body" color="boira" style={styles.label}>
-            {row.label}
-          </AppText>
-          <StepButton
-            symbol="−"
-            label={`${row.label}: ${row.earlierLabel}`}
-            onPress={row.onEarlier}
-          />
-          <AppText
-            variant="indexMd"
-            accessibilityLiveRegion="polite"
-            accessibilityLabel={`${row.label} ${row.value}`}
-            style={styles.value}
-          >
-            {row.value}
-          </AppText>
-          <StepButton symbol="+" label={`${row.label}: ${row.laterLabel}`} onPress={row.onLater} />
-        </View>
-      ))}
-      <AppText variant="small" color="boira">
+      <View style={styles.row}>
+        {wheels.map((wheel, index) => (
+          <View key={wheel.end} style={styles.labelCell}>
+            {index > 0 ? <View style={styles.arrowSpace} /> : null}
+            <AppText variant="tag" color="boira" style={styles.label}>
+              {wheel.label}
+            </AppText>
+          </View>
+        ))}
+      </View>
+      <View style={styles.row}>
+        <View pointerEvents="none" style={styles.band} />
+        {wheels.map((wheel, index) => (
+          <View key={wheel.end} style={styles.wheelCell}>
+            {index > 0 ? (
+              <AppText variant="title" color="boira" style={styles.arrow}>
+                →
+              </AppText>
+            ) : null}
+            <WheelPicker
+              testID={`wheel-${wheel.end}`}
+              values={hours}
+              value={wheel.value}
+              onChange={wheel.onChange}
+              format={format}
+              accessibilityLabel={wheel.label}
+              band={false}
+            />
+          </View>
+        ))}
+      </View>
+      <AppText variant="small" color="boira" style={styles.duration}>
         {duration}
       </AppText>
       <Button label={doneLabel} onPress={onClose} />
@@ -72,17 +69,20 @@ export function TimeRangeSheet({
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection: 'row', alignItems: 'center', gap: spacing.ms },
-  label: { flex: 1 },
-  value: { minWidth: 104, textAlign: 'center' },
-  step: {
-    width: sizes.touch,
-    height: sizes.touch,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: radii.pill,
-    borderWidth: 1,
-    borderColor: colors.linia,
-    backgroundColor: colors.card,
+  row: { flexDirection: 'row' },
+  labelCell: { flex: 1, flexDirection: 'row' },
+  arrowSpace: { width: ARROW },
+  label: { flex: 1, textAlign: 'center', textTransform: 'uppercase' },
+  wheelCell: { flex: 1, flexDirection: 'row', alignItems: 'center', height: WHEEL_HEIGHT },
+  arrow: { width: ARROW, textAlign: 'center' },
+  band: {
+    position: 'absolute',
+    top: WHEEL_ITEM * 2,
+    right: 0,
+    left: 0,
+    height: WHEEL_ITEM,
+    borderRadius: radii.field,
+    backgroundColor: colors.crep,
   },
+  duration: { textAlign: 'center' },
 });

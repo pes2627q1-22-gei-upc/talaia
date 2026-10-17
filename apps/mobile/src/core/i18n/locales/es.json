@@ -83,7 +83,8 @@
       "denied": "Activa la ubicación",
       "settings": "Ajustes",
       "error": "No hemos encontrado dónde estás",
-      "retry": "Vuelve a intentarlo"
+      "retry": "Vuelve a intentarlo",
+      "allow": "Permitir"
     },
     "when": {
       "title": "Cuándo",
@@ -91,15 +92,64 @@
       "tomorrow": "Mañana",
       "pick": "Elige el día",
       "range": "De {{from}} a {{to}}",
-      "rangeHint": "Franja horaria"
+      "rangeHint": "Franja horaria",
+      "picked": "{{weekday}} {{day}} {{month}}"
     },
     "weekdays": ["dom.", "lun.", "mar.", "mié.", "jue.", "vie.", "sáb."],
+    "calendar": {
+      "title": "Elige el día",
+      "close": "Cerrar",
+      "month": "{{month}} de {{year}}",
+      "day": "{{day}} {{month}}",
+      "previous": "Mes anterior",
+      "next": "Mes siguiente",
+      "months": [
+        "enero",
+        "febrero",
+        "marzo",
+        "abril",
+        "mayo",
+        "junio",
+        "julio",
+        "agosto",
+        "septiembre",
+        "octubre",
+        "noviembre",
+        "diciembre"
+      ],
+      "monthsShort": [
+        "ene.",
+        "feb.",
+        "mar.",
+        "abr.",
+        "may.",
+        "jun.",
+        "jul.",
+        "ago.",
+        "sept.",
+        "oct.",
+        "nov.",
+        "dic."
+      ],
+      "monthsOf": [
+        "de enero",
+        "de febrero",
+        "de marzo",
+        "de abril",
+        "de mayo",
+        "de junio",
+        "de julio",
+        "de agosto",
+        "de septiembre",
+        "de octubre",
+        "de noviembre",
+        "de diciembre"
+      ]
+    },
     "rangeSheet": {
       "title": "Franja horaria",
       "from": "Desde",
       "to": "Hasta",
-      "earlier": "una hora antes",
-      "later": "una hora más tarde",
       "duration_one": "{{count}} hora de observación",
       "duration_other": "{{count}} horas de observación",
       "done": "Hecho"

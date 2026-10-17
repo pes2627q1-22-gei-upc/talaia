@@ -17,6 +17,13 @@ l'app). La cobertura és només la de l'app: es desa durant 7 dies a l'artefacte
 `mobile-coverage`, també si Jest falla
 i ha generat informes. `packages/shared` només té tipus i el cobreix `typecheck`.
 
+## Desplegament
+
+Dos workflows més, separats de `ci.yml` (detalls a [desplegament.md](desplegament.md)):
+
+- [deploy-check.yml](../.github/workflows/deploy-check.yml): a les PR que toquen `deploy/`, els `Dockerfile`, `.dockerignore` o `package-lock.json`, valida el compose, construeix les imatges i arrenca el compose amb `.env.example` i un certificat autosignat fins que `/api/v1/health` respon per Nginx.
+- [deploy.yml](../.github/workflows/deploy.yml): amb push a `stable`, desplega a la VM des del runner self-hosted `talaia-vm`. Mai s'executa per PR.
+
 ## Activar SonarCloud quan hi hagi accés
 
 La integració està preparada però **desactivada per defecte**. Sense la variable

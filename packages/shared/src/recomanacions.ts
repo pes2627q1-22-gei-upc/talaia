@@ -19,7 +19,10 @@ export type ConsultaRecomanacions = {
   origen: { lat: number; lon: number };
   /** Nit de l'observació (`YYYY-MM-DD`): el dia del vespre, encara que la franja passi de mitjanit. */
   data: string;
-  /** Franja horària en hores locals de Catalunya (0–23). Si `finsA` < `desDe`, acaba l'endemà. */
+  /**
+   * Franja horària en hores locals de Catalunya (0–23). Si `finsA` < `desDe`, acaba l'endemà.
+   * L'app la calcula amb l'hora del mòbil: es dona per fet que és a `Europe/Madrid`.
+   */
   desDe: number;
   finsA: number;
   /**

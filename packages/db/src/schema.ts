@@ -28,12 +28,14 @@ export type Timestamp = ColumnType<Date, Date | string, Date | string>;
 export interface EsdevenimentsAstronomics {
   codi: string;
   dataActualitzacio: Generated<Timestamp>;
+  detallCalcul: Json | null;
   dificultatObservacio: "baixa" | "mitjana" | "alta";
   fenomenCodi: string;
   fi: Timestamp;
-  fontCodi: string;
+  fontCodi: string | null;
   inici: Timestamp;
   maxim: Timestamp | null;
+  metodeCalcul: string | null;
   precisio: Json;
   radiantMaxim: Json | null;
   referenciaFont: string | null;
@@ -46,7 +48,7 @@ export interface EsdevenimentsAstronomics {
 export interface FenomensAstronomics {
   codi: string;
   dataActualitzacio: Generated<Timestamp>;
-  periodicitat: "anual" | "ocasional";
+  periodicitat: "mensual" | "anual" | "ocasional";
   publicableCalendari: boolean;
   textos: Json;
   tipusCodi: string;
@@ -60,6 +62,16 @@ export interface FontsAstronomiques {
   organitzacio: "IMO" | "NASA";
   titol: string;
   url: string;
+}
+
+export interface IndexVisibilitat {
+  calculatEl: Generated<Timestamp>;
+  factors: Json;
+  foscorEstimada: boolean;
+  franja: "tap" | "jus" | "ras";
+  hora: Timestamp;
+  puntId: string;
+  valor: number;
 }
 
 export interface PuntsObservacio {
@@ -88,6 +100,7 @@ export interface DB {
   esdevenimentsAstronomics: EsdevenimentsAstronomics;
   fenomensAstronomics: FenomensAstronomics;
   fontsAstronomiques: FontsAstronomiques;
+  indexVisibilitat: IndexVisibilitat;
   puntsObservacio: PuntsObservacio;
   tipusFenomen: TipusFenomen;
 }

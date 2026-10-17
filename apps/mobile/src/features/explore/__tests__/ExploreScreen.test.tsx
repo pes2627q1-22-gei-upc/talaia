@@ -6,6 +6,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import i18n from '@/core/i18n';
 import { createQueryWrapper } from '@/test-utils/queryWrapper';
 
+import { addDays, nightOf } from '../exploreModel';
 import { ExploreScreen } from '../ExploreScreen';
 import { getCurrentPlace } from '../locationRepository';
 
@@ -31,6 +32,9 @@ function renderScreen() {
   }
   return render(<ExploreScreen />, { wrapper: Wrapper });
 }
+
+// Pantalla sencera: en paral·lel amb la resta, l'entorn de Skia endarrereix el primer render.
+jest.setTimeout(15_000);
 
 describe('ExploreScreen', () => {
   beforeEach(async () => {
@@ -60,18 +64,38 @@ describe('ExploreScreen', () => {
     expect(screen.getByRole('button', { name: 'Cel estrellat' })).not.toBeSelected();
   });
 
-  it('«Tria el dia» mostra les nits que es poden triar', async () => {
+  it('«Tria el dia» obre el calendari; en triar un dia, el segment el mostra', async () => {
     await renderScreen();
     await fireEvent.press(screen.getByRole('tab', { name: 'Tria el dia' }));
-    expect(screen.getAllByText(/^(dg|dl|dt|dc|dj|dv|ds)\. \d{1,2}$/)).toHaveLength(14);
+    expect(screen.getByRole('header', { name: 'Tria el dia' })).toBeOnTheScreen();
+
+    // D'aquí a tres nits (si és el mes que ve, primer s'hi passa).
+    const tonight = nightOf(new Date());
+    const target = addDays(tonight, 3);
+    const monthsOf = i18n.t('explore.calendar.monthsOf', { returnObjects: true }) as string[];
+    const label = i18n.t('explore.calendar.day', {
+      day: Number(target.slice(8, 10)),
+      month: monthsOf[Number(target.slice(5, 7)) - 1],
+    });
+    if (target.slice(0, 7) !== tonight.slice(0, 7)) {
+      await fireEvent.press(screen.getByRole('button', { name: 'Mes següent' }));
+    }
+    await fireEvent.press(screen.getByRole('button', { name: label }));
+
+    // El full es tanca amb la seva animació de sortida (ho prova el ViewModel); el segment ja ho diu.
+    expect(
+      screen.getByRole('tab', { name: /^(dg|dl|dt|dc|dj|dv|ds)\. \d{1,2} \S+$/ }),
+    ).toBeSelected();
   });
 
-  it('la franja horària s’obre en un full i es canvia d’hora en hora', async () => {
+  it('la franja horària s’obre en un full amb dues rodes', async () => {
     await renderScreen();
     await fireEvent.press(screen.getByRole('button', { name: 'De 22:00 a 06:00, Franja horària' }));
     expect(screen.getByRole('header', { name: 'Franja horària' })).toBeOnTheScreen();
 
-    await fireEvent.press(screen.getByRole('button', { name: 'Des de: una hora abans' }));
+    await fireEvent(screen.getByRole('adjustable', { name: 'Des de' }), 'accessibilityAction', {
+      nativeEvent: { actionName: 'decrement' },
+    });
     expect(screen.getByText('De 21:00 a 06:00')).toBeOnTheScreen();
     expect(screen.getByText("9 hores d'observació")).toBeOnTheScreen();
   });
