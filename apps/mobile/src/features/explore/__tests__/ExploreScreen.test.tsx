@@ -125,7 +125,7 @@ describe('ExploreScreen', () => {
   });
 
   it('«Veure el mapa» obre el mapa sense cercar, també sense ubicació', async () => {
-    jest.mocked(getCurrentPlace).mockResolvedValue({ status: 'denied' });
+    jest.mocked(getCurrentPlace).mockResolvedValue({ status: 'denied', canAskAgain: true });
     await renderScreen();
     await screen.findByText('Activa la ubicació');
     await fireEvent.press(screen.getByRole('button', { name: 'Veure el mapa' }));
