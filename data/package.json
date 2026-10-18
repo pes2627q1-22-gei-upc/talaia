@@ -1,4 +1,18 @@
 {
+  "name": "@talaia/data",
+  "version": "0.1.0",
   "private": true,
-  "type": "module"
+  "description": "Scripts de descàrrega i preprocés de dades obertes (punts, foscor del cel, fenòmens). Vegeu README.md.",
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "node --test \"scripts/**/*.test.ts\""
+  },
+  "dependencies": {
+    "geotiff": "^3.0.5"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.5",
+    "typescript": "~6.0.3"
+  }
 }

@@ -6,13 +6,12 @@ Llegenda: **Recomanació** = la proposta inicial del sprint master; no és defin
 
 ## Tècniques (Sprint 1, scaffolds)
 
-P1, P2, P3, P7 i P8 ja estan decidides: [ADR-0010](0010-eines-app.md). P4: [ADR-0011](0011-validacio-openapi-zod.md). P5: [ADR-0013](0013-acces-bd-kysely.md). P22: [ADR-0014](0014-identificador-app-expo-go.md).
+P1, P2, P3, P7 i P8 ja estan decidides: [ADR-0010](0010-eines-app.md). P4: [ADR-0011](0011-validacio-openapi-zod.md). P5: [ADR-0013](0013-acces-bd-kysely.md). P10: [ADR-0020](0020-foscor-sqm-geotiff.md). P22: [ADR-0014](0014-identificador-app-expo-go.md).
 
 | # | Decisió | Opcions | Recomanació | Quan / qui |
 |---|---|---|---|---|
 | P6 | Validació del JWT a l'API | Verificar amb JWKS de Supabase (`jose`) · secret compartit | **JWKS amb `jose`** | TG-84, Martina |
 | P9 | Planificació del worker | `node-cron` dins el contenidor · cron del sistema | **node-cron** (tot dins de Docker) | TG-99, Martina |
-| P10 | Preprocés del GeoTIFF | `geotiff.js` (Node) · GDAL (script a part) | **geotiff.js** en un script de `data/` que genera la foscor per punt | TG-97, Hugo |
 | P11 | Web d'administració | Vite + React · Next.js | **Vite + React** (estàtica, servida per Nginx) | Sprint 2 |
 
 ## Producte i índex

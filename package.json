@@ -10,7 +10,8 @@
     "services/api",
     "services/worker",
     "packages/shared",
-    "packages/db"
+    "packages/db",
+    "data"
   ],
   "scripts": {
     "mobile": "npm run start --workspace apps/mobile",
