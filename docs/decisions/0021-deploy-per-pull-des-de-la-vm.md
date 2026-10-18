@@ -13,7 +13,7 @@ Limitar el runner al workflow de deploy demanava un *runner group* de l'organitz
 
 ## Decisió
 
-- **La VM fa pull.** Un cron de l'usuari executa `deploy/scripts/desplega.sh` cada 5 minuts, amb `flock`. Si `origin/stable` ha canviat, fa `git reset --hard origin/stable`, `docker compose up -d --build --remove-orphans --wait`, el healthcheck HTTPS amb `curl --resolve` i `docker image prune`. Si no ha canviat, no fa res.
+- **La VM fa pull.** Un cron de l'usuari executa `deploy/scripts/desplega.sh` cada 5 minuts. L'script agafa un `flock` i compara `origin/stable` amb l'últim commit desplegat bé (no amb HEAD). Si no hi coincideix, fa `git reset --hard origin/stable`, `docker compose up -d --build --remove-orphans --wait`, el healthcheck HTTPS amb `curl --resolve` i `docker image prune`. Si no ha canviat, no fa res.
 - **S'esborra `deploy.yml`.** `deploy-check.yml` es queda: s'executa a runners de GitHub i no toca la VM.
 - La resta de l'ADR-0019 (VM de la FIB, DuckDNS, DNS-01, Nginx al 8080, secrets a `/opt/talaia/.env`) no canvia.
 
@@ -27,4 +27,4 @@ Limitar el runner al workflow de deploy demanava un *runner group* de l'organitz
 
 - GitHub no executa res a la VM. Només hi arriba el que s'ha fusionat a `stable` per PR, amb revisió i CI.
 - Un deploy comença, com a molt, 5 minuts després del merge a `stable`.
-- El resultat no surt a GitHub Actions: és a `~/talaia-deploy.log` de la VM. Un deploy que falla no es reintenta sol; es corregeix amb un hotfix a `stable` o, a la VM, amb `FORCE=1 deploy/scripts/desplega.sh`.
+- El resultat no surt a GitHub Actions: és a `~/talaia-deploy.log` de la VM. Un deploy que falla es reintenta a cada passada del cron fins que surt bé o arriba un hotfix a `stable`. No hi ha rollback automàtic: si el contenidor nou no passa el healthcheck, ja ha substituït l'anterior, i ho diu el log.

@@ -85,14 +85,14 @@ curl -fsS https://<PUBLIC_HOST>:<PUBLIC_PORT>/api/v1/health
 
 ### 5. Deploy automàtic (cron)
 
-Un cron de l'usuari executa `deploy/scripts/desplega.sh` cada 5 minuts. Si `origin/stable` ha canviat, fa `git reset --hard origin/stable`, refà i arrenca el compose i comprova el healthcheck per HTTPS. Si no ha canviat, no fa res.
+Un cron de l'usuari executa `deploy/scripts/desplega.sh` cada 5 minuts. Si `origin/stable` no és l'últim commit que s'ha desplegat bé (`.git/talaia-desplegat`), fa `git reset --hard origin/stable`, refà i arrenca el compose i comprova el healthcheck per HTTPS. Si no ha canviat, no fa res.
 
 ```bash
-(crontab -l 2>/dev/null; echo '*/5 * * * * flock -n /tmp/talaia-deploy.lock $HOME/talaia/deploy/scripts/desplega.sh /opt/talaia/.env >> $HOME/talaia-deploy.log 2>&1') | crontab -
+(crontab -l 2>/dev/null; echo '*/5 * * * * $HOME/talaia/deploy/scripts/desplega.sh /opt/talaia/.env >> $HOME/talaia-deploy.log 2>&1') | crontab -
 crontab -l   # comprova-ho
 ```
 
-`flock` evita que dos deploys es trepitgin si un build triga més de 5 minuts. El cron torna a funcionar sol després d'un reinici de la VM. **No editis res a `~/talaia`:** el deploy fa `git reset --hard` i ho perdria.
+L'script agafa un `flock` (`.git/talaia-deploy.lock`): si un build triga més de 5 minuts o se n'engega un a mà, el segon surt sense fer res. El `git fetch` té un límit d'1 minut i el `docker compose` de 20, perquè un procés penjat no bloquegi els següents. El cron torna a funcionar sol després d'un reinici de la VM. **No editis res a `~/talaia`:** el deploy fa `git reset --hard` i ho perdria.
 
 ### 6. Proteccions del repositori
 
@@ -102,7 +102,7 @@ GitHub no executa res a la VM: la VM només baixa `stable`, i una PR (d'un fork 
 
 1. Una `release/0.N.0` o un `hotfix/0.N.x` es fusiona a `stable` ([git-workflow.md](git-workflow.md)).
 2. En menys de 5 minuts, el cron de la VM executa `desplega.sh`: `git reset --hard origin/stable`, `docker compose up -d --build --remove-orphans --wait`, un healthcheck amb `curl --resolve <PUBLIC_HOST>:8080:127.0.0.1`, que valida el certificat real contra el Nginx local, i `docker image prune`.
-3. Cada deploy queda a `~/talaia-deploy.log`. Si falla, el log acaba amb `ERROR` i aquell commit no es torna a provar sol. Per tornar enrere o corregir-ho: un hotfix a `stable`.
+3. Cada deploy queda a `~/talaia-deploy.log`. Si falla, el log acaba amb `ERROR` i el cron el torna a provar a cada passada fins que surti bé: una fallada de xarxa o de Docker Hub es resol sola, i un commit trencat deixa un `ERROR` cada 5 minuts fins que arribi el hotfix a `stable`. No hi ha rollback automàtic: si el contenidor nou no passa el healthcheck, ja ha substituït l'anterior.
 
 A mà, a la VM, torna a desplegar el commit actual: `FORCE=1 ~/talaia/deploy/scripts/desplega.sh`.
 
