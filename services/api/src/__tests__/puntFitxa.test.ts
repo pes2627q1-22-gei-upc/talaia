@@ -2,8 +2,10 @@ import type { IndexHora } from '@talaia/shared';
 import request from 'supertest';
 
 import { createApp } from '../app';
+import { createPuntsRepository } from '../punts/puntsRepository';
 import type { PuntDetall, PuntsRepository } from '../punts/puntsRepository';
 import { createDefaultPuntsService } from '../punts/puntsService';
+import { fakeDb } from '../testing/fakeDb';
 
 const ID = '7d3f2c1a-5b4e-4f6a-9c8d-1e2f3a4b5c6d';
 const HORA_MS = 3_600_000;
@@ -124,6 +126,19 @@ describe('GET /api/v1/punts/{id}', () => {
       horitzoObert: null,
       accessibilitat: null,
     });
+  });
+
+  it("amb el repositori real i sqm com el retorna pg ('21.40'), la resposta té 21.4", async () => {
+    // Totes les consultes reben la mateixa fila; l'índex queda buit perquè no té `hora`.
+    const fila = { ...PUNT, horitzo_obert: PUNT.horitzoObert, sqm: '21.40' };
+    const { db } = fakeDb([fila]);
+    const repository = createPuntsRepository(db);
+    const res = await request(appWith({ ...repository, indexHores: async () => [] })).get(
+      `/api/v1/punts/${ID}`,
+    );
+    expect(res.status).toBe(200);
+    expect(res.body.sqm).toBe(21.4);
+    expect(typeof res.body.sqm).toBe('number');
   });
 
   it('porta Cache-Control fins a la propera hora', async () => {

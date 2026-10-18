@@ -1,33 +1,19 @@
-import {
-  CamelCasePlugin,
-  DummyDriver,
-  Kysely,
-  PostgresAdapter,
-  PostgresIntrospector,
-  PostgresQueryCompiler,
-  type CompiledQuery,
-} from 'kysely';
-import type { DB } from '@talaia/db';
-
+import { fakeDb as dummyDb } from '../../testing/fakeDb';
 import { createPuntsRepository } from '../puntsRepository';
 
-/** Sense base de dades: el DummyDriver no retorna files, però el log captura l'SQL. */
-function dummyDb() {
-  const queries: CompiledQuery[] = [];
-  const db = new Kysely<DB>({
-    dialect: {
-      createAdapter: () => new PostgresAdapter(),
-      createDriver: () => new DummyDriver(),
-      createIntrospector: (k) => new PostgresIntrospector(k),
-      createQueryCompiler: () => new PostgresQueryCompiler(),
-    },
-    plugins: [new CamelCasePlugin()],
-    log: (event) => {
-      queries.push(event.query);
-    },
-  });
-  return { db, queries };
-}
+/** Una fila de `punts_observacio` tal com la retorna `pg`: `numeric` arriba com a text. */
+const FILA_PUNT = {
+  id: 'id-1',
+  nom: 'Observatori del Montsec',
+  municipi: 'Àger',
+  descripcio: 'Parc Astronòmic del Montsec.',
+  altitud: 800,
+  horitzo_obert: ['S', 'SW'],
+  accessibilitat: null,
+  sqm: '21.40',
+  lon: 0.7364,
+  lat: 42.0244,
+};
 
 describe('puntsRepository.listPublished', () => {
   it("només llegeix els punts amb estat = 'PUBLICAT'", async () => {
@@ -55,6 +41,21 @@ describe('puntsRepository.findPublished', () => {
       'select "id", "nom", "municipi", "descripcio", "altitud", "horitzo_obert", "accessibilitat", "sqm", st_x("ubicacio"::geometry) as "lon", st_y("ubicacio"::geometry) as "lat" from "punts_observacio" where "id" = $1 and "estat" = $2',
     );
     expect(queries[0]?.parameters).toEqual(['id-1', 'PUBLICAT']);
+  });
+
+  it("converteix sqm (numeric, que pg retorna com a text) a number: '21.40' → 21.4", async () => {
+    const { db } = dummyDb([FILA_PUNT]);
+
+    const punt = await createPuntsRepository(db).findPublished('id-1');
+
+    expect(punt?.sqm).toBe(21.4);
+    expect(punt).toMatchObject({ horitzoObert: ['S', 'SW'], altitud: 800 });
+  });
+
+  it('manté sqm null si la foscor encara no està calculada', async () => {
+    const { db } = dummyDb([{ ...FILA_PUNT, sqm: null }]);
+
+    expect((await createPuntsRepository(db).findPublished('id-1'))?.sqm).toBeNull();
   });
 });
 
