@@ -11,6 +11,7 @@ npm run api                   # = npm run dev -w services/api, amb recàrrega
 
 - Salut: <http://localhost:3000/api/v1/health>
 - Punts del mapa: <http://localhost:3000/api/v1/punts> (cal `DATABASE_URL`)
+- Desglossament de l'índex d'un punt: `http://localhost:3000/api/v1/punts/{id}/index?nit=2026-10-19` (cal `DATABASE_URL`)
 - Documentació (Swagger UI): <http://localhost:3000/api/v1/docs>
 - OpenAPI: <http://localhost:3000/api/v1/openapi.json>
 
@@ -30,7 +31,7 @@ Es llegeixen del `.env` de l'**arrel** del repo (`dev` i `start` el carreguen am
 | Variable | Per defecte | Què és |
 |---|---|---|
 | `API_PORT` | `3000` | Port on escolta l'API |
-| `DATABASE_URL` | — | Postgres (`postgresql://…`). **Opcional:** sense ella l'API arrenca amb un avís, `/health` funciona i `/punts` respon 503 `database_unavailable`. Amb Supabase local: `postgresql://postgres:postgres@127.0.0.1:54322/postgres` |
+| `DATABASE_URL` | — | Postgres (`postgresql://…`). **Opcional:** sense ella l'API arrenca amb un avís, `/health` funciona i `/punts` i `/punts/{id}/index` responen 503 `database_unavailable`. Amb Supabase local: `postgresql://postgres:postgres@127.0.0.1:54322/postgres` |
 
 Una variable nova s'afegeix a l'esquema de `src/config/env.ts` i a `.env.example`. Cap secret al repo.
 
@@ -46,11 +47,16 @@ src/
     index.ts            Router de /api/v1: munta un router per recurs, /openapi.json i /docs
     health.ts           GET /health
     punts.ts            GET /punts: bbox, ETag, Cache-Control i 304
+    puntIndex.ts        GET /punts/{id}/index: desglossament de l'índex per hores i factors (HU04)
   punts/
-    puntsRepository.ts  Consulta dels punts publicats amb @talaia/db (ADR-0013)
+    puntsRepository.ts  Consulta dels punts publicats (tots, o un per id) amb @talaia/db (ADR-0013)
     mapDocument.ts      GeoJSON del mapa i retall per bbox
     documentCache.ts    Document en memòria amb ETag del contingut (MapDocumentCache)
     puntsService.ts     Uneix la memòria cau i el bbox; errors de la base de dades → 503
+  index/
+    night.ts            Què és «una nit» (12:00 → 12:00, hora de Catalunya) i la nit per defecte
+    indexRepository.ts  Lectura de la taula index_visibilitat (la que escriu el worker)
+    breakdownService.ts Punt + nit → DesglossamentIndex; 404 si el punt no és públic, 503 si la BD falla
   middleware/errors.ts  ApiError, 404 i handler central d'errors
 ```
 
@@ -62,6 +68,27 @@ Un sol GeoJSON `FeatureCollection` amb tots els punts `PUBLICAT`: `[lon, lat]` a
 - **HTTP:** `Cache-Control: public, max-age=<segons fins a la propera hora>`. Amb `If-None-Match` igual a l'`ETag` (també `W/"…"`, que és com el deixa Nginx), 304 sense cos.
 - **`?bbox=minLon,minLat,maxLon,maxLat`:** opcional. Retalla el document en memòria, sense consultar la base de dades. Si és invàlid, 400 `validation_error`.
 - **TG-99:** quan el worker marqui la versió de cada execució, n'hi ha prou de substituir `createContentHashCache` per una altra implementació de `MapDocumentCache` (`src/punts/documentCache.ts`).
+
+## `GET /punts/{id}/index` (HU04, TG-104)
+
+El desglossament de l'índex d'un punt per a una nit: una entrada per hora amb el valor (0–100), la franja i els quatre factors de la fórmula v1 ([ADR-0018](../../docs/decisions/0018-formula-index-v1.md)): `nuvols`, `sol`, `foscor` i `lluna`, de 0 a 1, més `foscorEstimada`. El tipus és `DesglossamentIndex` a `@talaia/shared` i les dades surten de la taula `index_visibilitat`, que escriu el worker cada hora (TG-99): l'API no calcula res.
+
+```json
+{
+  "punt": { "id": "6f1c2b7e-…", "nom": "Mirador del Montsec", "municipi": "Àger" },
+  "nit": "2026-10-19",
+  "hores": [
+    { "hora": "2026-10-19T19:00:00.000Z", "valor": 89, "franja": "ras",
+      "factors": { "nuvols": 1, "sol": 1, "foscor": 0.95, "lluna": 0.8 }, "foscorEstimada": false }
+  ]
+}
+```
+
+- **La nit** (`?nit=YYYY-MM-DD`, el dia del vespre, com `ConsultaRecomanacions.data`) va de les **12:00 locals** d'aquell dia a les 12:00 de l'endemà, en hora de Catalunya (`Europe/Madrid`, `src/index/night.ts`): la nit del canvi d'hora té 25 o 23 hores. Sense `nit`, la d'avui: fins al migdia, la que s'està acabant; a partir del migdia, la que ve.
+- **Només les hores calculades.** Si el worker encara no ha passat, `hores` és `[]` amb 200. Les hores de dia hi són amb `factors.sol = 0` i valor 0, perquè el component (TG-105) pugui mostrar on comença la nit.
+- **Errors:** `nit` invàlida → 400 `validation_error`; `id` que no és de cap punt `PUBLICAT` (o que no és un UUID) → 404 `punt_not_found`; sense `DATABASE_URL` o amb la base de dades caiguda → 503 `database_unavailable`.
+- **HTTP:** `Cache-Control: public, max-age=<segons fins a la propera hora>`, com `/punts`: l'índex només canvia quan el worker recalcula.
+- **TG-92** (`GET /punts/{id}`, la fitxa amb l'índex actual i el de les properes hores) és un router a part: aquest només exposa el desglossament.
 
 ## Afegir una ruta
 
@@ -79,6 +106,7 @@ Tota resposta d'error té el format `{ error: { code, message } }`:
 | 400 | `validation_error` | Un esquema zod rebutja l'entrada |
 | 400 | `invalid_json` | El cos no és JSON vàlid |
 | 404 | `not_found` | La ruta no existeix |
+| 404 | `punt_not_found` | `/punts/{id}/index`: cap punt publicat amb aquest `id` |
 | 503 | `database_unavailable` | No hi ha `DATABASE_URL` o no es pot llegir la base de dades |
 | 500 | `internal_error` | Error inesperat (es registra al log i no s'envia el detall) |
 
