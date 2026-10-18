@@ -39,12 +39,12 @@ const CLUSTER_IMAGE = 'talaia-cluster-disc';
 // El pont DOM pot enviar una còpia nova del mateix GeoJSON a cada render natiu.
 const sourceData = new WeakMap<GeoJSONSource, string>();
 
-function drawClusterDisc(palette: MarkerPalette): ImageData {
+function drawClusterDisc(palette: MarkerPalette, pixelRatio: number): ImageData {
   const canvas = document.createElement('canvas');
-  canvas.width = canvas.height = 92;
+  canvas.width = canvas.height = 46 * pixelRatio;
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('Canvas 2D unavailable');
-  ctx.scale(2, 2);
+  ctx.scale(pixelRatio, pixelRatio);
   ctx.beginPath();
   ctx.arc(23, 23, 22, 0, Math.PI * 2);
   ctx.fillStyle = palette.clusterBackground;
@@ -82,14 +82,14 @@ export function markerData(points: MapPoints): FeatureCollection<Point> {
   };
 }
 
-/** Anell, tija i peu del mockup. Es rasteritza a 2× per conservar vores nítides al mòbil. */
-export function drawMarkerPin(color: string, background: string): ImageData {
+/** Anell, tija i peu del mockup. Es rasteritza segons la densitat de la pantalla. */
+export function drawMarkerPin(color: string, background: string, pixelRatio = 2): ImageData {
   const canvas = document.createElement('canvas');
-  canvas.width = PIN_WIDTH * 2;
-  canvas.height = PIN_HEIGHT * 2;
+  canvas.width = PIN_WIDTH * pixelRatio;
+  canvas.height = PIN_HEIGHT * pixelRatio;
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('Canvas 2D unavailable');
-  ctx.scale(2, 2);
+  ctx.scale(pixelRatio, pixelRatio);
   ctx.strokeStyle = color;
   ctx.lineWidth = 1.5;
   ctx.beginPath();
@@ -206,13 +206,16 @@ export function syncMapPoints(map: Map, points: MapPoints, palette: MarkerPalett
     sourceData.set(source, serialized);
     return;
   }
+  const pixelRatio = Math.max(1, Math.ceil(globalThis.devicePixelRatio || 1));
   if (!map.hasImage(CLUSTER_IMAGE)) {
-    map.addImage(CLUSTER_IMAGE, drawClusterDisc(palette), { pixelRatio: 2 });
+    map.addImage(CLUSTER_IMAGE, drawClusterDisc(palette, pixelRatio), { pixelRatio });
   }
   for (const band of ['ras', 'jus', 'tap', 'unknown'] as const) {
     const id = `talaia-pin-${band}`;
     if (!map.hasImage(id)) {
-      map.addImage(id, drawMarkerPin(palette[band], palette.background), { pixelRatio: 2 });
+      map.addImage(id, drawMarkerPin(palette[band], palette.background, pixelRatio), {
+        pixelRatio,
+      });
     }
   }
   map.addSource(POINTS_SOURCE, { type: 'geojson', data, ...CLUSTER_OPTIONS });

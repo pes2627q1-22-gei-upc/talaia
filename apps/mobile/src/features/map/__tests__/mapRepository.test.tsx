@@ -1,6 +1,6 @@
 import type { PuntsMapaGeoJson } from '@talaia/shared';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { cleanup, renderHook, waitFor } from '@testing-library/react-native';
+import { act, cleanup, renderHook, waitFor } from '@testing-library/react-native';
 import type { PropsWithChildren } from 'react';
 
 import { apiGet } from '@/core/api/httpClient';
@@ -91,5 +91,48 @@ describe('mapRepository', () => {
     });
     await waitFor(() => expect(result.current.isError).toBe(true));
     expect(result.current.error).toBe(error);
+  });
+
+  it('revalida el catàleg buit després de 30 segons i conserva els punts recuperats', async () => {
+    const now = jest.spyOn(Date, 'now');
+    const start = Date.parse('2026-10-16T10:45:00Z');
+    now.mockReturnValue(start);
+    mockedApiGet.mockResolvedValue({ type: 'FeatureCollection', features: [] });
+    const first = await renderHook(() => useMapPointsQuery(), { wrapper: QueryWrapper });
+    await waitFor(() => expect(first.result.current.isSuccess).toBe(true));
+    await first.unmount();
+    now.mockReturnValue(start + 29_000);
+    const second = await renderHook(() => useMapPointsQuery(), { wrapper: QueryWrapper });
+    expect(mockedApiGet).toHaveBeenCalledTimes(1);
+    await second.unmount();
+    now.mockReturnValue(start + 30_000);
+    mockedApiGet.mockResolvedValue(points);
+    const third = await renderHook(() => useMapPointsQuery(), { wrapper: QueryWrapper });
+    await waitFor(() => expect(third.result.current.data).toEqual(points));
+    expect(mockedApiGet).toHaveBeenLastCalledWith('/punts', undefined, {
+      headers: { 'Cache-Control': 'no-cache' },
+    });
+    await third.unmount();
+    now.mockReturnValue(start + 60_000);
+    await renderHook(() => useMapPointsQuery(), { wrapper: QueryWrapper });
+    expect(mockedApiGet).toHaveBeenCalledTimes(2);
+  });
+
+  it('permet reintentar el catàleg buit abans dels 30 segons i revalida HTTP', async () => {
+    mockedApiGet
+      .mockResolvedValueOnce({ type: 'FeatureCollection', features: [] })
+      .mockResolvedValue(points);
+    const { result } = await renderHook(() => useMapPointsQuery(), { wrapper: QueryWrapper });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(result.current.data?.features).toEqual([]);
+    await act(async () => {
+      const refreshed = await result.current.refetch();
+      expect(refreshed.data).toEqual(points);
+    });
+    expect(mockedApiGet).toHaveBeenCalledTimes(2);
+    await waitFor(() => expect(result.current.data).toEqual(points));
+    expect(mockedApiGet).toHaveBeenLastCalledWith('/punts', undefined, {
+      headers: { 'Cache-Control': 'no-cache' },
+    });
   });
 });
