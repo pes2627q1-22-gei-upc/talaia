@@ -248,5 +248,7 @@ export function useExploreViewModel() {
       onChange: setTravel,
     },
     cta: { label: t('explore.cta'), disabled: !place, onPress: search },
+    // HU06: el mapa s'ha de poder explorar sense cercar, també sense ubicació.
+    browse: { label: t('explore.browse'), onPress: () => router.push('/recomanacions') },
   };
 }

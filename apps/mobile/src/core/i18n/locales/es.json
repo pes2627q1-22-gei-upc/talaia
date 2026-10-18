@@ -162,7 +162,8 @@
       "min": "30 min",
       "max": "4 h"
     },
-    "cta": "Encuentra el mejor lugar"
+    "cta": "Encuentra el mejor lugar",
+    "browse": "Ver el mapa"
   },
   "alerts": {
     "title": "Alertas",
