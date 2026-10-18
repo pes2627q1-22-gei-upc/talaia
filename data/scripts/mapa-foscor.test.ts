@@ -12,6 +12,7 @@ import {
   descarregaCeles,
   llegirMalla,
   parsejaCeles,
+  rang,
   rasteritza,
   sqmA,
   sqmProper,
@@ -158,6 +159,24 @@ describe('sqmProper', () => {
 
   it('és null si no hi ha cap cel·la dins del radi', () => {
     assert.equal(sqmProper(MALLA, 41.9, 1.5), null);
+  });
+
+  it('el radi és una distància, no una finestra quadrada: en diagonal també talla a 2 km', () => {
+    // Una sola cel·la, la de Barcelona. 1,8 km al nord del punt queda a 1,7 km del centre; 1,8 km
+    // al nord i a l'est és dins de la finestra de ±2 cel·les però a 2,3 km del centre.
+    const sola = rasteritza(parsejaCeles(geojson([feature(CELES_FONT[12]!)])));
+    const nord = sqmProper(sola, BARCELONA.lat + 0.0162, BARCELONA.lon);
+    assert.ok(nord && nord.distancia > 1600 && nord.distancia < 1800, String(nord?.distancia));
+    assert.equal(sqmProper(sola, BARCELONA.lat + 0.0162, BARCELONA.lon + 0.0216), null);
+  });
+});
+
+describe('rang', () => {
+  it('troba el mínim i el màxim sense desbordar la pila', () => {
+    assert.deepEqual(rang([3, -1, 7, 2]), { min: -1, max: 7 });
+    const molts = new Float32Array(500_000).map((_, i) => i % 1000);
+    assert.deepEqual(rang(molts), { min: 0, max: 999 });
+    assert.throws(() => Math.min(...molts), RangeError);
   });
 });
 

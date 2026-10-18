@@ -17,6 +17,7 @@
  */
 import { readFile } from 'node:fs/promises';
 import { fromArrayBuffer, writeArrayBuffer } from 'geotiff';
+import { SQM } from './punts.ts';
 
 export const FONT_SQM = {
   nom: 'Mapa de brillantor del cel nocturn de Catalunya 2024 (Generalitat de Catalunya / IEEC)',
@@ -33,10 +34,6 @@ export const FONT_SQM = {
 
 /** Valor de les cel·les sense dada al GeoTIFF (etiqueta `GDAL_NODATA`). */
 export const SENSE_DADA = -9999;
-
-/** Rang físic plausible d'un SQM; un valor de la font fora d'aquí és un error, no una dada. */
-export const SQM_MIN = 10;
-export const SQM_MAX = 23;
 
 /** Una cel·la de la font: el centre en metres EPSG:25831 i la brillantor del cel. */
 export type CelaSqm = { x: number; y: number; sqm: number };
@@ -120,9 +117,9 @@ export function parsejaCeles(geojson: unknown, costat: number = FONT_SQM.costat)
     const id = f.properties?.ID ?? `#${i}`;
     const mag = f.properties?.MAG;
     if (mag === null || mag === undefined) continue;
-    if (typeof mag !== 'number' || !(mag >= SQM_MIN && mag <= SQM_MAX)) {
+    if (typeof mag !== 'number' || !(mag >= SQM.min && mag <= SQM.max)) {
       throw new RangeError(
-        `Cel·la ${id}: MAG ${String(mag)} no és un SQM entre ${SQM_MIN} i ${SQM_MAX}`,
+        `Cel·la ${id}: MAG ${String(mag)} no és un SQM entre ${SQM.min} i ${SQM.max}`,
       );
     }
     const punts = anells(f.geometry).flat();
@@ -152,11 +149,13 @@ export function parsejaCeles(geojson: unknown, costat: number = FONT_SQM.costat)
 export function rasteritza(celes: CelaSqm[], costat: number = FONT_SQM.costat): MallaSqm {
   if (celes.length === 0) throw new RangeError('No hi ha cap cel·la per rasteritzar');
   const mig = costat / 2;
-  const x0 = Math.floor(Math.min(...celes.map((c) => c.x - mig)));
-  const y0 = Math.ceil(Math.max(...celes.map((c) => c.y + mig)));
+  const x = rang(celes.map((c) => c.x));
+  const y = rang(celes.map((c) => c.y));
+  const x0 = Math.floor(x.min - mig);
+  const y0 = Math.ceil(y.max + mig);
   // Arrodonit, no ceil: les cantonades de la font ballen uns decímetres i afegirien una fila buida.
-  const columnes = Math.round((Math.max(...celes.map((c) => c.x + mig)) - x0) / costat);
-  const files = Math.round((y0 - Math.min(...celes.map((c) => c.y - mig))) / costat);
+  const columnes = Math.round((x.max + mig - x0) / costat);
+  const files = Math.round((y0 - (y.min - mig)) / costat);
   const valors = new Float32Array(columnes * files).fill(SENSE_DADA);
   for (const c of celes) {
     const columna = Math.floor((c.x - x0) / costat);
@@ -168,6 +167,20 @@ export function rasteritza(celes: CelaSqm[], costat: number = FONT_SQM.costat): 
     valors[i] = c.sqm;
   }
   return { x0, y0, costat, columnes, files, valors };
+}
+
+/**
+ * Mínim i màxim en un sol recorregut. `Math.min(...llista)` passa cada valor com a argument i
+ * desborda la pila amb unes quantes desenes de milers de cel·les.
+ */
+export function rang(valors: Iterable<number>): { min: number; max: number } {
+  let min = Infinity;
+  let max = -Infinity;
+  for (const v of valors) {
+    if (v < min) min = v;
+    if (v > max) max = v;
+  }
+  return { min, max };
 }
 
 // --- Consulta ----------------------------------------------------------------------------------
@@ -196,7 +209,9 @@ export type SqmProper = {
 
 /**
  * Com `sqmA`, però si el punt cau en un forat de la malla (la costa, un far, una barra de sorra)
- * torna la cel·la més propera fins a `radiCeles` cel·les al voltant, amb la distància al seu centre.
+ * torna la cel·la amb el centre més proper, amb la distància fins a aquest centre. El radi és una
+ * distància real de `radiCeles` costats de cel·la (2 km per defecte), no una finestra quadrada: en
+ * diagonal també talla. `null` si no hi ha cap cel·la tan a prop.
  */
 export function sqmProper(
   malla: MallaSqm,
@@ -217,6 +232,7 @@ export function sqmProper(
       const cx = malla.x0 + (columna0 + dc + 0.5) * malla.costat;
       const cy = malla.y0 - (fila0 + df + 0.5) * malla.costat;
       const distancia = Math.hypot(cx - x, cy - y);
+      if (distancia > radiCeles * malla.costat) continue;
       if (!millor || distancia < millor.distancia) millor = { sqm, distancia };
     }
   }

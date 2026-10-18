@@ -101,7 +101,7 @@ export function validarPunts(fc: PuntsFC, { exigirAltitud = false } = {}): strin
     } else if (p.sqm !== null) {
       if (typeof p.sqm !== 'number' || p.sqm < SQM.min || p.sqm > SQM.max) {
         errors.push(`${id}: l'sqm ha de ser un nombre entre ${SQM.min} i ${SQM.max} (${p.sqm})`);
-      } else if (Math.round(p.sqm * 100) !== p.sqm * 100) {
+      } else if (Number(p.sqm.toFixed(2)) !== p.sqm) {
         errors.push(`${id}: l'sqm ha de tenir com a màxim 2 decimals (${p.sqm})`);
       }
     }
