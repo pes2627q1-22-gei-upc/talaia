@@ -80,7 +80,8 @@ describe('MapScreen', () => {
     await render(<MapScreen />);
     expect(screen.getByText('Encara no hi ha llocs disponibles')).toBeOnTheScreen();
     expect(screen.getByText('Torna-ho a provar més endavant.')).toBeOnTheScreen();
-    expect(screen.queryByRole('button')).toBeNull();
+    await fireEvent.press(screen.getByRole('button', { name: 'Torna-ho a provar' }));
+    expect(mockRefetch).toHaveBeenCalledTimes(1);
   });
 
   it('retira l’avís quan arriben punts i els conserva si falla una actualització', async () => {

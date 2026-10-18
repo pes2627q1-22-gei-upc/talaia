@@ -37,7 +37,7 @@ const retryIcon = {
 export function MapScreen() {
   const vm = useMapViewModel();
   const insets = useSafeAreaInsets();
-  const isError = vm.notice?.kind === 'error';
+  const canRetry = vm.notice?.kind === 'error' || vm.notice?.kind === 'empty';
 
   return (
     <View style={styles.container}>
@@ -68,7 +68,7 @@ export function MapScreen() {
           accessibilityLiveRegion="polite"
           accessibilityState={{ busy: vm.notice.kind === 'loading' }}
         >
-          {isError ? (
+          {canRetry ? (
             <View style={styles.retryContainer}>
               <View style={styles.noticeText}>
                 <AppText variant="label">{vm.notice.title}</AppText>
