@@ -1,6 +1,6 @@
 # Desplegament a la VM (TG-71)
 
-L'API es desplega a la VM de la FIB amb Docker Compose. Nginx hi fa d'únic punt d'entrada amb HTTPS de Let's Encrypt. Cada push a `stable` (una release o un hotfix) es desplega sol. Decisions: [ADR-0006](decisions/0006-infra-vm-docker.md) i [ADR-0019](decisions/0019-allotjament-i-desplegament.md).
+L'API es desplega a la VM de la FIB amb Docker Compose. Nginx hi fa d'únic punt d'entrada amb HTTPS de Let's Encrypt. Cada canvi a `stable` (una release o un hotfix) es desplega sol en menys de 5 minuts: un cron de la VM ho comprova i fa el deploy. Decisions: [ADR-0006](decisions/0006-infra-vm-docker.md), [ADR-0019](decisions/0019-allotjament-i-desplegament.md) i [ADR-0021](decisions/0021-deploy-per-pull-des-de-la-vm.md).
 
 ```
 App / Aprop / Mobilicat
@@ -13,8 +13,8 @@ nattech.fib.upc.edu ──(NAT)──▶ VM :8080
                 │       ▲ certs (volum)                                              │
                 │  acme (acme.sh): emet i renova el certificat amb DNS-01 de DuckDNS │
                 └────────────────────────────────────────────────────────────────────┘
-                                  ▲
-   GitHub ◀── connexió de sortida ── runner self-hosted (talaia-vm) ── deploy.yml
+                                  ▲ docker compose up --build
+   GitHub ◀── git fetch de stable cada 5 min ── cron (deploy/scripts/desplega.sh)
 ```
 
 | Fitxer | Què fa |
@@ -23,7 +23,7 @@ nattech.fib.upc.edu ──(NAT)──▶ VM :8080
 | `deploy/nginx/templates/default.conf.template` | HTTPS al 8080, `/api/v1/` cap a l'API, capçaleres de seguretat |
 | `deploy/scripts/emet-certificat.sh` | Primera emissió del certificat (un sol cop per VM) |
 | `services/api/Dockerfile`, `services/worker/Dockerfile` | Imatges multi-stage, `node:22-alpine`, usuari sense privilegis |
-| `.github/workflows/deploy.yml` | Deploy de `stable` al runner de la VM |
+| `deploy/scripts/desplega.sh` | Deploy de `stable`: l'executa el cron de la VM cada 5 minuts |
 | `.github/workflows/deploy-check.yml` | A cada PR que toca el desplegament: construeix les imatges i arrenca el compose |
 
 ## Ports
@@ -70,7 +70,7 @@ Compte: Docker Compose llegeix un comentari al final d'una línia buida (`VAR=  
 ### 4. Primera arrencada i certificat
 
 ```bash
-git clone https://github.com/pes2627q1-22-gei-upc/talaia.git && cd talaia && git switch stable
+cd ~ && git clone https://github.com/pes2627q1-22-gei-upc/talaia.git && cd talaia && git switch stable
 docker compose -f deploy/compose.yaml --env-file /opt/talaia/.env up -d --build --wait
 deploy/scripts/emet-certificat.sh /opt/talaia/.env
 ```
@@ -83,44 +83,38 @@ Comprovació des de fora de la VM:
 curl -fsS https://<PUBLIC_HOST>:<PUBLIC_PORT>/api/v1/health
 ```
 
-### 5. Runner self-hosted
+### 5. Deploy automàtic (cron)
 
-L'ha de registrar algú amb permisos d'administració de l'organització (Joan o el professor):
+Un cron de l'usuari executa `deploy/scripts/desplega.sh` cada 5 minuts. Si `origin/stable` ha canviat, fa `git reset --hard origin/stable`, refà i arrenca el compose i comprova el healthcheck per HTTPS. Si no ha canviat, no fa res.
 
-1. **Organització → Settings → Actions → Runner groups:** crea el grup `talaia-vm`, dona-hi accés només al repositori `talaia` i, a «Workflow access», limita'l a `pes2627q1-22-gei-upc/talaia/.github/workflows/deploy.yml@refs/heads/stable`. L'organització és GitHub Team i ho permet.
-2. **Organització → Settings → Actions → Runners → New runner** (Linux x64), al grup `talaia-vm`, i segueix les ordres que dona GitHub a la VM. A `config.sh`, afegeix l'etiqueta `talaia-vm`.
-3. Instal·la'l com a servei perquè sobrevisqui als reinicis:
+```bash
+(crontab -l 2>/dev/null; echo '*/5 * * * * flock -n /tmp/talaia-deploy.lock $HOME/talaia/deploy/scripts/desplega.sh /opt/talaia/.env >> $HOME/talaia-deploy.log 2>&1') | crontab -
+crontab -l   # comprova-ho
+```
 
-   ```bash
-   sudo ./svc.sh install "$USER" && sudo ./svc.sh start
-   ```
-
-L'usuari del runner és al grup `docker`, és a dir, té control total de la VM. Per això els controls de sota són obligatoris.
+`flock` evita que dos deploys es trepitgin si un build triga més de 5 minuts. El cron torna a funcionar sol després d'un reinici de la VM. **No editis res a `~/talaia`:** el deploy fa `git reset --hard` i ho perdria.
 
 ### 6. Proteccions del repositori
 
-El repositori és públic: una PR des d'un fork podria canviar un workflow perquè s'executi al runner de la VM. A més del runner group:
-
-- **Settings → Actions → General → Fork pull request workflows:** «Require approval for all outside collaborators».
-- **Settings → Environments → `production`:** «Deployment branches and tags» → *Selected branches* → només `stable`.
-- `deploy.yml` només s'activa amb push a `stable` (o a mà des de `stable`), mai per PR.
+GitHub no executa res a la VM: la VM només baixa `stable`, i una PR (d'un fork o de l'equip) no hi pot arribar. El que protegeix el deploy és el ruleset de `stable`: PR, aprovació i CI obligatòries ([git-workflow.md](git-workflow.md)). A més, a **Settings → Actions → General → Fork pull request workflows** hi ha «Require approval for all external contributors», perquè la CI d'una PR externa no s'executi sense que algú de l'equip la miri.
 
 ## Com es desplega
 
 1. Una `release/0.N.0` o un `hotfix/0.N.x` es fusiona a `stable` ([git-workflow.md](git-workflow.md)).
-2. `deploy.yml` s'executa a la VM: checkout, `docker compose up -d --build --remove-orphans --wait` i un healthcheck amb `curl --resolve <PUBLIC_HOST>:8080:127.0.0.1`, que valida el certificat real contra el Nginx local.
-3. Si el healthcheck falla, el job falla i es veu a Actions. Per tornar enrere: un hotfix a `stable` o, des d'Actions, «Re-run» del deploy d'un commit anterior.
+2. En menys de 5 minuts, el cron de la VM executa `desplega.sh`: `git reset --hard origin/stable`, `docker compose up -d --build --remove-orphans --wait`, un healthcheck amb `curl --resolve <PUBLIC_HOST>:8080:127.0.0.1`, que valida el certificat real contra el Nginx local, i `docker image prune`.
+3. Cada deploy queda a `~/talaia-deploy.log`. Si falla, el log acaba amb `ERROR` i aquell commit no es torna a provar sol. Per tornar enrere o corregir-ho: un hotfix a `stable`.
 
-També es pot llançar a mà des d'Actions → Deploy → «Run workflow» sobre `stable`.
+A mà, a la VM, torna a desplegar el commit actual: `FORCE=1 ~/talaia/deploy/scripts/desplega.sh`.
 
 ## El worker
 
-El worker té imatge però **no arrenca**: el procés llarg i el seu horari són de TG-99, que depèn de P9. Quan TG-99 estigui feta (punt d'entrada `services/worker/dist/main.js`), s'activa afegint `--profile worker` a les ordres de `docker compose` del `deploy.yml` i d'aquesta guia.
+El worker té imatge però **no arrenca**: el procés llarg i el seu horari són de TG-99, que depèn de P9. Quan TG-99 estigui feta (punt d'entrada `services/worker/dist/main.js`), s'activa afegint `--profile worker` a les ordres de `docker compose` de `desplega.sh` i d'aquesta guia.
 
 ## Ordres útils a la VM
 
 ```bash
 alias tc='docker compose -f ~/talaia/deploy/compose.yaml --env-file /opt/talaia/.env'
+tail -f ~/talaia-deploy.log  # deploys
 tc ps                        # estat i healthchecks
 tc logs -f api               # logs de l'API
 tc exec acme acme.sh --list  # certificats i data de renovació
