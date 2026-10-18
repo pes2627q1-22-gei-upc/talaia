@@ -177,8 +177,15 @@ Mostra cada migració amb la columna *Local* i *Remote* iguals.
 2. Commit i PR com qualsevol altre canvi. La migració es revisa a la PR.
 3. Abans d'aplicar-la, mira què faria:
    ```bash
+   npx supabase migration list --linked
    npx supabase db push --dry-run
    ```
+   Si una migració amb una data anterior s'ha fusionat després d'una de més nova (com va
+   passar amb `20261015120000_procedencia_fenomens_calculats.sql`), no la reanomenis: potser
+   ja està aplicada. Comprova la llista local/remota i, si falta una migració antiga,
+   previsualitza-la amb `npx supabase db push --include-all --dry-run`. Coordina amb l'equip
+   l'ús de `npx supabase db push --include-all` només si la previsualització mostra exactament
+   les migracions esperades.
 4. Aplica-la a la base de dades del projecte:
    ```bash
    npx supabase db push

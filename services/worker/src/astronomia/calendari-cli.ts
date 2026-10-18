@@ -1,7 +1,7 @@
 /** Genera el dataset i el seed de TG-107; --check només compara, sense escriure. */
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { calcularCalendari, type CalendariCalculat } from './calendari';
+import { calcularCalendari, METODE_CALCUL, type CalendariCalculat } from './calendari';
 
 const arrel = resolve(__dirname, '../../../..');
 const destiJson = resolve(arrel, 'data/astronomia/calculats-2026-2027.json');
@@ -42,6 +42,7 @@ export function generarSql(dades: CalendariCalculat): string {
     )
     .join(',\n');
   if (!fenomens || !esdeveniments) throw new Error('El calendari calculat és buit');
+  const codisVigents = dades.esdeveniments.map((e) => sqlText(e.codi)).join(', ');
   return (
     `-- Generat per @talaia/worker astronomia:calendari. No l'editis a mà.\n` +
     `-- Procedència: Astronomy Engine; el seed 02 conserva les fonts IMO/NASA.\n\nbegin;\n\n` +
@@ -60,7 +61,12 @@ export function generarSql(dades: CalendariCalculat): string {
     `  dificultat_observacio = excluded.dificultat_observacio, textos = excluded.textos,\n` +
     `  detall_calcul = excluded.detall_calcul\n` +
     `where (esdeveniments_astronomics.fenomen_codi, esdeveniments_astronomics.font_codi, esdeveniments_astronomics.metode_calcul, esdeveniments_astronomics.inici, esdeveniments_astronomics.fi, esdeveniments_astronomics.maxim, esdeveniments_astronomics.precisio, esdeveniments_astronomics.rellevant_catalunya, esdeveniments_astronomics.rellevancia, esdeveniments_astronomics.dificultat_observacio, esdeveniments_astronomics.textos, esdeveniments_astronomics.detall_calcul)\n` +
-    `  is distinct from (excluded.fenomen_codi, null, excluded.metode_calcul, excluded.inici, excluded.fi, excluded.maxim, excluded.precisio, excluded.rellevant_catalunya, excluded.rellevancia, excluded.dificultat_observacio, excluded.textos, excluded.detall_calcul);\n\ncommit;\n`
+    `  is distinct from (excluded.fenomen_codi, null, excluded.metode_calcul, excluded.inici, excluded.fi, excluded.maxim, excluded.precisio, excluded.rellevant_catalunya, excluded.rellevancia, excluded.dificultat_observacio, excluded.textos, excluded.detall_calcul);\n\n` +
+    `-- Si canvia el dia local o un criteri de selecció, elimina codis antics només d'aquest càlcul i període.\n` +
+    `delete from public.esdeveniments_astronomics\n` +
+    `where metode_calcul = ${sqlText(METODE_CALCUL)}\n` +
+    `  and maxim between ${sqlText(`${dades.periode.des_de}T00:00:00Z`)} and ${sqlText(`${dades.periode.fins_a}T23:59:59Z`)}\n` +
+    `  and codi not in (${codisVigents});\n\ncommit;\n`
   );
 }
 
