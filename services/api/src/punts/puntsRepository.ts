@@ -7,7 +7,12 @@ type Db = ReturnType<typeof createDb>;
 export type PuntsRepository = {
   /** Punts visibles al mapa: només els que tenen `estat = 'PUBLICAT'`. */
   listPublished(): Promise<PuntObservacio[]>;
+  /** Un punt publicat pel seu `id` (un UUID), o `undefined` si no existeix o no és públic. */
+  findPublished(id: string): Promise<PuntResum | undefined>;
 };
+
+/** El que identifica un punt a les respostes que no són el mapa (el desglossament, la fitxa). */
+export type PuntResum = Pick<PuntObservacio, 'id' | 'nom' | 'municipi'>;
 
 export function createPuntsRepository(db: Db): PuntsRepository {
   return {
@@ -24,5 +29,12 @@ export function createPuntsRepository(db: Db): PuntsRepository {
         .where('estat', '=', 'PUBLICAT')
         .orderBy('slug')
         .execute(),
+    findPublished: (id) =>
+      db
+        .selectFrom('puntsObservacio')
+        .select(['id', 'nom', 'municipi'])
+        .where('id', '=', id)
+        .where('estat', '=', 'PUBLICAT')
+        .executeTakeFirst(),
   };
 }

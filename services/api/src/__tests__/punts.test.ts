@@ -14,7 +14,7 @@ const PUNTS: PuntObservacio[] = [
 
 /** Repositori fals: retorna el que retornaria la consulta (només punts publicats). */
 function fakeRepository(punts = PUNTS) {
-  const repository: PuntsRepository & { calls: number } = {
+  const repository: Pick<PuntsRepository, 'listPublished'> & { calls: number } = {
     calls: 0,
     async listPublished() {
       repository.calls += 1;
@@ -24,7 +24,7 @@ function fakeRepository(punts = PUNTS) {
   return repository;
 }
 
-const appWith = (repository: PuntsRepository = fakeRepository()) =>
+const appWith = (repository: Pick<PuntsRepository, 'listPublished'> = fakeRepository()) =>
   createApp({ punts: createDefaultPuntsService(repository) });
 
 describe('GET /api/v1/punts', () => {

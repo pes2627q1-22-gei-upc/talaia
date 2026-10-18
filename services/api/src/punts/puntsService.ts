@@ -32,7 +32,9 @@ export function createPuntsService(cache: MapDocumentCache): PuntsService {
 }
 
 /** El servei amb la memòria cau per defecte (hash del contingut cada 5 minuts). */
-export function createDefaultPuntsService(repository: PuntsRepository): PuntsService {
+export function createDefaultPuntsService(
+  repository: Pick<PuntsRepository, 'listPublished'>,
+): PuntsService {
   return createPuntsService(
     createContentHashCache(async () => buildMapDocument(await repository.listPublished())),
   );
