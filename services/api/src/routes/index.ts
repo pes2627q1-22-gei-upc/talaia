@@ -4,19 +4,26 @@ import swaggerUi from 'swagger-ui-express';
 import { version } from '../config/env';
 import { buildOpenApiDocument } from '../openapi';
 import type { PuntsService } from '../punts/puntsService';
+import type { JwksSource } from '../middleware/auth';
+import type { ProfileStore } from '../services/profileService';
+import { createAuthRouter } from './auth';
 import { healthRouter } from './health';
 import { createPuntsRouter } from './punts';
 
-/** Dependències dels routers. Sense `punts`, `/punts` respon 503 (no hi ha `DATABASE_URL`). */
+/** Dependències dels routers. */
 export type ApiDeps = {
   punts?: PuntsService;
+  supabaseUrl?: string;
+  jwks?: JwksSource;
+  profileStore?: ProfileStore;
 };
 
 /** Router de `/api/v1`: un router per recurs (punts, recomanacions, esdeveniments…). */
-export function createApiRouter({ punts }: ApiDeps = {}): Router {
+export function createApiRouter({ punts, supabaseUrl, jwks, profileStore }: ApiDeps = {}): Router {
   const router = Router();
   router.use('/health', healthRouter);
   router.use('/punts', createPuntsRouter(punts));
+  router.use(createAuthRouter({ supabaseUrl, profileStore, jwks }));
 
   // Es genera quan ja s'han importat tots els routers, que són els que registren les rutes.
   const openapi = buildOpenApiDocument(version);
