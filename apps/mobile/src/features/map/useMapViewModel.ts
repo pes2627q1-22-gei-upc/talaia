@@ -1,6 +1,11 @@
 import { useTranslation } from 'react-i18next';
 
+import { useCurrentPlaceQuery } from '../explore/locationRepository';
+
 import type { MapCamera } from './NightMap';
+import { useMapPointsQuery } from './mapRepository';
+import { EMPTY_MAP_POINTS } from './pointMarkers';
+import { useDeviceHeading } from './useDeviceHeading';
 import { nightStyle } from './style/nightStyle';
 
 /**
@@ -19,7 +24,37 @@ export const camera: MapCamera = {
 
 export function useMapViewModel() {
   const { t } = useTranslation();
+  const location = useCurrentPlaceQuery();
+  const userLocation =
+    !location.isError && location.data?.status === 'ready'
+      ? { lat: location.data.place.lat, lon: location.data.place.lon }
+      : null;
+  const { heading, active: locationActive } = useDeviceHeading(userLocation !== null);
+  const query = useMapPointsQuery();
+  const points = query.data ?? EMPTY_MAP_POINTS;
+  const isLoading = query.isPending || (query.isError && query.isFetching);
+  const notice = isLoading
+    ? { kind: 'loading' as const, title: t('map.pointsLoading'), description: null }
+    : query.isError
+      ? { kind: 'error' as const, title: t('map.pointsError'), description: null }
+      : points.features.length === 0
+        ? {
+            kind: 'empty' as const,
+            title: t('map.pointsEmpty'),
+            description: t('map.pointsEmptyHint'),
+          }
+        : null;
   return {
+    userLocation,
+    userHeading: heading,
+    locationActive,
+    userLocationLabel: t('map.userLocation'),
+    points,
+    notice,
+    retryLabel: t('map.retry'),
+    retry: () => {
+      void query.refetch();
+    },
     mapStyle: nightStyle,
     camera,
     accessibilityLabel: t('map.a11y'),
