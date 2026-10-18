@@ -8,7 +8,7 @@
  * El seed és idempotent: `on conflict (slug) do update`, així `supabase db reset`
  * i un `db push --include-seed` repetit no dupliquen punts.
  *
- * Les columnes han de coincidir amb la migració de TG-86 (taula punts_observacio).
+ * Les columnes han de coincidir amb la taula punts_observacio (migracions de TG-86 i TG-97).
  */
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
@@ -37,6 +37,7 @@ function fila(f: PuntFeature): string {
     text(p.municipi),
     text(p.descripcio),
     num(p.altitud),
+    num(p.sqm),
     array(p.horitzo_obert),
     text(p.accessibilitat),
     `'OFICIAL'`,
@@ -49,9 +50,10 @@ export function generarSql(features: PuntFeature[]): string {
   return `-- Generat per data/scripts/build-seed-punts.ts a partir de data/punts_observacio.geojson.
 -- No l'editis a mà: canvia el GeoJSON i torna a executar el script. (TG-87)
 -- Coordenades: geocodificador de l'ICGC. Punts oficials (sense creador) i publicats.
+-- sqm: brillantor del cel (mag/arcsec²) del mapa de contaminació lumínica de la Generalitat (TG-97).
 
 insert into punts_observacio
-  (slug, nom, municipi, descripcio, altitud, horitzo_obert, accessibilitat, origen, estat, ubicacio)
+  (slug, nom, municipi, descripcio, altitud, sqm, horitzo_obert, accessibilitat, origen, estat, ubicacio)
 values
 ${features.map(fila).join(',\n')}
 on conflict (slug) do update set
@@ -59,6 +61,7 @@ on conflict (slug) do update set
   municipi = excluded.municipi,
   descripcio = excluded.descripcio,
   altitud = excluded.altitud,
+  sqm = excluded.sqm,
   horitzo_obert = excluded.horitzo_obert,
   accessibilitat = excluded.accessibilitat,
   ubicacio = excluded.ubicacio
@@ -79,6 +82,10 @@ function main(): void {
     console.warn(
       `Avís: ${senseAltitud} punts sense altitud. Executa data/scripts/fill-altitudes.ts.`,
     );
+  }
+  const senseSqm = fc.features.filter((f) => f.properties.sqm === null).length;
+  if (senseSqm) {
+    console.warn(`Avís: ${senseSqm} punts sense sqm (fora del mapa de contaminació lumínica).`);
   }
   const sql = generarSql(fc.features);
   if (process.argv.includes('--check')) {

@@ -2,7 +2,7 @@
  * Prova manual de l'índex v1 (ADR-0018): demana la previsió d'Open-Meteo d'un lloc, hi creua les
  * efemèrides i mostra l'índex i els factors de les properes hores. Sense base de dades.
  *
- *   npm run index -w services/worker -- 42.0294,0.7112          # foscor estimada (sense TG-97)
+ *   npm run index -w services/worker -- 42.0294,0.7112          # sense SQM: foscor estimada
  *   npm run index -w services/worker -- 42.0294,0.7112 21.6     # amb l'SQM del lloc
  */
 import { efemeridesHores } from '../astronomia/astronomia';

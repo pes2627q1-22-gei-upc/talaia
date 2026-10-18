@@ -102,7 +102,7 @@ src/
     cli.ts                 `npm run index`: prova manual amb la previsió real
 ```
 
-`índex = 100 × N × S × (0,6 · F + 0,4 · L)`, cada factor de 0 a 1: **N** núvols (la capa que més tapa; 0 si plou), **S** Sol (1 de nit o en el crepuscle astronòmic, 0,5 en el nàutic, 0 si no), **F** foscor (de l'SQM del punt; 0,6 provisional fins a TG-97) i **L** Lluna (la llum que fa segons la fracció il·luminada i l'alçada). Franges: 0–39 `tap`, 40–69 `jus`, 70–100 `ras`. Els pesos i els llindars són a `FORMULA_V1`; per què, a l'[ADR-0018](../../docs/decisions/0018-formula-index-v1.md).
+`índex = 100 × N × S × (0,6 · F + 0,4 · L)`, cada factor de 0 a 1: **N** núvols (la capa que més tapa; 0 si plou), **S** Sol (1 de nit o en el crepuscle astronòmic, 0,5 en el nàutic, 0 si no), **F** foscor (de l'SQM del punt, la columna `sqm` de `punts_observacio` que omple TG-97; 0,6 si el punt no en té) i **L** Lluna (la llum que fa segons la fracció il·luminada i l'alçada). Franges: 0–39 `tap`, 40–69 `jus`, 70–100 `ras`. Els pesos i els llindars són a `FORMULA_V1`; per què, a l'[ADR-0018](../../docs/decisions/0018-formula-index-v1.md).
 
 | Funció | Què fa |
 |---|---|
@@ -115,7 +115,7 @@ Prova manual, sense base de dades:
 
 ```bash
 npm run index -w services/worker -- 42.0294,0.7112          # el Montsec, foscor estimada
-npm run index -w services/worker -- 42.0294,0.7112 21.6     # amb l'SQM del lloc
+npm run index -w services/worker -- 42.0294,0.7112 21.56    # amb l'SQM del lloc (data/punts_observacio.geojson)
 ```
 
 ## Tests
