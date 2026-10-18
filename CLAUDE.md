@@ -18,6 +18,7 @@ Més context: `docs/producte.md` (abast, MVP, NOT list), `docs/arquitectura.md`,
 ## Estat actual
 
 - **Sprint 1: 05/10/2026 – 28/10/2026.** Objectiu: base tècnica operativa + primer flux del MVP (login → mapa de punts amb índex v1 → recomanacions → fitxa del punt amb desglossament → calendari de fenòmens). Veure `docs/sprint-1.md`.
+- **Sprint 2: 09/11/2026 – 27/11/2026** (sprint master: Martina) i **Sprint 3: 30/11/2026 – 18/12/2026** (sprint master: Hugo). Veure `docs/sprint-2.md` i `docs/sprint-3.md`.
 - Les branques `snapshot`, `stable` i `prod` estan protegides (ruleset de GitHub).
 - **App:** scaffold fet (TG-66): Expo SDK 57 + Expo Router + MVVM + i18n + TanStack Query + Jest a `apps/mobile` (vegeu el seu `README.md` i `AGENTS.md`). Eines: ADR-0010.
 - **Qualitat:** ESLint, Prettier, `tsconfig.base.json` i hooks de commit (husky + lint-staged + commitlint) a l'arrel (TG-67, ADR-0010).
@@ -116,7 +117,7 @@ Especificada → implementada → provada (tests a la CI) → revisada (PR aprov
 
 ## Com ha de treballar Claude Code aquí
 
-1. Identifica la tasca de Taiga (ref `TG-xx`) i llegeix-ne la descripció i els criteris d'acceptació de la història (`docs/sprint-1.md`).
+1. Identifica la tasca de Taiga (ref `TG-xx`) i llegeix-ne la descripció i els criteris d'acceptació de la història (`docs/sprint-<N>.md` del sprint de la tasca).
 2. Crea la branca `feature/TG-<ref>-…` des de `snapshot` actualitzada.
 3. Respecta el stack i les convencions; si una decisió no està presa, consulta `docs/decisions/pendents.md` i **pregunta** abans d'inventar-la.
 4. Escriu tests i actualitza l'OpenAPI / docs a la mateixa PR.
