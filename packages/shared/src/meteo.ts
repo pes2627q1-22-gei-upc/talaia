@@ -1,7 +1,7 @@
 import type { PuntObservacio } from './punts';
 
-/** Origen d'una dada meteorològica. Meteocat (XEMA) s'hi afegirà amb TG-115. */
-export type FontMeteo = 'open_meteo';
+/** Origen d'una dada meteorològica: la previsió d'Open-Meteo o les observacions de la XEMA (TG-115). */
+export type FontMeteo = 'open_meteo' | 'meteocat_xema';
 
 /**
  * Previsió meteorològica d'una hora en un punt, tal com la ingesta el worker d'Open-Meteo
@@ -56,4 +56,32 @@ export type PrevisioMeteoPunt = {
   font: FontMeteo;
   /** Hores consecutives, de la més propera a la més llunyana. */
   hores: PrevisioMeteoHora[];
+};
+
+/**
+ * Lectura semihorària d'una estació de la XEMA de Meteocat (TG-115): el que es va mesurar de debò,
+ * per contrastar-ho amb la previsió d'Open-Meteo (l'ajust de l'índex és TG-184). La XEMA no mesura
+ * els núvols: de dia, la irradiància solar en fa de testimoni. Mateixes unitats que
+ * `PrevisioMeteoHora` (el vent, passat de m/s a km/h). `null` = l'estació no ho mesura o no hi ha
+ * lectura.
+ */
+export type LecturaXema = {
+  /** Codi de l'estació (`CC`, `UG`…). */
+  estacio: string;
+  /** Instant de la lectura tal com el dona la XEMA (base semihorària), ISO 8601 en UTC. */
+  data: string;
+  /** Temperatura de l'aire, en °C. */
+  temperatura: number | null;
+  /** Humitat relativa, en %. */
+  humitat: number | null;
+  /** Precipitació de la mitja hora, en mm. */
+  precipitacio: number | null;
+  /** Velocitat del vent a 10 m, en km/h. */
+  ventVelocitat: number | null;
+  /** Direcció d'on ve el vent a 10 m, en graus. */
+  ventDireccio: number | null;
+  /** Irradiància solar global, en W/m². */
+  irradiancia: number | null;
+  /** Totes les lectures d'aquesta fila estan validades per Meteocat (estat «V»). */
+  validada: boolean;
 };

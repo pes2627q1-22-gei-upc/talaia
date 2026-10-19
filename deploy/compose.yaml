@@ -31,6 +31,7 @@ services:
     environment:
       DATABASE_URL: ${DATABASE_URL:-}
       OPEN_METEO_BASE_URL: ${OPEN_METEO_BASE_URL:-}
+      METEOCAT_API_KEY: ${METEOCAT_API_KEY:-}
 
   # Emet i renova el certificat de Let's Encrypt amb el repte DNS-01 de DuckDNS
   # (sense ports 80/443 no hi ha repte HTTP). Mentre no n'hi ha cap, en genera un
