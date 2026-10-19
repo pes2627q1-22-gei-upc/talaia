@@ -29,7 +29,11 @@ const TOKEN_ERRORS = [
   joseErrors.JWSInvalid,
   joseErrors.JWTInvalid,
   joseErrors.JWKSNoMatchingKey,
+  // Token sense `kid` quan el JWKS té més d'una clau (durant una rotació).
+  joseErrors.JWKSMultipleMatchingKeys,
   joseErrors.JOSEAlgNotAllowed,
+  // Capçalera amb un `crit` que jose no coneix.
+  joseErrors.JOSENotSupported,
 ];
 
 function isTokenError(error: unknown): boolean {
@@ -67,9 +71,13 @@ export function requireAuth({ supabaseUrl, jwks }: AuthMiddlewareOptions = {}): 
         requiredClaims: ['sub', 'exp'],
       });
 
+      // `requiredClaims` només garanteix que hi és: amb `sub: 123` la BD fallaria en convertir-lo a uuid.
+      if (typeof payload.sub !== 'string' || payload.sub.length === 0) {
+        return next(new ApiError(401, 'unauthorized', 'JWT invàlid o caducat'));
+      }
+
       const user: AuthenticatedUser = {
-        // `requiredClaims` garanteix que hi és, i jose comprova que és una cadena.
-        id: String(payload.sub),
+        id: payload.sub,
         email: typeof payload.email === 'string' ? payload.email : null,
         role: typeof payload.role === 'string' ? payload.role : 'authenticated',
         appMetadata:

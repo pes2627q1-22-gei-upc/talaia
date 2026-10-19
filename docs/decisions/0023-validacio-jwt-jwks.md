@@ -22,5 +22,5 @@ L'app s'autentica amb Supabase Auth (TG-81, TG-83) i envia el JWT d'accés a l'A
 
 ## Conseqüències
 
-- La primera petició autenticada després d'arrencar fa una crida HTTP al JWKS; les següents, no.
+- La primera petició autenticada després d'arrencar fa una crida HTTP al JWKS. Després, `jose` el torna a baixar quan la memòria cau té més de 10 minuts (`cacheMaxAge`) o quan arriba un `kid` desconegut: si Supabase no respon just llavors, l'API respon 503 encara que tingui les claus guardades.
 - Si `SUPABASE_URL` no apunta al projecte bo, totes les peticions autenticades donen 503 o 401. A la VM arriba per `deploy/compose.yaml`.

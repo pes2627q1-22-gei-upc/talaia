@@ -11,7 +11,6 @@ create table public.perfils (
   data_actualitzacio timestamptz not null default now()
 );
 
-
 create trigger perfils_set_data_actualitzacio
   before update on public.perfils
   for each row execute function public.set_data_actualitzacio();

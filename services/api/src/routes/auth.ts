@@ -9,7 +9,8 @@ import type { ProfileStore } from '../services/profileService';
 
 export type AuthRouterOptions = {
   supabaseUrl?: string;
-  profileStore?: ProfileStore;
+  /** Sense `DATABASE_URL`, `createApp` hi passa un store que respon 503. */
+  profileStore: ProfileStore;
   jwks?: JwksSource;
 };
 
@@ -61,11 +62,7 @@ registry.registerPath({
   },
 });
 
-export function createAuthRouter({
-  supabaseUrl,
-  profileStore,
-  jwks,
-}: AuthRouterOptions = {}): Router {
+export function createAuthRouter({ supabaseUrl, profileStore, jwks }: AuthRouterOptions): Router {
   const router = Router();
   const requireCurrentUser = requireAuth({ supabaseUrl, jwks });
 
@@ -73,16 +70,6 @@ export function createAuthRouter({
     const authReq = req as AuthenticatedRequest;
     if (!authReq.user) {
       return next(new ApiError(401, 'unauthorized', 'JWT invàlid o caducat'));
-    }
-
-    if (!profileStore) {
-      return next(
-        new ApiError(
-          503,
-          'database_unavailable',
-          "L'API no té DATABASE_URL: el perfil d'usuari no està disponible",
-        ),
-      );
     }
 
     try {

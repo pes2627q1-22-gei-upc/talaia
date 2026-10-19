@@ -19,7 +19,12 @@ export type ApiDeps = {
 };
 
 /** Router de `/api/v1`: un router per recurs (punts, recomanacions, esdeveniments…). */
-export function createApiRouter({ punts, supabaseUrl, jwks, profileStore }: ApiDeps = {}): Router {
+export function createApiRouter({
+  punts,
+  supabaseUrl,
+  jwks,
+  profileStore,
+}: ApiDeps & { profileStore: ProfileStore }): Router {
   const router = Router();
   router.use('/health', healthRouter);
   router.use('/punts', createPuntsRouter(punts));
