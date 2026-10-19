@@ -22,8 +22,7 @@ export type Env = z.infer<typeof EnvSchema>;
 export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
   const result = EnvSchema.safeParse(source);
   if (!result.success) {
-    throw new Error(`Variables d'entorn invàlides:
-${z.prettifyError(result.error)}`);
+    throw new Error(`Variables d'entorn invàlides:\n${z.prettifyError(result.error)}`);
   }
   return result.data;
 }

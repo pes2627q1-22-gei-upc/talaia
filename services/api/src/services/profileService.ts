@@ -1,6 +1,5 @@
-import { createDb } from '@talaia/db';
+import type { createDb } from '@talaia/db';
 
-import { loadEnv } from '../config/env';
 import type { AuthenticatedUser } from '../middleware/auth';
 
 export type ProfileRecord = {
@@ -17,13 +16,10 @@ export type ProfileStore = {
   ensureProfile: (user: AuthenticatedUser) => Promise<{ created: boolean; profile: ProfileRecord }>;
 };
 
-export function createDatabaseProfileStore(databaseUrl = loadEnv().DATABASE_URL): ProfileStore {
-  if (!databaseUrl) {
-    throw new Error('DATABASE_URL és obligatòria per crear el store de perfils');
-  }
+type Db = ReturnType<typeof createDb>;
 
-  const db = createDb(databaseUrl, { max: 5 });
-
+/** Perfils a la base de dades. Rep el pool de `server.ts`, el mateix que fan servir els punts. */
+export function createDatabaseProfileStore(db: Db): ProfileStore {
   return {
     async ensureProfile(user) {
       const avatarUrl =

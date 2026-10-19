@@ -1,5 +1,5 @@
 import type { Request, RequestHandler } from 'express';
-import { createLocalJWKSet, createRemoteJWKSet, errors as joseErrors, jwtVerify } from 'jose';
+import { createRemoteJWKSet, errors as joseErrors, jwtVerify, type JWTVerifyGetKey } from 'jose';
 
 import { ApiError } from './errors';
 
@@ -13,29 +13,42 @@ export type AuthenticatedUser = {
 
 export type AuthenticatedRequest = Request & { user?: AuthenticatedUser };
 
-export type JwksSource = ReturnType<typeof createLocalJWKSet> | ReturnType<typeof createRemoteJWKSet>;
+/** D'on surten les claus: el JWKS remot de Supabase o, als tests, `createLocalJWKSet`. */
+export type JwksSource = JWTVerifyGetKey;
 
 export type AuthMiddlewareOptions = {
   supabaseUrl?: string;
   jwks?: JwksSource;
 };
 
-function isJwksUnavailableError(error: unknown): boolean {
-  if (error instanceof joseErrors.JOSEError) {
-    return error instanceof joseErrors.JWKSTimeout;
-  }
+/** Errors que vénen del token. Qualsevol altre (JWKS caigut, 5xx, xarxa) és 503, no 401. */
+const TOKEN_ERRORS = [
+  joseErrors.JWTExpired,
+  joseErrors.JWTClaimValidationFailed,
+  joseErrors.JWSSignatureVerificationFailed,
+  joseErrors.JWSInvalid,
+  joseErrors.JWTInvalid,
+  joseErrors.JWKSNoMatchingKey,
+  joseErrors.JOSEAlgNotAllowed,
+];
 
-  return true;
+function isTokenError(error: unknown): boolean {
+  return TOKEN_ERRORS.some((tokenError) => error instanceof tokenError);
 }
 
 export function requireAuth({ supabaseUrl, jwks }: AuthMiddlewareOptions = {}): RequestHandler {
   const issuer = supabaseUrl ? `${supabaseUrl.replace(/\/$/, '')}/auth/v1` : '';
-  const keys = jwks ?? (issuer ? createRemoteJWKSet(new URL(`${issuer}/.well-known/jwks.json`)) : undefined);
+  const keys =
+    jwks ?? (issuer ? createRemoteJWKSet(new URL(`${issuer}/.well-known/jwks.json`)) : undefined);
 
   return async (req, _res, next) => {
     if (!supabaseUrl || !issuer || !keys) {
       return next(
-        new ApiError(500, 'internal_error', 'Configuració del servidor incompleta (falta SUPABASE_URL)'),
+        new ApiError(
+          500,
+          'internal_error',
+          'Configuració del servidor incompleta (falta SUPABASE_URL)',
+        ),
       );
     }
 
@@ -50,14 +63,13 @@ export function requireAuth({ supabaseUrl, jwks }: AuthMiddlewareOptions = {}): 
       const { payload } = await jwtVerify(token, keys, {
         issuer,
         audience: 'authenticated',
+        algorithms: ['ES256', 'RS256'],
+        requiredClaims: ['sub', 'exp'],
       });
 
-      if (typeof payload.sub !== 'string' || payload.sub.length === 0) {
-        throw new Error("JWT sense identificador d'usuari");
-      }
-
       const user: AuthenticatedUser = {
-        id: payload.sub,
+        // `requiredClaims` garanteix que hi és, i jose comprova que és una cadena.
+        id: String(payload.sub),
         email: typeof payload.email === 'string' ? payload.email : null,
         role: typeof payload.role === 'string' ? payload.role : 'authenticated',
         appMetadata:
@@ -73,13 +85,16 @@ export function requireAuth({ supabaseUrl, jwks }: AuthMiddlewareOptions = {}): 
       (req as AuthenticatedRequest).user = user;
       return next();
     } catch (error) {
-      const status = isJwksUnavailableError(error) ? 503 : 401;
-      const code = status === 503 ? 'service_unavailable' : 'unauthorized';
-      const message =
-        status === 503
-          ? 'No es pot validar el JWT de Supabase en aquest moment'
-          : `JWT invàlid o caducat: ${error instanceof Error ? error.message : ''}`.trim();
-      return next(new ApiError(status, code, message));
+      if (isTokenError(error)) {
+        return next(new ApiError(401, 'unauthorized', 'JWT invàlid o caducat'));
+      }
+      return next(
+        new ApiError(
+          503,
+          'service_unavailable',
+          'No es pot validar el JWT de Supabase en aquest moment',
+        ),
+      );
     }
   };
 }

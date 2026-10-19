@@ -1,9 +1,10 @@
-import { createLocalJWKSet, exportJWK, generateKeyPair, SignJWT } from 'jose';
+import { createLocalJWKSet, errors as joseErrors, exportJWK, generateKeyPair, SignJWT } from 'jose';
 import express from 'express';
 import request from 'supertest';
 import { z } from 'zod';
 
 import { createApp } from '../app';
+import type { AuthenticatedUser } from '../middleware/auth';
 import { errorHandler } from '../middleware/errors';
 
 const app = createApp();
@@ -17,33 +18,23 @@ describe('GET /api/v1/health', () => {
 });
 
 describe('JWT auth i perfil en el primer accés', () => {
+  const supabaseUrl = 'https://example.supabase.co';
+  const issuer = `${supabaseUrl}/auth/v1`;
+
   let profileExists = false;
   const profileStore = {
-    ensureProfile: jest.fn(async (user) => {
-      if (profileExists) {
-        return {
-          created: false,
-          profile: {
-            id: 'profile-1',
-            authUserId: user.id,
-            email: user.email ?? null,
-            nom: user.email ? user.email.split('@')[0] : null,
-            avatarUrl: typeof user.appMetadata?.avatar_url === 'string' ? user.appMetadata.avatar_url : null,
-            dataCreacio: new Date('2026-10-14T12:00:00.000Z'),
-            dataActualitzacio: new Date('2026-10-14T12:00:00.000Z'),
-          },
-        };
-      }
-
+    ensureProfile: jest.fn(async (user: AuthenticatedUser) => {
+      const created = !profileExists;
       profileExists = true;
       return {
-        created: true,
+        created,
         profile: {
           id: 'profile-1',
           authUserId: user.id,
           email: user.email ?? null,
-          nom: user.email ? user.email.split('@')[0] : null,
-          avatarUrl: typeof user.appMetadata?.avatar_url === 'string' ? user.appMetadata.avatar_url : null,
+          nom: user.email?.split('@')[0] ?? null,
+          avatarUrl:
+            typeof user.userMetadata?.avatar_url === 'string' ? user.userMetadata.avatar_url : null,
           dataCreacio: new Date('2026-10-14T12:00:00.000Z'),
           dataActualitzacio: new Date('2026-10-14T12:00:00.000Z'),
         },
@@ -51,10 +42,19 @@ describe('JWT auth i perfil en el primer accés', () => {
     }),
   };
 
-  const supabaseUrl = 'https://example.supabase.co';
-  const authApp = createApp({
-    supabaseUrl,
-    profileStore,
+  let privateKey: CryptoKey;
+  let jwtApp: ReturnType<typeof createApp>;
+
+  beforeAll(async () => {
+    const keyPair = await generateKeyPair('ES256');
+    privateKey = keyPair.privateKey;
+    const jwk = {
+      ...(await exportJWK(keyPair.publicKey)),
+      alg: 'ES256',
+      use: 'sig',
+      kid: 'test-key',
+    };
+    jwtApp = createApp({ supabaseUrl, profileStore, jwks: createLocalJWKSet({ keys: [jwk] }) });
   });
 
   beforeEach(() => {
@@ -62,53 +62,94 @@ describe('JWT auth i perfil en el primer accés', () => {
     profileStore.ensureProfile.mockClear();
   });
 
-  it('respón 401 si falta el JWT', async () => {
-    const res = await request(authApp).post('/api/v1/perfil');
-    expect(res.status).toBe(401);
-    expect(res.body).toEqual({ error: { code: 'unauthorized', message: 'Falta el token JWT de Supabase' } });
-  });
+  type TokenOptions = {
+    sub?: string | null;
+    iss?: string;
+    aud?: string;
+    exp?: number | string;
+    key?: CryptoKey;
+  };
 
-  it('respón 401 si el JWT és invàlid', async () => {
-    const res = await request(authApp).post('/api/v1/perfil').set('Authorization', 'Bearer invalid.token');
-    expect(res.status).toBe(401);
-    expect(res.body.error.code).toBe('unauthorized');
-  });
-
-  it('crea el perfil la primera vegada i el torna a 200 la segona', async () => {
-    const { publicKey, privateKey } = await generateKeyPair('ES256');
-    const jwk = {
-      ...(await exportJWK(publicKey)),
-      alg: 'ES256',
-      use: 'sig',
-      kid: 'test-key',
-    };
-    const localJwks: ReturnType<typeof createLocalJWKSet> = createLocalJWKSet({ keys: [jwk] });
-    const jwtApp = createApp({
-      supabaseUrl,
-      profileStore,
-      jwks: localJwks,
-    });
-
-    const token = await new SignJWT({
-      sub: 'user-123',
+  async function signToken({
+    sub = 'user-123',
+    iss = issuer,
+    aud = 'authenticated',
+    exp = '1h',
+    key = privateKey,
+  }: TokenOptions = {}) {
+    const jwt = new SignJWT({
       email: 'maria@example.com',
       role: 'authenticated',
-      app_metadata: { avatar_url: 'https://example.com/avatar.png' },
-      user_metadata: { full_name: 'Maria' },
+      user_metadata: { full_name: 'Maria', avatar_url: 'https://example.com/avatar.png' },
     })
       .setProtectedHeader({ alg: 'ES256', kid: 'test-key' })
       .setIssuedAt()
-      .setIssuer(`${supabaseUrl}/auth/v1`)
-      .setAudience('authenticated')
-      .sign(privateKey);
+      .setIssuer(iss)
+      .setAudience(aud)
+      .setExpirationTime(exp);
+    if (sub !== null) jwt.setSubject(sub);
+    return jwt.sign(key);
+  }
 
-    let res = await request(jwtApp).post('/api/v1/perfil').set('Authorization', `Bearer ${token}`);
+  const postPerfil = (app: ReturnType<typeof createApp>, token: string) =>
+    request(app).post('/api/v1/perfil').set('Authorization', `Bearer ${token}`);
+
+  it('respon 401 si falta el JWT', async () => {
+    const res = await request(jwtApp).post('/api/v1/perfil');
+    expect(res.status).toBe(401);
+    expect(res.body).toEqual({
+      error: { code: 'unauthorized', message: 'Falta el token JWT de Supabase' },
+    });
+  });
+
+  it('crea el perfil la primera vegada (201) i el torna la segona (200)', async () => {
+    const token = await signToken();
+
+    let res = await postPerfil(jwtApp, token);
     expect(res.status).toBe(201);
     expect(res.body.created).toBe(true);
+    expect(res.body.profile.avatarUrl).toBe('https://example.com/avatar.png');
 
-    res = await request(jwtApp).post('/api/v1/perfil').set('Authorization', `Bearer ${token}`);
+    res = await postPerfil(jwtApp, token);
     expect(res.status).toBe(200);
     expect(res.body.created).toBe(false);
+  });
+
+  it.each<[string, () => Promise<string>]>([
+    ['mal format', async () => 'invalid.token'],
+    ['caducat', () => signToken({ exp: Math.floor(Date.now() / 1000) - 60 })],
+    ["amb un 'iss' incorrecte", () => signToken({ iss: 'https://altre.supabase.co/auth/v1' })],
+    ["amb un 'aud' incorrecte", () => signToken({ aud: 'anon' })],
+    ['sense sub', () => signToken({ sub: null })],
+    [
+      'signat amb una altra clau',
+      async () => signToken({ key: (await generateKeyPair('ES256')).privateKey }),
+    ],
+  ])('respon 401 amb un JWT %s', async (_cas, makeToken) => {
+    const res = await postPerfil(jwtApp, await makeToken());
+    expect(res.status).toBe(401);
+    expect(res.body).toEqual({ error: { code: 'unauthorized', message: 'JWT invàlid o caducat' } });
+    expect(profileStore.ensureProfile).not.toHaveBeenCalled();
+  });
+
+  it.each<[string, Error]>([
+    [
+      'el JWKS respon un 5xx',
+      new joseErrors.JOSEError('Expected 200 OK from the JSON Web Key Set HTTP response'),
+    ],
+    ['el JWKS triga massa', new joseErrors.JWKSTimeout()],
+    ['la xarxa falla', new TypeError('fetch failed')],
+  ])('respon 503 si %s', async (_cas, error) => {
+    const brokenApp = createApp({
+      supabaseUrl,
+      profileStore,
+      jwks: async () => {
+        throw error;
+      },
+    });
+    const res = await postPerfil(brokenApp, await signToken());
+    expect(res.status).toBe(503);
+    expect(res.body.error.code).toBe('service_unavailable');
   });
 });
 

@@ -3,7 +3,7 @@ import express from 'express';
 import { loadEnv } from './config/env';
 import { ApiError, errorHandler, notFound } from './middleware/errors';
 import { createApiRouter, type ApiDeps } from './routes';
-import { createDatabaseProfileStore, type ProfileStore } from './services/profileService';
+import type { ProfileStore } from './services/profileService';
 
 export type AppOptions = ApiDeps & {
   profileStore?: ProfileStore;
@@ -15,17 +15,15 @@ export function createApp({ profileStore, ...apiDeps }: AppOptions = {}) {
   const resolvedSupabaseUrl = apiDeps.supabaseUrl ?? env.SUPABASE_URL;
   const resolvedProfileStore =
     profileStore ??
-    (env.DATABASE_URL
-      ? createDatabaseProfileStore(env.DATABASE_URL)
-      : {
-          async ensureProfile() {
-            throw new ApiError(
-              503,
-              'database_unavailable',
-              "L'API no té DATABASE_URL: el perfil d'usuari no està disponible",
-            );
-          },
-        });
+    ({
+      async ensureProfile() {
+        throw new ApiError(
+          503,
+          'database_unavailable',
+          "L'API no té DATABASE_URL: el perfil d'usuari no està disponible",
+        );
+      },
+    } satisfies ProfileStore);
 
   const app = express();
   app.disable('x-powered-by');

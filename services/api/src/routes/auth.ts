@@ -44,16 +44,28 @@ registry.registerPath({
     },
     401: {
       description: 'JWT no vàlid o absent',
-      content: { 'application/json': { schema: z.object({ error: z.object({ code: z.string(), message: z.string() }) }) } },
+      content: {
+        'application/json': {
+          schema: z.object({ error: z.object({ code: z.string(), message: z.string() }) }),
+        },
+      },
     },
     503: {
       description: 'No es pot validar el JWT de Supabase',
-      content: { 'application/json': { schema: z.object({ error: z.object({ code: z.string(), message: z.string() }) }) } },
+      content: {
+        'application/json': {
+          schema: z.object({ error: z.object({ code: z.string(), message: z.string() }) }),
+        },
+      },
     },
   },
 });
 
-export function createAuthRouter({ supabaseUrl, profileStore, jwks }: AuthRouterOptions = {}): Router {
+export function createAuthRouter({
+  supabaseUrl,
+  profileStore,
+  jwks,
+}: AuthRouterOptions = {}): Router {
   const router = Router();
   const requireCurrentUser = requireAuth({ supabaseUrl, jwks });
 
@@ -65,7 +77,11 @@ export function createAuthRouter({ supabaseUrl, profileStore, jwks }: AuthRouter
 
     if (!profileStore) {
       return next(
-        new ApiError(503, 'database_unavailable', "L'API no té DATABASE_URL: el perfil d'usuari no està disponible"),
+        new ApiError(
+          503,
+          'database_unavailable',
+          "L'API no té DATABASE_URL: el perfil d'usuari no està disponible",
+        ),
       );
     }
 
