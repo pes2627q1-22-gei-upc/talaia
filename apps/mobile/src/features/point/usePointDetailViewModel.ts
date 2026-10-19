@@ -1,6 +1,7 @@
 import { Alert, Linking } from 'react-native';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { DireccioHoritzo } from '@talaia/shared';
 
 import { ApiError } from '@/core/api/httpClient';
 import { nightStyle } from '@/features/map/style/nightStyle';
@@ -119,7 +120,7 @@ export function usePointDetailViewModel(pointId: string) {
     point?.altitud == null
       ? t('point.unavailable')
       : t('point.metres', { value: number.format(point.altitud) });
-  const directionLabels = {
+  const directionLabels: Record<DireccioHoritzo, string> = {
     N: t('point.directionN'),
     NE: t('point.directionNE'),
     E: t('point.directionE'),

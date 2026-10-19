@@ -1,4 +1,6 @@
-import type { IndexHora, PuntDetall } from '@talaia/shared';
+import type { IndexHora, PuntFitxa } from '@talaia/shared';
+
+import type { PointDetailModel } from '../pointModel';
 
 /** Dades de prova: no s'importen mai des de l'app. */
 export const hour: IndexHora = {
@@ -8,7 +10,7 @@ export const hour: IndexHora = {
   factors: { nuvols: 0.95, sol: 1, foscor: 0.94, lluna: 0.68 },
   foscorEstimada: false,
 };
-export const point: PuntDetall = {
+export const point: PointDetailModel = {
   id: 'montsec',
   nom: 'Serra del Montsec',
   municipi: 'Àger',
@@ -27,7 +29,7 @@ export const point: PuntDetall = {
 };
 
 /** Mateixa fitxa amb la forma JSON de `GET /punts/{id}` (TG-92). */
-export function asPointResponse(detail: PuntDetall = point) {
+export function asPointResponse(detail: PointDetailModel = point): PuntFitxa {
   return {
     id: detail.id,
     nom: detail.nom,

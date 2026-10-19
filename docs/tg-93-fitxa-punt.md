@@ -4,10 +4,10 @@ Branca `feature/TG-93-fitxa-punt`, amb TG-90 i les seves correccions de revisió
 
 ## Contracte de TG-92
 
-El repository consumeix el contracte de la PR #48 (`GET /api/v1/punts/{id}`)
-i adapta la resposta al model intern `PuntDetall` de la pantalla. Fins que la
-PR entri a `snapshot`, el tipus de resposta viu al repository; després es podrà
-substituir pel `PuntFitxa` de `@talaia/shared`.
+El repository consumeix el contracte de la TG-92 (`GET /api/v1/punts/{id}`)
+amb el tipus compartit `PuntFitxa` de `@talaia/shared` i adapta la resposta al
+model de presentació local `PointDetailModel`. Les direccions utilitzen
+`DireccioHoritzo` del mateix paquet.
 
 La resposta conté:
 
@@ -80,4 +80,4 @@ Els fixtures són a `features/point/__fixtures__`, només importats pels tests.
 Es proven dades, hores, canvi de punt, dades absents, error/404, reintent,
 memòria cau i refresc periòdic. El mapa DOM està simulat als tests de pantalla.
 
-**Validació posterior al commit:** contrastar la fitxa amb una resposta real de TG-92 i revisar-la en Expo Go (mides petites, text ampliat, gestos sobre el mapa, atribució i retorn enrere). Aquest commit es basa en el contracte de la PR #48 i en les proves automàtiques.
+**Validació posterior al commit:** contrastar la fitxa amb una resposta real de TG-92 i revisar-la en Expo Go (mides petites, text ampliat, gestos sobre el mapa, atribució i retorn enrere). La integració de tipus es comprova amb el contracte compartit i les proves automàtiques.
