@@ -76,6 +76,13 @@ Omple com a mínim `PUBLIC_HOST`, `PUBLIC_PORT` (`40000+XXX·10`), `ACME_EMAIL`,
 
 Compte: Docker Compose llegeix un comentari al final d'una línia buida (`VAR=   # …`) com si fos el valor. Posa els comentaris a la línia de sobre.
 
+Quatre condicions per a `DATABASE_URL`. Si no es compleixen, l'API arrenca però `/punts` respon 503 (amb una URL mal formada, el log diu `getaddrinfo ENOTFOUND`):
+
+- Fes servir la cadena del **Session pooler** (Supabase → **Connect**), amb l'usuari `postgres.<ref>`. El host directe `db.<ref>.supabase.co` només té IPv6 i la VM no hi arriba.
+- La contrasenya és la **de la base de dades** (Supabase → **Project Settings → Database**), no la del compte de Supabase ni la de cap altre servei.
+- Ha d'anar **percent-encoded**: `/` → `%2F`, `#` → `%23`, `?` → `%3F`, `@` → `%40`, `%` → `%25`. Sense codificar, un d'aquests caràcters talla la URL i el client pren l'usuari per host. Un `$` s'escriu `$$`, perquè Compose l'expandeix al `--env-file`.
+- Acaba en `…/postgres?sslmode=no-verify`, **sense barra abans del `?`** (`/postgres/?` busca una base de dades amb un nom que no existeix).
+
 ### 4. Primera arrencada i certificat
 
 ```bash
