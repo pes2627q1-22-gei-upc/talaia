@@ -1,6 +1,7 @@
 # syntax=docker/dockerfile:1
 # Imatge del worker (TG-71). Context de build: l'arrel del monorepo (vegeu deploy/compose.yaml).
-# El procés llarg i el seu horari són de TG-99 (P9): fins llavors el servei va amb `profiles: [worker]`.
+# Procés llarg que recalcula l'índex cada hora amb node-cron (TG-99, ADR-0024). tsup inclou
+# @talaia/db i @talaia/shared dins de dist/main.js, com a l'API.
 
 FROM node:22-alpine AS deps
 WORKDIR /app
@@ -32,5 +33,4 @@ WORKDIR /app
 COPY --from=prod-deps /app ./
 COPY --from=build /app/services/worker/dist services/worker/dist
 USER node
-# Punt d'entrada del procés llarg: el crea TG-99.
 CMD ["node", "services/worker/dist/main.js"]

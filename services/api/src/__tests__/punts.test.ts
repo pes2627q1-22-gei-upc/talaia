@@ -168,15 +168,19 @@ describe('versió del worker (ADR-0012)', () => {
     expect(repository.calls).toBe(2);
   });
 
-  it("regenera el document quan canvia l'hora, encara que el worker no hagi corregut", async () => {
-    let t = HORA + 49 * 60_000; // 10:59 UTC
+  it("regenera el document en canviar l'hora, encara que fa menys d'un minut que ha mirat la versió", async () => {
+    let t = Date.UTC(2026, 9, 19, 10, 59, 50);
     const repository = fakeRepository();
+    const listPublished = jest.spyOn(repository, 'listPublished');
     const service = createDefaultPuntsService(repository, () => t);
     await service.getMapDocument();
 
-    t += 2 * 60_000; // 11:01 UTC
+    t = Date.UTC(2026, 9, 19, 11, 0, 10);
     await service.getMapDocument();
-    expect(repository.calls).toBe(2);
+    expect(listPublished.mock.calls.map(([hora]) => hora.toISOString())).toEqual([
+      '2026-10-19T10:00:00.000Z',
+      '2026-10-19T11:00:00.000Z',
+    ]);
   });
 
   it('sense cap canvi, no consulta el catàleg fins als 5 minuts', async () => {

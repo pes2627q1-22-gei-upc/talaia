@@ -14,8 +14,14 @@ export type ContentHashCacheOptions = {
   /** Edat màxima del document abans de tornar-lo a construir. */
   ttlMs?: number;
   /**
-   * Versió de les dades (ADR-0012): l'última execució del worker i l'hora en curs. Si canvia, el
-   * document es regenera encara que no hagi passat `ttlMs`. Es consulta com a molt cada `checkMs`.
+   * Període de les dades, calculat del rellotge a cada petició sense anar a la BD (l'hora en curs:
+   * l'índex del mapa és el d'aquesta hora). Si canvia, el document es regenera al moment, i `load`
+   * el rep perquè les dades i el període surtin del mateix rellotge.
+   */
+  period?: (now: number) => number;
+  /**
+   * Versió de les dades (ADR-0012): l'última execució del worker. Si canvia, el document es
+   * regenera encara que no hagi passat `ttlMs`. Es consulta com a molt cada `checkMs`.
    */
   version?: () => Promise<string>;
   checkMs?: number;
@@ -28,18 +34,30 @@ export function etagFor(geojson: PuntsMapaGeoJson): string {
 
 /**
  * Document en memòria amb un `ETag` calculat del contingut, regenerat cada `ttlMs` o quan canvia
- * la `version`.
+ * el `period` o la `version`.
  * - Les peticions simultànies comparteixen una sola regeneració.
  * - Si no es pot llegir la versió, se serveix el document que hi ha fins a `ttlMs`.
  * - Si la regeneració falla i ja hi havia un document, se serveix l'antic i es torna a provar
  *   al cap de `ttlMs`. Si no n'hi havia cap, l'error arriba a qui ha fet la petició.
  */
 export function createContentHashCache(
-  load: () => Promise<PuntsMapaGeoJson>,
-  { ttlMs = 5 * 60_000, version, checkMs = 60_000, now = Date.now }: ContentHashCacheOptions = {},
+  load: (period: number | undefined) => Promise<PuntsMapaGeoJson>,
+  {
+    ttlMs = 5 * 60_000,
+    period,
+    version,
+    checkMs = 60_000,
+    now = Date.now,
+  }: ContentHashCacheOptions = {},
 ): MapDocumentCache {
   let current:
-    | { doc: VersionedMapDocument; loadedAt: number; checkedAt: number; version?: string }
+    | {
+        doc: VersionedMapDocument;
+        loadedAt: number;
+        checkedAt: number;
+        period?: number;
+        version?: string;
+      }
     | undefined;
   let refreshing: Promise<VersionedMapDocument> | undefined;
 
@@ -53,10 +71,17 @@ export function createContentHashCache(
   };
 
   const refresh = async () => {
+    const loadedPeriod = period?.(now());
     const loadedVersion = await readVersion();
-    const geojson = await load();
+    const geojson = await load(loadedPeriod);
     const doc = { geojson, etag: etagFor(geojson) };
-    current = { doc, loadedAt: now(), checkedAt: now(), version: loadedVersion };
+    current = {
+      doc,
+      loadedAt: now(),
+      checkedAt: now(),
+      period: loadedPeriod,
+      version: loadedVersion,
+    };
     return doc;
   };
 
@@ -70,7 +95,12 @@ export function createContentHashCache(
 
   return {
     async get() {
-      if (current && now() - current.loadedAt < ttlMs && !(await versionChanged())) {
+      if (
+        current &&
+        now() - current.loadedAt < ttlMs &&
+        period?.(now()) === current.period &&
+        !(await versionChanged())
+      ) {
         return current.doc;
       }
       refreshing ??= refresh().finally(() => {

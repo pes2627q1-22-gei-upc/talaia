@@ -61,7 +61,7 @@ Un sol GeoJSON `FeatureCollection` amb tots els punts `PUBLICAT`: `[lon, lat]` a
 - **Memòria cau:** el document es construeix en memòria i es regenera si té més de 5 minuts. L'`ETag` és un hash del contingut. Les peticions simultànies comparteixen una sola consulta, i si la base de dades falla se serveix l'últim document (503 si no n'hi ha cap).
 - **HTTP:** `Cache-Control: public, max-age=<segons fins a la propera hora>`. Amb `If-None-Match` igual a l'`ETag` (també `W/"…"`, que és com el deixa Nginx), 304 sense cos.
 - **`?bbox=minLon,minLat,maxLon,maxLat`:** opcional. Retalla el document en memòria, sense consultar la base de dades. Si és invàlid, 400 `validation_error`.
-- **Versió del worker** (ADR-0012, TG-99): com a molt un cop per minut, l'API llegeix l'última execució correcta de `execucions_worker` i l'hora en curs. Si alguna ha canviat, regenera el document sense esperar els 5 minuts. L'`ETag` continua sent el hash del contingut.
+- **Hora en curs i versió del worker** (ADR-0012, TG-99): a cada petició, l'API compara l'hora en curs (rellotge de l'API, sense anar a la BD) amb la del document, i si ha canviat el regenera amb l'índex de l'hora nova. A més, com a molt un cop per minut llegeix l'última execució correcta de `execucions_worker`, i si ha canviat també el regenera. L'`ETag` continua sent el hash del contingut.
 
 ## Afegir una ruta
 

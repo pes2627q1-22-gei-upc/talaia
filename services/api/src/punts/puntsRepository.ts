@@ -1,6 +1,5 @@
 import { lat, lon, type createDb } from '@talaia/db';
 import type { FranjaIndex, IndexVisibilitat, PuntObservacio } from '@talaia/shared';
-import { sql } from 'kysely';
 
 type Db = ReturnType<typeof createDb>;
 
@@ -9,8 +8,8 @@ type Db = ReturnType<typeof createDb>;
 export type PuntMapa = PuntObservacio & { index: IndexVisibilitat | null };
 
 export type PuntsRepository = {
-  /** Punts visibles al mapa: només els que tenen `estat = 'PUBLICAT'`. */
-  listPublished(): Promise<PuntMapa[]>;
+  /** Punts visibles al mapa (`estat = 'PUBLICAT'`), amb l'índex de l'`hora` (inici, en UTC). */
+  listPublished(hora: Date): Promise<PuntMapa[]>;
   /**
    * Versió de l'índex: quan va acabar l'última execució correcta del worker (ADR-0012, ADR-0024),
    * o `null` si encara no n'hi ha cap.
@@ -20,13 +19,11 @@ export type PuntsRepository = {
 
 export function createPuntsRepository(db: Db): PuntsRepository {
   return {
-    async listPublished() {
+    async listPublished(hora) {
       const files = await db
         .selectFrom('puntsObservacio as p')
         .leftJoin('indexVisibilitat as iv', (join) =>
-          join
-            .onRef('iv.puntId', '=', 'p.id')
-            .on('iv.hora', '=', sql<Date>`date_trunc('hour', now())`),
+          join.onRef('iv.puntId', '=', 'p.id').on('iv.hora', '=', hora),
         )
         .select((eb) => [
           'p.id',

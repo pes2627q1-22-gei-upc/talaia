@@ -124,18 +124,21 @@ npm run index -w services/worker -- 42.0294,0.7112 21.56    # amb l'SQM del lloc
 
 ```
 src/
-  main.ts                  Procés llarg: node-cron a «5 * * * *» (Europe/Madrid) i en arrencar
+  main.ts                  Cablejat del procés llarg: pool, node-cron a «5 * * * *» (UTC) i senyals
   recalcul/
-    recalcul.ts            Una execució: punts publicats → Open-Meteo → efemèrides → índex → BD
+    executor.ts            Sense solapaments, errors que no aturen el procés i aturada que espera
+    recalcul.ts            Una execució, per lots: punts → Open-Meteo → efemèrides → índex → BD
     repository.ts          Els ports sobre Kysely: punts, `index_visibilitat`, `execucions_worker`
 ```
 
 Per què node-cron i no el cron del sistema: [ADR-0024](../../docs/decisions/0024-planificacio-worker-node-cron.md).
 
-- **Una execució** (`recalculaIndex`): llegeix els punts `PUBLICAT` (posició, altitud i SQM), en demana la previsió a Open-Meteo en lots de 50, hi creua les efemèrides i desa l'índex de l'hora en curs i de les següents (`desaIndexs` substitueix les hores ja calculades). Després esborra l'índex de fa més de 24 hores.
-- **La marca de versió** (ADR-0012): en acabar, bé o malament, desa una fila a `execucions_worker` (`iniciada_el`, `acabada_el`, `estat` `ok`/`error`, punts, hores i el missatge de l'error). L'API fa servir l'última `acabada_el` correcta per saber quan ha de regenerar el GeoJSON del mapa.
+- **Una execució** (`recalculaIndex`): llegeix els punts `PUBLICAT` (posició, altitud i SQM), i els recalcula **en lots de 10**: per a cada lot, en demana la previsió a Open-Meteo (timeout de 30 s i **un reintent** si l'error és de xarxa, timeout, 429 o 5xx), hi creua les efemèrides i desa l'índex de l'hora en curs i de les següents (`desaIndexs` substitueix les hores ja calculades). Un lot que falla no atura els altres. Després esborra l'índex de fa més de 24 hores.
+- **La marca de versió** (ADR-0012): en acabar, desa una fila a `execucions_worker` (`iniciada_el`, `acabada_el`, `estat`, punts i hores desats, i el missatge de l'error). L'estat és `ok` només si tots els lots han anat bé; si no, és `error` i l'error diu quins punts han fallat. Si el registre mateix falla, es mostra al log i no amaga l'error de l'execució. L'API fa servir l'última `acabada_el` correcta per saber quan ha de regenerar el GeoJSON del mapa.
 - **Errors:** si falla Open-Meteo o la base de dades, l'error queda a `execucions_worker`, es mostra al log i el procés continua: es torna a provar a l'hora següent. Si una execució encara no ha acabat quan arriba la següent, la nova se salta.
-- **Aturada:** amb `SIGTERM` (Docker) o `SIGINT` espera l'execució en curs i tanca el pool.
+- **Base de dades penjada:** el pool té timeouts (10 s per connectar, 30 s per consulta), i una BD que no respon no pot deixar l'execució encallada per sempre.
+- **Aturada:** amb `SIGTERM` (Docker) o `SIGINT` no comença cap lot més, espera el que està en curs i tanca el pool. El compose dona 75 s (`stop_grace_period`).
+- **Build:** `npm run build` compila amb tsup, que inclou `@talaia/db` i `@talaia/shared` dins de `dist/main.js` (no tenen build), com a l'API.
 
 Prova en local amb la base de dades de Supabase local (`npx supabase start`):
 

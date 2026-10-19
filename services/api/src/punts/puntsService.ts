@@ -33,21 +33,28 @@ export function createPuntsService(cache: MapDocumentCache): PuntsService {
 
 const HORA_MS = 3_600_000;
 
+/** Inici de l'hora en curs (UTC): és la `hora` amb què el worker desa l'índex. */
+export function iniciHora(now: Date): Date {
+  return new Date(Math.floor(now.getTime() / HORA_MS) * HORA_MS);
+}
+
 /**
- * El servei amb la memòria cau per defecte: es regenera quan el worker acaba una execució o
- * canvia l'hora (l'índex del mapa és el de l'hora en curs), i com a molt cada 5 minuts.
+ * El servei amb la memòria cau per defecte: es regenera en canviar l'hora (l'índex del mapa és
+ * el de l'hora en curs), quan el worker acaba una execució i, si no, com a molt cada 5 minuts.
  */
 export function createDefaultPuntsService(
   repository: PuntsRepository,
   now: () => number = Date.now,
 ): PuntsService {
   return createPuntsService(
-    createContentHashCache(async () => buildMapDocument(await repository.listPublished()), {
-      version: async () => {
-        const hora = new Date(Math.floor(now() / HORA_MS) * HORA_MS).toISOString();
-        return `${(await repository.indexVersion()) ?? 'cap'}|${hora}`;
+    createContentHashCache(
+      async (hora = iniciHora(new Date(now())).getTime()) =>
+        buildMapDocument(await repository.listPublished(new Date(hora))),
+      {
+        period: (t) => iniciHora(new Date(t)).getTime(),
+        version: async () => (await repository.indexVersion()) ?? 'cap',
+        now,
       },
-      now,
-    }),
+    ),
   );
 }

@@ -21,6 +21,8 @@ services:
 
   # Recalcula l'índex en arrencar i cada hora amb node-cron (TG-99, ADR-0024).
   worker:
+    # Docker dona 10 s per aturar-se: no n'hi ha prou per acabar el lot d'Open-Meteo en curs.
+    stop_grace_period: 75s
     build:
       context: ..
       dockerfile: services/worker/Dockerfile

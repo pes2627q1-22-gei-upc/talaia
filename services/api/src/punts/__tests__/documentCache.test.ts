@@ -132,3 +132,24 @@ describe('createContentHashCache amb version', () => {
     expect(load).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('createContentHashCache amb period', () => {
+  it('es regenera al moment quan canvia el període i load el rep', async () => {
+    let t = 59_990;
+    const load = jest.fn(async (period: number | undefined) => doc(period === 0 ? 1 : 2));
+    const cache = createContentHashCache(load, {
+      ttlMs: 10 * 60_000,
+      checkMs: 60_000,
+      period: (now) => Math.floor(now / 60_000),
+      version: async () => 'v1',
+      now: () => t,
+    });
+
+    const first = await cache.get();
+    t = 60_010;
+    const second = await cache.get();
+
+    expect(load.mock.calls).toEqual([[0], [1]]);
+    expect(second.etag).not.toBe(first.etag);
+  });
+});
