@@ -27,5 +27,6 @@ Format: **Context → Decisió → Conseqüències**. Estat: `Acceptada`, `Propo
 | [0019](0019-allotjament-i-desplegament.md) | VM de la FIB (nattech, ports 8080–8089), HTTPS amb DuckDNS + Let's Encrypt DNS-01 i deploy de `stable` amb un runner self-hosted (P16, P17) | Acceptada (el deploy: 0021) |
 | [0020](0020-foscor-sqm-geotiff.md) | Foscor del cel per punt: la malla WFS del mapa de contaminació lumínica de la Generalitat es rasteritza a GeoTIFF amb geotiff.js i omple la columna `sqm` de `punts_observacio` (P10) | Acceptada |
 | [0021](0021-deploy-per-pull-des-de-la-vm.md) | Deploy de `stable` per pull: un cron de la VM cada 5 minuts, sense runner de GitHub | Acceptada |
+| [0022](0022-perfil-horitzo-icgc.md) | Perfil d'horitzó per punt: el model de 5 m de l'ICGC pel WCS, a tres resolucions, omple la columna `horitzo` de `punts_observacio` (360 alçades aparents) | Acceptada |
 
 Decisions encara obertes: [pendents.md](pendents.md).
