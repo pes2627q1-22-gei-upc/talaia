@@ -1,7 +1,6 @@
 import type {
   Esdeveniment,
   EsdevenimentsResponse,
-  IdiomaEsdeveniment,
   TipusFenomen,
   UbicacioEsdeveniment,
 } from '@talaia/shared';
@@ -19,10 +18,6 @@ const TipusFenomenSchema: z.ZodType<TipusFenomen> = z
     'superlluna',
   ])
   .meta({ id: 'TipusFenomen' });
-
-const IdiomaEsdevenimentSchema: z.ZodType<IdiomaEsdeveniment> = z
-  .enum(['ca', 'es', 'en'])
-  .meta({ id: 'IdiomaEsdeveniment' });
 
 const UbicacioEsdevenimentSchema: z.ZodType<UbicacioEsdeveniment> = z
   .object({
@@ -54,10 +49,6 @@ const EsdevenimentsQuerySchema = z.object({
   des_de: z.iso.date().meta({ description: "Primer dia de l'interval, inclòs." }),
   fins_a: z.iso.date().meta({ description: "Últim dia de l'interval, inclòs." }),
   tipus: TipusFenomenSchema.optional().meta({ description: 'Filtre opcional per tipus.' }),
-  idioma: IdiomaEsdevenimentSchema.optional().meta({
-    description: 'Idioma dels camps nom i descripcio. Per defecte: català.',
-    default: 'ca',
-  }),
 });
 
 registry.registerComponent('securitySchemes', 'ApiKeyAprop', {

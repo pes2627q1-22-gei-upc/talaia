@@ -4,12 +4,19 @@
     "comingSoon": "Muy pronto, aquí."
   },
   "tabs": {
-    "map": "Mapa",
+    "explore": "Explorar",
     "calendar": "Calendario",
+    "alerts": "Alertas",
     "profile": "Perfil"
   },
   "map": {
-    "a11y": "Mapa nocturno de Cataluña con el relieve"
+    "userLocation": "Tu ubicación",
+    "a11y": "Mapa nocturno de Cataluña con el relieve",
+    "pointsLoading": "Cargando lugares de observación…",
+    "pointsError": "No hemos podido cargar los lugares",
+    "pointsEmptyHint": "Vuelve a intentarlo más adelante.",
+    "pointsEmpty": "Todavía no hay lugares disponibles",
+    "retry": "Volver a intentar"
   },
   "calendar": {
     "title": "Calendario",
@@ -44,11 +51,136 @@
     "a11y": "Índice de visibilidad: {{value}} de 100, {{level}}"
   },
   "welcome": {
-    "title": "Talaia",
-    "subtitle": "Dónde y cuándo mirar el cielo."
+    "appName": "Talaia",
+    "tagline": "Dónde y cuándo mirar el cielo.",
+    "description": "Te decimos cuál es el mejor lugar cerca de ti para ver puestas de sol, lluvias de estrellas y noches despejadas.",
+    "continueGoogle": "Continuar con Google",
+    "continueApple": "Continuar con Apple",
+    "continueEmail": "Continuar con el correo",
+    "legal": "Al continuar aceptas las condiciones de uso y la política de privacidad de Talaia."
   },
   "notFound": {
     "title": "Esta pantalla no existe",
     "back": "Volver al inicio"
+  },
+  "explore": {
+    "greeting": {
+      "morning": "Buenos días",
+      "afternoon": "Buenas tardes",
+      "night": "Buenas noches"
+    },
+    "title": "¿Qué quieres ver?",
+    "goals": {
+      "pluja_estels": "Lluvia de estrellas",
+      "eclipsi": "Eclipse",
+      "via_lactia": "Vía Láctea",
+      "posta_sol": "Puesta de sol",
+      "sortida_sol": "Salida del sol",
+      "cel_estrellat": "Cielo estrellado",
+      "constellacions": "Constelaciones"
+    },
+    "constellationsHint": "Con el mito que hay detrás",
+    "new": "Nuevo",
+    "origin": {
+      "title": "Desde dónde sales",
+      "current": "Ubicación actual",
+      "here": "Donde estás ahora",
+      "locating": "Buscando dónde estás…",
+      "denied": "Activa la ubicación",
+      "settings": "Ajustes",
+      "error": "No hemos encontrado dónde estás",
+      "retry": "Vuelve a intentarlo",
+      "allow": "Permitir"
+    },
+    "when": {
+      "title": "Cuándo",
+      "tonight": "Esta noche",
+      "tomorrow": "Mañana",
+      "pick": "Elige el día",
+      "range": "De {{from}} a {{to}}",
+      "rangeHint": "Franja horaria",
+      "picked": "{{weekday}} {{day}} {{month}}"
+    },
+    "weekdays": ["dom.", "lun.", "mar.", "mié.", "jue.", "vie.", "sáb."],
+    "calendar": {
+      "title": "Elige el día",
+      "close": "Cerrar",
+      "month": "{{month}} de {{year}}",
+      "day": "{{day}} {{month}}",
+      "previous": "Mes anterior",
+      "next": "Mes siguiente",
+      "months": [
+        "enero",
+        "febrero",
+        "marzo",
+        "abril",
+        "mayo",
+        "junio",
+        "julio",
+        "agosto",
+        "septiembre",
+        "octubre",
+        "noviembre",
+        "diciembre"
+      ],
+      "monthsShort": [
+        "ene.",
+        "feb.",
+        "mar.",
+        "abr.",
+        "may.",
+        "jun.",
+        "jul.",
+        "ago.",
+        "sept.",
+        "oct.",
+        "nov.",
+        "dic."
+      ],
+      "monthsOf": [
+        "de enero",
+        "de febrero",
+        "de marzo",
+        "de abril",
+        "de mayo",
+        "de junio",
+        "de julio",
+        "de agosto",
+        "de septiembre",
+        "de octubre",
+        "de noviembre",
+        "de diciembre"
+      ]
+    },
+    "rangeSheet": {
+      "title": "Franja horaria",
+      "from": "Desde",
+      "to": "Hasta",
+      "duration_one": "{{count}} hora de observación",
+      "duration_other": "{{count}} horas de observación",
+      "done": "Hecho"
+    },
+    "travel": {
+      "title": "Hasta qué distancia",
+      "minutes": "{{minutes}} min en coche",
+      "hours": "{{hours}} h en coche",
+      "hoursMinutes": "{{hours}} h {{minutes}} min en coche",
+      "min": "30 min",
+      "max": "4 h"
+    },
+    "cta": "Encuentra el mejor lugar",
+    "browse": "Ver el mapa"
+  },
+  "alerts": {
+    "title": "Alertas",
+    "soonTitle": "Pronto",
+    "soonMessage": "Aquí podrás crear alertas para que te avisemos cuando haya buenas condiciones para lo que quieres ver."
+  },
+  "auth": {
+    "signOut": "Cerrar sesión",
+    "signingOut": "Cerrando sesión…",
+    "restoreError": "No se ha podido recuperar la sesión. Inténtalo de nuevo.",
+    "logoutError": "No se ha podido cerrar la sesión. Inténtalo de nuevo.",
+    "retry": "Reintentar"
   }
 }

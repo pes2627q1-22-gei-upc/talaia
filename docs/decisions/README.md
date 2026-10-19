@@ -21,5 +21,13 @@ Format: **Context → Decisió → Conseqüències**. Estat: `Acceptada`, `Propo
 | [0013](0013-acces-bd-kysely.md) | Accés a la base de dades amb Kysely (`@talaia/db`) sobre migracions SQL de Supabase; RLS activat sense polítiques | Acceptada |
 | [0014](0014-identificador-app-expo-go.md) | Identificador `cat.talaia.app` (P22) i Expo Go per provar en dispositius | Acceptada |
 | [0015](0015-mapa-dom-component.md) | Mapa amb MapLibre GL JS en una DOM component d'Expo: Expo Go i terreny 3D | Acceptada |
+| [0016](0016-sign-in-with-apple-ios.md) | «Continua amb Apple» només a iOS (P15) | Acceptada |
+| [0017](0017-cataleg-inicial-punts.md) | Catàleg inicial de 32 punts d'observació en un GeoJSON versionat (`data/`) que genera el seed SQL (P13) | Acceptada |
+| [0018](0018-formula-index-v1.md) | Fórmula de l'índex v1: els núvols i el Sol multipliquen, la foscor i la Lluna es ponderen; franges 0–39 / 40–69 / 70–100 (P12) | Acceptada |
+| [0019](0019-allotjament-i-desplegament.md) | VM de la FIB (nattech, ports 8080–8089), HTTPS amb DuckDNS + Let's Encrypt DNS-01 i deploy de `stable` amb un runner self-hosted (P16, P17) | Acceptada (el deploy: 0021) |
+| [0020](0020-foscor-sqm-geotiff.md) | Foscor del cel per punt: la malla WFS del mapa de contaminació lumínica de la Generalitat es rasteritza a GeoTIFF amb geotiff.js i omple la columna `sqm` de `punts_observacio` (P10) | Acceptada |
+| [0021](0021-deploy-per-pull-des-de-la-vm.md) | Deploy de `stable` per pull: un cron de la VM cada 5 minuts, sense runner de GitHub | Acceptada |
+| [0022](0022-perfil-horitzo-icgc.md) | Perfil d'horitzó per punt: el model de 5 m de l'ICGC pel WCS, a tres resolucions, omple la columna `horitzo` de `punts_observacio` (360 alçades aparents) | Acceptada |
+| [0023](0023-validacio-jwt-jwks.md) | Validació del JWT a l'API amb el JWKS de Supabase i `jose`: 401 només si el token és dolent, 503 si Supabase no respon (P6) | Acceptada |
 
 Decisions encara obertes: [pendents.md](pendents.md).

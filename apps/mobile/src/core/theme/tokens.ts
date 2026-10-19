@@ -16,10 +16,23 @@ export const colors = {
   lluna: '#EEF0F7',
   boira: '#9AA3C7',
   far: '#FFB547',
+  ubicacio: '#4B9FFF',
   ras: '#5FD4C4',
   jus: '#E3C58F',
   tap: '#E0708A',
   pedra: '#D9C4A0',
+} as const;
+
+/**
+ * Degradats del Figma. Els seus colors només existeixen dins del degradat: no són tokens de color
+ * i no es fan servir enlloc més.
+ */
+export const gradients = {
+  /** Cel de la benvinguda (mockup 01), de dalt a baix. */
+  cel: {
+    colors: ['#0B1030', '#17205A', '#2F3680'],
+    locations: [0, 0.58, 1],
+  },
 } as const;
 
 export const spacing = {
@@ -34,16 +47,20 @@ export const spacing = {
 
 export const radii = {
   sm: 10,
+  /** Camps i controls de formulari: origen, franja horària, control segmentat (mockup 02). */
+  field: 14,
   md: 16,
   lg: 20,
   pill: 999,
 } as const;
 
-/** Alçades fixes del Figma i la mida mínima de tacte (44 pt). */
+/** Alçades fixes del Figma, la mida mínima de tacte (44 pt) i la de les icones. */
 export const sizes = {
   button: 54,
   chip: 34,
   touch: 44,
+  /** Caixa de les icones (botons, files). */
+  icon: 22,
 } as const;
 
 /** Noms amb què `_layout.tsx` registra les fonts (`useFonts`). Cada pes és una família. */
@@ -85,7 +102,15 @@ export const motion = {
   spring: { damping: 18, stiffness: 180 },
   enter: Easing.out(Easing.cubic),
   exit: Easing.in(Easing.cubic),
-  pressedScale: 0.97,
+  /**
+   * Prémer: s'enfonsa de seguida (`in`) i torna amb un spring que s'assenta amb un rebot mínim
+   * (relació d'amortiment ≈ 0,7). És el que fa que un botó es noti físic.
+   */
+  press: { scale: 0.96, in: 90, release: { damping: 19, stiffness: 320, mass: 0.6 } },
+  /** Retard entre elements que entren en cascada. */
+  stagger: 40,
+  /** Sortida d'una pantalla amb coreografia (el salt a la velocitat de la llum de la benvinguda). */
+  leave: 720,
 } as const;
 
 export type ColorToken = keyof typeof colors;

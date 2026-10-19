@@ -13,6 +13,7 @@ import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { AppProviders } from '@/core/providers/AppProviders';
+import { stackOptions } from '@/core/navigation/transitions';
 import { colors } from '@/core/theme/tokens';
 
 void SplashScreen.preventAutoHideAsync();
@@ -32,13 +33,17 @@ const navigationTheme = {
 function RootStack() {
   const { t } = useTranslation();
   return (
-    <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.nit } }}>
-      <Stack.Screen name="(tabs)" />
+    <Stack screenOptions={stackOptions}>
+      {/* Des de la benvinguda, l'app entra amb una fosa (la benvinguda ja ha fet la seva sortida). */}
+      <Stack.Screen name="(tabs)" options={{ animation: 'fade' }} />
       <Stack.Screen
         name="punt/[id]"
         options={{ headerShown: true, title: t('point.title'), headerTintColor: colors.lluna }}
       />
-      <Stack.Screen name="benvinguda" options={{ presentation: 'modal' }} />
+      <Stack.Screen
+        name="benvinguda"
+        options={{ presentation: 'fullScreenModal', animation: 'fade' }}
+      />
     </Stack>
   );
 }

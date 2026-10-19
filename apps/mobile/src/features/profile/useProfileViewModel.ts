@@ -1,16 +1,18 @@
 import { useTranslation } from 'react-i18next';
 
 import { isSupportedLanguage, SUPPORTED_LANGUAGES, type Language } from '@/core/i18n';
+import { useAuthViewModel } from '@/features/auth/useAuthViewModel';
 
 /**
- * ViewModel del perfil. De moment només gestiona l'idioma, que serveix per provar
- * l'i18n de punta a punta; HU36–HU38 hi afegiran el compte.
+ * ViewModel del perfil: idioma i accions de la sessió actual.
  */
 export function useProfileViewModel() {
+  const auth = useAuthViewModel();
   const { t, i18n } = useTranslation();
   const current: Language = isSupportedLanguage(i18n.language) ? i18n.language : 'ca';
 
   return {
+    auth,
     title: t('profile.title'),
     languageLabel: t('profile.language'),
     currentLanguage: current,

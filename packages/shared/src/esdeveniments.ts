@@ -2,8 +2,6 @@
 export type TipusFenomen =
   'fase_llunar' | 'pluja_estels' | 'eclipsi_solar' | 'eclipsi_llunar' | 'conjuncio' | 'superlluna';
 
-export type IdiomaEsdeveniment = 'ca' | 'es' | 'en';
-
 /** Punt general recomanat perquè Aprop pugui situar l'esdeveniment al seu mapa. */
 export type UbicacioEsdeveniment = {
   nom: string;

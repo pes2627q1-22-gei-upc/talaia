@@ -5,8 +5,8 @@ tasca **TG-109** (Victor, límit 14/10) cobreix dues integracions independents:
 
 | Integració | Rol de Talaia | Estat del contracte |
 |---|---|---|
-| Aprop | Proveïdor d'esdeveniments astronòmics | **Acordat**, amb les concrecions següents |
-| Mobilicat | Consumidor de rutes sostenibles | **Proposta enviada; pendent de resposta** |
+| Aprop | Proveïdor d'esdeveniments astronòmics | **Acordat** per correu i confirmat en persona; TG-108 en farà la implementació |
+| Mobilicat | Consumidor de rutes sostenibles | **Proposta enviada; pendent de resposta**. No bloqueja TG-108 |
 
 ## Oferim a Aprop: esdeveniments astronòmics
 
@@ -17,7 +17,7 @@ font executable del contracte és l'OpenAPI generat per `services/api`, disponib
 ### Petició acordada
 
 ```http
-GET /api/v1/esdeveniments?des_de=2027-08-01&fins_a=2027-08-31&tipus=eclipsi_solar&idioma=ca
+GET /api/v1/esdeveniments?des_de=2027-08-01&fins_a=2027-08-31&tipus=eclipsi_solar
 X-API-Key: <clau assignada a Aprop>
 ```
 
@@ -26,7 +26,6 @@ X-API-Key: <clau assignada a Aprop>
 | `des_de` | Sí | Primer dia de l'interval, inclòs, en format `YYYY-MM-DD`. |
 | `fins_a` | Sí | Últim dia de l'interval, inclòs, en format `YYYY-MM-DD`. |
 | `tipus` | No | Categoria del calendari; valors enumerats a continuació. |
-| `idioma` | No | `ca`, `es` o `en`; per defecte, `ca`. |
 
 Es retornen els esdeveniments que intersecten l'interval, ordenats per `inici`. No cal
 paginació per al volum previst del calendari. L'accés es protegeix amb una API key al header
@@ -40,7 +39,7 @@ nom diferencia, per exemple, les Perseids de les Gemínids o la lluna plena de l
 | `fase_llunar` | Lluna nova, quart creixent, lluna plena, quart minvant | TG-107 |
 | `pluja_estels` | Perseids, Gemínids, Oriònids | TG-106 |
 | `eclipsi_solar` | Eclipsi solar total | TG-106 |
-| `eclipsi_llunar` | Eclipsi lunar penumbral | TG-106 |
+| `eclipsi_llunar` | Eclipsi lunar penumbral, eclipsi total («lluna de sang») | TG-106 |
 | `conjuncio` | Conjunció de Venus i Júpiter | TG-107 |
 | `superlluna` | Superlluna plena | TG-107 |
 
@@ -75,18 +74,23 @@ d'esdeveniments acordat.
 Decisions incorporades arran de la resposta d'Aprop:
 
 - Cada esdeveniment conté una ubicació general recomanada (`nom`, `latitud`, `longitud`) perquè
-  el puguin representar al mapa. No afirma que sigui l'únic lloc d'observació ni incorpora una
-  previsió de núvols.
-- El català és obligatori i l'idioma per defecte. Aprop va marcar castellà i anglès com una
-  millora opcional; el contracte reserva `idioma=es|en` perquè Talaia ha decidit suportar-los.
+  el puguin representar al mapa. Aprop ha confirmat que una ubicació general els serveix; no
+  prometem que sigui l'únic lloc d'observació ni el millor segons els núvols en temps real.
+- Els textos es retornen en català. Aprop va plantejar castellà i anglès, amb
+  `?idioma=ca|es|en`, com una possibilitat opcional i disposa de traducció pròpia. No formen part
+  de la primera versió del contracte; si s'afegeixen, caldrà versionar-ne la documentació.
 - L'autenticació és mitjançant API key.
-- No es retorna `estat`: un fenomen astronòmic no es cancel·la i el període `inici`--`fi` ja
-  permet saber si és futur, actiu o passat. La meteorologia s'ha de tractar separadament.
+- No es retorna `estat`: apareixia a la proposta inicial, però després es va acordar en persona
+  que el període `inici`--`fi` ja permet saber si és futur, actiu o passat. Un fenomen
+  astronòmic no es cancel·la; la meteorologia s'ha de tractar separadament.
 - `maxim` pot ser `null` quan la font no publica un instant de màxima activitat.
 
 La ubicació forma part del contracte públic, però no del dataset estàtic de TG-106: TG-108
 l'obtindrà del catàleg de punts oficials o d'una regla de recomanació acordada. El contracte no
 promet que sigui el millor punt segons la meteorologia en temps real.
+
+El contracte amb Aprop es pot integrar i revisar independentment del de Mobilicat: aquest darrer
+continua pendent de confirmació i no s'ha de presentar com a acordat en tancar aquesta PR.
 
 ## Consumim de Mobilicat: rutes sostenibles
 
