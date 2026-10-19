@@ -61,6 +61,12 @@ export const sizes = {
   touch: 44,
   /** Caixa de les icones (botons, files). */
   icon: 22,
+  /** Fitxa del punt (mockup 05): mapa de capçalera i evolució horària. */
+  pointMap: 300,
+  hourlyChart: 64,
+  hourlyColumn: 44,
+  /** Amplada reservada al valor gran de la fitxa (evita retallar «87»). */
+  pointIndex: 96,
 } as const;
 
 /** Noms amb què `_layout.tsx` registra les fonts (`useFonts`). Cada pes és una família. */
@@ -74,7 +80,8 @@ export const fonts = {
 
 /** Escala tipogràfica del Figma. Sense `fontWeight`: el pes ja és a la família. */
 export const typography = {
-  indexLg: { fontFamily: fonts.display, fontSize: 66, lineHeight: 62 },
+  // The font's glyphs extend past a 62px line box at this size on native platforms.
+  indexLg: { fontFamily: fonts.display, fontSize: 66, lineHeight: 76 },
   indexMd: { fontFamily: fonts.display, fontSize: 40, lineHeight: 38 },
   display: { fontFamily: fonts.display, fontSize: 38, lineHeight: 40 },
   title: { fontFamily: fonts.bold, fontSize: 22, lineHeight: 28 },

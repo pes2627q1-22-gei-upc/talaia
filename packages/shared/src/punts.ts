@@ -1,4 +1,4 @@
-import type { IndexVisibilitat } from './indexVisibilitat';
+import type { IndexHora, IndexVisibilitat } from './indexVisibilitat';
 
 /**
  * Punt d'observació del catàleg.
@@ -34,4 +34,22 @@ export type PuntMapaFeature = {
 export type PuntsMapaGeoJson = {
   type: 'FeatureCollection';
   features: PuntMapaFeature[];
+};
+
+/**
+ * Model intern de la fitxa a TG-93. El repository adapta la resposta `PuntFitxa`
+ * de TG-92 a aquesta forma fins que el tipus compartit arribi a la branca.
+ */
+export type PuntDetall = PuntObservacio & {
+  descripcio: string;
+  /** Text d'accés al punt; `null` si no n'hi ha. */
+  accessibilitat: string | null;
+  /** Direccions amb l'horitzó obert; `null` si no se'n coneixen. */
+  horitzoObert: Array<'N' | 'NE' | 'E' | 'SE' | 'S' | 'SW' | 'W' | 'NW'> | null;
+  /** Metres sobre el nivell del mar; `null` si el catàleg no en té. */
+  altitud: number | null;
+  /** `null` fins que hi hagi un càlcul disponible per a l'hora actual. */
+  indexActual: IndexHora | null;
+  /** Instants ISO 8601 en UTC. Un array buit indica que no hi ha previsió. */
+  properesHores: IndexHora[];
 };

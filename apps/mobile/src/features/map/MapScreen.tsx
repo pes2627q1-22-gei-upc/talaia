@@ -1,4 +1,5 @@
 import { Image } from 'expo-image';
+import { router } from 'expo-router';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -53,6 +54,9 @@ export function MapScreen() {
         userLocationColor={colors.ubicacio}
         points={vm.points}
         markerPalette={markerPalette}
+        onPointPress={async (id) => {
+          router.push({ pathname: '/punt/[id]', params: { id } });
+        }}
         dom={{
           style: { flex: 1, backgroundColor: colors.nit },
           scrollEnabled: false,
