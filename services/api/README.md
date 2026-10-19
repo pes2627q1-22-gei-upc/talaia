@@ -57,7 +57,7 @@ src/
     puntsService.ts     Memòria cau i bbox del mapa, i fitxa amb l'índex per hores; errors de la base de dades → 503
   index/
     night.ts            Què és «una nit» (12:00 → 12:00, hora de Catalunya) i la nit per defecte
-    indexRepository.ts  Lectura de la taula index_visibilitat (la que escriu el worker)
+    indexSchemas.ts     Esquemes zod/OpenAPI de l'índex per hora (IndexHora), compartits per /punts/{id} i /punts/{id}/index
     breakdownService.ts Punt + nit → DesglossamentIndex; 404 si el punt no és públic, 503 si la BD falla
   middleware/errors.ts  ApiError, 404 i handler central d'errors
 ```
@@ -97,9 +97,9 @@ El desglossament de l'índex d'un punt per a una nit: una entrada per hora amb e
 
 - **La nit** (`?nit=YYYY-MM-DD`, el dia del vespre, com `ConsultaRecomanacions.data`) va de les **12:00 locals** d'aquell dia a les 12:00 de l'endemà, en hora de Catalunya (`Europe/Madrid`, `src/index/night.ts`): la nit del canvi d'hora té 25 o 23 hores. Sense `nit`, la d'avui: fins al migdia, la que s'està acabant; a partir del migdia, la que ve.
 - **Només les hores calculades.** Si el worker encara no ha passat, `hores` és `[]` amb 200. Les hores de dia hi són amb `factors.sol = 0` i valor 0, perquè el component (TG-105) pugui mostrar on comença la nit.
-- **Errors:** `nit` invàlida → 400 `validation_error`; `id` que no és de cap punt `PUBLICAT` (o que no és un UUID) → 404 `punt_not_found`; sense `DATABASE_URL` o amb la base de dades caiguda → 503 `database_unavailable`.
+- **Errors:** `id` que no és un UUID o `nit` invàlida → 400 `validation_error`; cap punt `PUBLICAT` amb aquest `id` → 404 `punt_not_found` (com a `/punts/{id}`); sense `DATABASE_URL` o amb la base de dades caiguda → 503 `database_unavailable`.
 - **HTTP:** `Cache-Control: public, max-age=<segons fins a la propera hora>`, com `/punts`: l'índex només canvia quan el worker recalcula.
-- **TG-92** (`GET /punts/{id}`, la fitxa amb l'índex actual i el de les properes hores) és un router a part: aquest només exposa el desglossament.
+- **Comparteix amb `/punts/{id}`** les consultes del repositori (`findPublished`, `indexHores`) i l'esquema `IndexHora` de l'OpenAPI (`src/index/indexSchemas.ts`); la ruta és un router a part (`routes/puntIndex.ts`).
 
 ## Afegir una ruta
 

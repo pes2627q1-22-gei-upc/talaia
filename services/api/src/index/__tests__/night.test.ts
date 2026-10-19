@@ -43,6 +43,15 @@ describe('defaultNight', () => {
     expect(defaultNight(new Date('2026-10-20T21:30:00Z'))).toBe('2026-10-20'); // 23:30 local
     expect(defaultNight(new Date('2026-12-31T23:30:00Z'))).toBe('2026-12-31'); // 00:30 local de l'1 de gener: la nit del 31
   });
+
+  it("els dies del canvi d'hora, el migdia local no és a 12 h de la mitjanit", () => {
+    // 25/10/2026 (acaba l'hora d'estiu): a les 10:30Z són les 11:30 locals, encara la nit del 24.
+    expect(defaultNight(new Date('2026-10-25T10:30:00Z'))).toBe('2026-10-24');
+    expect(defaultNight(new Date('2026-10-25T11:00:00Z'))).toBe('2026-10-25');
+    // 28/3/2027 (comença l'hora d'estiu): a les 10:30Z són les 12:30 locals, ja la nit del 28.
+    expect(defaultNight(new Date('2027-03-28T10:30:00Z'))).toBe('2027-03-28');
+    expect(defaultNight(new Date('2027-03-28T09:59:00Z'))).toBe('2027-03-27');
+  });
 });
 
 describe('NightSchema', () => {

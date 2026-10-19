@@ -1,47 +1,20 @@
-import type { DesglossamentIndex, FactorsIndex, IndexHora } from '@talaia/shared';
+import type { DesglossamentIndex } from '@talaia/shared';
 import { Router } from 'express';
 import { z } from 'zod';
 
 import type { BreakdownService } from '../index/breakdownService';
+import { IndexHoraSchema } from '../index/indexSchemas';
 import { NightSchema } from '../index/night';
 import { ApiError } from '../middleware/errors';
 import { ErrorSchema, registry } from '../openapi';
 import { secondsToNextHour } from './punts';
 
-const ParamsSchema = z.object({ id: z.string() });
-const QuerySchema = z.object({ nit: NightSchema.optional() });
-
-const Factor = z.number().min(0).max(1);
-
-// Tipats amb els tipus compartits: si l'esquema i @talaia/shared divergeixen, no compila.
-const FactorsSchema: z.ZodType<FactorsIndex> = z.object({
-  nuvols: Factor.meta({ description: '1 amb el cel ras; 0 tapat o si plou.' }),
-  sol: Factor.meta({
-    description: '1 de nit o en el crepuscle astronòmic, 0,5 en el nàutic, 0 en el civil o de dia.',
-  }),
-  foscor: Factor.meta({
-    description: 'Foscor del cel segons la contaminació lumínica: 1 com més fosc.',
-  }),
-  lluna: Factor.meta({ description: '1 sense Lluna; baixa com més il·luminada i alta és.' }),
+const ParamsSchema = z.object({
+  id: z
+    .uuid({ error: 'id ha de ser un UUID' })
+    .meta({ description: 'Id del punt (`properties.id` del GeoJSON del mapa)' }),
 });
-
-const IndexHoraSchema: z.ZodType<IndexHora> = z
-  .object({
-    hora: z.iso.datetime().meta({
-      description: "Inici de l'hora, ISO 8601 en UTC",
-      example: '2026-10-19T21:00:00.000Z',
-    }),
-    valor: z.number().int().min(0).max(100),
-    franja: z.enum(['tap', 'jus', 'ras']),
-    factors: FactorsSchema.meta({
-      description:
-        'Els factors de la fórmula v1 (ADR-0018), de 0 a 1: `índex = 100 × nuvols × sol × (0,6 · foscor + 0,4 · lluna)`.',
-    }),
-    foscorEstimada: z.boolean().meta({
-      description: 'La foscor és provisional: el punt no té SQM del mapa de contaminació lumínica.',
-    }),
-  })
-  .meta({ id: 'IndexHora' });
+const QuerySchema = z.object({ nit: NightSchema.optional() });
 
 const DesglossamentSchema: z.ZodType<DesglossamentIndex> = z
   .object({
@@ -64,7 +37,7 @@ registry.registerPath({
   description:
     "L'índex de visibilitat d'una nit hora a hora, amb els factors que l'expliquen (núvols, Sol, foscor del cel i Lluna). Una nit va de les 12:00 locals del dia `nit` a les 12:00 de l'endemà; sense `nit`, la d'avui (fins al migdia, la que s'està acabant). Respon amb `Cache-Control` fins a la propera hora, que és quan el worker recalcula.",
   request: {
-    params: z.object({ id: z.string().meta({ description: '`id` del punt (UUID)' }) }),
+    params: ParamsSchema,
     query: z.object({
       nit: z.string().optional().meta({
         description: 'La nit, `YYYY-MM-DD` (el dia del vespre). Per defecte, la d’avui.',
@@ -81,7 +54,7 @@ registry.registerPath({
       content: { 'application/json': { schema: DesglossamentSchema } },
     },
     400: {
-      description: '`nit` invàlid',
+      description: '`id` no és un UUID o `nit` és invàlida (`validation_error`)',
       content: { 'application/json': { schema: ErrorSchema } },
     },
     404: {

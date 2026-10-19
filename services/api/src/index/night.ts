@@ -24,7 +24,10 @@ export function nightWindow(night: string, timeZone = TIME_ZONE): NightWindow {
  * vol veure la nit en curs); a partir del migdia, la que ve.
  */
 export function defaultNight(now: Date = new Date(), timeZone = TIME_ZONE): string {
-  return localDate(new Date(now.getTime() - 12 * 3_600_000), timeZone);
+  // Es compara amb el migdia real del dia, no amb «ara − 12 h»: els dies del canvi d'hora el
+  // migdia local no és a 12 h de la mitjanit.
+  const today = localDate(now, timeZone);
+  return now < nightWindow(today, timeZone).from ? previousDay(today) : today;
 }
 
 /** Les 12:00 locals d'un dia, en UTC. El canvi d'hora és de matinada, així que el migdia no hi cau mai. */
@@ -58,9 +61,12 @@ function localDate(instant: Date, timeZone: string): string {
   return `${part('year')}-${part('month')}-${part('day')}`;
 }
 
-function nextDay(date: string): string {
+const nextDay = (date: string) => shiftDay(date, 1);
+const previousDay = (date: string) => shiftDay(date, -1);
+
+function shiftDay(date: string, days: number): string {
   const [y = NaN, m = NaN, d = NaN] = date.split('-').map(Number);
-  return new Date(Date.UTC(y, m - 1, d + 1)).toISOString().slice(0, 10);
+  return new Date(Date.UTC(y, m - 1, d + days)).toISOString().slice(0, 10);
 }
 
 function isCalendarDate(date: string): boolean {

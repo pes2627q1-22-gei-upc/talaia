@@ -3,7 +3,6 @@ import { createDb } from '@talaia/db';
 import { createApp } from './app';
 import { loadEnv } from './config/env';
 import { createBreakdownService } from './index/breakdownService';
-import { createIndexRepository } from './index/indexRepository';
 import { createPuntsRepository } from './punts/puntsRepository';
 import { createDefaultPuntsService } from './punts/puntsService';
 import { createDatabaseProfileStore } from './services/profileService';
@@ -18,7 +17,7 @@ if (env.DATABASE_URL) {
   const db = createDb(env.DATABASE_URL, { max: 5 });
   const puntsRepository = createPuntsRepository(db);
   punts = createDefaultPuntsService(puntsRepository);
-  breakdown = createBreakdownService(puntsRepository, createIndexRepository(db));
+  breakdown = createBreakdownService(puntsRepository);
   profileStore = createDatabaseProfileStore(db);
 } else {
   console.warn(

@@ -1,9 +1,7 @@
 import type { DesglossamentIndex } from '@talaia/shared';
-import { z } from 'zod';
 
 import { ApiError } from '../middleware/errors';
 import type { PuntsRepository } from '../punts/puntsRepository';
-import type { IndexRepository } from './indexRepository';
 import { defaultNight, nightWindow } from './night';
 
 export type BreakdownService = {
@@ -19,27 +17,18 @@ export type BreakdownServiceOptions = {
   now?: () => Date;
 };
 
-const Uuid = z.guid();
-
 export function createBreakdownService(
-  punts: Pick<PuntsRepository, 'findPublished'>,
-  index: IndexRepository,
+  repository: Pick<PuntsRepository, 'findPublished' | 'indexHores'>,
   { now = () => new Date() }: BreakdownServiceOptions = {},
 ): BreakdownService {
   return {
     async getBreakdown(puntId, night = defaultNight(now())) {
-      // Un id que no és un UUID no pot ser de cap punt: 404 sense molestar la base de dades.
-      if (!Uuid.safeParse(puntId).success) throw notFound(puntId);
-      let breakdown: DesglossamentIndex | undefined;
+      const { from, to } = nightWindow(night);
+      let punt: Awaited<ReturnType<PuntsRepository['findPublished']>>;
+      let hores: DesglossamentIndex['hores'] = [];
       try {
-        const punt = await punts.findPublished(puntId);
-        if (punt) {
-          breakdown = {
-            punt,
-            nit: night,
-            hores: await index.listHours(puntId, nightWindow(night)),
-          };
-        }
+        punt = await repository.findPublished(puntId);
+        if (punt) hores = await repository.indexHores(puntId, from, to);
       } catch (err) {
         console.error("[index] no s'ha pogut llegir el desglossament", err);
         throw new ApiError(
@@ -48,11 +37,12 @@ export function createBreakdownService(
           "Ara mateix no es pot llegir l'índex de visibilitat",
         );
       }
-      if (!breakdown) throw notFound(puntId);
-      return breakdown;
+      if (!punt) {
+        throw new ApiError(404, 'punt_not_found', `No hi ha cap punt publicat amb id ${puntId}`);
+      }
+      // Només el que identifica el punt: la fitxa sencera (sqm, descripció, lat/lon…) és /punts/{id}.
+      const { id, nom, municipi } = punt;
+      return { punt: { id, nom, municipi }, nit: night, hores };
     },
   };
 }
-
-const notFound = (puntId: string) =>
-  new ApiError(404, 'punt_not_found', `No hi ha cap punt publicat amb id ${puntId}`);
