@@ -7,6 +7,8 @@ import { Easing } from 'react-native-reanimated';
  */
 export const colors = {
   nit: '#0E1433',
+  /** Transició del mapa cap al fons de la fitxa. */
+  mapFade: '#0E143333',
   card: '#141B42',
   sheet: '#161D45',
   vel: '#1E2657',
@@ -67,6 +69,10 @@ export const sizes = {
   hourlyColumn: 44,
   /** Amplada reservada al valor gran de la fitxa (evita retallar «87»). */
   pointIndex: 96,
+  pointMarker: 66,
+  pointMarkerCore: 43,
+  pointMarkerStem: 18,
+  pointMarkerHalo: 10,
 } as const;
 
 /** Noms amb què `_layout.tsx` registra les fonts (`useFonts`). Cada pes és una família. */
@@ -91,6 +97,7 @@ export const typography = {
   small: { fontFamily: fonts.regular, fontSize: 14, lineHeight: 20 },
   chip: { fontFamily: fonts.semibold, fontSize: 14, lineHeight: 18 },
   caption: { fontFamily: fonts.regular, fontSize: 12, lineHeight: 17 },
+  hourlyIndex: { fontFamily: fonts.display, fontSize: 27, lineHeight: 30 },
   tag: { fontFamily: fonts.bold, fontSize: 12, lineHeight: 16 },
   link: { fontFamily: fonts.bold, fontSize: 13, lineHeight: 17 },
   overline: {

@@ -18,7 +18,7 @@ export const point: PuntDetall = {
   accessibilitat: 'Aparcament al costat del punt.',
   horitzoObert: ['S', 'SW'],
   altitud: 1570,
-  indexActual: hour,
+  indexActual: { ...hour, hora: '2026-10-18T20:00:00Z' },
   properesHores: [
     { ...hour, hora: '2026-10-18T23:00:00Z', valor: 94 },
     hour,

@@ -14,7 +14,8 @@ jest.mock('maplibre-gl', () => ({
 const props: ComponentProps<typeof PointLocationMapContent> = {
   mapStyle: { version: 8, sources: {}, layers: [] },
   coordinates: { lat: 41.9, lon: 0.8 },
-  palette: { background: '#10142c', text: '#fff', link: '#5fd4c4' },
+  palette: { background: '#10142c', text: '#fff', link: '#5fd4c4', marker: '#5fd4c4' },
+  metrics: { touch: 44, icon: 22, marker: 66, core: 43, stem: 18, halo: 10 },
   label: 'Serra del Montsec',
   attributionLabel: 'Crèdits del mapa',
   unavailableLabel: 'Mapa no disponible',
@@ -73,6 +74,7 @@ it('centra el mapa fix, situa la talaia i permet obrir i tancar els crèdits', a
   const button = mapContainer.querySelector<HTMLButtonElement>('button');
   const panel = mapContainer.querySelector<HTMLElement>('[role="region"]');
   expect(button?.getAttribute('aria-label')).toBe(props.attributionLabel);
+  expect(host.querySelector('style')?.textContent).toContain('width: 44px; height: 44px');
   expect(button?.getAttribute('aria-expanded')).toBe('false');
   expect(panel?.hidden).toBe(true);
   button?.click();

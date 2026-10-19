@@ -8,7 +8,15 @@ import { ATTRIBUTION } from '@/features/map/style/nightStyle';
 type Props = {
   mapStyle: StyleSpecification;
   coordinates: { lat: number; lon: number };
-  palette: { background: string; text: string; link: string };
+  palette: { background: string; text: string; link: string; marker: string };
+  metrics: {
+    touch: number;
+    icon: number;
+    marker: number;
+    core: number;
+    stem: number;
+    halo: number;
+  };
   label: string;
   attributionLabel: string;
   unavailableLabel: string;
@@ -19,6 +27,7 @@ export default function PointLocationMapContent({
   mapStyle,
   coordinates,
   palette,
+  metrics,
   label,
   attributionLabel,
   unavailableLabel,
@@ -92,17 +101,26 @@ export default function PointLocationMapContent({
       style={{ position: 'absolute', inset: 0, background: palette.background }}
     >
       <style>{`
+        :root {
+          --talaia-marker: ${palette.marker};
+          --talaia-marker-size: ${metrics.marker}px;
+          --talaia-marker-core: ${metrics.core}px;
+          --talaia-marker-stem: ${metrics.stem}px;
+          --talaia-marker-halo: ${metrics.halo}px;
+        }
         .talaia-map-credits {
           position: absolute; z-index: 4; top: 8px; left: 8px;
           display: flex; align-items: flex-start; gap: 8px; pointer-events: none;
         }
         .talaia-map-credits__button {
-          display: grid; place-items: center; flex: 0 0 30px; width: 30px; height: 30px;
+          display: grid; place-items: center; flex: 0 0 ${metrics.touch}px;
+          width: ${metrics.touch}px; height: ${metrics.touch}px;
           padding: 3px; border: 0; border-radius: 50%; background: transparent;
           color: ${palette.link}; cursor: pointer; pointer-events: auto;
         }
         .talaia-map-credits__button svg {
-          display: block; width: 24px; height: 24px; fill: none; stroke: currentColor;
+          display: block; width: ${metrics.icon}px; height: ${metrics.icon}px;
+          fill: none; stroke: currentColor;
           stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round;
         }
         .talaia-map-credits__button:focus { outline: none; }
@@ -118,26 +136,39 @@ export default function PointLocationMapContent({
         .talaia-map-credits__panel[hidden] { display: none; }
         .talaia-map-credits__panel a { color: ${palette.link}; }
         .talaia-point-marker {
-          width: 66px; height: 74px; display: flex; justify-content: center; position: relative;
-          color: #5fd4c4;
+          width: var(--talaia-marker-size);
+          height: calc(var(--talaia-marker-size) + var(--talaia-marker-stem) - var(--talaia-marker-halo));
+          display: flex; justify-content: center; position: relative;
+          color: var(--talaia-marker);
         }
         .talaia-point-marker::before {
           content: ''; position: absolute; top: 0; left: 0; box-sizing: border-box;
-          width: 66px; height: 66px;
-          border: 1px solid rgba(95, 212, 196, .72); border-radius: 50%;
+          width: var(--talaia-marker-size); height: var(--talaia-marker-size);
+          border: 1px solid color-mix(in srgb, var(--talaia-marker) 72%, transparent);
+          border-radius: 50%;
           animation: talaia-point-pulse 1.8s ease-out infinite;
         }
         .talaia-point-marker::after {
-          content: ''; position: absolute; top: 56px; left: 32px; width: 2px; height: 18px;
-          background: #5fd4c4; box-shadow: 0 0 6px rgba(95, 212, 196, .7);
+          content: ''; position: absolute;
+          top: calc(var(--talaia-marker-size) - var(--talaia-marker-halo));
+          left: calc((var(--talaia-marker-size) - 2px) / 2);
+          width: 2px; height: var(--talaia-marker-stem);
+          background: var(--talaia-marker);
+          box-shadow: 0 0 6px color-mix(in srgb, var(--talaia-marker) 70%, transparent);
         }
         .talaia-point-marker__core {
-          position: absolute; z-index: 2; top: 11.5px; left: 11.5px;
-          box-sizing: border-box; width: 43px; height: 43px;
-          display: grid; place-items: center; border: 3px solid #5fd4c4; border-radius: 50%;
-          background: #0e1433; box-shadow: 0 0 0 10px rgba(95, 212, 196, .18);
+          position: absolute; z-index: 2;
+          top: calc((var(--talaia-marker-size) - var(--talaia-marker-core)) / 2);
+          left: calc((var(--talaia-marker-size) - var(--talaia-marker-core)) / 2);
+          box-sizing: border-box;
+          width: var(--talaia-marker-core); height: var(--talaia-marker-core);
+          display: grid; place-items: center;
+          border: 3px solid var(--talaia-marker); border-radius: 50%;
+          background: ${palette.background};
+          box-shadow: 0 0 0 var(--talaia-marker-halo)
+            color-mix(in srgb, var(--talaia-marker) 18%, transparent);
         }
-        .talaia-point-marker__core svg { width: 24px; height: 24px; }
+        .talaia-point-marker__core svg { width: ${metrics.icon}px; height: ${metrics.icon}px; }
         @keyframes talaia-point-pulse {
           0% { transform: scale(.82); opacity: .65; }
           100% { transform: scale(1.12); opacity: 0; }

@@ -88,7 +88,6 @@ export function usePointDetailViewModel(pointId: string) {
         })()
       : undefined;
   const bestWindow = bestPeriod ? { from: bestPeriod.from, to: bestPeriod.to } : undefined;
-  const darkness = point?.indexActual?.factors.foscor;
   const factorRows = (
     [
       { key: 'nuvols', icon: 'cloud', label: 'clouds', hint: 'cloudsHint' },
@@ -116,6 +115,10 @@ export function usePointDetailViewModel(pointId: string) {
     ];
   });
   const number = new Intl.NumberFormat(locale, { maximumFractionDigits: 0 });
+  const altitude =
+    point?.altitud == null
+      ? t('point.unavailable')
+      : t('point.metres', { value: number.format(point.altitud) });
   const directionLabels = {
     N: t('point.directionN'),
     NE: t('point.directionNE'),
@@ -162,22 +165,8 @@ export function usePointDetailViewModel(pointId: string) {
     currentLabel,
     noIndex: t('point.noIndex'),
     bestWindow,
-    bestHour: bestWindow ? t('point.bestHour', bestWindow) : undefined,
-    darknessLabel: t('point.darkness'),
-    darkness:
-      darkness == null
-        ? t('point.unavailable')
-        : t('point.darknessValue', {
-            value: number.format(Math.min(1, Math.max(0, darkness)) * 100),
-          }),
-    darknessHint: point?.indexActual?.foscorEstimada
-      ? t('point.darknessEstimated')
-      : t('point.darknessHint'),
-    altitudeLabel: t('point.altitude'),
-    altitude:
-      point?.altitud == null
-        ? t('point.unavailable')
-        : t('point.metres', { value: number.format(point.altitud) }),
+    altitude,
+    altitudeTag: t('point.altitudeTag', { value: altitude }),
     factorRows,
     pointInfoLabel: t('point.info'),
     horizonLabel: t('point.openHorizon'),
@@ -203,7 +192,7 @@ export function usePointDetailViewModel(pointId: string) {
       ...hour,
       isBest: bestPeriod?.hourIds.has(hour.id) ?? false,
       accessibilityLabel: bestPeriod?.hourIds.has(hour.id)
-        ? `${hour.accessibilityLabel}. ${t('point.bestHourA11y')}`
+        ? t('point.bestHourWithStatusA11y', { label: hour.accessibilityLabel })
         : hour.accessibilityLabel,
     })),
     errorTitle: notFound ? t('point.notFoundTitle') : t('point.errorTitle'),

@@ -45,8 +45,7 @@ it('ordena hores, respecta les franges del backend i converteix a l’hora de Ca
   expect(result.current.hours.map((h) => h.level)).toEqual(['ras', 'tap', 'ras']);
   expect(result.current.hours.map((h) => h.isBest)).toEqual([false, false, true]);
   expect(result.current.hours[2]?.accessibilityLabel).toContain('Dins del millor moment');
-  expect(result.current.bestHour).toContain('01:00');
-  expect(result.current.darkness).toBe('94/100');
+  expect(result.current.bestWindow?.to).toBe('02:00');
   expect(result.current.factorRows.map((factor) => [factor.key, factor.value])).toEqual([
     ['nuvols', 95],
     ['sol', 100],
@@ -75,9 +74,8 @@ it('no inventa índex ni altitud quan falten dades', async () => {
   expect(result.current.altitude).toBe('Sense dades');
   expect(result.current.horizon).toBeUndefined();
   expect(result.current.accessibility).toBeUndefined();
-  expect(result.current.darkness).toBe('Sense dades');
   expect(result.current.hours).toEqual([]);
-  expect(result.current.bestHour).toBeUndefined();
+  expect(result.current.bestWindow).toBeUndefined();
 });
 
 it('no proposa un millor moment si totes les hores tenen la franja tap', async () => {
@@ -107,7 +105,9 @@ it('distingeix una altitud zero i una foscor estimada', async () => {
   const { result } = await renderVm();
   await waitFor(() => expect(result.current.status).toBe('ok'));
   expect(result.current.altitude).toBe('0 m');
-  expect(result.current.darknessHint).toContain('estimat');
+  expect(result.current.factorRows.find((factor) => factor.key === 'foscor')?.hint).toContain(
+    'estimat',
+  );
 });
 
 it.each([400, 404])('tracta el %i com un punt inexistent', async (status) => {
@@ -196,7 +196,7 @@ it('refresca l’índex quan la fitxa queda oberta i n’indica la data', async 
     get.mockResolvedValue(asPointResponse());
     const { result, unmount } = await renderVm();
     await waitFor(() => expect(result.current.status).toBe('ok'));
-    expect(result.current.currentLabel).toContain('23:00');
+    expect(result.current.currentLabel).toContain('22:00');
     get.mockResolvedValue(
       asPointResponse({
         ...point,

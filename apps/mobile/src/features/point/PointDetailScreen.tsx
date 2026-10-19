@@ -1,8 +1,7 @@
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Trans } from 'react-i18next';
-import { useState } from 'react';
-import { FlatList, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import Animated, { FadeIn, ReduceMotion } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -14,11 +13,25 @@ import { IndexIndicator } from '@/shared/ui/IndexIndicator';
 import { Skeleton } from '@/shared/ui/Skeleton';
 import { StateMessage } from '@/shared/ui/StateMessage';
 
+import { HourlyChart } from './HourlyChart';
 import PointLocationMap from './PointLocationMap';
 import { usePointDetailViewModel } from './usePointDetailViewModel';
 
 const appear = FadeIn.duration(motion.base).reduceMotion(ReduceMotion.System);
-const mapPalette = { background: colors.nit, text: colors.boira, link: colors.lluna };
+const mapPalette = {
+  background: colors.nit,
+  text: colors.boira,
+  link: colors.lluna,
+  marker: colors.ras,
+};
+const mapMetrics = {
+  touch: sizes.touch,
+  icon: sizes.icon,
+  marker: sizes.pointMarker,
+  core: sizes.pointMarkerCore,
+  stem: sizes.pointMarkerStem,
+  halo: sizes.pointMarkerHalo,
+};
 const directionsIcon = require('@/assets/images/point/directions.svg');
 const planIcon = require('@/assets/images/point/plan.svg');
 const factorIcons = {
@@ -31,7 +44,6 @@ const factorIcons = {
 /** TG-93 / mockup 05. Els factors detallats són TG-105; rutes i plans, altres històries. */
 export function PointDetailScreen({ pointId }: { pointId: string }) {
   const vm = usePointDetailViewModel(pointId);
-  const [selectedHourId, setSelectedHourId] = useState<string | null>(null);
   return (
     <SafeAreaView edges={['left', 'right', 'bottom']} style={styles.root}>
       {vm.status === 'loading' ? (
@@ -61,6 +73,7 @@ export function PointDetailScreen({ pointId }: { pointId: string }) {
                 key={pointId}
                 coordinates={vm.coordinates}
                 palette={mapPalette}
+                metrics={mapMetrics}
                 label={vm.mapLabel}
                 attributionLabel={vm.mapCreditsLabel}
                 unavailableLabel={vm.mapUnavailable}
@@ -74,7 +87,7 @@ export function PointDetailScreen({ pointId }: { pointId: string }) {
               />
               <LinearGradient
                 pointerEvents="none"
-                colors={['transparent', 'transparent', 'rgba(14,20,51,0.2)', colors.nit]}
+                colors={['transparent', 'transparent', colors.mapFade, colors.nit]}
                 locations={[0, 0.35, 0.7, 1]}
                 style={styles.mapFade}
               />
@@ -90,7 +103,7 @@ export function PointDetailScreen({ pointId }: { pointId: string }) {
                   {vm.municipality}
                 </AppText>
                 <AppText variant="tag" color="pedra" style={styles.tag}>
-                  {vm.altitudeLabel}: {vm.altitude}
+                  {vm.altitudeTag}
                 </AppText>
               </View>
             </View>
@@ -127,11 +140,7 @@ export function PointDetailScreen({ pointId }: { pointId: string }) {
                       values={vm.bestWindow}
                       components={{
                         strong: (
-                          <AppText
-                            variant="small"
-                            color="lluna"
-                            style={{ fontFamily: fonts.bold }}
-                          />
+                          <AppText variant="small" color="lluna" style={styles.bestHourStrong} />
                         ),
                       }}
                     />
@@ -139,84 +148,12 @@ export function PointDetailScreen({ pointId }: { pointId: string }) {
                 ) : null}
               </View>
             </Card>
-            <View style={styles.section}>
-              <AppText variant="heading" accessibilityRole="header">
-                {vm.hoursLabel}
-              </AppText>
-              <AppText variant="caption" color="boira">
-                {vm.timezoneLabel}
-              </AppText>
-              {vm.hours.length ? (
-                <FlatList
-                  horizontal
-                  data={vm.hours}
-                  extraData={selectedHourId}
-                  keyExtractor={(hour) => hour.id}
-                  showsHorizontalScrollIndicator
-                  style={styles.chartList}
-                  contentContainerStyle={styles.chart}
-                  renderItem={({ item }) => (
-                    <Pressable
-                      accessibilityRole="button"
-                      accessibilityLabel={item.accessibilityLabel}
-                      accessibilityState={{ selected: item.id === selectedHourId }}
-                      onPress={() =>
-                        setSelectedHourId((selected) => (selected === item.id ? null : item.id))
-                      }
-                      style={[
-                        styles.hour,
-                        !item.isBest && item.id !== selectedHourId && styles.hourMuted,
-                      ]}
-                    >
-                      <View
-                        style={[
-                          styles.barTrack,
-                          item.id === selectedHourId && styles.barTrackSelected,
-                        ]}
-                      >
-                        <View
-                          style={[
-                            styles.bar,
-                            {
-                              height: item.value === 0 ? 2 : `${item.value}%`,
-                              backgroundColor: colors[item.level],
-                            },
-                          ]}
-                        />
-                        {item.id === selectedHourId ? (
-                          <>
-                            <View
-                              testID="selected-hour-silhouette"
-                              pointerEvents="none"
-                              style={[styles.barSilhouette, { borderColor: colors[item.level] }]}
-                            />
-                            <View pointerEvents="none" style={styles.barIndex}>
-                              <AppText
-                                variant="heading"
-                                color={item.value >= 75 ? 'nit' : item.level}
-                                style={[
-                                  styles.barIndexValue,
-                                  item.value < 75 && styles.barIndexValueShadow,
-                                ]}
-                              >
-                                {item.value}
-                              </AppText>
-                            </View>
-                          </>
-                        ) : null}
-                      </View>
-                      <AppText variant="caption" color="boira">
-                        {item.label}
-                      </AppText>
-                    </Pressable>
-                  )}
-                />
-              ) : (
-                <AppText variant="small" color="boira">
-                  {vm.noHours}
-                </AppText>
-              )}
-            </View>
+            <HourlyChart
+              hours={vm.hours}
+              hoursLabel={vm.hoursLabel}
+              timezoneLabel={vm.timezoneLabel}
+              noHours={vm.noHours}
+            />
             <View style={styles.factors}>
               {vm.factorRows.map((factor) => (
                 <View key={factor.key} style={styles.factorRow}>
@@ -355,47 +292,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   indexCopy: { flex: 1, flexBasis: sizes.hourlyColumn * 3, gap: spacing.xs },
-  section: { gap: spacing.sm },
-  chartList: { marginTop: -spacing.xs },
-  chart: { gap: spacing.xs, paddingTop: spacing.xs, paddingBottom: spacing.sm },
-  hour: { minWidth: sizes.hourlyColumn, alignItems: 'center', gap: spacing.xs },
-  hourMuted: { opacity: 0.38 },
-  barTrack: {
-    height: sizes.hourlyChart,
-    width: sizes.hourlyColumn - spacing.sm,
-    justifyContent: 'flex-end',
-    position: 'relative',
-  },
-  barTrackSelected: { backgroundColor: colors.vel, borderRadius: spacing.xs },
-  barSilhouette: {
-    position: 'absolute',
-    top: 0,
-    bottom: 0,
-    left: 0,
-    right: 0,
-    borderWidth: 1,
-    borderRadius: spacing.xs,
-  },
-  barIndex: {
-    position: 'absolute',
-    top: 0,
-    bottom: 0,
-    left: 0,
-    right: 0,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  barIndexValue: {
-    fontFamily: fonts.display,
-    fontSize: 27,
-    lineHeight: 30,
-  },
-  barIndexValueShadow: {
-    textShadowColor: colors.nit,
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
-  },
-  bar: { width: '100%', borderTopLeftRadius: spacing.xs, borderTopRightRadius: spacing.xs },
+  bestHourStrong: { fontFamily: fonts.bold },
   factors: { gap: spacing.md },
   pointInfo: { gap: spacing.md },
   infoField: { gap: spacing.xs },

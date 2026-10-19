@@ -44,20 +44,24 @@ desglossament dels factors correspon a TG-105. La connexió amb els marcadors
 de TG-90 ja està integrada.
 
 El mapa de situació és estàtic i reutilitza l'estil nocturn de l'ICGC.
-El botó d'informació desplega l'atribució a la part superior del mapa.
+El botó d'informació té una superfície tàctil de 44 pt i desplega l'atribució a la part superior del mapa.
 El marcador de torre segueix el mockup. La navegació enrere és
 la de la pila existent. «Com arribar» obre Google Maps amb les coordenades del
 punt. «Crea un pla» mostra un avís fins que existeixi el flux de creació de plans.
 
 ## Comportament i comprovacions
 
-- La consulta es refresca cada minut i mostra la data de l'índex retornat.
+- La consulta es refresca cada minut quan ja té dades; després d'un error o d'un
+  punt inexistent sense dades, espera una acció de reintent. La fitxa mostra la
+  data de l'índex retornat.
 - Les hores es mostren en `Europe/Madrid`, ordenades per instant UTC. La millor
   finestra agrupa les hores consecutives de la mateixa franja que el màxim
   disponible, sense unir buits de més de 90 minuts. És una interpretació de
   presentació de la previsió horària; no és una finestra retornada per l’API.
+  Si el màxim és de la franja `tap`, no es destaca cap millor moment.
 - Les barres de la finestra «Millor moment» mantenen el color complet; les altres
-  s'atenuen però es poden tocar igualment per consultar l'índex.
+  s'atenuen però es poden tocar igualment per consultar l'índex. Les etiquetes
+  de les hores conserven el contrast.
 - En tocar una barra, apareix el contorn complet del 100% i el valor gran al
   centre, sense pastilla de fons. La part plena conserva la proporció real.
   Tocar-la de nou amaga la selecció; tocar-ne una altra la desplaça.
@@ -66,8 +70,10 @@ punt. «Crea un pla» mostra un avís fins que existeixi el flux de creació de 
 - Si falla una actualització, es conserva la fitxa anterior amb un avís i reintent.
 - Les dades absents es mostren com a absents, no com a zero. La foscor es presenta
   sobre 100 a partir del factor 0–1 i s'indica quan és estimada.
-- S'afegeixen `sizes.pointMap`, `sizes.hourlyChart` i `sizes.hourlyColumn` als tokens.
-  Es mantenen paleta, tipografies i components base.
+- El gràfic horari gestiona la selecció localment perquè tocar una barra no torni
+  a pintar tota la fitxa ni el mapa DOM.
+- Les dimensions del mapa, el marcador, el gràfic i la tipografia del valor horari
+  es defineixen als tokens. Es mantenen paleta i components base.
 
 Tests de la feature: `npm test -w apps/mobile -- --runInBand src/features/point`.
 Els fixtures són a `features/point/__fixtures__`, només importats pels tests.
