@@ -50,42 +50,43 @@ export function usePointDetailViewModel(pointId: string) {
     (current, hour) => (!current || hour.value > current.value ? hour : current),
     undefined,
   );
-  const bestPeriod = best
-    ? (() => {
-        const bestIndex = hours.findIndex((hour) => hour.id === best.id);
-        let first = bestIndex;
-        let last = bestIndex;
-        while (
-          first > 0 &&
-          hours[first - 1]?.level === best.level &&
-          Date.parse(hours[first]!.id) - Date.parse(hours[first - 1]!.id) <= 90 * 60 * 1000
-        ) {
-          first -= 1;
-        }
-        while (
-          last < hours.length - 1 &&
-          hours[last + 1]?.level === best.level &&
-          Date.parse(hours[last + 1]!.id) - Date.parse(hours[last]!.id) <= 90 * 60 * 1000
-        ) {
-          last += 1;
-        }
-        const finalTimestamp = Date.parse(hours[last]!.id);
-        const previousTimestamp = last > first ? Date.parse(hours[last - 1]!.id) : undefined;
-        const duration = previousTimestamp ? finalTimestamp - previousTimestamp : 60 * 60 * 1000;
-        const formatTime = (timestamp: number) =>
-          new Intl.DateTimeFormat(locale, {
-            timeZone: 'Europe/Madrid',
-            hour: '2-digit',
-            minute: '2-digit',
-            hourCycle: 'h23',
-          }).format(new Date(timestamp));
-        return {
-          from: formatTime(Date.parse(hours[first]!.id)),
-          to: formatTime(finalTimestamp + duration),
-          hourIds: new Set(hours.slice(first, last + 1).map((hour) => hour.id)),
-        };
-      })()
-    : undefined;
+  const bestPeriod =
+    best && best.level !== 'tap'
+      ? (() => {
+          const bestIndex = hours.findIndex((hour) => hour.id === best.id);
+          let first = bestIndex;
+          let last = bestIndex;
+          while (
+            first > 0 &&
+            hours[first - 1]?.level === best.level &&
+            Date.parse(hours[first]!.id) - Date.parse(hours[first - 1]!.id) <= 90 * 60 * 1000
+          ) {
+            first -= 1;
+          }
+          while (
+            last < hours.length - 1 &&
+            hours[last + 1]?.level === best.level &&
+            Date.parse(hours[last + 1]!.id) - Date.parse(hours[last]!.id) <= 90 * 60 * 1000
+          ) {
+            last += 1;
+          }
+          const finalTimestamp = Date.parse(hours[last]!.id);
+          const previousTimestamp = last > first ? Date.parse(hours[last - 1]!.id) : undefined;
+          const duration = previousTimestamp ? finalTimestamp - previousTimestamp : 60 * 60 * 1000;
+          const formatTime = (timestamp: number) =>
+            new Intl.DateTimeFormat(locale, {
+              timeZone: 'Europe/Madrid',
+              hour: '2-digit',
+              minute: '2-digit',
+              hourCycle: 'h23',
+            }).format(new Date(timestamp));
+          return {
+            from: formatTime(Date.parse(hours[first]!.id)),
+            to: formatTime(finalTimestamp + duration),
+            hourIds: new Set(hours.slice(first, last + 1).map((hour) => hour.id)),
+          };
+        })()
+      : undefined;
   const bestWindow = bestPeriod ? { from: bestPeriod.from, to: bestPeriod.to } : undefined;
   const darkness = point?.indexActual?.factors.foscor;
   const factorRows = (

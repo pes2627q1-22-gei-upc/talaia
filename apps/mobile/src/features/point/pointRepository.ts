@@ -47,6 +47,6 @@ export function usePointDetailQuery(pointId: string) {
     queryFn: ({ signal }) => fetchPointDetail(pointId, signal),
     enabled: pointId.trim().length > 0,
     // La fitxa pot quedar oberta mentre canvia l'hora de l'índex.
-    refetchInterval: 60_000,
+    refetchInterval: (query) => (query.state.data ? 60_000 : false),
   });
 }

@@ -80,6 +80,22 @@ it('no inventa índex ni altitud quan falten dades', async () => {
   expect(result.current.bestHour).toBeUndefined();
 });
 
+it('no proposa un millor moment si totes les hores tenen la franja tap', async () => {
+  get.mockResolvedValue(
+    asPointResponse({
+      ...point,
+      properesHores: [
+        { ...hour, hora: '2026-10-18T21:00:00Z', valor: 0, franja: 'tap' },
+        { ...hour, hora: '2026-10-18T22:00:00Z', valor: 18, franja: 'tap' },
+      ],
+    }),
+  );
+  const { result } = await renderVm();
+  await waitFor(() => expect(result.current.status).toBe('ok'));
+  expect(result.current.bestWindow).toBeUndefined();
+  expect(result.current.hours.every((hour) => !hour.isBest)).toBe(true);
+});
+
 it('distingeix una altitud zero i una foscor estimada', async () => {
   get.mockResolvedValue(
     asPointResponse({
@@ -100,6 +116,29 @@ it.each([400, 404])('tracta el %i com un punt inexistent', async (status) => {
   await waitFor(() => expect(result.current.status).toBe('notFound'));
   expect(result.current.errorTitle).toBe('No hem trobat aquest punt');
 });
+
+it.each([
+  ['404', new ApiError(404, 'punt_not_found', 'Not found')],
+  ['error de xarxa', new Error('offline')],
+] as const)(
+  'no torna a consultar cada minut una fitxa sense dades després de %s',
+  async (_, error) => {
+    jest.useFakeTimers();
+    try {
+      get.mockRejectedValue(error);
+      const { result, unmount } = await renderVm();
+      await waitFor(() => expect(['notFound', 'error']).toContain(result.current.status));
+      expect(get).toHaveBeenCalledTimes(1);
+      await act(async () => {
+        await jest.advanceTimersByTimeAsync(60_000);
+      });
+      expect(get).toHaveBeenCalledTimes(1);
+      await unmount();
+    } finally {
+      jest.useRealTimers();
+    }
+  },
+);
 
 it('no consulta l’endpoint amb un identificador buit', async () => {
   const { result } = await renderVm(' ');
