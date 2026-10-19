@@ -68,3 +68,67 @@ describe('createContentHashCache', () => {
     await expect(cache.get()).rejects.toThrow('caiguda');
   });
 });
+
+describe('createContentHashCache amb version', () => {
+  afterEach(() => jest.restoreAllMocks());
+
+  it('es regenera quan canvia la versió, i la mira com a molt cada checkMs', async () => {
+    let t = 0;
+    let v = 'v1';
+    const load = jest.fn().mockResolvedValueOnce(doc(1)).mockResolvedValueOnce(doc(2));
+    const version = jest.fn(async () => v);
+    const cache = createContentHashCache(load, {
+      ttlMs: 10_000,
+      checkMs: 1000,
+      version,
+      now: () => t,
+    });
+    const first = await cache.get();
+
+    v = 'v2';
+    t = 500;
+    expect(await cache.get()).toBe(first);
+    expect(version).toHaveBeenCalledTimes(1);
+
+    t = 1000;
+    const second = await cache.get();
+    expect(load).toHaveBeenCalledTimes(2);
+    expect(second.etag).not.toBe(first.etag);
+  });
+
+  it('si la versió no canvia, no torna a carregar abans de ttlMs', async () => {
+    let t = 0;
+    const load = jest.fn().mockResolvedValue(doc(1));
+    const cache = createContentHashCache(load, {
+      ttlMs: 10_000,
+      checkMs: 1000,
+      version: async () => 'v1',
+      now: () => t,
+    });
+    await cache.get();
+    t = 5000;
+    await cache.get();
+    expect(load).toHaveBeenCalledTimes(1);
+  });
+
+  it('si no es pot llegir la versió, serveix el document que té fins a ttlMs', async () => {
+    jest.spyOn(console, 'error').mockImplementation(() => {});
+    let t = 0;
+    let falla = false;
+    const load = jest.fn().mockResolvedValue(doc(1));
+    const cache = createContentHashCache(load, {
+      ttlMs: 10_000,
+      checkMs: 1000,
+      version: async () => {
+        if (falla) throw new Error('bd');
+        return 'v1';
+      },
+      now: () => t,
+    });
+    const first = await cache.get();
+    falla = true;
+    t = 2000;
+    expect(await cache.get()).toBe(first);
+    expect(load).toHaveBeenCalledTimes(1);
+  });
+});

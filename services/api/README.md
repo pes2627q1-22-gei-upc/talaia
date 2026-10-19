@@ -56,12 +56,12 @@ src/
 
 ## `GET /punts` (ADR-0012)
 
-Un sol GeoJSON `FeatureCollection` amb tots els punts `PUBLICAT`: `[lon, lat]` amb 6 decimals i les propietats `id`, `nom`, `municipi` i `index`. **`index` és `null` fins que el calculin TG-98 i TG-99**; l'app pinta el marcador en gris.
+Un sol GeoJSON `FeatureCollection` amb tots els punts `PUBLICAT`: `[lon, lat]` amb 6 decimals i les propietats `id`, `nom`, `municipi` i `index`. `index` és el de l'**hora en curs** que ha desat el worker (TG-99), o `null` si encara no s'ha calculat (l'app pinta el marcador en gris).
 
 - **Memòria cau:** el document es construeix en memòria i es regenera si té més de 5 minuts. L'`ETag` és un hash del contingut. Les peticions simultànies comparteixen una sola consulta, i si la base de dades falla se serveix l'últim document (503 si no n'hi ha cap).
 - **HTTP:** `Cache-Control: public, max-age=<segons fins a la propera hora>`. Amb `If-None-Match` igual a l'`ETag` (també `W/"…"`, que és com el deixa Nginx), 304 sense cos.
 - **`?bbox=minLon,minLat,maxLon,maxLat`:** opcional. Retalla el document en memòria, sense consultar la base de dades. Si és invàlid, 400 `validation_error`.
-- **TG-99:** quan el worker marqui la versió de cada execució, n'hi ha prou de substituir `createContentHashCache` per una altra implementació de `MapDocumentCache` (`src/punts/documentCache.ts`).
+- **Versió del worker** (ADR-0012, TG-99): com a molt un cop per minut, l'API llegeix l'última execució correcta de `execucions_worker` i l'hora en curs. Si alguna ha canviat, regenera el document sense esperar els 5 minuts. L'`ETag` continua sent el hash del contingut.
 
 ## Afegir una ruta
 

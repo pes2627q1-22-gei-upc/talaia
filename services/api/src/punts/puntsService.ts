@@ -31,9 +31,23 @@ export function createPuntsService(cache: MapDocumentCache): PuntsService {
   };
 }
 
-/** El servei amb la memòria cau per defecte (hash del contingut cada 5 minuts). */
-export function createDefaultPuntsService(repository: PuntsRepository): PuntsService {
+const HORA_MS = 3_600_000;
+
+/**
+ * El servei amb la memòria cau per defecte: es regenera quan el worker acaba una execució o
+ * canvia l'hora (l'índex del mapa és el de l'hora en curs), i com a molt cada 5 minuts.
+ */
+export function createDefaultPuntsService(
+  repository: PuntsRepository,
+  now: () => number = Date.now,
+): PuntsService {
   return createPuntsService(
-    createContentHashCache(async () => buildMapDocument(await repository.listPublished())),
+    createContentHashCache(async () => buildMapDocument(await repository.listPublished()), {
+      version: async () => {
+        const hora = new Date(Math.floor(now() / HORA_MS) * HORA_MS).toISOString();
+        return `${(await repository.indexVersion()) ?? 'cap'}|${hora}`;
+      },
+      now,
+    }),
   );
 }

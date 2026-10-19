@@ -1,24 +1,48 @@
-import type { PuntObservacio } from '@talaia/shared';
 import request from 'supertest';
 
 import { createApp } from '../app';
-import type { PuntsRepository } from '../punts/puntsRepository';
+import type { PuntMapa, PuntsRepository } from '../punts/puntsRepository';
 import { createDefaultPuntsService } from '../punts/puntsService';
 import { matchesIfNoneMatch, secondsToNextHour } from '../routes/punts';
 
-const PUNTS: PuntObservacio[] = [
-  { id: 'a', nom: 'Cap de Creus', municipi: 'Cadaqués', lon: 3.3158674321, lat: 42.3189126543 },
-  { id: 'b', nom: 'Mont Caro', municipi: 'Roquetes', lon: 0.3509, lat: 40.8035 },
-  { id: 'c', nom: 'Port de la Bonaigua', municipi: 'Alt Àneu', lon: 1.0028, lat: 42.6633 },
+const PUNTS: PuntMapa[] = [
+  {
+    id: 'a',
+    nom: 'Cap de Creus',
+    municipi: 'Cadaqués',
+    lon: 3.3158674321,
+    lat: 42.3189126543,
+    index: null,
+  },
+  {
+    id: 'b',
+    nom: 'Mont Caro',
+    municipi: 'Roquetes',
+    lon: 0.3509,
+    lat: 40.8035,
+    index: { valor: 82, franja: 'ras' },
+  },
+  {
+    id: 'c',
+    nom: 'Port de la Bonaigua',
+    municipi: 'Alt Àneu',
+    lon: 1.0028,
+    lat: 42.6633,
+    index: null,
+  },
 ];
 
 /** Repositori fals: retorna el que retornaria la consulta (només punts publicats). */
 function fakeRepository(punts = PUNTS) {
-  const repository: PuntsRepository & { calls: number } = {
+  const repository: PuntsRepository & { calls: number; version: string | null } = {
     calls: 0,
+    version: '2026-10-19T10:05:02.000Z',
     async listPublished() {
       repository.calls += 1;
       return punts;
+    },
+    async indexVersion() {
+      return repository.version;
     },
   };
   return repository;
@@ -41,6 +65,7 @@ describe('GET /api/v1/punts', () => {
       geometry: { type: 'Point', coordinates: [3.315867, 42.318913] },
       properties: { id: 'a', nom: 'Cap de Creus', municipi: 'Cadaqués', index: null },
     });
+    expect(res.body.features[1].properties.index).toEqual({ valor: 82, franja: 'ras' });
   });
 
   it('porta ETag entre cometes i Cache-Control fins a la propera hora', async () => {
@@ -116,10 +141,52 @@ describe('GET /api/v1/punts', () => {
     const res = await request(
       appWith({
         listPublished: () => Promise.reject(new Error('connexió tancada')),
+        indexVersion: () => Promise.reject(new Error('connexió tancada')),
       }),
     ).get('/api/v1/punts');
     expect(res.status).toBe(503);
     expect(res.body.error.code).toBe('database_unavailable');
+  });
+});
+
+describe('versió del worker (ADR-0012)', () => {
+  const HORA = Date.UTC(2026, 9, 19, 10, 10);
+
+  it('regenera el document quan el worker acaba una execució, sense esperar els 5 minuts', async () => {
+    let t = HORA;
+    const repository = fakeRepository();
+    const service = createDefaultPuntsService(repository, () => t);
+    await service.getMapDocument();
+
+    t += 30_000;
+    repository.version = '2026-10-19T11:05:00.000Z';
+    await service.getMapDocument();
+    expect(repository.calls).toBe(1); // la versió es mira com a molt cada minut
+
+    t += 30_000;
+    await service.getMapDocument();
+    expect(repository.calls).toBe(2);
+  });
+
+  it("regenera el document quan canvia l'hora, encara que el worker no hagi corregut", async () => {
+    let t = HORA + 49 * 60_000; // 10:59 UTC
+    const repository = fakeRepository();
+    const service = createDefaultPuntsService(repository, () => t);
+    await service.getMapDocument();
+
+    t += 2 * 60_000; // 11:01 UTC
+    await service.getMapDocument();
+    expect(repository.calls).toBe(2);
+  });
+
+  it('sense cap canvi, no consulta el catàleg fins als 5 minuts', async () => {
+    let t = HORA;
+    const repository = fakeRepository();
+    const service = createDefaultPuntsService(repository, () => t);
+    await service.getMapDocument();
+    t += 4 * 60_000;
+    await service.getMapDocument();
+    expect(repository.calls).toBe(1);
   });
 });
 
