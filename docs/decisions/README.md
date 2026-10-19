@@ -28,5 +28,6 @@ Format: **Context → Decisió → Conseqüències**. Estat: `Acceptada`, `Propo
 | [0020](0020-foscor-sqm-geotiff.md) | Foscor del cel per punt: la malla WFS del mapa de contaminació lumínica de la Generalitat es rasteritza a GeoTIFF amb geotiff.js i omple la columna `sqm` de `punts_observacio` (P10) | Acceptada |
 | [0021](0021-deploy-per-pull-des-de-la-vm.md) | Deploy de `stable` per pull: un cron de la VM cada 5 minuts, sense runner de GitHub | Acceptada |
 | [0022](0022-perfil-horitzo-icgc.md) | Perfil d'horitzó per punt: el model de 5 m de l'ICGC pel WCS, a tres resolucions, omple la columna `horitzo` de `punts_observacio` (360 alçades aparents) | Acceptada |
+| [0024](0024-planificacio-worker-node-cron.md) | El worker recalcula l'índex en arrencar i cada hora amb node-cron dins del contenidor; cada execució queda a `execucions_worker`, que l'API fa servir com a versió del mapa (P9) | Acceptada |
 
 Decisions encara obertes: [pendents.md](pendents.md).

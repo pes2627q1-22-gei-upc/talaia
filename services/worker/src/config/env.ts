@@ -4,6 +4,13 @@ import { z } from 'zod';
 const buitComAbsent = (valor: unknown) => (valor === '' ? undefined : valor);
 
 const EnvSchema = z.object({
+  // Opcional per a les CLI de prova; el procés horari (main.ts) no arrenca sense ella.
+  DATABASE_URL: z.preprocess(
+    buitComAbsent,
+    z
+      .url({ protocol: /^postgres(ql)?$/, error: 'DATABASE_URL ha de ser una URL postgresql://' })
+      .optional(),
+  ),
   OPEN_METEO_BASE_URL: z.preprocess(
     buitComAbsent,
     z.url().default('https://api.open-meteo.com/v1'),

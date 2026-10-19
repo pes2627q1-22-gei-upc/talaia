@@ -19,10 +19,8 @@ services:
     expose:
       - '3000'
 
-  # El procés llarg i el seu horari són de TG-99 (P9). Fins llavors no arrenca:
-  # s'activa amb `--profile worker` (docs/desplegament.md).
+  # Recalcula l'índex en arrencar i cada hora amb node-cron (TG-99, ADR-0024).
   worker:
-    profiles: [worker]
     build:
       context: ..
       dockerfile: services/worker/Dockerfile

@@ -2,7 +2,7 @@
 
 Procés de Talaia que ingesta les dades externes i recalcula l'índex de visibilitat de tots els punts **cada hora** ([ADR-0004](../../docs/decisions/0004-index-precalculat.md)). Node 22 + TypeScript (strict), mateixes eines que l'API.
 
-Estat: hi ha la **ingesta de la previsió d'Open-Meteo** (TG-95 i TG-114), el **càlcul astronòmic** amb Astronomy Engine (TG-96) i la **fórmula de l'índex v1** amb la seva persistència (TG-98). La planificació horària i el contenidor Docker arriben amb TG-99.
+Estat: hi ha la **ingesta de la previsió d'Open-Meteo** (TG-95 i TG-114), el **càlcul astronòmic** amb Astronomy Engine (TG-96) i la **fórmula de l'índex v1** amb la seva persistència (TG-98). El **procés horari** (TG-99) recalcula l'índex de tots els punts en arrencar i cada hora amb node-cron, dins del contenidor.
 
 ## Ordres
 
@@ -12,6 +12,7 @@ nvm use && npm install        # des de l'arrel: instal·la tots els workspaces
 
 | Ordre (`-w services/worker`) | Què fa |
 |---|---|
+| `npm run start` | Procés horari (`src/main.ts`): recalcula l'índex en arrencar i cada hora. Cal `DATABASE_URL` |
 | `npm run meteo -- <lat,lon> [<lat,lon> …]` | Demana la previsió d'un o més llocs a Open-Meteo i la mostra per pantalla |
 | `npm run astro -- <lat,lon[,altitud]> [YYYY-MM-DD]` | Mostra la nit d'un lloc (Sol, crepuscles, Lluna) i les efemèrides hora a hora, sense xarxa |
 | `npm run build` | Compila a `dist/` (sense els tests) |
@@ -33,6 +34,7 @@ Es llegeixen del `.env` de l'**arrel** del repo (`--env-file-if-exists`; vegeu `
 | Variable | Per defecte | Què és |
 |---|---|---|
 | `OPEN_METEO_BASE_URL` | `https://api.open-meteo.com/v1` | URL base de l'API d'Open-Meteo (sense clau; 10.000 crides/dia) |
+| `DATABASE_URL` | — | Postgres (`postgresql://…`). Obligatòria per a `npm run start`; les CLI de prova no la fan servir |
 
 ## Ingesta de la previsió d'Open-Meteo (TG-95 i TG-114)
 
@@ -116,6 +118,29 @@ Prova manual, sense base de dades:
 ```bash
 npm run index -w services/worker -- 42.0294,0.7112          # el Montsec, foscor estimada
 npm run index -w services/worker -- 42.0294,0.7112 21.56    # amb l'SQM del lloc (data/punts_observacio.geojson)
+```
+
+## Recàlcul horari (TG-99)
+
+```
+src/
+  main.ts                  Procés llarg: node-cron a «5 * * * *» (Europe/Madrid) i en arrencar
+  recalcul/
+    recalcul.ts            Una execució: punts publicats → Open-Meteo → efemèrides → índex → BD
+    repository.ts          Els ports sobre Kysely: punts, `index_visibilitat`, `execucions_worker`
+```
+
+Per què node-cron i no el cron del sistema: [ADR-0024](../../docs/decisions/0024-planificacio-worker-node-cron.md).
+
+- **Una execució** (`recalculaIndex`): llegeix els punts `PUBLICAT` (posició, altitud i SQM), en demana la previsió a Open-Meteo en lots de 50, hi creua les efemèrides i desa l'índex de l'hora en curs i de les següents (`desaIndexs` substitueix les hores ja calculades). Després esborra l'índex de fa més de 24 hores.
+- **La marca de versió** (ADR-0012): en acabar, bé o malament, desa una fila a `execucions_worker` (`iniciada_el`, `acabada_el`, `estat` `ok`/`error`, punts, hores i el missatge de l'error). L'API fa servir l'última `acabada_el` correcta per saber quan ha de regenerar el GeoJSON del mapa.
+- **Errors:** si falla Open-Meteo o la base de dades, l'error queda a `execucions_worker`, es mostra al log i el procés continua: es torna a provar a l'hora següent. Si una execució encara no ha acabat quan arriba la següent, la nova se salta.
+- **Aturada:** amb `SIGTERM` (Docker) o `SIGINT` espera l'execució en curs i tanca el pool.
+
+Prova en local amb la base de dades de Supabase local (`npx supabase start`):
+
+```bash
+DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:54322/postgres npm run start -w services/worker
 ```
 
 ## Tests

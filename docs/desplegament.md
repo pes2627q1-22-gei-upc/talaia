@@ -9,7 +9,7 @@ App / Aprop / Mobilicat
 nattech.fib.upc.edu ──(NAT)──▶ VM :8080
                                   │
                 ┌─────────────── Docker Compose (deploy/compose.yaml) ──────────────┐
-                │  nginx :8080 (TLS) ──▶ api :3000           worker (profile worker) │
+                │  nginx :8080 (TLS) ──▶ api :3000           worker (node-cron)      │
                 │       ▲ certs (volum)                                              │
                 │  acme (acme.sh): emet i renova el certificat amb DNS-01 de DuckDNS │
                 └────────────────────────────────────────────────────────────────────┘
@@ -19,7 +19,7 @@ nattech.fib.upc.edu ──(NAT)──▶ VM :8080
 
 | Fitxer | Què fa |
 |---|---|
-| `deploy/compose.yaml` | Serveis `api`, `worker` (amb `profiles: [worker]`), `acme` i `nginx` |
+| `deploy/compose.yaml` | Serveis `api`, `worker`, `acme` i `nginx` |
 | `deploy/nginx/templates/default.conf.template` | HTTPS al 8080, `/api/v1/` cap a l'API, capçaleres de seguretat |
 | `deploy/scripts/emet-certificat.sh` | Primera emissió del certificat (un sol cop per VM) |
 | `services/api/Dockerfile`, `services/worker/Dockerfile` | Imatges multi-stage, `node:22-alpine`, usuari sense privilegis |
@@ -108,7 +108,11 @@ A mà, a la VM, torna a desplegar el commit actual: `FORCE=1 ~/talaia/deploy/scr
 
 ## El worker
 
-El worker té imatge però **no arrenca**: el procés llarg i el seu horari són de TG-99, que depèn de P9. Quan TG-99 estigui feta (punt d'entrada `services/worker/dist/main.js`), s'activa afegint `--profile worker` a les ordres de `docker compose` de `desplega.sh` i d'aquesta guia.
+El worker (`services/worker/dist/main.js`) és un procés llarg que recalcula l'índex de tots els punts en arrencar i cada hora al minut 5, amb node-cron i l'hora de Catalunya ([ADR-0024](decisions/0024-planificacio-worker-node-cron.md)). Necessita `DATABASE_URL`, la mateixa que l'API. Cada execució queda a la taula `execucions_worker`, i l'API en fa servir l'última correcta per regenerar el document del mapa. Un recàlcul que falla no atura el procés: es torna a provar a l'hora següent.
+
+```bash
+tc logs -f worker            # «índex de 32 punts (… hores) en … s» a cada hora
+```
 
 ## Ordres útils a la VM
 
