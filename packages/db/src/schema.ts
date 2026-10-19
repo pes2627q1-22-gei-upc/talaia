@@ -74,6 +74,16 @@ export interface IndexVisibilitat {
   valor: number;
 }
 
+export interface Perfils {
+  authUserId: string;
+  avatarUrl: string | null;
+  dataActualitzacio: Generated<Timestamp>;
+  dataCreacio: Generated<Timestamp>;
+  email: string | null;
+  id: Generated<string>;
+  nom: string | null;
+}
+
 export interface PuntsObservacio {
   accessibilitat: string | null;
   altitud: number | null;
@@ -103,6 +113,7 @@ export interface DB {
   fenomensAstronomics: FenomensAstronomics;
   fontsAstronomiques: FontsAstronomiques;
   indexVisibilitat: IndexVisibilitat;
+  perfils: Perfils;
   puntsObservacio: PuntsObservacio;
   tipusFenomen: TipusFenomen;
 }

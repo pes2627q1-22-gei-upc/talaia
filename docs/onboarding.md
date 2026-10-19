@@ -146,8 +146,7 @@ Si tens accés al projecte (panell de Supabase → projecte **Talaia**):
 | Variable | On és |
 |---|---|
 | `SUPABASE_URL` | *Project Settings → Data API → Project URL* |
-| `SUPABASE_ANON_KEY` i `EXPO_PUBLIC_SUPABASE_ANON_KEY` | *Project Settings → API Keys*, la clau `anon` (és pública, pot anar a l'app) |
-| `SUPABASE_SERVICE_ROLE_KEY` | *Project Settings → API Keys*, la clau `service_role`. **Secreta: només API i worker, mai a l'app ni en una variable `EXPO_PUBLIC_*`** |
+| `EXPO_PUBLIC_SUPABASE_ANON_KEY` | *Project Settings → API Keys*, la clau `anon` (és pública, pot anar a l'app). L'API no en necessita cap: valida els JWT amb el JWKS públic (ADR-0023) |
 | `DATABASE_URL` | Botó **Connect** → *Session pooler*. Fes servir aquesta (usuari `postgres.<ref>`), no la *Direct connection*: el host directe només té IPv6 i no connecta des de la majoria de xarxes |
 
 ### Connectar el CLI (un cop)
