@@ -82,6 +82,7 @@ export interface PuntsObservacio {
   dataCreacio: Generated<Timestamp>;
   descripcio: string;
   estat: Generated<"PENDENT" | "PUBLICAT" | "REBUTJAT" | "DESACTIVAT">;
+  horitzo: number[] | null;
   horitzoObert: string[] | null;
   id: Generated<string>;
   municipi: string;
