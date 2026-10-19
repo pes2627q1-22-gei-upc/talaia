@@ -60,6 +60,7 @@ export default function NightMap({
   const container = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const ready = useRef(false);
+  const locationMarker = useRef<maplibregl.Marker | null>(null);
   const headingMarker = useRef<maplibregl.Marker | null>(null);
   const latestPoints = useRef({ points, markerPalette });
   // El pont torna a enviar les props a cada render natiu: el mapa es crea un sol cop amb les inicials.
@@ -110,16 +111,11 @@ export default function NightMap({
 
   const lat = userLocation?.lat;
   const lon = userLocation?.lon;
+  const hasLocation =
+    lat !== undefined && lon !== undefined && Number.isFinite(lat) && Number.isFinite(lon);
   useEffect(() => {
     const map = mapRef.current;
-    if (
-      !map ||
-      lat === undefined ||
-      lon === undefined ||
-      !Number.isFinite(lat) ||
-      !Number.isFinite(lon)
-    )
-      return;
+    if (!map || !hasLocation) return;
     const dot = document.createElement('div');
     dot.className = 'talaia-location';
     const pulse = document.createElement('span');
@@ -141,23 +137,18 @@ export default function NightMap({
     });
     // Marcador independent dels punts d'observació: mai entra en un clúster.
     const marker = new maplibregl.Marker({ element: dot, pitchAlignment: 'viewport' })
-      .setLngLat([lon, lat])
+      .setLngLat([0, 0])
       .addTo(map);
+    locationMarker.current = marker;
     return () => {
+      locationMarker.current = null;
       marker.remove();
     };
-  }, [lat, lon, userLocationLabel, userLocationColor, markerPalette.text]);
+  }, [hasLocation, userLocationLabel, userLocationColor, markerPalette.text]);
 
   useEffect(() => {
     const map = mapRef.current;
-    if (
-      !map ||
-      lat === undefined ||
-      lon === undefined ||
-      !Number.isFinite(lat) ||
-      !Number.isFinite(lon)
-    )
-      return;
+    if (!map || !hasLocation) return;
     const cone = document.createElement('div');
     cone.setAttribute('aria-hidden', 'true');
     Object.assign(cone.style, {
@@ -175,14 +166,20 @@ export default function NightMap({
       rotationAlignment: 'map',
       pitchAlignment: 'viewport',
     })
-      .setLngLat([lon, lat])
+      .setLngLat([0, 0])
       .addTo(map);
     headingMarker.current = marker;
     return () => {
       headingMarker.current = null;
       marker.remove();
     };
-  }, [lat, lon, userLocationColor]);
+  }, [hasLocation, userLocationColor]);
+
+  useEffect(() => {
+    if (!hasLocation || lat === undefined || lon === undefined) return;
+    locationMarker.current?.setLngLat([lon, lat]);
+    headingMarker.current?.setLngLat([lon, lat]);
+  }, [lat, lon, hasLocation, userLocationLabel, userLocationColor, markerPalette.text]);
 
   useEffect(() => {
     const marker = headingMarker.current;

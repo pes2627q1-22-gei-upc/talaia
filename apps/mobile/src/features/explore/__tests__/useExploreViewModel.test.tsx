@@ -10,7 +10,16 @@ import { getCurrentPlace } from '../locationRepository';
 import { useExploreViewModel } from '../useExploreViewModel';
 
 jest.mock('expo-router', () => ({ useRouter: jest.fn() }));
-jest.mock('../locationRepository', () => ({ getCurrentPlace: jest.fn() }));
+jest.mock('../locationRepository', () => {
+  const { useQuery } = jest.requireActual('@tanstack/react-query');
+  const { CURRENT_PLACE_KEY } = jest.requireActual('../locationKeys');
+  const getCurrentPlace = jest.fn();
+  return {
+    getCurrentPlace,
+    useCurrentPlaceQuery: () =>
+      useQuery({ queryKey: CURRENT_PLACE_KEY, queryFn: getCurrentPlace, retry: false }),
+  };
+});
 
 const push = jest.fn();
 jest.mocked(useRouter).mockReturnValue({ push } as unknown as ReturnType<typeof useRouter>);

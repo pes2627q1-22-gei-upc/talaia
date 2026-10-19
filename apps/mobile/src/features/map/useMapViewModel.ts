@@ -32,7 +32,8 @@ export function useMapViewModel() {
   const { heading, active: locationActive } = useDeviceHeading(userLocation !== null);
   const query = useMapPointsQuery();
   const points = query.data ?? EMPTY_MAP_POINTS;
-  const isLoading = query.isPending || (query.isError && query.isFetching);
+  const isLoading =
+    query.isPending || ((query.isError || points.features.length === 0) && query.isFetching);
   const notice = isLoading
     ? { kind: 'loading' as const, title: t('map.pointsLoading'), description: null }
     : query.isError

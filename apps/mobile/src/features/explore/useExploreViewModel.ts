@@ -1,5 +1,4 @@
 import type { ConsultaRecomanacions, ObjectiuObservacio } from '@talaia/shared';
-import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -25,11 +24,7 @@ import {
   TRAVEL,
   travelParts,
 } from './exploreModel';
-import { getCurrentPlace } from './locationRepository';
-
-import { CURRENT_PLACE_KEY } from './locationKeys';
-
-export { CURRENT_PLACE_KEY } from './locationKeys';
+import { useCurrentPlaceQuery } from './locationRepository';
 
 /** «Què vols veure?» (HU01, mockup 02): què, des d'on, quan i fins on. */
 export function useExploreViewModel() {
@@ -46,12 +41,7 @@ export function useExploreViewModel() {
   const [rangeOpen, setRangeOpen] = useState(false);
   const [travel, setTravel] = useState<number>(TRAVEL.initial);
 
-  const location = useQuery({
-    queryKey: CURRENT_PLACE_KEY,
-    queryFn: getCurrentPlace,
-    staleTime: 5 * 60 * 1000,
-    retry: false,
-  });
+  const location = useCurrentPlaceQuery();
   const { refetch } = location;
   const placeReady = location.data?.status === 'ready';
 

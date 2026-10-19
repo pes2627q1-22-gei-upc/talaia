@@ -145,6 +145,12 @@ it('mostra ubicació i direcció, amaga la fletxa inactiva i retira els marcador
   await act(async () => root.render(<NightMap {...located} userHeading={90} />));
   expect(arrow!.setRotation).toHaveBeenLastCalledWith(90);
   expect(markers).toHaveLength(2);
+  await act(async () => root.render(<NightMap {...located} userLocation={{ lat: 42, lon: 3 }} />));
+  expect(markers).toHaveLength(2);
+  expect(dot!.setLngLat).toHaveBeenLastCalledWith([3, 42]);
+  expect(arrow!.setLngLat).toHaveBeenLastCalledWith([3, 42]);
+  expect(dot!.remove).not.toHaveBeenCalled();
+  expect(arrow!.remove).not.toHaveBeenCalled();
   await act(async () => root.render(<NightMap {...props} />));
   expect(dot!.remove).toHaveBeenCalledTimes(1);
   expect(arrow!.remove).toHaveBeenCalledTimes(1);

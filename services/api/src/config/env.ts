@@ -10,6 +10,10 @@ const EnvSchema = z.object({
       .url({ protocol: /^postgres(ql)?$/, error: 'DATABASE_URL ha de ser una URL postgresql://' })
       .optional(),
   ),
+  SUPABASE_URL: z.preprocess(
+    (v) => (v === '' ? undefined : v),
+    z.string().url().default('http://127.0.0.1:54321'),
+  ),
 });
 
 export type Env = z.infer<typeof EnvSchema>;
