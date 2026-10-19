@@ -32,6 +32,6 @@ export type IndexHora = IndexVisibilitat & {
   /** Inici de l'hora, ISO 8601 en UTC; el mateix instant que la previsió i les efemèrides. */
   hora: string;
   factors: FactorsIndex;
-  /** La foscor és provisional: encara no hi ha la del mapa de contaminació lumínica (TG-97). */
+  /** La foscor és provisional: el punt no té SQM del mapa de contaminació lumínica (ADR-0020). */
   foscorEstimada: boolean;
 };

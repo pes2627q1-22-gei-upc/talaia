@@ -88,6 +88,7 @@ export interface PuntsObservacio {
   nom: string;
   origen: "OFICIAL" | "COMUNITAT";
   slug: string;
+  sqm: Numeric | null;
   ubicacio: string;
 }
 

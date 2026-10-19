@@ -25,5 +25,6 @@ Format: **Context → Decisió → Conseqüències**. Estat: `Acceptada`, `Propo
 | [0017](0017-cataleg-inicial-punts.md) | Catàleg inicial de 32 punts d'observació en un GeoJSON versionat (`data/`) que genera el seed SQL (P13) | Acceptada |
 | [0018](0018-formula-index-v1.md) | Fórmula de l'índex v1: els núvols i el Sol multipliquen, la foscor i la Lluna es ponderen; franges 0–39 / 40–69 / 70–100 (P12) | Acceptada |
 | [0019](0019-allotjament-i-desplegament.md) | VM de la FIB (nattech, ports 8080–8089), HTTPS amb DuckDNS + Let's Encrypt DNS-01 i deploy de `stable` amb un runner self-hosted (P16, P17) | Acceptada |
+| [0020](0020-foscor-sqm-geotiff.md) | Foscor del cel per punt: la malla WFS del mapa de contaminació lumínica de la Generalitat es rasteritza a GeoTIFF amb geotiff.js i omple la columna `sqm` de `punts_observacio` (P10) | Acceptada |
 
 Decisions encara obertes: [pendents.md](pendents.md).

@@ -10,7 +10,13 @@
     "profile": "Perfil"
   },
   "map": {
-    "a11y": "Mapa nocturn de Catalunya amb el relleu"
+    "userLocation": "La teva ubicació",
+    "a11y": "Mapa nocturn de Catalunya amb el relleu",
+    "pointsLoading": "Carregant llocs d’observació…",
+    "pointsError": "No hem pogut carregar els llocs",
+    "pointsEmptyHint": "Torna-ho a provar més endavant.",
+    "pointsEmpty": "Encara no hi ha llocs disponibles",
+    "retry": "Torna-ho a provar"
   },
   "calendar": {
     "title": "Calendari",
@@ -162,7 +168,8 @@
       "min": "30 min",
       "max": "4 h"
     },
-    "cta": "Troba el millor lloc"
+    "cta": "Troba el millor lloc",
+    "browse": "Veure el mapa"
   },
   "alerts": {
     "title": "Alertes",
