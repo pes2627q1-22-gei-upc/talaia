@@ -92,7 +92,7 @@ describe('apiGet', () => {
     const request = jest.fn().mockResolvedValue(new Response('{"created":true}', { status: 201 }));
     globalThis.fetch = request;
     jest.mocked(getAccessToken).mockResolvedValue('jwt');
-    await expect(apiPost('/profile/ensure', {})).resolves.toEqual({ created: true });
+    await expect(apiPost('/perfil', {})).resolves.toEqual({ created: true });
     const init = request.mock.calls[0]![1] as RequestInit;
     expect(init.method).toBe('POST');
     expect(init.body).toBe('{}');

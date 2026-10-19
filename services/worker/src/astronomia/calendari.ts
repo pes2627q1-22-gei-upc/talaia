@@ -15,6 +15,16 @@ import {
 
 const DIA = 86_400_000;
 const HORA = 3_600_000;
+const FORMAT_CATALUNYA = new Intl.DateTimeFormat('en-CA', {
+  timeZone: 'Europe/Madrid',
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+  hour: '2-digit',
+  minute: '2-digit',
+  second: '2-digit',
+  hourCycle: 'h23',
+});
 const OBSERVADOR = new Observer(41.77, 2.44, 1700); // Montseny: referència, no ubicació única.
 export const METODE_CALCUL = 'Astronomy Engine 2.1.19';
 export const SEPARACIO_MAXIMA = 3; // graus aparents, criteri editorial del MVP.
@@ -86,6 +96,33 @@ function iso(ms: number): string {
   return new Date(Math.round(ms / 1000) * 1000).toISOString().replace('.000Z', 'Z');
 }
 
+function partsCatalunya(ms: number): Record<string, string> {
+  return Object.fromEntries(
+    FORMAT_CATALUNYA.formatToParts(new Date(ms)).map((p) => [p.type, p.value]),
+  );
+}
+
+function diaCatalunya(ms: number): string {
+  const { year, month, day } = partsCatalunya(ms);
+  return `${year}-${month}-${day}`;
+}
+
+/** Mitjanit local expressada en UTC; no tots els dies duren 24 h pel canvi d'hora. */
+function mitjanitCatalunya(dia: string): number {
+  const suposadaUtc = Date.parse(`${dia}T00:00:00Z`);
+  const { year, month, day, hour, minute, second } = partsCatalunya(suposadaUtc);
+  const diferencia =
+    Date.UTC(
+      Number(year),
+      Number(month) - 1,
+      Number(day),
+      Number(hour),
+      Number(minute),
+      Number(second),
+    ) - suposadaUtc;
+  return suposadaUtc - diferencia;
+}
+
 function instant(
   codi: string,
   fenomen_codi: string,
@@ -108,11 +145,12 @@ function instant(
   };
 }
 
-/** Una fase és un instant exacte, però no una franja d'observació de ±30 minuts. */
+/** Una fase és un instant exacte, però ocupa el dia del calendari a Catalunya. */
 function faseDelDia(event: EsdevenimentCalculat): EsdevenimentCalculat {
-  const dia = event.maxim.slice(0, 10);
-  event.inici = `${dia}T00:00:00Z`;
-  event.fi = `${dia}T23:59:59Z`;
+  const dia = diaCatalunya(Date.parse(event.maxim));
+  const seguent = new Date(Date.parse(`${dia}T00:00:00Z`) + DIA).toISOString().slice(0, 10);
+  event.inici = iso(mitjanitCatalunya(dia));
+  event.fi = iso(mitjanitCatalunya(seguent) - 1000);
   event.precisio.inici = 'dia';
   event.precisio.fi = 'dia';
   return event;
@@ -191,7 +229,7 @@ function afegeixFases(desDe: number, finsA: number, events: EsdevenimentCalculat
   while (fase.time.date.getTime() <= finsA) {
     const ms = fase.time.date.getTime();
     if (ms >= desDe && (fase.quarter === 0 || fase.quarter === 2)) {
-      const data = iso(ms).slice(0, 10);
+      const data = diaCatalunya(Date.parse(iso(ms)));
       if (fase.quarter === 0) {
         events.push(
           faseDelDia(
@@ -272,12 +310,12 @@ function afegeixConjuncions(
         },
       });
     const event = instant(
-      `${codi}-${iso(ms).slice(0, 10)}`,
+      `${codi}-${diaCatalunya(Date.parse(iso(ms)))}`,
       codi,
       ms,
       {
         ca: {
-          nota_visibilitat: `Separació aparent aproximada de ${angle.toFixed(1)}° des del Montseny, amb els dos astres a més de 10° d'altura i el Sol sota -6°. La visibilitat real depèn del lloc i dels núvols.`,
+          nota_visibilitat: `Separació aparent aproximada de ${angle.toFixed(1)}° des del Montseny, amb els dos astres a més de 10° d'altura i el Sol sota -6°. La franja inici-fi és orientativa (±30 minuts de la millor mostra horària), no la durada real de l'aproximació. La visibilitat real depèn del lloc i dels núvols.`,
           consell_observacio: `Observeu ${NOMS[a]} i ${NOMS[b]} al voltant de l'hora indicada des d'un lloc amb l'horitzó lliure.`,
         },
       },

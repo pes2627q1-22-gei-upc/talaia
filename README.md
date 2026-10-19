@@ -22,6 +22,8 @@
   <a href="docs/arquitectura.md">Arquitectura</a> ·
   <a href="docs/decisions/README.md">Decisions</a> ·
   <a href="docs/sprint-1.md">Sprint 1</a> ·
+  <a href="docs/sprint-2.md">Sprint 2</a> ·
+  <a href="docs/sprint-3.md">Sprint 3</a> ·
   <a href="https://tree.taiga.io/project/mohamed-dari-pes_22_c_talaia">Taiga</a>
 </p>
 
@@ -77,7 +79,7 @@ npm run mobile                  # app: escaneja el QR amb Expo Go
 | 🧩 | Tipus de domini compartits per l'app, l'API i el worker | [`packages/shared`](packages/shared) |
 | ✅ | CI a cada PR: lint, typecheck, tests i SonarCloud | [`docs/ci.md`](docs/ci.md) |
 
-El que ve ara, tasca a tasca: [Sprint 1](docs/sprint-1.md) i [Taiga](https://tree.taiga.io/project/mohamed-dari-pes_22_c_talaia).
+El que ve ara, tasca a tasca: [Sprint 1](docs/sprint-1.md), [Sprint 2](docs/sprint-2.md), [Sprint 3](docs/sprint-3.md) i [Taiga](https://tree.taiga.io/project/mohamed-dari-pes_22_c_talaia).
 
 ## ✦ Stack
 

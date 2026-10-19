@@ -18,6 +18,11 @@ describe('loadEnv', () => {
     expect(loadEnv({ DATABASE_URL: '' }).DATABASE_URL).toBeUndefined();
   });
 
+  it('SUPABASE_URL usa el valor per defecte quan està buit', () => {
+    expect(loadEnv({}).SUPABASE_URL).toBe('http://127.0.0.1:54321');
+    expect(loadEnv({ SUPABASE_URL: '' }).SUPABASE_URL).toBe('http://127.0.0.1:54321');
+  });
+
   it('accepta una URL postgresql:// i rebutja la resta', () => {
     const url = 'postgresql://postgres:postgres@127.0.0.1:54322/postgres';
     expect(loadEnv({ DATABASE_URL: url }).DATABASE_URL).toBe(url);

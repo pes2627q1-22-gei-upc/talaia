@@ -18,6 +18,7 @@ Més context: `docs/producte.md` (abast, MVP, NOT list), `docs/arquitectura.md`,
 ## Estat actual
 
 - **Sprint 1: 05/10/2026 – 28/10/2026.** Objectiu: base tècnica operativa + primer flux del MVP (login → mapa de punts amb índex v1 → recomanacions → fitxa del punt amb desglossament → calendari de fenòmens). Veure `docs/sprint-1.md`.
+- **Sprint 2: 09/11/2026 – 27/11/2026** (sprint master: Martina) i **Sprint 3: 30/11/2026 – 18/12/2026** (sprint master: Hugo). Veure `docs/sprint-2.md` i `docs/sprint-3.md`.
 - Les branques `snapshot`, `stable` i `prod` estan protegides (ruleset de GitHub).
 - **App:** scaffold fet (TG-66): Expo SDK 57 + Expo Router + MVVM + i18n + TanStack Query + Jest a `apps/mobile` (vegeu el seu `README.md` i `AGENTS.md`). Eines: ADR-0010.
 - **Qualitat:** ESLint, Prettier, `tsconfig.base.json` i hooks de commit (husky + lint-staged + commitlint) a l'arrel (TG-67, ADR-0010).
@@ -34,7 +35,7 @@ Més context: `docs/producte.md` (abast, MVP, NOT list), `docs/arquitectura.md`,
 - **CI** (TG-70): lint, typecheck i tests de l'app, de l'API, del worker i de `@talaia/db` a cada PR; SonarCloud preparat (`docs/ci.md`).
 - **Explora** (TG-101): la pestanya d'inici és «Què vols veure?» (mockup 02): què, des d'on (ubicació actual amb `expo-location`), quan i fins a quant temps en cotxe. «Troba el millor lloc» obre el mapa a `/recomanacions`, on TG-102 hi posarà el rànquing. La consulta és `ConsultaRecomanacions` a `@talaia/shared`.
 - **Mapa** (TG-89): MapLibre GL JS en una DOM component d'Expo, amb l'estil nocturn de l'ICGC, terreny 3D i cel de nit (ADR-0015). Tota l'app es prova a **Expo Go**; cap mòdul natiu que Expo Go no porti sense ADR (ADR-0014). Identificador: `cat.talaia.app`.
-- **Desplegament** (TG-71): `deploy/compose.yaml` (Nginx + API + acme.sh; worker amb `profiles: [worker]` fins a TG-99) a la VM de la FIB, HTTPS al 8080 amb DuckDNS + Let's Encrypt DNS-01, i deploy de `stable` amb un runner self-hosted (`deploy.yml`). Secrets a `/opt/talaia/.env` a la VM. Vegeu `docs/desplegament.md` i ADR-0019.
+- **Desplegament** (TG-71): `deploy/compose.yaml` (Nginx + API + acme.sh; worker amb `profiles: [worker]` fins a TG-99) a la VM de la FIB, HTTPS al 8080 amb DuckDNS + Let's Encrypt DNS-01, i deploy de `stable` per pull: un cron de la VM executa `deploy/scripts/desplega.sh` cada 5 minuts, sense runner (ADR-0021). Secrets a `/opt/talaia/.env` a la VM. Vegeu `docs/desplegament.md` i ADR-0019.
 
 ## Stack (decidit, no reobrir sense ADR)
 
@@ -116,7 +117,7 @@ Especificada → implementada → provada (tests a la CI) → revisada (PR aprov
 
 ## Com ha de treballar Claude Code aquí
 
-1. Identifica la tasca de Taiga (ref `TG-xx`) i llegeix-ne la descripció i els criteris d'acceptació de la història (`docs/sprint-1.md`).
+1. Identifica la tasca de Taiga (ref `TG-xx`) i llegeix-ne la descripció i els criteris d'acceptació de la història (`docs/sprint-<N>.md` del sprint de la tasca).
 2. Crea la branca `feature/TG-<ref>-…` des de `snapshot` actualitzada.
 3. Respecta el stack i les convencions; si una decisió no està presa, consulta `docs/decisions/pendents.md` i **pregunta** abans d'inventar-la.
 4. Escriu tests i actualitza l'OpenAPI / docs a la mateixa PR.

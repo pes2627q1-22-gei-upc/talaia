@@ -146,8 +146,7 @@ Si tens accés al projecte (panell de Supabase → projecte **Talaia**):
 | Variable | On és |
 |---|---|
 | `SUPABASE_URL` | *Project Settings → Data API → Project URL* |
-| `SUPABASE_ANON_KEY` i `EXPO_PUBLIC_SUPABASE_ANON_KEY` | *Project Settings → API Keys*, la clau `anon` (és pública, pot anar a l'app) |
-| `SUPABASE_SERVICE_ROLE_KEY` | *Project Settings → API Keys*, la clau `service_role`. **Secreta: només API i worker, mai a l'app ni en una variable `EXPO_PUBLIC_*`** |
+| `EXPO_PUBLIC_SUPABASE_ANON_KEY` | *Project Settings → API Keys*, la clau `anon` (és pública, pot anar a l'app). L'API no en necessita cap: valida els JWT amb el JWKS públic (ADR-0023) |
 | `DATABASE_URL` | Botó **Connect** → *Session pooler*. Fes servir aquesta (usuari `postgres.<ref>`), no la *Direct connection*: el host directe només té IPv6 i no connecta des de la majoria de xarxes |
 
 ### Connectar el CLI (un cop)
@@ -177,8 +176,15 @@ Mostra cada migració amb la columna *Local* i *Remote* iguals.
 2. Commit i PR com qualsevol altre canvi. La migració es revisa a la PR.
 3. Abans d'aplicar-la, mira què faria:
    ```bash
+   npx supabase migration list --linked
    npx supabase db push --dry-run
    ```
+   Si una migració amb una data anterior s'ha fusionat després d'una de més nova (com va
+   passar amb `20261015120000_procedencia_fenomens_calculats.sql`), no la reanomenis: potser
+   ja està aplicada. Comprova la llista local/remota i, si falta una migració antiga,
+   previsualitza-la amb `npx supabase db push --include-all --dry-run`. Coordina amb l'equip
+   l'ús de `npx supabase db push --include-all` només si la previsualització mostra exactament
+   les migracions esperades.
 4. Aplica-la a la base de dades del projecte:
    ```bash
    npx supabase db push
