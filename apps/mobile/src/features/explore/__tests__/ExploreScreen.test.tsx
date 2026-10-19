@@ -11,7 +11,16 @@ import { ExploreScreen } from '../ExploreScreen';
 import { getCurrentPlace } from '../locationRepository';
 
 jest.mock('expo-router', () => ({ useRouter: jest.fn() }));
-jest.mock('../locationRepository', () => ({ getCurrentPlace: jest.fn() }));
+jest.mock('../locationRepository', () => {
+  const { useQuery } = jest.requireActual('@tanstack/react-query');
+  const { CURRENT_PLACE_KEY } = jest.requireActual('../locationKeys');
+  const getCurrentPlace = jest.fn();
+  return {
+    getCurrentPlace,
+    useCurrentPlaceQuery: () =>
+      useQuery({ queryKey: CURRENT_PLACE_KEY, queryFn: getCurrentPlace, retry: false }),
+  };
+});
 
 const push = jest.fn();
 jest.mocked(useRouter).mockReturnValue({ push } as unknown as ReturnType<typeof useRouter>);
@@ -122,5 +131,13 @@ describe('ExploreScreen', () => {
         params: expect.objectContaining({ objectiu: 'cel_estrellat', lat: '41.98' }),
       }),
     );
+  });
+
+  it('«Veure el mapa» obre el mapa sense cercar, també sense ubicació', async () => {
+    jest.mocked(getCurrentPlace).mockResolvedValue({ status: 'denied', canAskAgain: true });
+    await renderScreen();
+    await screen.findByText('Activa la ubicació');
+    await fireEvent.press(screen.getByRole('button', { name: 'Veure el mapa' }));
+    expect(push).toHaveBeenCalledWith('/recomanacions');
   });
 });

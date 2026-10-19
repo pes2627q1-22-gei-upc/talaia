@@ -159,6 +159,7 @@ export function ExploreScreen() {
             icon={<Image source={searchIcon} style={styles.ctaIcon} accessible={false} />}
             style={styles.cta}
           />
+          <Button label={vm.browse.label} onPress={vm.browse.onPress} variant="text" />
         </Enter>
       </ScrollView>
 

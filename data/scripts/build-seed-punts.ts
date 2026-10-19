@@ -8,7 +8,7 @@
  * El seed és idempotent: `on conflict (slug) do update`, així `supabase db reset`
  * i un `db push --include-seed` repetit no dupliquen punts.
  *
- * Les columnes han de coincidir amb la migració de TG-86 (taula punts_observacio).
+ * Les columnes han de coincidir amb la taula punts_observacio (migracions de TG-86, TG-97 i TG-116).
  */
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
@@ -28,6 +28,9 @@ const num = (v: number | null): string => (v === null ? 'null' : String(v));
 const array = (v: string[] | null): string =>
   v === null || v.length === 0 ? 'null' : `array[${v.map(text).join(', ')}]::text[]`;
 
+const reals = (v: number[] | null): string =>
+  v === null ? 'null' : `array[${v.join(', ')}]::real[]`;
+
 function fila(f: PuntFeature): string {
   const p = f.properties;
   const geom = JSON.stringify({ type: 'Point', coordinates: f.geometry.coordinates });
@@ -37,8 +40,10 @@ function fila(f: PuntFeature): string {
     text(p.municipi),
     text(p.descripcio),
     num(p.altitud),
+    num(p.sqm),
     array(p.horitzo_obert),
     text(p.accessibilitat),
+    reals(p.horitzo),
     `'OFICIAL'`,
     `'PUBLICAT'`,
     `st_setsrid(st_geomfromgeojson(${text(geom)}), 4326)::geography`,
@@ -49,9 +54,11 @@ export function generarSql(features: PuntFeature[]): string {
   return `-- Generat per data/scripts/build-seed-punts.ts a partir de data/punts_observacio.geojson.
 -- No l'editis a mà: canvia el GeoJSON i torna a executar el script. (TG-87)
 -- Coordenades: geocodificador de l'ICGC. Punts oficials (sense creador) i publicats.
+-- sqm: brillantor del cel (mag/arcsec²) del mapa de contaminació lumínica de la Generalitat (TG-97).
+-- horitzo: alçada aparent de l'horitzó per grau d'azimut, del model d'elevacions de l'ICGC (TG-116).
 
 insert into punts_observacio
-  (slug, nom, municipi, descripcio, altitud, horitzo_obert, accessibilitat, origen, estat, ubicacio)
+  (slug, nom, municipi, descripcio, altitud, sqm, horitzo_obert, accessibilitat, horitzo, origen, estat, ubicacio)
 values
 ${features.map(fila).join(',\n')}
 on conflict (slug) do update set
@@ -59,8 +66,10 @@ on conflict (slug) do update set
   municipi = excluded.municipi,
   descripcio = excluded.descripcio,
   altitud = excluded.altitud,
+  sqm = excluded.sqm,
   horitzo_obert = excluded.horitzo_obert,
   accessibilitat = excluded.accessibilitat,
+  horitzo = excluded.horitzo,
   ubicacio = excluded.ubicacio
 -- Un punt de la comunitat amb el mateix slug no se sobreescriu.
 where punts_observacio.origen = 'OFICIAL';
@@ -78,6 +87,16 @@ function main(): void {
   if (senseAltitud) {
     console.warn(
       `Avís: ${senseAltitud} punts sense altitud. Executa data/scripts/fill-altitudes.ts.`,
+    );
+  }
+  const senseSqm = fc.features.filter((f) => f.properties.sqm === null).length;
+  if (senseSqm) {
+    console.warn(`Avís: ${senseSqm} punts sense sqm (fora del mapa de contaminació lumínica).`);
+  }
+  const senseHoritzo = fc.features.filter((f) => f.properties.horitzo === null).length;
+  if (senseHoritzo) {
+    console.warn(
+      `Avís: ${senseHoritzo} punts sense horitzo. Executa data/scripts/fill-horitzo.ts.`,
     );
   }
   const sql = generarSql(fc.features);

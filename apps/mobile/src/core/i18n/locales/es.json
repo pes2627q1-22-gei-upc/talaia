@@ -10,7 +10,13 @@
     "profile": "Perfil"
   },
   "map": {
-    "a11y": "Mapa nocturno de Cataluña con el relieve"
+    "userLocation": "Tu ubicación",
+    "a11y": "Mapa nocturno de Cataluña con el relieve",
+    "pointsLoading": "Cargando lugares de observación…",
+    "pointsError": "No hemos podido cargar los lugares",
+    "pointsEmptyHint": "Vuelve a intentarlo más adelante.",
+    "pointsEmpty": "Todavía no hay lugares disponibles",
+    "retry": "Volver a intentar"
   },
   "calendar": {
     "title": "Calendario",
@@ -162,7 +168,8 @@
       "min": "30 min",
       "max": "4 h"
     },
-    "cta": "Encuentra el mejor lugar"
+    "cta": "Encuentra el mejor lugar",
+    "browse": "Ver el mapa"
   },
   "alerts": {
     "title": "Alertas",

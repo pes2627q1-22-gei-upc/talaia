@@ -1,5 +1,4 @@
 import type { ConsultaRecomanacions, ObjectiuObservacio } from '@talaia/shared';
-import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -25,9 +24,7 @@ import {
   TRAVEL,
   travelParts,
 } from './exploreModel';
-import { getCurrentPlace } from './locationRepository';
-
-export const CURRENT_PLACE_KEY = ['ubicacio-actual'] as const;
+import { useCurrentPlaceQuery } from './locationRepository';
 
 /** «Què vols veure?» (HU01, mockup 02): què, des d'on, quan i fins on. */
 export function useExploreViewModel() {
@@ -44,12 +41,7 @@ export function useExploreViewModel() {
   const [rangeOpen, setRangeOpen] = useState(false);
   const [travel, setTravel] = useState<number>(TRAVEL.initial);
 
-  const location = useQuery({
-    queryKey: CURRENT_PLACE_KEY,
-    queryFn: getCurrentPlace,
-    staleTime: 5 * 60 * 1000,
-    retry: false,
-  });
+  const location = useCurrentPlaceQuery();
   const { refetch } = location;
   const placeReady = location.data?.status === 'ready';
 
@@ -248,5 +240,7 @@ export function useExploreViewModel() {
       onChange: setTravel,
     },
     cta: { label: t('explore.cta'), disabled: !place, onPress: search },
+    // HU06: el mapa s'ha de poder explorar sense cercar, també sense ubicació.
+    browse: { label: t('explore.browse'), onPress: () => router.push('/recomanacions') },
   };
 }

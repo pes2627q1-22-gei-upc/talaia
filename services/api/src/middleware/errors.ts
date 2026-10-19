@@ -1,6 +1,6 @@
 import type { ApiErrorBody } from '@talaia/shared';
 import type { ErrorRequestHandler, RequestHandler } from 'express';
-import { ZodError, z } from 'zod';
+import { ZodError } from 'zod';
 
 /** Error controlat: arriba al client com a `{ error: { code, message } }` amb aquest status. */
 export class ApiError extends Error {
@@ -28,13 +28,24 @@ export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
 
 function toApiError(err: unknown): ApiError {
   if (err instanceof ApiError) return err;
-  if (err instanceof ZodError) return new ApiError(400, 'validation_error', z.prettifyError(err));
+  if (err instanceof ZodError) return new ApiError(400, 'validation_error', zodMessage(err));
   if (isClientHttpError(err)) {
     return err.type === 'entity.parse.failed'
       ? new ApiError(400, 'invalid_json', 'El cos de la petició no és JSON vàlid')
       : new ApiError(err.status, 'bad_request', err.message);
   }
   return new ApiError(500, 'internal_error', 'Error intern del servidor');
+}
+
+/** «camp: missatge; …» en una línia, sense el ✖ ni els salts de línia de `z.prettifyError`. */
+function zodMessage(err: ZodError): string {
+  return err.issues
+    .map(({ path, message }) => {
+      const camp = path.map(String).join('.');
+      // Els missatges propis ja solen començar pel camp («bbox: …»): no el repetim.
+      return camp && !message.startsWith(camp) ? `${camp}: ${message}` : message;
+    })
+    .join('; ');
 }
 
 /** Errors 4xx d'Express i body-parser (JSON mal format, cos massa gran…). */

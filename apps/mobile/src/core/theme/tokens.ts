@@ -16,6 +16,7 @@ export const colors = {
   lluna: '#EEF0F7',
   boira: '#9AA3C7',
   far: '#FFB547',
+  ubicacio: '#4B9FFF',
   ras: '#5FD4C4',
   jus: '#E3C58F',
   tap: '#E0708A',

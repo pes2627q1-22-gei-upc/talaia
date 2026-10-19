@@ -127,7 +127,7 @@
       "dificultat_observacio": "mitjana",
       "textos": {
         "ca": {
-          "nota_visibilitat": "Separació aparent aproximada de 0.9° des del Montseny, amb els dos astres a més de 10° d'altura i el Sol sota -6°. La visibilitat real depèn del lloc i dels núvols.",
+          "nota_visibilitat": "Separació aparent aproximada de 0.9° des del Montseny, amb els dos astres a més de 10° d'altura i el Sol sota -6°. La franja inici-fi és orientativa (±30 minuts de la millor mostra horària), no la durada real de l'aproximació. La visibilitat real depèn del lloc i dels núvols.",
           "consell_observacio": "Observeu Lluna i Mart al voltant de l'hora indicada des d'un lloc amb l'horitzó lliure."
         }
       },
@@ -152,7 +152,7 @@
       "dificultat_observacio": "mitjana",
       "textos": {
         "ca": {
-          "nota_visibilitat": "Separació aparent aproximada de 2.4° des del Montseny, amb els dos astres a més de 10° d'altura i el Sol sota -6°. La visibilitat real depèn del lloc i dels núvols.",
+          "nota_visibilitat": "Separació aparent aproximada de 2.4° des del Montseny, amb els dos astres a més de 10° d'altura i el Sol sota -6°. La franja inici-fi és orientativa (±30 minuts de la millor mostra horària), no la durada real de l'aproximació. La visibilitat real depèn del lloc i dels núvols.",
           "consell_observacio": "Observeu Lluna i Júpiter al voltant de l'hora indicada des d'un lloc amb l'horitzó lliure."
         }
       },
@@ -164,8 +164,8 @@
       "codi": "lluna-nova-2026-10-10",
       "fenomen_codi": "lluna-nova",
       "metode_calcul": "Astronomy Engine 2.1.19",
-      "inici": "2026-10-10T00:00:00Z",
-      "fi": "2026-10-10T23:59:59Z",
+      "inici": "2026-10-09T22:00:00Z",
+      "fi": "2026-10-10T21:59:59Z",
       "maxim": "2026-10-10T15:50:37Z",
       "precisio": {
         "inici": "dia",
@@ -186,8 +186,8 @@
       "codi": "lluna-plena-2026-10-26",
       "fenomen_codi": "lluna-plena",
       "metode_calcul": "Astronomy Engine 2.1.19",
-      "inici": "2026-10-26T00:00:00Z",
-      "fi": "2026-10-26T23:59:59Z",
+      "inici": "2026-10-25T23:00:00Z",
+      "fi": "2026-10-26T22:59:59Z",
       "maxim": "2026-10-26T04:12:16Z",
       "precisio": {
         "inici": "dia",
@@ -221,7 +221,7 @@
       "dificultat_observacio": "mitjana",
       "textos": {
         "ca": {
-          "nota_visibilitat": "Separació aparent aproximada de 2.8° des del Montseny, amb els dos astres a més de 10° d'altura i el Sol sota -6°. La visibilitat real depèn del lloc i dels núvols.",
+          "nota_visibilitat": "Separació aparent aproximada de 2.8° des del Montseny, amb els dos astres a més de 10° d'altura i el Sol sota -6°. La franja inici-fi és orientativa (±30 minuts de la millor mostra horària), no la durada real de l'aproximació. La visibilitat real depèn del lloc i dels núvols.",
           "consell_observacio": "Observeu Lluna i Júpiter al voltant de l'hora indicada des d'un lloc amb l'horitzó lliure."
         }
       },
@@ -246,7 +246,7 @@
       "dificultat_observacio": "mitjana",
       "textos": {
         "ca": {
-          "nota_visibilitat": "Separació aparent aproximada de 2.2° des del Montseny, amb els dos astres a més de 10° d'altura i el Sol sota -6°. La visibilitat real depèn del lloc i dels núvols.",
+          "nota_visibilitat": "Separació aparent aproximada de 2.2° des del Montseny, amb els dos astres a més de 10° d'altura i el Sol sota -6°. La franja inici-fi és orientativa (±30 minuts de la millor mostra horària), no la durada real de l'aproximació. La visibilitat real depèn del lloc i dels núvols.",
           "consell_observacio": "Observeu Lluna i Venus al voltant de l'hora indicada des d'un lloc amb l'horitzó lliure."
         }
       },
@@ -258,8 +258,8 @@
       "codi": "lluna-nova-2026-11-09",
       "fenomen_codi": "lluna-nova",
       "metode_calcul": "Astronomy Engine 2.1.19",
-      "inici": "2026-11-09T00:00:00Z",
-      "fi": "2026-11-09T23:59:59Z",
+      "inici": "2026-11-08T23:00:00Z",
+      "fi": "2026-11-09T22:59:59Z",
       "maxim": "2026-11-09T07:02:42Z",
       "precisio": {
         "inici": "dia",
@@ -293,7 +293,7 @@
       "dificultat_observacio": "mitjana",
       "textos": {
         "ca": {
-          "nota_visibilitat": "Separació aparent aproximada de 1.2° des del Montseny, amb els dos astres a més de 10° d'altura i el Sol sota -6°. La visibilitat real depèn del lloc i dels núvols.",
+          "nota_visibilitat": "Separació aparent aproximada de 1.2° des del Montseny, amb els dos astres a més de 10° d'altura i el Sol sota -6°. La franja inici-fi és orientativa (±30 minuts de la millor mostra horària), no la durada real de l'aproximació. La visibilitat real depèn del lloc i dels núvols.",
           "consell_observacio": "Observeu Mart i Júpiter al voltant de l'hora indicada des d'un lloc amb l'horitzó lliure."
         }
       },
@@ -305,8 +305,8 @@
       "codi": "superlluna-plena-2026-11-24",
       "fenomen_codi": "superlluna-plena",
       "metode_calcul": "Astronomy Engine 2.1.19",
-      "inici": "2026-11-24T00:00:00Z",
-      "fi": "2026-11-24T23:59:59Z",
+      "inici": "2026-11-23T23:00:00Z",
+      "fi": "2026-11-24T22:59:59Z",
       "maxim": "2026-11-24T14:54:04Z",
       "precisio": {
         "inici": "dia",
@@ -344,7 +344,7 @@
       "dificultat_observacio": "mitjana",
       "textos": {
         "ca": {
-          "nota_visibilitat": "Separació aparent aproximada de 2.1° des del Montseny, amb els dos astres a més de 10° d'altura i el Sol sota -6°. La visibilitat real depèn del lloc i dels núvols.",
+          "nota_visibilitat": "Separació aparent aproximada de 2.1° des del Montseny, amb els dos astres a més de 10° d'altura i el Sol sota -6°. La franja inici-fi és orientativa (±30 minuts de la millor mostra horària), no la durada real de l'aproximació. La visibilitat real depèn del lloc i dels núvols.",
           "consell_observacio": "Observeu Lluna i Júpiter al voltant de l'hora indicada des d'un lloc amb l'horitzó lliure."
         }
       },
@@ -356,8 +356,8 @@
       "codi": "lluna-nova-2026-12-09",
       "fenomen_codi": "lluna-nova",
       "metode_calcul": "Astronomy Engine 2.1.19",
-      "inici": "2026-12-09T00:00:00Z",
-      "fi": "2026-12-09T23:59:59Z",
+      "inici": "2026-12-08T23:00:00Z",
+      "fi": "2026-12-09T22:59:59Z",
       "maxim": "2026-12-09T00:52:31Z",
       "precisio": {
         "inici": "dia",
@@ -378,8 +378,8 @@
       "codi": "superlluna-plena-2026-12-24",
       "fenomen_codi": "superlluna-plena",
       "metode_calcul": "Astronomy Engine 2.1.19",
-      "inici": "2026-12-24T00:00:00Z",
-      "fi": "2026-12-24T23:59:59Z",
+      "inici": "2026-12-23T23:00:00Z",
+      "fi": "2026-12-24T22:59:59Z",
       "maxim": "2026-12-24T01:28:45Z",
       "precisio": {
         "inici": "dia",
@@ -404,8 +404,8 @@
       "codi": "lluna-nova-2027-01-07",
       "fenomen_codi": "lluna-nova",
       "metode_calcul": "Astronomy Engine 2.1.19",
-      "inici": "2027-01-07T00:00:00Z",
-      "fi": "2027-01-07T23:59:59Z",
+      "inici": "2027-01-06T23:00:00Z",
+      "fi": "2027-01-07T22:59:59Z",
       "maxim": "2027-01-07T20:25:06Z",
       "precisio": {
         "inici": "dia",
@@ -426,8 +426,8 @@
       "codi": "superlluna-plena-2027-01-22",
       "fenomen_codi": "superlluna-plena",
       "metode_calcul": "Astronomy Engine 2.1.19",
-      "inici": "2027-01-22T00:00:00Z",
-      "fi": "2027-01-22T23:59:59Z",
+      "inici": "2027-01-21T23:00:00Z",
+      "fi": "2027-01-22T22:59:59Z",
       "maxim": "2027-01-22T12:17:50Z",
       "precisio": {
         "inici": "dia",
@@ -465,7 +465,7 @@
       "dificultat_observacio": "mitjana",
       "textos": {
         "ca": {
-          "nota_visibilitat": "Separació aparent aproximada de 1.6° des del Montseny, amb els dos astres a més de 10° d'altura i el Sol sota -6°. La visibilitat real depèn del lloc i dels núvols.",
+          "nota_visibilitat": "Separació aparent aproximada de 1.6° des del Montseny, amb els dos astres a més de 10° d'altura i el Sol sota -6°. La franja inici-fi és orientativa (±30 minuts de la millor mostra horària), no la durada real de l'aproximació. La visibilitat real depèn del lloc i dels núvols.",
           "consell_observacio": "Observeu Lluna i Júpiter al voltant de l'hora indicada des d'un lloc amb l'horitzó lliure."
         }
       },
@@ -477,8 +477,8 @@
       "codi": "lluna-nova-2027-02-06",
       "fenomen_codi": "lluna-nova",
       "metode_calcul": "Astronomy Engine 2.1.19",
-      "inici": "2027-02-06T00:00:00Z",
-      "fi": "2027-02-06T23:59:59Z",
+      "inici": "2027-02-05T23:00:00Z",
+      "fi": "2027-02-06T22:59:59Z",
       "maxim": "2027-02-06T15:56:47Z",
       "precisio": {
         "inici": "dia",
@@ -512,7 +512,7 @@
       "dificultat_observacio": "mitjana",
       "textos": {
         "ca": {
-          "nota_visibilitat": "Separació aparent aproximada de 2.0° des del Montseny, amb els dos astres a més de 10° d'altura i el Sol sota -6°. La visibilitat real depèn del lloc i dels núvols.",
+          "nota_visibilitat": "Separació aparent aproximada de 2.0° des del Montseny, amb els dos astres a més de 10° d'altura i el Sol sota -6°. La franja inici-fi és orientativa (±30 minuts de la millor mostra horària), no la durada real de l'aproximació. La visibilitat real depèn del lloc i dels núvols.",
           "consell_observacio": "Observeu Lluna i Júpiter al voltant de l'hora indicada des d'un lloc amb l'horitzó lliure."
         }
       },
@@ -521,11 +521,11 @@
       }
     },
     {
-      "codi": "superlluna-plena-2027-02-20",
+      "codi": "superlluna-plena-2027-02-21",
       "fenomen_codi": "superlluna-plena",
       "metode_calcul": "Astronomy Engine 2.1.19",
-      "inici": "2027-02-20T00:00:00Z",
-      "fi": "2027-02-20T23:59:59Z",
+      "inici": "2027-02-20T23:00:00Z",
+      "fi": "2027-02-21T22:59:59Z",
       "maxim": "2027-02-20T23:24:07Z",
       "precisio": {
         "inici": "dia",
@@ -550,8 +550,8 @@
       "codi": "lluna-nova-2027-03-08",
       "fenomen_codi": "lluna-nova",
       "metode_calcul": "Astronomy Engine 2.1.19",
-      "inici": "2027-03-08T00:00:00Z",
-      "fi": "2027-03-08T23:59:59Z",
+      "inici": "2027-03-07T23:00:00Z",
+      "fi": "2027-03-08T22:59:59Z",
       "maxim": "2027-03-08T09:30:07Z",
       "precisio": {
         "inici": "dia",
@@ -572,8 +572,8 @@
       "codi": "lluna-plena-2027-03-22",
       "fenomen_codi": "lluna-plena",
       "metode_calcul": "Astronomy Engine 2.1.19",
-      "inici": "2027-03-22T00:00:00Z",
-      "fi": "2027-03-22T23:59:59Z",
+      "inici": "2027-03-21T23:00:00Z",
+      "fi": "2027-03-22T22:59:59Z",
       "maxim": "2027-03-22T10:44:19Z",
       "precisio": {
         "inici": "dia",
@@ -591,11 +591,11 @@
       }
     },
     {
-      "codi": "lluna-nova-2027-04-06",
+      "codi": "lluna-nova-2027-04-07",
       "fenomen_codi": "lluna-nova",
       "metode_calcul": "Astronomy Engine 2.1.19",
-      "inici": "2027-04-06T00:00:00Z",
-      "fi": "2027-04-06T23:59:59Z",
+      "inici": "2027-04-06T22:00:00Z",
+      "fi": "2027-04-07T21:59:59Z",
       "maxim": "2027-04-06T23:51:45Z",
       "precisio": {
         "inici": "dia",
@@ -613,11 +613,11 @@
       }
     },
     {
-      "codi": "lluna-plena-2027-04-20",
+      "codi": "lluna-plena-2027-04-21",
       "fenomen_codi": "lluna-plena",
       "metode_calcul": "Astronomy Engine 2.1.19",
-      "inici": "2027-04-20T00:00:00Z",
-      "fi": "2027-04-20T23:59:59Z",
+      "inici": "2027-04-20T22:00:00Z",
+      "fi": "2027-04-21T21:59:59Z",
       "maxim": "2027-04-20T22:27:45Z",
       "precisio": {
         "inici": "dia",
@@ -638,8 +638,8 @@
       "codi": "lluna-nova-2027-05-06",
       "fenomen_codi": "lluna-nova",
       "metode_calcul": "Astronomy Engine 2.1.19",
-      "inici": "2027-05-06T00:00:00Z",
-      "fi": "2027-05-06T23:59:59Z",
+      "inici": "2027-05-05T22:00:00Z",
+      "fi": "2027-05-06T21:59:59Z",
       "maxim": "2027-05-06T10:59:11Z",
       "precisio": {
         "inici": "dia",
@@ -657,7 +657,7 @@
       }
     },
     {
-      "codi": "conjuncio-lluna-jupiter-2027-05-12",
+      "codi": "conjuncio-lluna-jupiter-2027-05-13",
       "fenomen_codi": "conjuncio-lluna-jupiter",
       "metode_calcul": "Astronomy Engine 2.1.19",
       "inici": "2027-05-12T21:30:00Z",
@@ -673,7 +673,7 @@
       "dificultat_observacio": "mitjana",
       "textos": {
         "ca": {
-          "nota_visibilitat": "Separació aparent aproximada de 2.0° des del Montseny, amb els dos astres a més de 10° d'altura i el Sol sota -6°. La visibilitat real depèn del lloc i dels núvols.",
+          "nota_visibilitat": "Separació aparent aproximada de 2.0° des del Montseny, amb els dos astres a més de 10° d'altura i el Sol sota -6°. La franja inici-fi és orientativa (±30 minuts de la millor mostra horària), no la durada real de l'aproximació. La visibilitat real depèn del lloc i dels núvols.",
           "consell_observacio": "Observeu Lluna i Júpiter al voltant de l'hora indicada des d'un lloc amb l'horitzó lliure."
         }
       },
@@ -685,8 +685,8 @@
       "codi": "lluna-plena-2027-05-20",
       "fenomen_codi": "lluna-plena",
       "metode_calcul": "Astronomy Engine 2.1.19",
-      "inici": "2027-05-20T00:00:00Z",
-      "fi": "2027-05-20T23:59:59Z",
+      "inici": "2027-05-19T22:00:00Z",
+      "fi": "2027-05-20T21:59:59Z",
       "maxim": "2027-05-20T10:59:39Z",
       "precisio": {
         "inici": "dia",
@@ -707,8 +707,8 @@
       "codi": "lluna-nova-2027-06-04",
       "fenomen_codi": "lluna-nova",
       "metode_calcul": "Astronomy Engine 2.1.19",
-      "inici": "2027-06-04T00:00:00Z",
-      "fi": "2027-06-04T23:59:59Z",
+      "inici": "2027-06-03T22:00:00Z",
+      "fi": "2027-06-04T21:59:59Z",
       "maxim": "2027-06-04T19:40:51Z",
       "precisio": {
         "inici": "dia",
@@ -729,8 +729,8 @@
       "codi": "lluna-plena-2027-06-19",
       "fenomen_codi": "lluna-plena",
       "metode_calcul": "Astronomy Engine 2.1.19",
-      "inici": "2027-06-19T00:00:00Z",
-      "fi": "2027-06-19T23:59:59Z",
+      "inici": "2027-06-18T22:00:00Z",
+      "fi": "2027-06-19T21:59:59Z",
       "maxim": "2027-06-19T00:45:01Z",
       "precisio": {
         "inici": "dia",
@@ -751,8 +751,8 @@
       "codi": "lluna-nova-2027-07-04",
       "fenomen_codi": "lluna-nova",
       "metode_calcul": "Astronomy Engine 2.1.19",
-      "inici": "2027-07-04T00:00:00Z",
-      "fi": "2027-07-04T23:59:59Z",
+      "inici": "2027-07-03T22:00:00Z",
+      "fi": "2027-07-04T21:59:59Z",
       "maxim": "2027-07-04T03:02:33Z",
       "precisio": {
         "inici": "dia",
@@ -773,8 +773,8 @@
       "codi": "lluna-plena-2027-07-18",
       "fenomen_codi": "lluna-plena",
       "metode_calcul": "Astronomy Engine 2.1.19",
-      "inici": "2027-07-18T00:00:00Z",
-      "fi": "2027-07-18T23:59:59Z",
+      "inici": "2027-07-17T22:00:00Z",
+      "fi": "2027-07-18T21:59:59Z",
       "maxim": "2027-07-18T15:45:36Z",
       "precisio": {
         "inici": "dia",
@@ -795,8 +795,8 @@
       "codi": "lluna-nova-2027-08-02",
       "fenomen_codi": "lluna-nova",
       "metode_calcul": "Astronomy Engine 2.1.19",
-      "inici": "2027-08-02T00:00:00Z",
-      "fi": "2027-08-02T23:59:59Z",
+      "inici": "2027-08-01T22:00:00Z",
+      "fi": "2027-08-02T21:59:59Z",
       "maxim": "2027-08-02T10:05:42Z",
       "precisio": {
         "inici": "dia",
@@ -817,8 +817,8 @@
       "codi": "lluna-plena-2027-08-17",
       "fenomen_codi": "lluna-plena",
       "metode_calcul": "Astronomy Engine 2.1.19",
-      "inici": "2027-08-17T00:00:00Z",
-      "fi": "2027-08-17T23:59:59Z",
+      "inici": "2027-08-16T22:00:00Z",
+      "fi": "2027-08-17T21:59:59Z",
       "maxim": "2027-08-17T07:29:20Z",
       "precisio": {
         "inici": "dia",
@@ -839,8 +839,8 @@
       "codi": "lluna-nova-2027-08-31",
       "fenomen_codi": "lluna-nova",
       "metode_calcul": "Astronomy Engine 2.1.19",
-      "inici": "2027-08-31T00:00:00Z",
-      "fi": "2027-08-31T23:59:59Z",
+      "inici": "2027-08-30T22:00:00Z",
+      "fi": "2027-08-31T21:59:59Z",
       "maxim": "2027-08-31T17:41:41Z",
       "precisio": {
         "inici": "dia",
@@ -858,11 +858,11 @@
       }
     },
     {
-      "codi": "lluna-plena-2027-09-15",
+      "codi": "lluna-plena-2027-09-16",
       "fenomen_codi": "lluna-plena",
       "metode_calcul": "Astronomy Engine 2.1.19",
-      "inici": "2027-09-15T00:00:00Z",
-      "fi": "2027-09-15T23:59:59Z",
+      "inici": "2027-09-15T22:00:00Z",
+      "fi": "2027-09-16T21:59:59Z",
       "maxim": "2027-09-15T23:04:09Z",
       "precisio": {
         "inici": "dia",
@@ -883,8 +883,8 @@
       "codi": "lluna-nova-2027-09-30",
       "fenomen_codi": "lluna-nova",
       "metode_calcul": "Astronomy Engine 2.1.19",
-      "inici": "2027-09-30T00:00:00Z",
-      "fi": "2027-09-30T23:59:59Z",
+      "inici": "2027-09-29T22:00:00Z",
+      "fi": "2027-09-30T21:59:59Z",
       "maxim": "2027-09-30T02:36:35Z",
       "precisio": {
         "inici": "dia",
@@ -905,8 +905,8 @@
       "codi": "lluna-plena-2027-10-15",
       "fenomen_codi": "lluna-plena",
       "metode_calcul": "Astronomy Engine 2.1.19",
-      "inici": "2027-10-15T00:00:00Z",
-      "fi": "2027-10-15T23:59:59Z",
+      "inici": "2027-10-14T22:00:00Z",
+      "fi": "2027-10-15T21:59:59Z",
       "maxim": "2027-10-15T13:47:34Z",
       "precisio": {
         "inici": "dia",
@@ -927,8 +927,8 @@
       "codi": "lluna-nova-2027-10-29",
       "fenomen_codi": "lluna-nova",
       "metode_calcul": "Astronomy Engine 2.1.19",
-      "inici": "2027-10-29T00:00:00Z",
-      "fi": "2027-10-29T23:59:59Z",
+      "inici": "2027-10-28T22:00:00Z",
+      "fi": "2027-10-29T21:59:59Z",
       "maxim": "2027-10-29T13:37:05Z",
       "precisio": {
         "inici": "dia",
@@ -949,8 +949,8 @@
       "codi": "lluna-plena-2027-11-14",
       "fenomen_codi": "lluna-plena",
       "metode_calcul": "Astronomy Engine 2.1.19",
-      "inici": "2027-11-14T00:00:00Z",
-      "fi": "2027-11-14T23:59:59Z",
+      "inici": "2027-11-13T23:00:00Z",
+      "fi": "2027-11-14T22:59:59Z",
       "maxim": "2027-11-14T03:26:26Z",
       "precisio": {
         "inici": "dia",
@@ -971,8 +971,8 @@
       "codi": "lluna-nova-2027-11-28",
       "fenomen_codi": "lluna-nova",
       "metode_calcul": "Astronomy Engine 2.1.19",
-      "inici": "2027-11-28T00:00:00Z",
-      "fi": "2027-11-28T23:59:59Z",
+      "inici": "2027-11-27T23:00:00Z",
+      "fi": "2027-11-28T22:59:59Z",
       "maxim": "2027-11-28T03:24:59Z",
       "precisio": {
         "inici": "dia",
@@ -993,8 +993,8 @@
       "codi": "lluna-plena-2027-12-13",
       "fenomen_codi": "lluna-plena",
       "metode_calcul": "Astronomy Engine 2.1.19",
-      "inici": "2027-12-13T00:00:00Z",
-      "fi": "2027-12-13T23:59:59Z",
+      "inici": "2027-12-12T23:00:00Z",
+      "fi": "2027-12-13T22:59:59Z",
       "maxim": "2027-12-13T16:09:19Z",
       "precisio": {
         "inici": "dia",
@@ -1015,8 +1015,8 @@
       "codi": "lluna-nova-2027-12-27",
       "fenomen_codi": "lluna-nova",
       "metode_calcul": "Astronomy Engine 2.1.19",
-      "inici": "2027-12-27T00:00:00Z",
-      "fi": "2027-12-27T23:59:59Z",
+      "inici": "2027-12-26T23:00:00Z",
+      "fi": "2027-12-27T22:59:59Z",
       "maxim": "2027-12-27T20:12:56Z",
       "precisio": {
         "inici": "dia",

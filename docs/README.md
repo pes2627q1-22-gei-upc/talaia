@@ -6,8 +6,8 @@
 | [producte.md](producte.md) | Visió, índex, MVP, NOT list, èpiques, model conceptual, pantalles |
 | [arquitectura.md](arquitectura.md) | Diagrama físic, stack, alternatives descartades, fonts de dades, riscos |
 | [decisions/](decisions/README.md) | ADR acceptades i [decisions pendents](decisions/pendents.md) |
-| [sprint-1.md](sprint-1.md) | Objectiu, històries, criteris d'acceptació, tasques amb dates i responsables |
-| [backlog.md](backlog.md) | Les 43 històries per èpica amb story points |
+| [sprint-1.md](sprint-1.md) · [sprint-2.md](sprint-2.md) · [sprint-3.md](sprint-3.md) | Per sprint: objectiu, històries, criteris d'acceptació, tasques amb dates, responsables i hores |
+| [backlog.md](backlog.md) | Les 46 històries per èpica amb story points, i els RNF |
 | [git-workflow.md](git-workflow.md) | Branques, commits, PR, final de sprint |
 | [ci.md](ci.md) | Checks de CI i activació de SonarCloud |
 | [design-system.md](design-system.md) | Colors, tipografia, components, mapa |
