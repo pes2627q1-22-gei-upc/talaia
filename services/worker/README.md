@@ -2,7 +2,7 @@
 
 Procés de Talaia que ingesta les dades externes i recalcula l'índex de visibilitat de tots els punts **cada hora** ([ADR-0004](../../docs/decisions/0004-index-precalculat.md)). Node 22 + TypeScript (strict), mateixes eines que l'API.
 
-Estat: hi ha la **ingesta de la previsió d'Open-Meteo** (TG-95 i TG-114), el **càlcul astronòmic** amb Astronomy Engine (TG-96) i la **fórmula de l'índex v1** amb la seva persistència (TG-98). El **procés horari** (TG-99) recalcula l'índex de tots els punts en arrencar i cada hora amb node-cron, dins del contenidor.
+Estat: hi ha la **ingesta de la previsió d'Open-Meteo** (TG-95 i TG-114), el **càlcul astronòmic** amb Astronomy Engine (TG-96), la **fórmula de l'índex v1** amb la seva persistència (TG-98) i la **ingesta de les observacions de la XEMA** de Meteocat (TG-115, `npm run xema`). El **procés horari** (TG-99) recalcula l'índex de tots els punts en arrencar i cada hora amb node-cron, dins del contenidor.
 
 ## Ordres
 
@@ -15,6 +15,7 @@ nvm use && npm install        # des de l'arrel: instal·la tots els workspaces
 | `npm run start` | Procés horari (`src/main.ts`): recalcula l'índex en arrencar i cada hora. Cal `DATABASE_URL` |
 | `npm run meteo -- <lat,lon> [<lat,lon> …]` | Demana la previsió d'un o més llocs a Open-Meteo i la mostra per pantalla |
 | `npm run astro -- <lat,lon[,altitud]> [YYYY-MM-DD]` | Mostra la nit d'un lloc (Sol, crepuscles, Lluna) i les efemèrides hora a hora, sense xarxa |
+| `npm run xema -- <codi estació> [YYYY-MM-DD]` | Lectures d'un dia d'una estació de la XEMA (cal `METEOCAT_API_KEY`; gasta 7 consultes), sense base de dades |
 | `npm run build` | Compila a `dist/` (sense els tests) |
 | `npm run typecheck` | TypeScript strict (`tsconfig.base.json` de l'arrel) |
 | `npm test` | Jest |
@@ -35,6 +36,7 @@ Es llegeixen del `.env` de l'**arrel** del repo (`--env-file-if-exists`; vegeu `
 |---|---|---|
 | `OPEN_METEO_BASE_URL` | `https://api.open-meteo.com/v1` | URL base de l'API d'Open-Meteo (sense clau; 10.000 crides/dia) |
 | `DATABASE_URL` | — | Postgres (`postgresql://…`). Obligatòria per a `npm run start`; les CLI de prova no la fan servir |
+| `METEOCAT_API_KEY` | — | Clau de l'API de Meteocat (pla gratuït amb «Dades de la XEMA»). Opcional: sense ella no s'ingesten les observacions. Secreta |
 
 ## Ingesta de la previsió d'Open-Meteo (TG-95 i TG-114)
 
@@ -68,6 +70,29 @@ src/
 - **Valors `null`.** Si el model no dóna un valor per a una hora, es desa `null` (no s'inventa res). La fórmula de l'índex (TG-98) decideix què fer-ne.
 - **Errors.** Un error de xarxa o un timeout (`timeoutMs`, 15 s per defecte), un error HTTP, un cos inesperat (també una sèrie més curta que `time`) o un nombre de llocs diferent del demanat llancen `OpenMeteoError` (amb `status` quan hi ha resposta HTTP). Si falla un lot, `previsio` rebutja sencer: la ingesta no desa res i es conserva la previsió anterior. Un reintent per a 429, 5xx i errors de xarxa queda per a TG-99.
 - **Persistència.** `ingestaPrevisioMeteo` escriu a un `PrevisioMeteoRepository`. La implementació amb Kysely (`@talaia/db`, [ADR-0013](../../docs/decisions/0013-acces-bd-kysely.md)) i la migració de la taula de previsions són el següent pas, ara que hi ha `punts_observacio` (TG-86); fins aleshores hi ha la de memòria, que fan servir els tests i la CLI.
+
+## Observacions de la XEMA de Meteocat (TG-115)
+
+```
+src/meteocat/
+  xema.ts                Client de l'API de dades mesurades (x-api-key, zod, timeout)
+  ingesta.ts             Estacions operatives i la més propera a cada punt; lectures d'un dia
+  repository.ts          Taules `estacions_xema` i `lectures_xema` amb Kysely, i en memòria
+  cli.ts                 `npm run xema`: prova manual amb la clau, sense base de dades
+```
+
+El que es va mesurar de debò, per contrastar-ho amb la previsió d'Open-Meteo. L'ajust de l'índex amb aquestes dades és TG-184 (Sprint 2). Per què així: [ADR-0025](../../docs/decisions/0025-observacions-xema.md).
+
+- **Estacions** (`actualitzaEstacionsXema`, un cop al mes): desa les estacions operatives (`/estacions/metadades?estat=ope`), marca com a no operatives les que ja no ho són (sense esborrar-les ni perdre'n les lectures) i assigna a cada punt l'estació operativa més propera (`punts_observacio.estacio_xema`, KNN de PostGIS, només per distància).
+- **Lectures** (`ingestaLecturesXema`, un cop al dia, en UTC i no abans de les 03:00 UTC): les d'**ahir** (UTC) de les estacions assignades als punts. Una petició per variable per a totes les estacions (`/variables/mesurades/{codi}/{any}/{mes}/{dia}`): temperatura, humitat, precipitació, vent i irradiància solar. La XEMA no mesura els núvols; la irradiància en fa de testimoni de dia.
+- **Format:** una fila per estació i lectura semihorària (`LecturaXema` de `@talaia/shared`), amb les unitats d'Open-Meteo (el vent, de m/s a km/h). La XEMA etiqueta per davant: la de les 11:00Z cobreix de 11:00 a 11:30. `validada` diu si Meteocat ja ha validat tots els valors de la fila (estat «V»); a les d'ahir sol ser `false`.
+- **Qualitat:** les lectures invàlides (estat «N») no es desen, i els valors fora del rang físic (`RANGS`, els mateixos que els `check`, i un test ho vigila) es descarten un a un (`descartades` al resum). En tornar a baixar un dia, un valor que ara és invàlid es posa a `null`.
+- **Errors:** si falla una variable, es desen les altres i l'error queda al resum. Si fallen totes, llança un error. Amb la clau rebutjada (401, 403) o la quota exhaurida (429), desa el que ja ha baixat i llança de seguida. Tornar a baixar un dia no esborra els valors que la nova ingesta no porta. Les lectures es guarden 90 dies.
+- **Quota:** unes 190 consultes al mes (6 al dia i les metadades), sigui quin sigui el nombre de punts.
+
+```bash
+npm run xema -w services/worker -- CC 2026-10-18    # cal METEOCAT_API_KEY al .env de l'arrel
+```
 
 ## Càlcul astronòmic amb Astronomy Engine (TG-96)
 

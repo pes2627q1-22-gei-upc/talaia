@@ -12,7 +12,8 @@
     "typecheck": "tsc --noEmit",
     "test": "jest",
     "lint": "eslint .",
-    "index": "tsx --env-file-if-exists=../../.env src/index/cli.ts"
+    "index": "tsx --env-file-if-exists=../../.env src/index/cli.ts",
+    "xema": "tsx --env-file-if-exists=../../.env src/meteocat/cli.ts"
   },
   "jest": {
     "preset": "ts-jest",
