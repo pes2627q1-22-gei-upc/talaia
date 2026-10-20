@@ -58,7 +58,7 @@
       "poor": "Very little darkness · poor quality",
       "veryPoor": "Very bright sky · very poor quality"
     },
-    "sqmHint": "Reference darkness for this location. Moonlight and clouds can change the sky on a given night.",
+    "sqmHint": "Reference darkness for this location",
     "darknessHint": "Higher values mean less light pollution.",
     "darknessEstimated": "Estimated value; light pollution data is not available yet.",
     "clouds": "Clouds",

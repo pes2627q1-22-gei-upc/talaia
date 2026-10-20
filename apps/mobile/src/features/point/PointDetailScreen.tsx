@@ -227,17 +227,18 @@ export function PointDetailScreen({ pointId }: { pointId: string }) {
                   </View>
                 ) : null}
                 {vm.skyDarkness ? (
-                  <View style={styles.infoField}>
+                  <View style={styles.sqmField}>
                     <AppText variant="small" color="boira">
                       {vm.skyDarknessLabel}
                     </AppText>
-                    <AppText variant="body">{vm.skyDarkness}</AppText>
-                    <AppText variant="small" color="boira">
-                      {vm.skyDarknessQuality}
+                    <AppText variant="small" color="lluna">
+                      {vm.skyDarkness} · {vm.skyDarknessHint}
                     </AppText>
-                    <AppText variant="small" color="boira">
-                      {vm.skyDarknessHint}
-                    </AppText>
+                    <View style={styles.sqmQuality}>
+                      <AppText variant="chip" color="pedra">
+                        {vm.skyDarknessQuality}
+                      </AppText>
+                    </View>
                   </View>
                 ) : null}
               </View>
@@ -250,6 +251,7 @@ export function PointDetailScreen({ pointId }: { pointId: string }) {
           <Button
             variant="secondary"
             label={vm.directionsLabel}
+            haptic
             icon={<Image source={directionsIcon} style={styles.actionIcon} accessible={false} />}
             onPress={vm.openDirections}
             style={styles.actionButton}
@@ -257,6 +259,7 @@ export function PointDetailScreen({ pointId }: { pointId: string }) {
           <Button
             variant="primary"
             label={vm.createPlanLabel}
+            haptic
             icon={<Image source={planIcon} style={styles.actionIcon} accessible={false} />}
             onPress={vm.createPlan}
             style={styles.actionButton}
@@ -321,6 +324,19 @@ const styles = StyleSheet.create({
   factors: { gap: spacing.md },
   pointInfo: { gap: spacing.md },
   infoField: { gap: spacing.xs },
+  sqmField: {
+    gap: spacing.sm,
+    paddingTop: spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: colors.linia,
+  },
+  sqmQuality: {
+    alignSelf: 'flex-start',
+    backgroundColor: colors.vel,
+    borderRadius: radii.sm,
+    paddingHorizontal: spacing.ms,
+    paddingVertical: spacing.xs,
+  },
   factorRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   factorIcon: { width: sizes.icon, height: sizes.icon },
   factorContent: { flex: 1, gap: spacing.xs },

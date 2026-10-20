@@ -43,7 +43,7 @@ export const HourlyChart = memo(function HourlyChart({
             <PressableScale
               accessibilityLabel={item.accessibilityLabel}
               accessibilityState={{ selected: item.id === selectedHourId }}
-              haptic="selection"
+              haptic
               onPress={() =>
                 setSelectedHourId((selected) => (selected === item.id ? null : item.id))
               }

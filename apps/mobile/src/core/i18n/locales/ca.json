@@ -58,7 +58,7 @@
       "poor": "Molt poca foscor · qualitat deficient",
       "veryPoor": "Cel molt il·luminat · qualitat molt deficient"
     },
-    "sqmHint": "Foscor de referència del lloc. La Lluna i els núvols poden canviar el cel d'una nit concreta.",
+    "sqmHint": "Foscor de referència del lloc",
     "darknessHint": "Com més alt, menys contaminació lumínica.",
     "darknessEstimated": "Valor estimat; pendent de dades de contaminació lumínica.",
     "clouds": "Núvols",

@@ -45,7 +45,7 @@ it('mostra les dades i les hores amb etiquetes accessibles', async () => {
   expect(screen.getByText(point.accessibilitat!)).toBeOnTheScreen();
   expect(screen.getByText('Vistes obertes')).toBeOnTheScreen();
   expect(screen.getByText('Cap al sud i al sud-oest')).toBeOnTheScreen();
-  expect(screen.getByText('21,4 mag/arcsec²')).toBeOnTheScreen();
+  expect(screen.getByText('21,4 mag/arcsec² · Foscor de referència del lloc')).toBeOnTheScreen();
   expect(screen.getByText('Cel molt fosc · qualitat excel·lent')).toBeOnTheScreen();
   expect(screen.getByRole('header', { name: 'Informació del punt' })).toBeOnTheScreen();
   expect(screen.getByText('Sol')).toBeOnTheScreen();

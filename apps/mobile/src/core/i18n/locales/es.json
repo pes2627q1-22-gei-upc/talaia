@@ -58,7 +58,7 @@
       "poor": "Muy poca oscuridad · calidad deficiente",
       "veryPoor": "Cielo muy iluminado · calidad muy deficiente"
     },
-    "sqmHint": "Oscuridad de referencia del lugar. La Luna y las nubes pueden cambiar el cielo de una noche concreta.",
+    "sqmHint": "Oscuridad de referencia del lugar",
     "darknessHint": "Cuanto más alto, menos contaminación lumínica.",
     "darknessEstimated": "Valor estimado; pendiente de datos de contaminación lumínica.",
     "clouds": "Nubes",
