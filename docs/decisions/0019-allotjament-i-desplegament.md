@@ -11,6 +11,7 @@ La FIB ofereix a l'equip una VM de plantilla sense VPN. Només té **10 ports p�
 ## Decisió
 
 - **Allotjament (P16): la VM de la FIB.** Cost zero. Tota la configuració és al repo (`deploy/`) i les dades a Supabase, de manera que la VM es pot refer de zero amb [docs/desplegament.md](../desplegament.md).
+- **Sistema: Ubuntu 20.04.** La plantilla d'Ubuntu 24.04 ocupa 30 GB i supera la quota de disc de la VM (24 GB). A la 20.04 (focal, fora de suport des del maig de 2025) Docker hi funciona, però en queden congelades les últimes versions publicades per a focal: **Docker 28.1.1 i Compose 2.35.1**. L'script `get.docker.com` hi falla (intenta instal·lar `docker-model-plugin`, que no existeix per a focal): s'instal·la amb `apt` des del repositori de Docker ([docs/desplegament.md](../desplegament.md), secció 1).
 - **Nom públic (P17): un subdomini de DuckDNS** (`PUBLIC_HOST`, p. ex. `talaia.duckdns.org`) amb un registre A cap a la IP de `nattech.fib.upc.edu`. La URL de l'API és `https://<PUBLIC_HOST>:<40000+XXX·10>/api/v1`.
 - **Certificat: Let's Encrypt amb el repte DNS-01** (sense port 80 no hi ha repte HTTP-01). El contenidor `acme` (acme.sh) l'emet i el renova amb el token de DuckDNS, i Nginx el torna a llegir cada 6 hores.
 - **Nginx escolta HTTPS al 8080**, l'únic port publicat. L'API i el worker no tenen cap port fora de la xarxa de Docker. La resta de ports (8081–8089) no es publiquen fins que es facin servir.
@@ -33,4 +34,6 @@ La FIB ofereix a l'equip una VM de plantilla sense VPN. Només té **10 ports p�
 
 - La URL pública porta port. L'app i els equips Aprop i Mobilicat la llegeixen de configuració (`API_PUBLIC_URL`), no del codi.
 - Si la VM s'esborra, es refà amb la guia; el certificat es torna a emetre amb `deploy/scripts/emet-certificat.sh`.
+- La VM no rep actualitzacions de seguretat del sistema ni de Docker. N'hi ha prou per a l'assignatura. Les del sistema es poden recuperar amb l'Ubuntu Pro gratuït (`sudo pro attach`, ESM de la 20.04 fins al 2030); les de Docker, només passant a una plantilla suportada si la quota de disc ho permet.
+- La connexió a Supabase va amb `sslmode=no-verify`: és xifrada, però no comprova que l'altre extrem sigui Supabase. N'hi ha prou per a l'assignatura. Per verificar-lo, cal el certificat de Supabase (*Project Settings → Database → SSL*) dins del contenidor de l'API i `sslmode=verify-full&sslrootcert=<fitxer>` a `DATABASE_URL`.
 - El worker té imatge però no arrenca fins a TG-99 (P9): és al compose amb `profiles: [worker]`.
