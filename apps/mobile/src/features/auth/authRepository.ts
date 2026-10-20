@@ -9,6 +9,9 @@ import { getAuthClient } from '@/core/auth/supabase';
 
 export type AuthUser = { id: string; email?: string };
 
+/** Dades del perfil que només té l'app després d'iniciar sessió (el nom d'Apple). */
+export type ProfileHints = { nom?: string };
+
 /** Per què no s'ha pogut iniciar sessió. `cancelled` no es mostra: l'usuari ja ho sap. */
 export type SignInFailureReason =
   | 'cancelled'
@@ -39,7 +42,11 @@ const INVALID_EMAIL_CODES = new Set(['email_address_invalid', 'validation_failed
 /** Tradueix un error de Supabase (o de xarxa) al motiu que entén la vista. */
 export function toSignInFailure(error: unknown): SignInFailure {
   if (error instanceof SignInFailure) return error;
-  if (isAuthRetryableFetchError(error) || error instanceof TypeError) {
+  // `fetch` de React Native llança aquest TypeError sense xarxa; la resta són errors de codi.
+  if (
+    isAuthRetryableFetchError(error) ||
+    (error instanceof TypeError && error.message === 'Network request failed')
+  ) {
     return new SignInFailure('network', { cause: error });
   }
   if (isAuthError(error)) {
@@ -120,7 +127,7 @@ export const authRepository = {
     await guard(() => client.auth.exchangeCodeForSession(code));
   },
   /** Apple amb el full natiu d'iOS (ADR-0016): el token va directe a Supabase. */
-  async signInWithApple(): Promise<void> {
+  async signInWithApple(): Promise<ProfileHints> {
     const client = requireClient();
     // Apple rep el hash del nonce i Supabase el nonce: així el token no es pot reutilitzar.
     const nonce = Crypto.randomUUID();
@@ -143,12 +150,10 @@ export const authRepository = {
     const token = credential.identityToken;
     if (!token) throw new SignInFailure('unknown');
     await guard(() => client.auth.signInWithIdToken({ provider: 'apple', token, nonce }));
-    // Apple només dona el nom el primer cop; l'API el llegeix de `full_name` per al perfil.
+    // Apple només dona el nom el primer cop i no el posa al token: va al cos de POST /perfil.
     const { givenName, familyName } = credential.fullName ?? {};
-    const fullName = [givenName, familyName].filter(Boolean).join(' ');
-    if (fullName) {
-      await guard(() => client.auth.updateUser({ data: { full_name: fullName } }));
-    }
+    const nom = [givenName, familyName].filter(Boolean).join(' ');
+    return nom ? { nom } : {};
   },
   /** Envia un codi de 6 xifres (no un enllaç màgic: a Expo Go fallen). */
   async sendEmailCode(email: string): Promise<void> {

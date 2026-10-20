@@ -26,7 +26,6 @@ const auth = {
   signInWithOAuth: jest.fn(),
   exchangeCodeForSession: jest.fn(),
   signInWithIdToken: jest.fn(),
-  updateUser: jest.fn(),
   signInWithOtp: jest.fn(),
   verifyOtp: jest.fn(),
 };
@@ -41,7 +40,7 @@ beforeEach(() => {
     data: { provider: 'google', url: 'https://supabase.test/authorize' },
     error: null,
   });
-  for (const fn of [auth.exchangeCodeForSession, auth.signInWithIdToken, auth.updateUser]) {
+  for (const fn of [auth.exchangeCodeForSession, auth.signInWithIdToken]) {
     fn.mockResolvedValue(ok);
   }
   auth.signInWithOtp.mockResolvedValue(ok);
@@ -104,7 +103,7 @@ describe('Apple', () => {
       .mockResolvedValue(
         credential as unknown as AppleAuthentication.AppleAuthenticationCredential,
       );
-    await authRepository.signInWithApple();
+    expect(await authRepository.signInWithApple()).toEqual({});
     expect(AppleAuthentication.signInAsync).toHaveBeenCalledWith(
       expect.objectContaining({ nonce: 'hashed-nonce' }),
     );
@@ -113,16 +112,14 @@ describe('Apple', () => {
       token: 'id-token',
       nonce: 'raw-nonce',
     });
-    expect(auth.updateUser).not.toHaveBeenCalled();
   });
 
-  it('desa el nom que Apple només dona el primer cop', async () => {
+  it('torna el nom que Apple només dona el primer cop, per al perfil', async () => {
     jest.mocked(AppleAuthentication.signInAsync).mockResolvedValue({
       ...credential,
       fullName: { givenName: 'Martina', familyName: 'Maldonado' },
     } as unknown as AppleAuthentication.AppleAuthenticationCredential);
-    await authRepository.signInWithApple();
-    expect(auth.updateUser).toHaveBeenCalledWith({ data: { full_name: 'Martina Maldonado' } });
+    expect(await authRepository.signInWithApple()).toEqual({ nom: 'Martina Maldonado' });
   });
 
   it('cancel·lar el full d’Apple és una cancel·lació', async () => {
@@ -173,6 +170,7 @@ it.each([
   [new AuthApiError('rate', 429, 'over_email_send_rate_limit'), 'rateLimited'],
   [new AuthApiError('bad', 400, 'email_address_invalid'), 'invalidEmail'],
   [new AuthApiError('boom', 500, 'unexpected_failure'), 'unknown'],
+  [new TypeError("Cannot read properties of undefined (reading 'url')"), 'unknown'],
 ])('tradueix %p a %s', (error, expected) => {
   expect(toSignInFailure(error).reason).toBe(expected);
 });
