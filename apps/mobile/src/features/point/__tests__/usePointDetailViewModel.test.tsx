@@ -5,6 +5,7 @@ import i18n from '@/core/i18n';
 import { createQueryWrapper } from '@/test-utils/queryWrapper';
 
 import { fetchPointDetail, millisecondsUntilNextPointRefresh } from '../pointRepository';
+import { skyDarknessBand } from '../skyDarkness';
 import { usePointDetailViewModel } from '../usePointDetailViewModel';
 import { asPointResponse, hour, point } from '../__fixtures__/point';
 
@@ -54,6 +55,7 @@ it('ordena hores, respecta les franges del backend i converteix a l’hora de Ca
   ]);
   expect(result.current.accessibility).toBe(point.accessibilitat);
   expect(result.current.skyDarkness).toBe('21,4 mag/arcsec²');
+  expect(result.current.skyDarknessQuality).toBe('Cel molt fosc · qualitat excel·lent');
   expect(result.current.horizon).toBe('Cap al sud i al sud-oest');
 });
 
@@ -76,8 +78,21 @@ it('no inventa índex ni altitud quan falten dades', async () => {
   expect(result.current.horizon).toBeUndefined();
   expect(result.current.accessibility).toBeUndefined();
   expect(result.current.skyDarkness).toBeUndefined();
+  expect(result.current.skyDarknessQuality).toBeUndefined();
   expect(result.current.hours).toEqual([]);
   expect(result.current.bestWindow).toBeUndefined();
+});
+
+it.each([
+  [17.49, 'veryPoor'],
+  [17.5, 'poor'],
+  [18, 'low'],
+  [19, 'moderate'],
+  [20, 'good'],
+  [21, 'veryGood'],
+  [21.4, 'excellent'],
+])('classifica %s mag/arcsec² com %s', (sqm, band) => {
+  expect(skyDarknessBand(sqm)).toBe(band);
 });
 
 it('no proposa un millor moment si totes les hores tenen la franja tap', async () => {

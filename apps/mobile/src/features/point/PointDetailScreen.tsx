@@ -232,6 +232,12 @@ export function PointDetailScreen({ pointId }: { pointId: string }) {
                       {vm.skyDarknessLabel}
                     </AppText>
                     <AppText variant="body">{vm.skyDarkness}</AppText>
+                    <AppText variant="small" color="boira">
+                      {vm.skyDarknessQuality}
+                    </AppText>
+                    <AppText variant="small" color="boira">
+                      {vm.skyDarknessHint}
+                    </AppText>
                   </View>
                 ) : null}
               </View>

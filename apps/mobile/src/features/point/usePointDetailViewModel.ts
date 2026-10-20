@@ -7,6 +7,7 @@ import { ApiError } from '@/core/api/httpClient';
 import { nightStyle } from '@/features/map/style/nightStyle';
 
 import { usePointDetailQuery } from './pointRepository';
+import { skyDarknessBand } from './skyDarkness';
 
 export function usePointDetailViewModel(pointId: string) {
   const { t, i18n } = useTranslation();
@@ -192,6 +193,11 @@ export function usePointDetailViewModel(pointId: string) {
             value: point.sqm.toLocaleString(locale, { maximumFractionDigits: 2 }),
           }),
     skyDarknessLabel: t('point.sqmLabel'),
+    skyDarknessQuality:
+      point?.sqm == null || !Number.isFinite(point.sqm)
+        ? undefined
+        : t(`point.sqmQuality.${skyDarknessBand(point.sqm)}`),
+    skyDarknessHint: t('point.sqmHint'),
     factorRows,
     pointInfoLabel: t('point.info'),
     horizonLabel: t('point.openHorizon'),

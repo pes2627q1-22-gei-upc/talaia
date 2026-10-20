@@ -49,6 +49,16 @@
     "darkness": "Foscor del cel",
     "sqmLabel": "Foscor del cel (SQM)",
     "sqmValue": "{{value}} mag/arcsec²",
+    "sqmQuality": {
+      "excellent": "Cel molt fosc · qualitat excel·lent",
+      "veryGood": "Cel fosc · qualitat molt bona",
+      "good": "Bona foscor · qualitat bona",
+      "moderate": "Foscor moderada",
+      "low": "Poca foscor · qualitat baixa",
+      "poor": "Molt poca foscor · qualitat deficient",
+      "veryPoor": "Cel molt il·luminat · qualitat molt deficient"
+    },
+    "sqmHint": "Foscor de referència del lloc. La Lluna i els núvols poden canviar el cel d'una nit concreta.",
     "darknessHint": "Com més alt, menys contaminació lumínica.",
     "darknessEstimated": "Valor estimat; pendent de dades de contaminació lumínica.",
     "clouds": "Núvols",

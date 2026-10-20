@@ -49,6 +49,16 @@
     "darkness": "Sky darkness",
     "sqmLabel": "Sky darkness (SQM)",
     "sqmValue": "{{value}} mag/arcsec²",
+    "sqmQuality": {
+      "excellent": "Very dark sky · excellent quality",
+      "veryGood": "Dark sky · very good quality",
+      "good": "Good darkness · good quality",
+      "moderate": "Moderate darkness",
+      "low": "Little darkness · low quality",
+      "poor": "Very little darkness · poor quality",
+      "veryPoor": "Very bright sky · very poor quality"
+    },
+    "sqmHint": "Reference darkness for this location. Moonlight and clouds can change the sky on a given night.",
     "darknessHint": "Higher values mean less light pollution.",
     "darknessEstimated": "Estimated value; light pollution data is not available yet.",
     "clouds": "Clouds",
