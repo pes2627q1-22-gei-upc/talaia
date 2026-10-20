@@ -29,5 +29,6 @@ Format: **Context → Decisió → Conseqüències**. Estat: `Acceptada`, `Propo
 | [0021](0021-deploy-per-pull-des-de-la-vm.md) | Deploy de `stable` per pull: un cron de la VM cada 5 minuts, sense runner de GitHub | Acceptada |
 | [0022](0022-perfil-horitzo-icgc.md) | Perfil d'horitzó per punt: el model de 5 m de l'ICGC pel WCS, a tres resolucions, omple la columna `horitzo` de `punts_observacio` (360 alçades aparents) | Acceptada |
 | [0023](0023-validacio-jwt-jwks.md) | Validació del JWT a l'API amb el JWKS de Supabase i `jose`: 401 només si el token és dolent, 503 si Supabase no respon (P6) | Acceptada |
+| [0026](0026-contracte-esdeveniments-aprop.md) | Contracte del calendari amb Aprop: sis tipus, dies civils de Catalunya, ubicació general i accés amb API key o JWT (P14) | Acceptada |
 
 Decisions encara obertes: [pendents.md](pendents.md).

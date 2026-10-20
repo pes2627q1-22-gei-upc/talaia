@@ -41,21 +41,41 @@ const EsdevenimentSchema: z.ZodType<Esdeveniment> = z
   })
   .meta({ id: 'Esdeveniment' });
 
-const EsdevenimentsResponseSchema: z.ZodType<EsdevenimentsResponse> = z
+export const EsdevenimentsResponseSchema: z.ZodType<EsdevenimentsResponse> = z
   .object({ data: z.array(EsdevenimentSchema) })
   .meta({ id: 'EsdevenimentsResponse' });
 
-const EsdevenimentsQuerySchema = z.object({
-  des_de: z.iso.date().meta({ description: "Primer dia de l'interval, inclòs." }),
-  fins_a: z.iso.date().meta({ description: "Últim dia de l'interval, inclòs." }),
-  tipus: TipusFenomenSchema.optional().meta({ description: 'Filtre opcional per tipus.' }),
-});
+/** Dies civils de Catalunya; 366 dies inclosos com a màxim, sense paginació en aquest contracte. */
+export const EsdevenimentsQuerySchema = z
+  .object({
+    des_de: z.iso.date({ error: 'des_de ha de ser una data YYYY-MM-DD vàlida' }).meta({
+      description: 'Primer dia civil a Europe/Madrid, inclòs.',
+    }),
+    fins_a: z.iso.date({ error: 'fins_a ha de ser una data YYYY-MM-DD vàlida' }).meta({
+      description: 'Últim dia civil a Europe/Madrid, inclòs; màxim 366 dies de consulta.',
+    }),
+    tipus: TipusFenomenSchema.optional().meta({ description: 'Filtre opcional per tipus.' }),
+  })
+  .refine(({ des_de, fins_a }) => des_de <= fins_a, {
+    path: ['fins_a'],
+    error: 'fins_a ha de ser igual o posterior a des_de',
+  })
+  .refine(({ des_de, fins_a }) => Date.parse(fins_a) - Date.parse(des_de) <= 365 * 86_400_000, {
+    path: ['fins_a'],
+    error: "L'interval no pot superar 366 dies civils",
+  });
 
 registry.registerComponent('securitySchemes', 'ApiKeyAprop', {
   type: 'apiKey',
   in: 'header',
   name: 'X-API-Key',
   description: "Clau assignada a l'equip Aprop; no s'ha d'incloure en una aplicació client.",
+});
+registry.registerComponent('securitySchemes', 'BearerSupabase', {
+  type: 'http',
+  scheme: 'bearer',
+  bearerFormat: 'JWT',
+  description: "JWT d'accés de Supabase per a l'app de Talaia (ADR-0023).",
 });
 
 /**
@@ -65,12 +85,15 @@ registry.registerComponent('securitySchemes', 'ApiKeyAprop', {
 registry.registerPath({
   method: 'get',
   path: '/esdeveniments',
+  operationId: 'listEsdeveniments',
   tags: ['Esdeveniments'],
   summary: "Consulta els esdeveniments astronòmics d'un període",
   description:
-    "Retorna les ocurrències que intersecten l'interval demanat. La ubicació és un punt " +
-    "general recomanat per situar l'esdeveniment al mapa, no una garantia meteorològica.",
-  security: [{ ApiKeyAprop: [] }],
+    "Pendent d'implementació a TG-108. Les dates són dies civils de Catalunya " +
+    '(Europe/Madrid): [des_de 00:00, fins_a + 1 dia 00:00). Hi entra un esdeveniment si ' +
+    'inici < final i fi > començament. La ubicació és un punt general recomanat per situar ' +
+    "l'esdeveniment al mapa, no una garantia meteorològica.",
+  security: [{ ApiKeyAprop: [] }, { BearerSupabase: [] }],
   request: { query: EsdevenimentsQuerySchema },
   responses: {
     200: {
@@ -82,15 +105,11 @@ registry.registerPath({
       content: { 'application/json': { schema: ErrorSchema } },
     },
     401: {
-      description: "Falta la clau d'API.",
+      description: 'Credencial absent o invàlida (API key o JWT).',
       content: { 'application/json': { schema: ErrorSchema } },
     },
-    403: {
-      description: "La clau d'API no és vàlida.",
-      content: { 'application/json': { schema: ErrorSchema } },
-    },
-    429: {
-      description: 'Límit de peticions superat.',
+    503: {
+      description: 'Base de dades o validació JWT temporalment indisponible.',
       content: { 'application/json': { schema: ErrorSchema } },
     },
     500: {

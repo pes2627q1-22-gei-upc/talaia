@@ -265,6 +265,7 @@ describe('OpenAPI', () => {
     expect(res.body.components.schemas).toHaveProperty('Error');
     expect(res.body.components.schemas).toHaveProperty('Esdeveniment');
     expect(res.body.components.securitySchemes).toHaveProperty('ApiKeyAprop');
+    expect(res.body.components.securitySchemes).toHaveProperty('BearerSupabase');
 
     const tipus = res.body.paths['/esdeveniments'].get.parameters.find(
       (parameter: { name: string }) => parameter.name === 'tipus',
@@ -282,7 +283,11 @@ describe('OpenAPI', () => {
         (parameter: { name: string }) => parameter.name,
       ),
     ).toEqual(['des_de', 'fins_a', 'tipus']);
-    expect(res.body.paths['/esdeveniments'].get.security).toEqual([{ ApiKeyAprop: [] }]);
+    expect(res.body.paths['/esdeveniments'].get.operationId).toBe('listEsdeveniments');
+    expect(res.body.paths['/esdeveniments'].get.security).toEqual([
+      { ApiKeyAprop: [] },
+      { BearerSupabase: [] },
+    ]);
   });
 
   it('serveix la UI a /api/v1/docs/', async () => {

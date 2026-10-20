@@ -10,7 +10,7 @@ tasca **TG-109** (Victor, límit 14/10) cobreix dues integracions independents:
 
 ## Oferim a Aprop: esdeveniments astronòmics
 
-Història: **HU43** (E12). TG-109 defineix el contracte i TG-108 implementarà l'endpoint. La
+Història: **HU43** (E12). [ADR-0026](decisions/0026-contracte-esdeveniments-aprop.md) recull les decisions de TG-109 i TG-108 implementarà l'endpoint. La
 font executable del contracte és l'OpenAPI generat per `services/api`, disponible a
 `GET /api/v1/openapi.json` i a la interfície `/api/v1/docs`.
 
@@ -27,9 +27,16 @@ X-API-Key: <clau assignada a Aprop>
 | `fins_a` | Sí | Últim dia de l'interval, inclòs, en format `YYYY-MM-DD`. |
 | `tipus` | No | Categoria del calendari; valors enumerats a continuació. |
 
-Es retornen els esdeveniments que intersecten l'interval, ordenats per `inici`. No cal
-paginació per al volum previst del calendari. L'accés es protegeix amb una API key al header
-`X-API-Key`; la clau queda al backend d'Aprop i no en una aplicació client.
+Les dates són **dies civils de Catalunya (`Europe/Madrid`)**, no dies UTC. Es consulta des de
+`des_de` a les 00:00 fins a les 00:00 de l'endemà de `fins_a` (límit final exclòs). Un
+esdeveniment hi entra si `inici < final` i `fi > començament`; la resposta s'ordena per
+`inici`. El rang ha d'estar en ordre i no pot superar **366 dies civils inclosos**. No cal
+paginació per a aquest volum. Les hores dels esdeveniments retornats són instants ISO 8601
+en UTC; la conversió a hora local correspon al consumidor.
+
+Aprop s'autentica amb una API key al header `X-API-Key`, guardada al seu backend i mai a
+l'app mòbil. L'app de Talaia consulta la mateixa ruta amb `Authorization: Bearer <JWT>` de
+Supabase. És una alternativa, no calen les dues credencials alhora.
 
 `tipus` classifica les entrades per famílies estables; no identifica cada fenomen concret. El
 nom diferencia, per exemple, les Perseids de les Gemínids o la lluna plena de la lluna nova:
@@ -45,7 +52,8 @@ nom diferencia, per exemple, les Perseids de les Gemínids o la lluna plena de l
 
 Si Aprop omet el filtre `tipus`, rep totes les categories. No s'exposen sortides i postes del
 Sol ni crepuscles: són dades diàries per calcular la visibilitat, no entrades del calendari
-d'esdeveniments acordat.
+d'esdeveniments acordat. Afegir una categoria nova requereix acordar i versionar el contracte
+amb Aprop; no s'amplia l'enum públic en silenci.
 
 ### Resposta acordada
 
@@ -61,9 +69,9 @@ d'esdeveniments acordat.
       "maxim": "2027-08-02T10:07:00Z",
       "descripcio": "Eclipsi total globalment, visible de manera parcial des de Catalunya.",
       "ubicacio": {
-        "nom": "Montseny",
-        "latitud": 41.759,
-        "longitud": 2.394
+        "nom": "Centre d'Observació de l'Univers",
+        "latitud": 42.024603,
+        "longitud": 0.73684
       },
       "font": "NASA"
     }
@@ -74,8 +82,10 @@ d'esdeveniments acordat.
 Decisions incorporades arran de la resposta d'Aprop:
 
 - Cada esdeveniment conté una ubicació general recomanada (`nom`, `latitud`, `longitud`) perquè
-  el puguin representar al mapa. Aprop ha confirmat que una ubicació general els serveix; no
-  prometem que sigui l'únic lloc d'observació ni el millor segons els núvols en temps real.
+  el puguin representar al mapa. Al MVP s'obté del punt oficial amb slug
+  `centre-observacio-univers`; no es copien coordenades als esdeveniments. Aprop ha confirmat
+  que una ubicació general els serveix: no prometem que sigui l'únic lloc d'observació ni el
+  millor segons els núvols o la geometria de cada fenomen en temps real.
 - Els textos es retornen en català. Aprop va plantejar castellà i anglès, amb
   `?idioma=ca|es|en`, com una possibilitat opcional i disposa de traducció pròpia. No formen part
   de la primera versió del contracte; si s'afegeixen, caldrà versionar-ne la documentació.
@@ -84,10 +94,14 @@ Decisions incorporades arran de la resposta d'Aprop:
   que el període `inici`--`fi` ja permet saber si és futur, actiu o passat. Un fenomen
   astronòmic no es cancel·la; la meteorologia s'ha de tractar separadament.
 - `maxim` pot ser `null` quan la font no publica un instant de màxima activitat.
+- `font` és `IMO` o `NASA` per als calendaris importats; per a fases, conjuncions i
+  superllunes calculades és el valor de `metode_calcul` (p. ex. `Astronomy Engine 2.1.19`).
+- Sense credencial o amb una credencial invàlida, la resposta és 401. Un error temporal de
+  la base de dades o del JWKS de Supabase és 503; no es promet cap 429 sense un límit definit.
 
 La ubicació forma part del contracte públic, però no del dataset estàtic de TG-106: TG-108
-l'obtindrà del catàleg de punts oficials o d'una regla de recomanació acordada. El contracte no
-promet que sigui el millor punt segons la meteorologia en temps real.
+la llegirà del catàleg de punts oficials. Si el punt de referència no existeix o no és publicat,
+el servei ha de fallar explícitament en lloc de retornar una ubicació inventada o `null`.
 
 El contracte amb Aprop es pot integrar i revisar independentment del de Mobilicat: aquest darrer
 continua pendent de confirmació i no s'ha de presentar com a acordat en tancar aquesta PR.

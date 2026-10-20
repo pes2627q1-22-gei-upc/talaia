@@ -6,7 +6,7 @@ Llegenda: **Recomanació** = la proposta inicial del sprint master; no és defin
 
 ## Tècniques (Sprint 1, scaffolds)
 
-P1, P2, P3, P7 i P8 ja estan decidides: [ADR-0010](0010-eines-app.md). P4: [ADR-0011](0011-validacio-openapi-zod.md). P5: [ADR-0013](0013-acces-bd-kysely.md). P6: [ADR-0023](0023-validacio-jwt-jwks.md). P10: [ADR-0020](0020-foscor-sqm-geotiff.md). P14: contracte amb Aprop documentat a [`serveis-externs.md`](../serveis-externs.md). P22: [ADR-0014](0014-identificador-app-expo-go.md).
+P1, P2, P3, P7 i P8 ja estan decidides: [ADR-0010](0010-eines-app.md). P4: [ADR-0011](0011-validacio-openapi-zod.md). P5: [ADR-0013](0013-acces-bd-kysely.md). P6: [ADR-0023](0023-validacio-jwt-jwks.md). P10: [ADR-0020](0020-foscor-sqm-geotiff.md). P14: [ADR-0026](0026-contracte-esdeveniments-aprop.md). P22: [ADR-0014](0014-identificador-app-expo-go.md).
 
 | # | Decisió | Opcions | Recomanació | Quan / qui |
 |---|---|---|---|---|
