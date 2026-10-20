@@ -82,7 +82,9 @@ export function useEmailLoginViewModel() {
         router.replace('/');
       } else {
         setFailure(result.reason);
-        if (result.reason === 'invalidCode') setCodeValue('');
+        // Un codi ja gastat (també si ha fallat el perfil) no serveix: se'n pot demanar un altre.
+        if (result.reason === 'invalidCode' || result.reason === 'profile') setCodeValue('');
+        if (result.reason === 'profile') setResendIn(0);
       }
     });
 

@@ -66,6 +66,7 @@ A `apps/mobile/src/shared/ui/`. Cap pantalla torna a definir un botó, una targe
 | `IndexIndicator` | Xifra de l'índex amb el color de la franja; `md` hi afegeix la franja a sota, `lg` és només la xifra |
 | `Skeleton` | Esquelet de càrrega que batega en opacitat |
 | `StateMessage` | Estat buit o d'error, amb acció opcional |
+| `TextField` | Camp de text (TG-249): etiqueta `small` `boira`, fons `sheet`, vora `vora` (`far` amb el focus, `tap` amb error), radi de formulari i 54 d'alçada. L'error surt a sota com a alerta |
 | `Screen` | Esquelet de pantalla: fons, títol `display` i subtítol; el primer cop que es munta, entra amb una fosa i 6 pt |
 | `SegmentedControl` | Control segmentat (TG-101): la peça triada (`crep`) llisca darrere el text sense rebot; cada opció és una pestanya accessible. `onReselect` avisa si es torna a tocar la triada |
 | `MonthCalendar` | Calendari mensual a l'estil de l'inline d'iOS (TG-101): fletxes `far`, avui en `far`, el dia triat dins un cercle `far` que apareix amb una molla i els dies fora de rang apagats. Es canvia de mes lliscant o amb les fletxes; la setmana comença en dilluns (ca, es) o en diumenge (en) |

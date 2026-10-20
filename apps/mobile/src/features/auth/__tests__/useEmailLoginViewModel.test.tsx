@@ -89,6 +89,15 @@ describe('useEmailLoginViewModel', () => {
     expect(replace).not.toHaveBeenCalled();
   });
 
+  it('si falla el perfil, el codi ja gastat s’esborra i se’n pot demanar un altre', async () => {
+    jest.mocked(signInAndEnsureProfile).mockResolvedValue({ ok: false, reason: 'profile' });
+    const { result } = await atCodeStep();
+    expect(result.current.canResend).toBe(false);
+    await act(async () => result.current.setCode('123456'));
+    expect(result.current.code).toBe('');
+    expect(result.current.canResend).toBe(true);
+  });
+
   it('es pot tornar a enviar el codi quan passa el minut', async () => {
     jest.useFakeTimers();
     const { result } = await atCodeStep();

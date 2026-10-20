@@ -74,11 +74,15 @@ posis la clau `service_role`.
 ## Inici de sessió (TG-249)
 
 Sense sessió no s'entra a l'app: `(tabs)/_layout.tsx` redirigeix a `/benvinguda`
-(`useSessionGate`), i en tancar la sessió s'hi torna. Sense les variables de
-Supabase la porta queda oberta, per poder provar l'app en local sense compte.
+(`useSessionGate`), i en tancar la sessió s'hi torna. Si la sessió hi és però no
+s'ha pogut recuperar (sense cobertura i amb el token caducat), no s'envia a la
+benvinguda: `RestoreErrorScreen` deixa tornar-ho a provar, i quan torna la xarxa el
+SDK la renova sol. Sense les variables de Supabase la porta queda oberta, per poder
+provar l'app en local sense compte.
 
 Tots els mètodes són a `features/auth/authRepository.ts`, amb el client únic de
-`core/auth/supabase.ts` (flux PKCE). `signInAndEnsureProfile` (`signIn.ts`) hi
+`core/auth/supabase.ts` (flux PKCE amb S256: `core/auth/webCrypto.ts` hi posa el
+`crypto` d'`expo-crypto`, que React Native no porta). `signInAndEnsureProfile` (`signIn.ts`) hi
 afegeix `POST /api/v1/perfil` (TG-84) després de cada login; si el perfil falla,
 tanca la sessió i la vista ho diu, perquè no quedi cap compte a mitges.
 
@@ -88,8 +92,8 @@ tanca la sessió i la vista ho diu, perquè no quedi cap compte a mitges.
   A Android l'enllaç també arriba a Expo Router: `app/+native-intent.tsx` el
   deixa a la benvinguda.
 - **Apple (només iOS, ADR-0016):** `expo-apple-authentication` amb un nonce (Apple
-  en rep el hash) i `signInWithIdToken`. Apple només dona el nom el primer cop: es
-  desa a `full_name`, d'on el llegeix el perfil. Botó oficial d'Apple.
+  en rep el hash) i `signInWithIdToken`. Apple només dona el nom el primer cop i no
+  el posa al token: va al cos de `POST /perfil` (`{ nom }`). Botó oficial d'Apple.
 - **Correu:** `/benvinguda-correu`, codi de 6 xifres (`signInWithOtp` + `verifyOtp`),
   no enllaç màgic. Les plantilles de correu han de portar `{{ .Token }}`: en local
   ja ho fan (`supabase/templates/codi-acces.html`); al projecte del núvol s'han de
@@ -98,6 +102,15 @@ tanca la sessió i la vista ho diu, perquè no quedi cap compte a mitges.
   adreces de l'equip.
 - **Errors:** `SignInFailure.reason` (`network`, `invalidCode`, `rateLimited`…),
   traduïts a `auth.errors.*`. Cancel·lar no mostra cap missatge.
+
+### Abans de publicar l'app
+
+- Treure `host.exp.Exponent` dels *Client IDs* d'Apple a Supabase: amb ell, qualsevol
+  projecte obert amb Expo Go pot obtenir un token d'Apple vàlid per a Talaia.
+- Treure `exp://**` de les adreces de redirecció (`supabase/config.toml` i el núvol).
+- Els comptes d'Apple creats des d'Expo Go no són els de l'app real (`cat.talaia.app`):
+  els de proves no es poden reaprofitar.
+- SMTP propi per al correu (P21).
 
 ### Contracte amb les tasques que consumeixen la sessió
 

@@ -37,7 +37,7 @@ describe('useWelcomeViewModel', () => {
     await i18n.changeLanguage('en');
     const { result } = await renderHook(() => useWelcomeViewModel());
     expect(result.current.tagline).toBe('Where and when to look at the sky.');
-    expect(result.current.appleLabel).toBe('Continue with Apple');
+    expect(result.current.googleLabel).toBe('Continue with Google');
   });
 
   it('ofereix Apple a iOS i no a Android (ADR-0016)', async () => {
