@@ -4,6 +4,13 @@ import { z } from 'zod';
 const buitComAbsent = (valor: unknown) => (valor === '' ? undefined : valor);
 
 const EnvSchema = z.object({
+  // Opcional per a les CLI de prova; el procés horari (main.ts) no arrenca sense ella.
+  DATABASE_URL: z.preprocess(
+    buitComAbsent,
+    z
+      .url({ protocol: /^postgres(ql)?$/, error: 'DATABASE_URL ha de ser una URL postgresql://' })
+      .optional(),
+  ),
   // Clau de l'API de Meteocat (TG-115). Opcional: sense ella no s'ingesten les observacions de la XEMA.
   METEOCAT_API_KEY: z.preprocess(buitComAbsent, z.string().optional()),
   OPEN_METEO_BASE_URL: z.preprocess(

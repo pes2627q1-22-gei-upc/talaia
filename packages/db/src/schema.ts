@@ -9,6 +9,8 @@ export type Generated<T> = T extends ColumnType<infer S, infer I, infer U>
   ? ColumnType<S, I | undefined, U>
   : ColumnType<T, T | undefined, T>;
 
+export type Int8 = ColumnType<string, bigint | number | string, bigint | number | string>;
+
 export type Json = JsonValue;
 
 export type JsonArray = JsonValue[];
@@ -52,6 +54,16 @@ export interface EstacionsXema {
   nom: string;
   operativa: Generated<boolean>;
   ubicacio: string;
+}
+
+export interface ExecucionsWorker {
+  acabadaEl: Generated<Timestamp>;
+  error: string | null;
+  estat: string;
+  hores: Generated<number>;
+  id: Generated<Int8>;
+  iniciadaEl: Timestamp;
+  punts: Generated<number>;
 }
 
 export interface FenomensAstronomics {
@@ -133,6 +145,7 @@ export interface TipusFenomen {
 export interface DB {
   esdevenimentsAstronomics: EsdevenimentsAstronomics;
   estacionsXema: EstacionsXema;
+  execucionsWorker: ExecucionsWorker;
   fenomensAstronomics: FenomensAstronomics;
   fontsAstronomiques: FontsAstronomiques;
   indexVisibilitat: IndexVisibilitat;
