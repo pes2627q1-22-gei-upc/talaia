@@ -59,17 +59,20 @@ docker --version && docker compose version
 
 Per a focal, les últimes versions publicades són **Docker 28.1.1 i Compose 2.35.1**, i ja no n'hi haurà més. Compose 2.35 admet tot el que fa servir `deploy/compose.yaml` (`--wait`, `profiles`, `${VAR:?}`). En una plantilla suportada (22.04, 24.04) n'hi ha prou amb `curl -fsSL https://get.docker.com | sudo sh`.
 
+Les actualitzacions de seguretat del sistema de la 20.04 es poden recuperar amb l'Ubuntu Pro gratuït (`sudo pro attach <token>`, amb un compte d'Ubuntu One): ESM fins al 2030. Docker no hi entra: continua congelat.
+
 ### 2. DuckDNS
 
 1. Entra a [duckdns.org](https://www.duckdns.org) amb el compte de l'equip (`talaia.pes@gmail.com`, P20) i crea el subdomini (p. ex. `talaia`).
 2. Posa-hi com a IP la de `nattech.fib.upc.edu` (`dig +short nattech.fib.upc.edu`).
 3. Copia el token del compte: va a `DUCKDNS_TOKEN`.
 
-### 3. Fitxer d'entorn
+### 3. Repositori i fitxer d'entorn
 
 ```bash
+cd ~ && git clone https://github.com/pes2627q1-22-gei-upc/talaia.git && cd talaia && git switch stable   # o snapshot, mentre stable no tingui deploy/
 sudo mkdir -p /opt/talaia && sudo chown "$USER": /opt/talaia && sudo chmod 700 /opt/talaia
-(umask 077 && cp ~/talaia/.env.example /opt/talaia/.env)   # després de clonar el repo (secció 4)
+(umask 077 && cp ~/talaia/.env.example /opt/talaia/.env)
 ```
 
 Omple com a mínim `PUBLIC_HOST`, `PUBLIC_PORT` (`40000+XXX·10`), `ACME_EMAIL`, `DUCKDNS_TOKEN`, `DATABASE_URL` i `API_PUBLIC_URL`. Els valors reals són al gestor de contrasenyes de l'equip (P20), mai al repo ni al xat.
@@ -80,13 +83,13 @@ Quatre condicions per a `DATABASE_URL`. Si no es compleixen, l'API arrenca però
 
 - Fes servir la cadena del **Session pooler** (Supabase → **Connect**), amb l'usuari `postgres.<ref>`. El host directe `db.<ref>.supabase.co` només té IPv6 i la VM no hi arriba.
 - La contrasenya és la **de la base de dades** (Supabase → **Project Settings → Database**), no la del compte de Supabase ni la de cap altre servei.
-- Ha d'anar **percent-encoded**: `/` → `%2F`, `#` → `%23`, `?` → `%3F`, `@` → `%40`, `%` → `%25`. Sense codificar, un d'aquests caràcters talla la URL i el client pren l'usuari per host. Un `$` s'escriu `$$`, perquè Compose l'expandeix al `--env-file`.
+- Ha d'anar **percent-encoded**: `/` → `%2F`, `#` → `%23`, `?` → `%3F`, `@` → `%40`, `%` → `%25`. Sense codificar, un d'aquests caràcters talla la URL i el client pren l'usuari per host. Compose expandeix els `$` del `--env-file`: escriu-los `$$`, o posa tot el valor entre cometes simples (`DATABASE_URL='postgresql://…'`), on Compose no expandeix res.
 - Acaba en `…/postgres?sslmode=no-verify`, **sense barra abans del `?`** (`/postgres/?` busca una base de dades amb un nom que no existeix).
 
 ### 4. Primera arrencada i certificat
 
 ```bash
-cd ~ && git clone https://github.com/pes2627q1-22-gei-upc/talaia.git && cd talaia && git switch stable   # o snapshot, mentre stable no tingui deploy/
+cd ~/talaia
 docker compose -f deploy/compose.yaml --env-file /opt/talaia/.env up -d --build --wait
 deploy/scripts/emet-certificat.sh /opt/talaia/.env
 ```

@@ -34,5 +34,6 @@ La FIB ofereix a l'equip una VM de plantilla sense VPN. Només té **10 ports p�
 
 - La URL pública porta port. L'app i els equips Aprop i Mobilicat la llegeixen de configuració (`API_PUBLIC_URL`), no del codi.
 - Si la VM s'esborra, es refà amb la guia; el certificat es torna a emetre amb `deploy/scripts/emet-certificat.sh`.
-- La VM no rep actualitzacions de seguretat del sistema ni de Docker. N'hi ha prou per a l'assignatura; si la quota de disc ho permet, cal passar a una plantilla suportada i reinstal·lar seguint la guia.
+- La VM no rep actualitzacions de seguretat del sistema ni de Docker. N'hi ha prou per a l'assignatura. Les del sistema es poden recuperar amb l'Ubuntu Pro gratuït (`sudo pro attach`, ESM de la 20.04 fins al 2030); les de Docker, només passant a una plantilla suportada si la quota de disc ho permet.
+- La connexió a Supabase va amb `sslmode=no-verify`: és xifrada, però no comprova que l'altre extrem sigui Supabase. N'hi ha prou per a l'assignatura. Per verificar-lo, cal el certificat de Supabase (*Project Settings → Database → SSL*) dins del contenidor de l'API i `sslmode=verify-full&sslrootcert=<fitxer>` a `DATABASE_URL`.
 - El worker té imatge però no arrenca fins a TG-99 (P9): és al compose amb `profiles: [worker]`.
