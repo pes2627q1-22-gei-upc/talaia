@@ -1,3 +1,4 @@
+import { router } from 'expo-router';
 import { fireEvent, render, screen } from '@testing-library/react-native';
 import { View } from 'react-native';
 
@@ -7,6 +8,8 @@ import { MapScreen } from '../MapScreen';
 import type { MapPoints } from '../pointMarkers';
 import { nightStyle } from '../style/nightStyle';
 import { camera } from '../useMapViewModel';
+
+jest.mock('expo-router', () => ({ router: { push: jest.fn() } }));
 
 jest.mock('../useDeviceHeading', () => ({
   useDeviceHeading: () => ({ heading: null, active: true }),
@@ -43,6 +46,7 @@ describe('MapScreen', () => {
     await i18n.changeLanguage('ca');
     mockNightMap.mockClear();
     mockRefetch.mockClear();
+    jest.mocked(router.push).mockClear();
     mockQuery = {
       data: undefined,
       isPending: true,
@@ -63,6 +67,18 @@ describe('MapScreen', () => {
         points: { type: 'FeatureCollection', features: [] },
       }),
     );
+  });
+
+  it('obre la fitxa amb l’ID del marcador seleccionat', async () => {
+    await render(<MapScreen />);
+    const props = mockNightMap.mock.calls.at(-1)![0] as {
+      onPointPress: (id: string) => Promise<void>;
+    };
+    await props.onPointPress('punt-real');
+    expect(router.push).toHaveBeenCalledWith({
+      pathname: '/punt/[id]',
+      params: { id: 'punt-real' },
+    });
   });
 
   it('mostra que està carregant els punts', async () => {

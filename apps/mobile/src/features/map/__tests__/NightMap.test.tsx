@@ -13,6 +13,7 @@ jest.mock('maplibre-gl', () => ({
 }));
 jest.mock('../pointMarkers', () => ({
   bindClusterInteraction: jest.fn(),
+  MARKERS_LAYER: 'talaia-point-markers',
   syncMapPoints: jest.fn(),
 }));
 
@@ -44,12 +45,13 @@ const props: ComponentProps<typeof NightMap> = {
     jus: '#ff0',
     tap: '#f00',
   },
+  onPointPress: jest.fn(),
 };
 
 let root: Root;
 let host: HTMLDivElement;
 let load: () => void;
-let map: { on: jest.Mock; remove: jest.Mock };
+let map: { on: jest.Mock; off: jest.Mock; getCanvas: jest.Mock; remove: jest.Mock };
 let unbind: jest.Mock;
 let markers: {
   element: HTMLElement;
@@ -72,6 +74,8 @@ beforeEach(() => {
     on: jest.fn((event, callback) => {
       if (event === 'load') load = callback;
     }),
+    off: jest.fn(),
+    getCanvas: jest.fn(() => ({ style: {} })),
     remove: jest.fn(),
   };
   jest.mocked(maplibregl.Map).mockImplementation(() => map as unknown as maplibregl.Map);
@@ -114,6 +118,11 @@ it('espera l’estil, utilitza les últimes dades i conserva el mapa en actualit
   await act(async () => root.render(<NightMap {...props} points={points} />));
   await act(async () => load());
   expect(syncMapPoints).toHaveBeenLastCalledWith(map, points, props.markerPalette);
+  const pointClick = map.on.mock.calls.find(
+    ([event, layer]) => event === 'click' && layer === 'talaia-point-markers',
+  )?.[2];
+  pointClick?.({ features: [{ properties: { id: 'test' } }] });
+  expect(props.onPointPress).toHaveBeenCalledWith('test');
   await act(async () => root.render(<NightMap {...props} />));
   expect(syncMapPoints).toHaveBeenLastCalledWith(map, props.points, props.markerPalette);
   expect(maplibregl.Map).toHaveBeenCalledTimes(1);

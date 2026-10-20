@@ -41,6 +41,7 @@ function fakeRepository({ punt = PUNT, horesCalculades = 60, error }: FakeOption
   const repository: PuntsRepository & { rangs: Array<[Date, Date]> } = {
     rangs: [],
     listPublished: async () => [],
+    indexVersion: async () => null,
     async findPublished(id) {
       if (error) throw error;
       return id === punt.id ? punt : undefined;
