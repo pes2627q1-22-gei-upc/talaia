@@ -244,6 +244,16 @@ otp_expiry = 3600
 # admin_email = "admin@email.com"
 # sender_name = "Admin"
 
+# L'app entra amb un codi de 6 xifres, no amb un enllaç (TG-249): les dues plantilles porten
+# {{ .Token }}. Al projecte del núvol s'han de posar igual a Authentication → Email Templates.
+[auth.email.template.magic_link]
+subject = "El teu codi de Talaia"
+content_path = "./supabase/templates/codi-acces.html"
+
+[auth.email.template.confirmation]
+subject = "El teu codi de Talaia"
+content_path = "./supabase/templates/codi-acces.html"
+
 # Uncomment to customize email template
 # [auth.email.template.invite]
 # subject = "You have been invited"

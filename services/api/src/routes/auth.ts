@@ -14,6 +14,14 @@ export type AuthRouterOptions = {
   jwks?: JwksSource;
 };
 
+/**
+ * Dades que només té l'app. Apple només dona el nom el primer cop i no el posa al token: l'app
+ * l'envia aquí (TG-249). Només s'aplica en crear el perfil.
+ */
+const ProfileEnsureBodySchema = z
+  .object({ nom: z.string().trim().min(1).max(100).optional() })
+  .meta({ id: 'ProfileEnsureBody' });
+
 const ProfileEnsureResponseSchema = z
   .object({
     created: z.boolean(),
@@ -34,6 +42,12 @@ registry.registerPath({
   path: '/perfil',
   tags: ['Auth'],
   summary: 'Assegura que l’usuari autenticat té un perfil a la base de dades',
+  request: {
+    body: {
+      required: false,
+      content: { 'application/json': { schema: ProfileEnsureBodySchema } },
+    },
+  },
   responses: {
     200: {
       description: 'El perfil ja existia',
@@ -73,7 +87,9 @@ export function createAuthRouter({ supabaseUrl, profileStore, jwks }: AuthRouter
     }
 
     try {
-      const result = await profileStore.ensureProfile(authReq.user);
+      // Sense cos (o sense Content-Type), Express deixa `req.body` buit.
+      const { nom } = ProfileEnsureBodySchema.parse(req.body ?? {});
+      const result = await profileStore.ensureProfile(authReq.user, { nom });
       res.status(result.created ? 201 : 200).json({
         created: result.created,
         profile: {

@@ -131,6 +131,22 @@ describe('JWT auth i perfil en el primer accés', () => {
     expect(res.body.created).toBe(false);
   });
 
+  it("passa al perfil el nom que envia l'app (Apple no el posa al token)", async () => {
+    const token = await signToken();
+    const res = await postPerfil(jwtApp, token).send({ nom: '  Martina Maldonado ' });
+    expect(res.status).toBeLessThan(300);
+    expect(profileStore.ensureProfile).toHaveBeenLastCalledWith(expect.anything(), {
+      nom: 'Martina Maldonado',
+    });
+  });
+
+  it('respon 400 si el nom no és vàlid', async () => {
+    const token = await signToken();
+    const res = await postPerfil(jwtApp, token).send({ nom: '' });
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe('validation_error');
+  });
+
   it.each<[string, () => Promise<string>]>([
     ['mal format', async () => 'invalid.token'],
     ['caducat', () => signToken({ exp: Math.floor(Date.now() / 1000) - 60 })],

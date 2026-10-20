@@ -49,6 +49,16 @@ function RootStack() {
         name="benvinguda"
         options={{ presentation: 'fullScreenModal', animation: 'fade' }}
       />
+      <Stack.Screen
+        name="benvinguda-correu"
+        options={{
+          headerShown: true,
+          title: '',
+          headerBackTitle: t('emailLogin.back'),
+          headerTransparent: true,
+          headerTintColor: colors.lluna,
+        }}
+      />
     </Stack>
   );
 }
