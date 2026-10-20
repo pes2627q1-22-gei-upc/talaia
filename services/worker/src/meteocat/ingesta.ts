@@ -124,12 +124,14 @@ export async function ingestaLecturesXema(
     if (anulats.length) await repository.anulaValors(anulats);
   };
 
+  let demanades = 0;
   for (const variable of variables) {
     if (senyal?.aborted) {
       errors.push(`${variable}: aturat abans de demanar-la`);
       continue;
     }
     let lectures;
+    demanades += 1;
     try {
       lectures = await client.lectures(variable, dia);
     } catch (error) {
@@ -160,7 +162,10 @@ export async function ingestaLecturesXema(
     await desa();
     throw errorDeCompte;
   }
-  if (errors.length === variables.length) {
+  // Només és una fallada de Meteocat si han fallat totes les que s'han demanat; si el procés
+  // s'ha aturat abans de demanar-ne cap, es torna el resum amb els motius.
+  const fallades = errors.length - (variables.length - demanades);
+  if (demanades > 0 && fallades === demanades) {
     throw new Error(`No s'ha pogut baixar cap variable de la XEMA (${dia}): ${errors.join('; ')}`);
   }
 
