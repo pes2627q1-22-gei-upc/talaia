@@ -20,6 +20,7 @@ export const HourlyChart = memo(function HourlyChart({
   noHours,
 }: Props) {
   const [selectedHourId, setSelectedHourId] = useState<string | null>(null);
+  const hasBestWindow = hours.some((hour) => hour.isBest);
 
   return (
     <View style={styles.section}>
@@ -42,16 +43,17 @@ export const HourlyChart = memo(function HourlyChart({
             <PressableScale
               accessibilityLabel={item.accessibilityLabel}
               accessibilityState={{ selected: item.id === selectedHourId }}
-              haptic="selection"
+              haptic
               onPress={() =>
                 setSelectedHourId((selected) => (selected === item.id ? null : item.id))
               }
               style={styles.hour}
             >
               <View
+                testID={`hour-bar-${item.id}`}
                 style={[
                   styles.barTrack,
-                  !item.isBest && item.id !== selectedHourId && styles.barMuted,
+                  hasBestWindow && !item.isBest && item.id !== selectedHourId && styles.barMuted,
                   item.id === selectedHourId && styles.barTrackSelected,
                 ]}
               >
