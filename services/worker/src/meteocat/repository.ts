@@ -3,9 +3,30 @@ import type { LecturaXema } from '@talaia/shared';
 import { sql, type Kysely } from 'kysely';
 
 import type { XemaRepository } from './ingesta';
+import type { EstacioXema } from './xema';
 
 /** Files per `insert`: lluny del límit de 65.535 paràmetres de Postgres (9 columnes per fila). */
 const FILES_PER_INSERT = 1000;
+
+const COLUMNES = [
+  'temperatura',
+  'humitat',
+  'precipitacio',
+  'vent_velocitat',
+  'vent_direccio',
+  'irradiancia',
+] as const;
+
+/**
+ * Una fila és validada si tots els valors que porta ho són. En una ingesta parcial es conserven
+ * valors antics (`coalesce`): si se'n conserva algun, també cal que l'antiga fos validada.
+ */
+const VALIDADA = sql<boolean>`excluded.validada and (lectures_xema.validada or not (${sql.join(
+  COLUMNES.map(
+    (c) => sql`(excluded.${sql.ref(c)} is null and lectures_xema.${sql.ref(c)} is not null)`,
+  ),
+  sql` or `,
+)}))`;
 
 /** Les taules de la XEMA (TG-115) amb Kysely (ADR-0013). */
 export function createKyselyXemaRepository(db: Kysely<DB>): XemaRepository {
@@ -21,6 +42,7 @@ export function createKyselyXemaRepository(db: Kysely<DB>): XemaRepository {
               nom: e.nom,
               ubicacio: puntDesDeLonLat(e.lon, e.lat),
               altitud: e.altitud,
+              operativa: true,
             })),
           )
           .onConflict((oc) =>
@@ -28,13 +50,16 @@ export function createKyselyXemaRepository(db: Kysely<DB>): XemaRepository {
               nom: eb.ref('excluded.nom'),
               ubicacio: eb.ref('excluded.ubicacio'),
               altitud: eb.ref('excluded.altitud'),
+              operativa: true,
               actualitzadaEl: new Date(),
             })),
           )
           .execute();
-        // Una estació que ja no és operativa no ha de quedar com a la més propera de cap punt.
+        // No s'esborra: n'hi ha prou d'un dia de baixa temporal per perdre l'historial (TG-184).
         await trx
-          .deleteFrom('estacionsXema')
+          .updateTable('estacionsXema')
+          .set({ operativa: false, actualitzadaEl: new Date() })
+          .where('operativa', '=', true)
           .where(
             'codi',
             'not in',
@@ -45,16 +70,18 @@ export function createKyselyXemaRepository(db: Kysely<DB>): XemaRepository {
     },
 
     async assignaEstacionsProperes() {
-      // `<->` entre geographies ordena per distància amb l'índex GiST (KNN de PostGIS).
+      // `<->` entre geographies ordena per distància amb l'índex GiST (KNN de PostGIS). Només es
+      // toquen els punts que canvien, perquè el trigger no els renovi `data_actualitzacio`.
+      const mesPropera = sql<string | null>`(
+        select e.codi from estacions_xema e
+        where e.operativa
+        order by e.ubicacio <-> punts_observacio.ubicacio
+        limit 1
+      )`;
       await db
         .updateTable('puntsObservacio')
-        .set((eb) => ({
-          estacioXema: eb
-            .selectFrom('estacionsXema as e')
-            .select('e.codi')
-            .orderBy(sql`e.ubicacio <-> punts_observacio.ubicacio`)
-            .limit(1),
-        }))
+        .set({ estacioXema: mesPropera })
+        .where(sql<boolean>`estacio_xema is distinct from ${mesPropera}`)
         .execute();
       const { n } = await db
         .selectFrom('puntsObservacio')
@@ -87,7 +114,7 @@ export function createKyselyXemaRepository(db: Kysely<DB>): XemaRepository {
               ventVelocitat: sql`coalesce(excluded.vent_velocitat, lectures_xema.vent_velocitat)`,
               ventDireccio: sql`coalesce(excluded.vent_direccio, lectures_xema.vent_direccio)`,
               irradiancia: sql`coalesce(excluded.irradiancia, lectures_xema.irradiancia)`,
-              validada: sql`excluded.validada`,
+              validada: VALIDADA,
             }),
           )
           .execute();
@@ -112,20 +139,40 @@ const fila = (l: LecturaXema) => ({
   validada: l.validada,
 });
 
-/** En memòria, per als tests i la CLI. */
-export function createInMemoryXemaRepository(estacionsDelsPunts: string[] = []) {
-  const estacions = new Map<string, unknown>();
+type PuntAmbCoordenades = { id: string; lat: number; lon: number };
+
+/**
+ * En memòria, per als tests i la CLI. Amb `punts`, `assignaEstacionsProperes` tria l'estació
+ * operativa més propera de debò; amb `estacions`, les estacions dels punts són aquestes.
+ */
+export function createInMemoryXemaRepository({
+  punts = [],
+  estacions: estacionsFixes,
+}: { punts?: PuntAmbCoordenades[]; estacions?: string[] } = {}) {
+  const estacions = new Map<string, EstacioXema & { operativa: boolean }>();
+  const assignades = new Map<string, string>();
   const lectures = new Map<string, LecturaXema>();
-  const repository: XemaRepository & { lectures(): LecturaXema[] } = {
+
+  const repository: XemaRepository & {
+    lectures(): LecturaXema[];
+    estacions(): Array<EstacioXema & { operativa: boolean }>;
+    estacioDe(puntId: string): string | undefined;
+  } = {
     async desaEstacions(noves) {
-      estacions.clear();
-      for (const e of noves) estacions.set(e.codi, e);
+      for (const e of estacions.values()) e.operativa = false;
+      for (const e of noves) estacions.set(e.codi, { ...e, operativa: true });
     },
     async assignaEstacionsProperes() {
-      return estacionsDelsPunts.length;
+      const operatives = [...estacions.values()].filter((e) => e.operativa);
+      for (const p of punts) {
+        const [mesPropera] = [...operatives].sort((a, b) => distancia(p, a) - distancia(p, b));
+        if (mesPropera) assignades.set(p.id, mesPropera.codi);
+        else assignades.delete(p.id);
+      }
+      return assignades.size;
     },
     async estacionsDelsPunts() {
-      return estacionsDelsPunts;
+      return estacionsFixes ?? [...new Set(assignades.values())];
     },
     async desaLectures(noves) {
       for (const l of noves) {
@@ -139,19 +186,34 @@ export function createInMemoryXemaRepository(estacionsDelsPunts: string[] = []) 
         if (Date.parse(l.data) < abans.getTime()) lectures.delete(clau);
     },
     lectures: () => [...lectures.values()],
+    estacions: () => [...estacions.values()],
+    estacioDe: (puntId) => assignades.get(puntId),
   };
   return repository;
 }
 
-/** El mateix que el `coalesce` de l'upsert: els valors nous, i els antics on el nou és `null`. */
+/** Prou per ordenar estacions a Catalunya: distància equirectangular en graus. */
+function distancia(a: { lat: number; lon: number }, b: { lat: number; lon: number }) {
+  const dx = (a.lon - b.lon) * Math.cos(((a.lat + b.lat) / 2) * (Math.PI / 180));
+  return Math.hypot(dx, a.lat - b.lat);
+}
+
+/** El mateix que l'upsert: els valors nous, els antics on el nou és `null`, i `validada` igual. */
 function fusiona(anterior: LecturaXema, nova: LecturaXema): LecturaXema {
-  return {
-    ...nova,
+  const valors = {
     temperatura: nova.temperatura ?? anterior.temperatura,
     humitat: nova.humitat ?? anterior.humitat,
     precipitacio: nova.precipitacio ?? anterior.precipitacio,
     ventVelocitat: nova.ventVelocitat ?? anterior.ventVelocitat,
     ventDireccio: nova.ventDireccio ?? anterior.ventDireccio,
     irradiancia: nova.irradiancia ?? anterior.irradiancia,
+  };
+  const conservaAntics = (Object.keys(valors) as Array<keyof typeof valors>).some(
+    (k) => nova[k] === null && anterior[k] !== null,
+  );
+  return {
+    ...nova,
+    ...valors,
+    validada: nova.validada && (anterior.validada || !conservaAntics),
   };
 }

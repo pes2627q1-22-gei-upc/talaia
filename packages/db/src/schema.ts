@@ -50,6 +50,7 @@ export interface EstacionsXema {
   altitud: number | null;
   codi: string;
   nom: string;
+  operativa: Generated<boolean>;
   ubicacio: string;
 }
 

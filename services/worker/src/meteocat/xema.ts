@@ -11,8 +11,8 @@ export const URL_BASE_XEMA = 'https://api.meteo.cat/xema/v1';
 
 /**
  * Codis de variable de la XEMA que es contrasten amb la previsió d'Open-Meteo. La XEMA no mesura
- * els núvols: la irradiància solar en fa de testimoni de dia (TG-184). Codis d'un llistat de
- * tercers (oscaromeu/meteocat); cal confirmar-los amb `/variables/mesurades/metadades`.
+ * els núvols: la irradiància solar en fa de testimoni de dia (TG-184). Són els codis del catàleg
+ * oficial (`/variables/mesurades/metadades`).
  */
 export const VARIABLES_XEMA = {
   ventVelocitat: 30,
@@ -48,7 +48,10 @@ export type XemaClientOptions = {
 export type XemaClient = {
   /** Estacions operatives en una data (`YYYY-MM-DD`). */
   estacionsOperatives(data: string): Promise<EstacioXema[]>;
-  /** Lectures semihoràries d'una variable de totes les estacions en un dia (`YYYY-MM-DD`, UTC). */
+  /**
+   * Lectures semihoràries d'una variable de totes les estacions en un dia (`YYYY-MM-DD`, UTC),
+   * sense les que Meteocat marca com a invàlides (estat «N»).
+   */
   lectures(
     variable: VariableXema,
     data: string,
@@ -154,14 +157,16 @@ export function createXemaClient(options: XemaClientOptions): XemaClient {
         estacio.variables
           .filter((v) => v.codi === codi)
           .flatMap((v) =>
-            v.lectures.map((l) => ({
-              estacio: estacio.codi,
-              // La XEMA dona `2026-10-18T21:30Z`: es normalitza a ISO amb mil·lisegons, com la resta.
-              data: new Date(l.data).toISOString(),
-              valor: l.valor,
-              // «V» és una lectura validada per Meteocat; la resta encara és provisional.
-              validada: l.estat === 'V',
-            })),
+            // Estats de Meteocat: «V» validada, «T» o buit pendent de validar, «N» invàlida.
+            v.lectures
+              .filter((l) => l.estat !== 'N')
+              .map((l) => ({
+                estacio: estacio.codi,
+                // La XEMA dona `2026-10-18T21:30Z`: es normalitza a ISO amb mil·lisegons, com la resta.
+                data: new Date(l.data).toISOString(),
+                valor: l.valor,
+                validada: l.estat === 'V',
+              })),
           ),
       );
     },

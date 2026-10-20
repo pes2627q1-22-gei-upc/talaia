@@ -2,7 +2,7 @@
 
 Procés de Talaia que ingesta les dades externes i recalcula l'índex de visibilitat de tots els punts **cada hora** ([ADR-0004](../../docs/decisions/0004-index-precalculat.md)). Node 22 + TypeScript (strict), mateixes eines que l'API.
 
-Estat: hi ha la **ingesta de la previsió d'Open-Meteo** (TG-95 i TG-114), el **càlcul astronòmic** amb Astronomy Engine (TG-96) i la **fórmula de l'índex v1** amb la seva persistència (TG-98). La planificació horària i el contenidor Docker arriben amb TG-99.
+Estat: hi ha la **ingesta de la previsió d'Open-Meteo** (TG-95 i TG-114), el **càlcul astronòmic** amb Astronomy Engine (TG-96) la **fórmula de l'índex v1** amb la seva persistència (TG-98) i la **ingesta de les observacions de la XEMA** de Meteocat (TG-115, `npm run xema`). La planificació horària i el contenidor Docker arriben amb TG-99.
 
 ## Ordres
 
@@ -14,6 +14,7 @@ nvm use && npm install        # des de l'arrel: instal·la tots els workspaces
 |---|---|
 | `npm run meteo -- <lat,lon> [<lat,lon> …]` | Demana la previsió d'un o més llocs a Open-Meteo i la mostra per pantalla |
 | `npm run astro -- <lat,lon[,altitud]> [YYYY-MM-DD]` | Mostra la nit d'un lloc (Sol, crepuscles, Lluna) i les efemèrides hora a hora, sense xarxa |
+| `npm run xema -- <codi estació> [YYYY-MM-DD]` | Lectures d'un dia d'una estació de la XEMA (cal `METEOCAT_API_KEY`; gasta 7 consultes), sense base de dades |
 | `npm run build` | Compila a `dist/` (sense els tests) |
 | `npm run typecheck` | TypeScript strict (`tsconfig.base.json` de l'arrel) |
 | `npm test` | Jest |
@@ -80,12 +81,12 @@ src/meteocat/
 
 El que es va mesurar de debò, per contrastar-ho amb la previsió d'Open-Meteo. L'ajust de l'índex amb aquestes dades és TG-184 (Sprint 2). Per què així: [ADR-0025](../../docs/decisions/0025-observacions-xema.md).
 
-- **Estacions** (`actualitzaEstacionsXema`, un cop al mes): desa les estacions operatives (`/estacions/metadades?estat=ope`), esborra les que ja no ho són i assigna a cada punt l'estació més propera (`punts_observacio.estacio_xema`, KNN de PostGIS).
-- **Lectures** (`ingestaLecturesXema`, un cop al dia): les d'**ahir** (UTC) de les estacions assignades als punts. Una petició per variable per a totes les estacions (`/variables/mesurades/{codi}/{any}/{mes}/{dia}`): temperatura, humitat, precipitació, vent i irradiància solar. La XEMA no mesura els núvols; la irradiància en fa de testimoni de dia.
-- **Format:** una fila per estació i lectura semihorària (`LecturaXema` de `@talaia/shared`), amb les unitats d'Open-Meteo (el vent, de m/s a km/h). `validada` diu si Meteocat ja ha validat totes les lectures de la fila (estat «V»).
-- **Errors:** si falla una variable, es desen les altres i l'error queda al resum. Tornar a baixar un dia no esborra els valors que la nova ingesta no porta. Les lectures es guarden 90 dies.
+- **Estacions** (`actualitzaEstacionsXema`, un cop al mes): desa les estacions operatives (`/estacions/metadades?estat=ope`), marca com a no operatives les que ja no ho són (sense esborrar-les ni perdre'n les lectures) i assigna a cada punt l'estació operativa més propera (`punts_observacio.estacio_xema`, KNN de PostGIS, només per distància).
+- **Lectures** (`ingestaLecturesXema`, un cop al dia, en UTC i no abans de les 03:00 UTC): les d'**ahir** (UTC) de les estacions assignades als punts. Una petició per variable per a totes les estacions (`/variables/mesurades/{codi}/{any}/{mes}/{dia}`): temperatura, humitat, precipitació, vent i irradiància solar. La XEMA no mesura els núvols; la irradiància en fa de testimoni de dia.
+- **Format:** una fila per estació i lectura semihorària (`LecturaXema` de `@talaia/shared`), amb les unitats d'Open-Meteo (el vent, de m/s a km/h). La XEMA etiqueta per davant: la de les 11:00Z cobreix de 11:00 a 11:30. `validada` diu si Meteocat ja ha validat tots els valors de la fila (estat «V»); a les d'ahir sol ser `false`.
+- **Qualitat:** les lectures invàlides (estat «N») no es desen, i els valors fora del rang físic (`RANGS`) es descarten un a un (`descartades` al resum).
+- **Errors:** si falla una variable, es desen les altres i l'error queda al resum. Si fallen totes, o la clau és rebutjada (401, 403) o la quota s'ha exhaurit (429), llança un error de seguida. Tornar a baixar un dia no esborra els valors que la nova ingesta no porta. Les lectures es guarden 90 dies.
 - **Quota:** unes 190 consultes al mes (6 al dia i les metadades), sigui quin sigui el nombre de punts.
-- **Pendent de comprovar amb la clau:** els codis de variable (`VARIABLES_XEMA`, d'un llistat de tercers) i el format de la resposta per a totes les estacions.
 
 ```bash
 npm run xema -w services/worker -- CC 2026-10-18    # cal METEOCAT_API_KEY al .env de l'arrel

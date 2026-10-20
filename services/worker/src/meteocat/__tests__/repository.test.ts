@@ -54,25 +54,49 @@ const lectura = (data: string): LecturaXema => ({
   validada: true,
 });
 
+/** L'SQL sense salts de línia ni espais repetits, per comparar-lo. */
+const pla = (sql: string | undefined) => sql?.replace(/\s+/g, ' ').trim();
+
 describe('createKyselyXemaRepository', () => {
-  it("assigna a cada punt l'estació més propera amb el KNN de PostGIS", async () => {
+  it("assigna l'estació operativa més propera (KNN) i només als punts que canvien", async () => {
     const { db, queries } = fakeDb([{ n: '32' }]);
 
     await expect(createKyselyXemaRepository(db).assignaEstacionsProperes()).resolves.toBe(32);
 
-    expect(queries[0]?.sql).toBe(
-      'update "punts_observacio" set "estacio_xema" = (select "e"."codi" from "estacions_xema" as "e" order by e.ubicacio <-> punts_observacio.ubicacio limit $1)',
+    const mesPropera =
+      '( select e.codi from estacions_xema e where e.operativa order by e.ubicacio <-> punts_observacio.ubicacio limit 1 )';
+    expect(pla(queries[0]?.sql)).toBe(
+      `update "punts_observacio" set "estacio_xema" = ${mesPropera} where estacio_xema is distinct from ${mesPropera}`,
     );
   });
 
-  it('desa les lectures amb un upsert que no esborra els valors que no porta', async () => {
+  it('marca com a no operatives les estacions que falten, sense esborrar-ne cap', async () => {
+    const { db, queries } = fakeDb();
+
+    await createKyselyXemaRepository(db).desaEstacions([
+      { codi: 'CC', nom: 'Orís', lat: 42.07, lon: 2.2, altitud: 626 },
+      { codi: 'UG', nom: 'Viladecans', lat: 41.3, lon: 2.04, altitud: 3 },
+    ]);
+
+    const sqls = queries.map((q) => pla(q.sql) ?? '');
+    expect(sqls.some((q) => q.startsWith('delete'))).toBe(false);
+    const marca = queries.find((q) => q.sql.startsWith('update "estacions_xema"'));
+    expect(pla(marca?.sql)).toBe(
+      'update "estacions_xema" set "operativa" = $1, "actualitzada_el" = $2 where "operativa" = $3 and "codi" not in ($4, $5)',
+    );
+    expect(marca?.parameters).toEqual([false, expect.any(Date), true, 'CC', 'UG']);
+  });
+
+  it("desa les lectures amb un upsert que conserva els valors i calcula 'validada'", async () => {
     const { db, queries } = fakeDb();
 
     await createKyselyXemaRepository(db).desaLectures([lectura('2026-10-18T21:00:00.000Z')]);
 
-    expect(queries[0]?.sql).toContain('on conflict ("estacio", "data") do update set');
-    expect(queries[0]?.sql).toContain(
-      '"humitat" = coalesce(excluded.humitat, lectures_xema.humitat)',
+    const sql = pla(queries[0]?.sql) ?? '';
+    expect(sql).toContain('on conflict ("estacio", "data") do update set');
+    expect(sql).toContain('"humitat" = coalesce(excluded.humitat, lectures_xema.humitat)');
+    expect(sql).toContain(
+      '"validada" = excluded.validada and (lectures_xema.validada or not ((excluded."temperatura" is null and lectures_xema."temperatura" is not null) or',
     );
   });
 

@@ -16,10 +16,15 @@ En mirar l'API de dades meteorològiques de Meteocat:
 ## Decisió
 
 - **Al worker, no a l'app ni a l'API.** La clau `METEOCAT_API_KEY` és secreta i opcional: sense ella no s'ingesta res i la resta del worker funciona igual.
-- **Estacions, un cop al mes:** es desen les operatives (`estacions_xema`, amb PostGIS), s'esborren les que ja no ho són i cada punt rep l'estació més propera (`punts_observacio.estacio_xema`).
-- **Lectures, un cop al dia, les d'ahir:** una petició per variable per a totes les estacions, i només es desen les de les estacions assignades als punts. Unes **190 consultes al mes**, sigui quin sigui el nombre de punts. Les dades del dia anterior ja estan completes, i el contrast es fa a posteriori (no cal temps real).
-- **Format:** `lectures_xema`, una fila per estació i lectura semihorària, amb les unitats d'Open-Meteo (`LecturaXema` a `@talaia/shared`; el vent, en km/h) i un booleà `validada` (estat «V» de Meteocat). Les lectures es guarden 90 dies.
-- **Robustesa:** si falla una variable es desen les altres, i tornar a baixar un dia no esborra els valors que la nova ingesta no porta (`coalesce`).
+- **Estacions, un cop al mes:** es desen les operatives (`estacions_xema`, amb PostGIS). Les que ja no ho són **no s'esborren**: es marquen amb `operativa = false` i en conserven les lectures, perquè n'hi ha prou d'un dia de baixa temporal per perdre l'historial que farà servir la TG-184 (les lectures no tenen `on delete cascade`). Cada punt rep l'**estació operativa més propera**, només per distància (`punts_observacio.estacio_xema`); només s'actualitzen els punts que canvien d'estació.
+- **Lectures, un cop al dia, les d'ahir (UTC):** una petició per variable per a totes les estacions, i només es desen les de les estacions assignades als punts. Unes **190 consultes al mes**, sigui quin sigui el nombre de punts. Les dades del dia anterior ja estan completes, i el contrast es fa a posteriori (no cal temps real). El worker ho ha de planificar **en UTC i no abans de les 03:00 UTC**: amb l'hora de Catalunya entre les 00:00 i les 02:00, el canvi d'hora del 25/10 faria saltar el dia 24.
+- **Format:** `lectures_xema`, una fila per estació i lectura semihorària, amb les unitats d'Open-Meteo (`LecturaXema` a `@talaia/shared`; el vent, en km/h). Les lectures es guarden 90 dies.
+- **Quan:** la XEMA etiqueta per davant (la lectura de les 11:00Z cobreix de 11:00 a 11:30), i Open-Meteo etiqueta per darrere els valors acumulats (la precipitació de les 12:00 és la de 11:00 a 12:00). La TG-184 ho ha de tenir en compte en comparar-les, o es desquadrarà mitja hora o una hora.
+- **Qualitat de les dades:**
+  - Les lectures que Meteocat marca com a **invàlides** (estat «N») no es desen.
+  - Els valors **fora del rang físic** (`RANGS`, els mateixos que els `check` de la taula: una humitat de 101) es descarten un a un: no fan perdre la resta del dia.
+  - `validada` diu si **tots** els valors de la fila estan validats (estat «V»). Meteocat valida amb dies de retard, de manera que a les lectures d'ahir sol ser `false`. Si una ingesta parcial conserva valors antics, la fila només és validada si l'antiga també ho era.
+- **Robustesa:** si falla una variable es desen les altres, i tornar a baixar un dia no esborra els valors que la nova ingesta no porta (`coalesce`). Si fallen totes, o si la clau és rebutjada (401, 403) o la quota s'ha exhaurit (429), la ingesta falla de seguida i no continua gastant consultes. Respecta el senyal d'aturada del worker.
 
 ### Alternatives descartades
 
@@ -29,6 +34,8 @@ En mirar l'API de dades meteorològiques de Meteocat:
 
 ## Conseqüències
 
-- Cal demanar la clau amb el compte de l'equip (P20) i posar-la a `/opt/talaia/.env` a la VM.
-- Els codis de variable (30, 31, 32, 33, 35 i 36) surten d'un llistat de tercers: s'han de confirmar amb `/variables/mesurades/metadades` quan hi hagi clau, igual que el format de la resposta per a totes les estacions.
+- Cal demanar la clau amb el compte de l'equip (P20) i posar-la a `/opt/talaia/.env` a la VM. **La subscripció gratuïta caduca** (d'un mes a un any, segons el que es demani): cal renovar-la, i una clau caducada fa fallar la ingesta amb un 401 o 403, visible al log.
+- **Condicions d'ús:** si l'app mostra o difon aquestes dades, cal citar el Servei Meteorològic de Catalunya (SMC) com a font.
+- **L'estació es tria només per distància.** Amb les 189 estacions reals, 15 dels 32 punts queden amb més de 350 m de diferència d'altitud (el Santuari del Far, a 1.119 m, amb Anglès, a 151 m), 10 de les 27 estacions assignades no mesuren el vent a 10 m i 4 no tenen irradiància. Per a la TG-184 caldrà triar-la també per altitud i per les variables que mesura.
+- Els codis de variable (30, 31, 32, 33, 35 i 36) són els del catàleg oficial, i una mostra real de 183 estacions passa pel client (comprovat a la revisió de la PR #51).
 - La planificació (cada dia i cada mes) entra al procés horari de la TG-99 ([ADR-0024](0024-planificacio-worker-node-cron.md)).

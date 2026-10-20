@@ -48,7 +48,7 @@ describe('createXemaClient', () => {
     expect(new Headers(crides[0]?.init?.headers).get('x-api-key')).toBe('clau-de-prova');
   });
 
-  it("demana una variable de totes les estacions d'un dia i marca les lectures validades", async () => {
+  it("demana una variable de totes les estacions d'un dia, marca les validades i treu les «N»", async () => {
     const { client, crides } = clientAmb(() =>
       json([
         {
@@ -59,6 +59,8 @@ describe('createXemaClient', () => {
               lectures: [
                 { data: '2026-10-18T21:00Z', valor: 8.3, estat: 'V', baseHoraria: 'SH' },
                 { data: '2026-10-18T21:30Z', valor: 8.1, estat: 'T', baseHoraria: 'SH' },
+                { data: '2026-10-18T22:00Z', valor: 7.9, estat: '', baseHoraria: 'SH' },
+                { data: '2026-10-18T22:30Z', valor: 99.9, estat: 'N', baseHoraria: 'SH' },
               ],
             },
           ],
@@ -69,6 +71,7 @@ describe('createXemaClient', () => {
     await expect(client.lectures('temperatura', '2026-10-18')).resolves.toEqual([
       { estacio: 'CC', data: '2026-10-18T21:00:00.000Z', valor: 8.3, validada: true },
       { estacio: 'CC', data: '2026-10-18T21:30:00.000Z', valor: 8.1, validada: false },
+      { estacio: 'CC', data: '2026-10-18T22:00:00.000Z', valor: 7.9, validada: false },
     ]);
     expect(crides[0]?.url).toBe('https://api.meteo.cat/xema/v1/variables/mesurades/32/2026/10/18');
   });

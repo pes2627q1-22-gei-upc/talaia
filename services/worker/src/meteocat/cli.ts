@@ -21,7 +21,7 @@ async function main(): Promise<void> {
   if (!apiKey) throw new Error("Falta METEOCAT_API_KEY al .env de l'arrel");
 
   const client = createXemaClient({ apiKey });
-  const repository = createInMemoryXemaRepository([estacio]);
+  const repository = createInMemoryXemaRepository({ estacions: [estacio] });
   const estacions = await client.estacionsOperatives(new Date().toISOString().slice(0, 10));
   console.log(`${estacions.length} estacions operatives`);
 

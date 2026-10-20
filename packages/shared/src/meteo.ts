@@ -1,7 +1,7 @@
 import type { PuntObservacio } from './punts';
 
-/** Origen d'una dada meteorològica: la previsió d'Open-Meteo o les observacions de la XEMA (TG-115). */
-export type FontMeteo = 'open_meteo' | 'meteocat_xema';
+/** Origen d'una previsió meteorològica. */
+export type FontMeteo = 'open_meteo';
 
 /**
  * Previsió meteorològica d'una hora en un punt, tal com la ingesta el worker d'Open-Meteo
@@ -68,13 +68,17 @@ export type PrevisioMeteoPunt = {
 export type LecturaXema = {
   /** Codi de l'estació (`CC`, `UG`…). */
   estacio: string;
-  /** Instant de la lectura tal com el dona la XEMA (base semihorària), ISO 8601 en UTC. */
+  /**
+   * Inici de la mitja hora que resumeix la lectura, ISO 8601 en UTC. La XEMA etiqueta per davant:
+   * la de les 11:00Z cobreix de 11:00 a 11:30. Compte en contrastar-ho amb Open-Meteo, que
+   * etiqueta per darrere els valors acumulats (la precipitació de les 12:00 és la de 11:00 a 12:00).
+   */
   data: string;
   /** Temperatura de l'aire, en °C. */
   temperatura: number | null;
   /** Humitat relativa, en %. */
   humitat: number | null;
-  /** Precipitació de la mitja hora, en mm. */
+  /** Precipitació de la mitja hora que comença a `data`, en mm. */
   precipitacio: number | null;
   /** Velocitat del vent a 10 m, en km/h. */
   ventVelocitat: number | null;
@@ -82,6 +86,10 @@ export type LecturaXema = {
   ventDireccio: number | null;
   /** Irradiància solar global, en W/m². */
   irradiancia: number | null;
-  /** Totes les lectures d'aquesta fila estan validades per Meteocat (estat «V»). */
+  /**
+   * Tots els valors de la fila estan validats per Meteocat (estat «V»). Meteocat valida amb dies de
+   * retard: a les lectures d'ahir, que són les que baixa el worker, sol ser `false`. Les invàlides
+   * (estat «N») i les de fora de rang no hi arriben.
+   */
   validada: boolean;
 };
