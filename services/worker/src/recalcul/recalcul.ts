@@ -66,8 +66,8 @@ const missatge = (error: unknown) => (error instanceof Error ? error.message : S
  * Una execució del worker (ADR-0024): per lots de punts publicats, previsió d'Open-Meteo,
  * efemèrides de cada hora, índex v1 (ADR-0018) i persistència a `index_visibilitat`.
  * Un lot que falla no atura els altres. En acabar, en deixa constància a `execucions_worker`
- * (`ok` només si tots els lots han anat bé): l'API fa servir l'última que ha desat algun punt com a versió del
- * document del mapa (ADR-0012).
+ * (`ok` només si tots els lots han anat bé). L'API fa servir com a versió del document del mapa
+ * l'última execució que ha desat algun punt (ADR-0012).
  */
 export async function recalculaIndex({
   punts,

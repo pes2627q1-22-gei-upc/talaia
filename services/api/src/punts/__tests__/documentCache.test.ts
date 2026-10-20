@@ -183,3 +183,28 @@ describe('createContentHashCache: una regeneració que travessa el canvi de per�
     expect(load.mock.calls).toEqual([[0], [1]]);
   });
 });
+
+describe("createContentHashCache: l'hora canvia mentre es llegeix la versió", () => {
+  it('regenera amb el període nou en lloc de servir el document anterior', async () => {
+    let t = 0;
+    const load = jest.fn(async (period: number | undefined) => doc(period === 0 ? 1 : 2));
+    const cache = createContentHashCache(load, {
+      ttlMs: 10 * 60_000,
+      checkMs: 1000,
+      period: (now) => Math.floor(now / 60_000),
+      version: async () => {
+        // La lectura de la versió triga prou perquè l'hora canviï pel camí.
+        if (t === 59_999) t = 60_001;
+        return 'v1';
+      },
+      now: () => t,
+    });
+    await cache.get();
+
+    t = 59_999;
+    const doc2 = await cache.get();
+
+    expect(doc2.geojson.features).toHaveLength(2);
+    expect(load.mock.calls.at(-1)).toEqual([1]);
+  });
+});

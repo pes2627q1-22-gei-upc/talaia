@@ -98,8 +98,9 @@ export function createContentHashCache(
       if (
         current &&
         now() - current.loadedAt < ttlMs &&
-        period?.(now()) === current.period &&
-        !(await versionChanged())
+        !(await versionChanged()) &&
+        // Després de l'`await`: si l'hora ha canviat mentre es llegia la versió, també es regenera.
+        period?.(now()) === current.period
       ) {
         return current.doc;
       }
