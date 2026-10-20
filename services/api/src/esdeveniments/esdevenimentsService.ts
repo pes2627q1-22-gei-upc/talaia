@@ -9,7 +9,8 @@ import type {
 } from './esdevenimentsRepository';
 
 type TextosFenomen = { ca?: { nom?: unknown; descripcio?: unknown } };
-type TextosEsdeveniment = { ca?: { nota_visibilitat?: unknown } };
+// CamelCasePlugin de Kysely converteix també recursivament les claus dels JSONB.
+type TextosEsdeveniment = { ca?: { notaVisibilitat?: unknown } };
 
 function text(value: unknown): string | undefined {
   return typeof value === 'string' && value.trim() ? value.trim() : undefined;
@@ -20,7 +21,7 @@ function mapEsdeveniment(fila: FilaEsdeveniment, ubicacio: PuntReferencia): Esde
   const esdeveniment = fila.textosEsdeveniment as TextosEsdeveniment;
   const nom = text(fenomen?.ca?.nom);
   const descripcioBase = text(fenomen?.ca?.descripcio);
-  const nota = text(esdeveniment?.ca?.nota_visibilitat);
+  const nota = text(esdeveniment?.ca?.notaVisibilitat);
   const font = fila.organitzacio ?? fila.metodeCalcul;
   if (!nom || !descripcioBase || !font) {
     throw new ApiError(

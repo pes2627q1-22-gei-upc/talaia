@@ -19,7 +19,7 @@ const FILA: FilaEsdeveniment = {
   fi: new Date('2026-10-26T23:00:00Z'),
   maxim: new Date('2026-10-26T12:00:00Z'),
   textosFenomen: { ca: { nom: 'Lluna plena', descripcio: 'Disc lunar il·luminat.' } },
-  textosEsdeveniment: { ca: { nota_visibilitat: 'Visible des de Catalunya.' } },
+  textosEsdeveniment: { ca: { notaVisibilitat: 'Visible des de Catalunya.' } },
   organitzacio: null,
   metodeCalcul: 'Astronomy Engine 2.1.19',
 };
@@ -101,7 +101,7 @@ describe('GET /api/v1/esdeveniments', () => {
         {
           ...FILA,
           tipus: 'conjuncio',
-          textosEsdeveniment: { ca: { nota_visibilitat: 'Separació mesurada des del Montseny.' } },
+          textosEsdeveniment: { ca: { notaVisibilitat: 'Separació mesurada des del Montseny.' } },
         },
       ],
     });
@@ -186,6 +186,24 @@ describe('GET /api/v1/esdeveniments', () => {
 });
 
 describe('consultes Kysely del calendari', () => {
+  it('llegeix les notes JSONB amb les claus camelCase que retorna CamelCasePlugin', async () => {
+    const { db } = fakeDb([
+      {
+        codi: FILA.codi,
+        tipus: 'fase_llunar',
+        inici: FILA.inici,
+        fi: FILA.fi,
+        maxim: FILA.maxim,
+        textos_fenomen: FILA.textosFenomen,
+        textos_esdeveniment: { ca: { nota_visibilitat: 'Nota concreta.' } },
+        organitzacio: null,
+        metode_calcul: FILA.metodeCalcul,
+      },
+    ]);
+    const files = await createEsdevenimentsRepository(db).list(FILA.inici, FILA.fi);
+    expect(files[0]?.textosEsdeveniment).toEqual({ ca: { notaVisibilitat: 'Nota concreta.' } });
+  });
+
   it('filtra solapament, visibilitat a Catalunya i tipus, amb ordre estable', async () => {
     const { db, queries } = fakeDb([]);
     await createEsdevenimentsRepository(db).list(
