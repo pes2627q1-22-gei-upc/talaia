@@ -16,6 +16,7 @@ services:
     environment:
       API_PORT: 3000
       DATABASE_URL: ${DATABASE_URL:-}
+      SUPABASE_URL: ${SUPABASE_URL:-}
     expose:
       - '3000'
 

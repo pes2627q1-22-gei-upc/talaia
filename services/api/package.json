@@ -13,7 +13,21 @@
   },
   "jest": {
     "preset": "ts-jest",
-    "testEnvironment": "node"
+    "testEnvironment": "node",
+    "extensionsToTreatAsEsm": [
+      ".ts"
+    ],
+    "transform": {
+      "^.+\\.[tj]s$": [
+        "ts-jest",
+        {
+          "useESM": true
+        }
+      ]
+    },
+    "transformIgnorePatterns": [
+      "/node_modules/(?!(jose)/)"
+    ]
   },
   "devDependencies": {
     "@types/express": "^5.0.6",
@@ -34,6 +48,7 @@
     "@talaia/db": "*",
     "@talaia/shared": "*",
     "express": "^5.2.1",
+    "jose": "^6.2.12",
     "swagger-ui-express": "^5.0.1",
     "zod": "^4.6.5"
   }

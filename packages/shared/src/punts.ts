@@ -1,4 +1,4 @@
-import type { IndexVisibilitat } from './indexVisibilitat';
+import type { IndexHora, IndexVisibilitat } from './indexVisibilitat';
 
 /**
  * Punt d'observació del catàleg.
@@ -34,4 +34,28 @@ export type PuntMapaFeature = {
 export type PuntsMapaGeoJson = {
   type: 'FeatureCollection';
   features: PuntMapaFeature[];
+};
+
+/** Direccions de l'horitzó (`punts_observacio.horitzo_obert`). */
+export type DireccioHoritzo = 'N' | 'NE' | 'E' | 'SE' | 'S' | 'SW' | 'W' | 'NW';
+
+/** `GET /api/v1/punts/{id}`: la fitxa d'un punt publicat (HU07). */
+export type PuntFitxa = PuntObservacio & {
+  descripcio: string;
+  /** Metres sobre el nivell del mar. */
+  altitud: number | null;
+  /** Direccions amb l'horitzó obert (aproximat, ADR-0017). `null` si no és clar. */
+  horitzoObert: DireccioHoritzo[] | null;
+  accessibilitat: string | null;
+  /**
+   * Foscor del cel: brillantor en mag/arcsec² (SQM, ADR-0020). Com més alta, més fosc.
+   * `null` si encara no s'ha calculat per a aquest punt.
+   */
+  sqm: number | null;
+  index: {
+    /** L'índex de l'hora en curs (UTC). `null` si el worker encara no l'ha calculat. */
+    actual: IndexHora | null;
+    /** Les hores següents, en ordre. Buida si no n'hi ha cap de calculada. */
+    properesHores: IndexHora[];
+  };
 };

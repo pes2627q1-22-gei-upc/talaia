@@ -11,6 +11,7 @@ npm run api                   # = npm run dev -w services/api, amb recàrrega
 
 - Salut: <http://localhost:3000/api/v1/health>
 - Punts del mapa: <http://localhost:3000/api/v1/punts> (cal `DATABASE_URL`)
+- Fitxa d'un punt: `http://localhost:3000/api/v1/punts/<id>?hores=24`
 - Documentació (Swagger UI): <http://localhost:3000/api/v1/docs>
 - OpenAPI: <http://localhost:3000/api/v1/openapi.json>
 
@@ -30,7 +31,8 @@ Es llegeixen del `.env` de l'**arrel** del repo (`dev` i `start` el carreguen am
 | Variable | Per defecte | Què és |
 |---|---|---|
 | `API_PORT` | `3000` | Port on escolta l'API |
-| `DATABASE_URL` | — | Postgres (`postgresql://…`). **Opcional:** sense ella l'API arrenca amb un avís, `/health` funciona i `/punts` respon 503 `database_unavailable`. Amb Supabase local: `postgresql://postgres:postgres@127.0.0.1:54322/postgres` |
+| `DATABASE_URL` | — | Postgres (`postgresql://…`). **Opcional:** sense ella l'API arrenca amb un avís, `/health` funciona i `/punts` i `/perfil` responen 503 `database_unavailable`. Amb Supabase local: `postgresql://postgres:postgres@127.0.0.1:54322/postgres` |
+| `SUPABASE_URL` | `http://127.0.0.1:54321` | URL del projecte de Supabase. `requireAuth` hi valida els JWT amb el JWKS (`/auth/v1/.well-known/jwks.json`, ADR-0023): 401 si el token és dolent, 503 si Supabase no respon |
 
 Una variable nova s'afegeix a l'esquema de `src/config/env.ts` i a `.env.example`. Cap secret al repo.
 
@@ -45,12 +47,12 @@ src/
   routes/
     index.ts            Router de /api/v1: munta un router per recurs, /openapi.json i /docs
     health.ts           GET /health
-    punts.ts            GET /punts: bbox, ETag, Cache-Control i 304
+    punts.ts            GET /punts (bbox, ETag, Cache-Control i 304) i GET /punts/{id}
   punts/
-    puntsRepository.ts  Consulta dels punts publicats amb @talaia/db (ADR-0013)
+    puntsRepository.ts  Consultes dels punts publicats i del seu índex amb @talaia/db (ADR-0013)
     mapDocument.ts      GeoJSON del mapa i retall per bbox
     documentCache.ts    Document en memòria amb ETag del contingut (MapDocumentCache)
-    puntsService.ts     Uneix la memòria cau i el bbox; errors de la base de dades → 503
+    puntsService.ts     Memòria cau i bbox del mapa, i fitxa amb l'índex per hores; errors de la base de dades → 503
   middleware/errors.ts  ApiError, 404 i handler central d'errors
 ```
 
@@ -62,6 +64,15 @@ Un sol GeoJSON `FeatureCollection` amb tots els punts `PUBLICAT`: `[lon, lat]` a
 - **HTTP:** `Cache-Control: public, max-age=<segons fins a la propera hora>`. Amb `If-None-Match` igual a l'`ETag` (també `W/"…"`, que és com el deixa Nginx), 304 sense cos.
 - **`?bbox=minLon,minLat,maxLon,maxLat`:** opcional. Retalla el document en memòria, sense consultar la base de dades. Si és invàlid, 400 `validation_error`.
 - **Hora en curs i versió del worker** (ADR-0012, TG-99): a cada petició, l'API compara l'hora en curs (rellotge de l'API, sense anar a la BD) amb la del document, i si ha canviat el regenera amb l'índex de l'hora nova. A més, com a molt un cop per minut llegeix l'última execució correcta de `execucions_worker`, i si ha canviat també el regenera. L'`ETag` continua sent el hash del contingut.
+
+## `GET /punts/{id}` (HU07, TG-92)
+
+La fitxa d'un punt `PUBLICAT` (tipus `PuntFitxa` a `@talaia/shared`): metadades del catàleg, `lat`/`lon`, la foscor del cel `sqm` (mag/arcsec², ADR-0020; `null` si no està calculada) i `index`:
+
+- `actual`: l'índex de l'hora en curs (UTC, a l'hora en punt) amb els factors i `foscorEstimada`, o `null` si el worker encara no l'ha calculat.
+- `properesHores`: les `?hores=` següents (1–48, per defecte 24), en ordre. Si el worker n'ha calculat menys, només hi ha les que hi ha.
+
+Errors: `id` que no és un UUID o `hores` fora de rang → 400 `validation_error`; punt inexistent o no publicat → 404 `punt_not_found` (l'app tracta el 400 i el 404 igual: «aquest punt no existeix»); sense base de dades → 503. `Cache-Control` fins a la propera hora.
 
 ## Afegir una ruta
 
