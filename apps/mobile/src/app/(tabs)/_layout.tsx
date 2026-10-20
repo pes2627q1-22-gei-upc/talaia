@@ -1,8 +1,10 @@
+import { Redirect } from 'expo-router';
 import { NativeTabs } from 'expo-router/unstable-native-tabs';
 import { useTranslation } from 'react-i18next';
 import { Platform } from 'react-native';
 
 import { colors } from '@/core/theme/tokens';
+import { useSessionGate } from '@/features/auth/useSessionGate';
 
 // Icones provisionals: SF Symbols a iOS i les del template a Android/web.
 // La barra pròpia del mockup (icones de Talaia) queda per a una tasca a part.
@@ -12,6 +14,11 @@ const calendarIcon = require('@/assets/images/tabIcons/explore.png');
 export default function TabsLayout() {
   const { t } = useTranslation();
   const ios = Platform.OS === 'ios';
+  const gate = useSessionGate();
+
+  // Sense sessió no s'entra a l'app: la benvinguda és la porta (HU35). Mentre es restaura, res.
+  if (gate === 'restoring') return null;
+  if (gate === 'signedOut') return <Redirect href="/benvinguda" />;
 
   return (
     <NativeTabs

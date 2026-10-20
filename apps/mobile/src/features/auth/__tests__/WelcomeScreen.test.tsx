@@ -10,6 +10,7 @@ import { motion } from '@/core/theme/tokens';
 
 import { TL } from '../intro/timeline';
 import { INTRO_LEAD, INTRO_SEEN_KEY, SKIP_DURATION } from '../intro/useIntro';
+import { signInAndEnsureProfile } from '../signIn';
 import { WelcomeScreen } from '../WelcomeScreen';
 
 jest.mock('expo-router', () => ({
@@ -26,8 +27,30 @@ jest.mock('react-native-reanimated', () => {
     useReducedMotion: jest.fn(() => false),
   };
 });
+// El botó natiu d'Apple: a Jest, un botó amb el nom que hi posa el sistema.
+jest.mock('expo-apple-authentication', () => {
+  const { Pressable } = jest.requireActual('react-native');
+  return {
+    AppleAuthenticationButton: ({ onPress }: { onPress: () => void }) => (
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Continua amb Apple"
+        onPress={onPress}
+      />
+    ),
+    AppleAuthenticationButtonType: { CONTINUE: 1 },
+    AppleAuthenticationButtonStyle: { BLACK: 2 },
+  };
+});
+jest.mock('../signIn', () => ({ signInAndEnsureProfile: jest.fn() }));
+jest.mock('../authRepository', () => ({
+  authRepository: { signInWithGoogle: jest.fn(), signInWithApple: jest.fn() },
+}));
 const replace = jest.fn();
-jest.mocked(useRouter).mockReturnValue({ replace } as unknown as ReturnType<typeof useRouter>);
+const push = jest.fn();
+jest
+  .mocked(useRouter)
+  .mockReturnValue({ replace, push } as unknown as ReturnType<typeof useRouter>);
 
 const METRICS = {
   frame: { x: 0, y: 0, width: 393, height: 852 },
@@ -53,6 +76,7 @@ async function layOut() {
 describe('WelcomeScreen', () => {
   beforeEach(async () => {
     jest.clearAllMocks();
+    jest.mocked(signInAndEnsureProfile).mockResolvedValue({ ok: true });
     await AsyncStorage.clear();
     await i18n.changeLanguage('ca');
   });
@@ -73,19 +97,36 @@ describe('WelcomeScreen', () => {
     restore.restore();
   });
 
-  it("prémer una opció fa la sortida i després entra a l'app, només un cop", async () => {
+  it("en entrar amb Google fa la sortida i després entra a l'app, només un cop", async () => {
     jest.useFakeTimers();
     await renderWelcome();
     await layOut();
 
-    await fireEvent.press(screen.getByRole('button', { name: 'Continua amb el correu' }));
     await fireEvent.press(screen.getByRole('button', { name: 'Continua amb Google' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Continua amb Apple' }));
     expect(replace).not.toHaveBeenCalled();
 
     await act(() => jest.advanceTimersByTime(motion.leave));
     expect(replace).toHaveBeenCalledTimes(1);
     expect(replace).toHaveBeenCalledWith('/');
     jest.useRealTimers();
+  });
+
+  it('si falla, no surt de la benvinguda i diu per què', async () => {
+    jest.mocked(signInAndEnsureProfile).mockResolvedValue({ ok: false, reason: 'network' });
+    await renderWelcome();
+    await layOut();
+    await fireEvent.press(screen.getByRole('button', { name: 'Continua amb Google' }));
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'No hi ha connexió. Revisa-la i torna-ho a provar.',
+    );
+    expect(replace).not.toHaveBeenCalled();
+  });
+
+  it('el correu obre la seva pantalla sense fer la sortida', async () => {
+    await renderWelcome();
+    await fireEvent.press(screen.getByRole('button', { name: 'Continua amb el correu' }));
+    expect(push).toHaveBeenCalledWith('/benvinguda-correu');
   });
 
   it('pinta el cel i la torre un cop sap quant ocupa el contingut', async () => {

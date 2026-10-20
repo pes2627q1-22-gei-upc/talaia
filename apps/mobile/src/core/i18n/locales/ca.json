@@ -57,7 +57,8 @@
     "continueGoogle": "Continua amb Google",
     "continueApple": "Continua amb Apple",
     "continueEmail": "Continua amb el correu",
-    "legal": "En continuar acceptes les condicions d'ús i la política de privacitat de Talaia."
+    "legal": "En continuar acceptes les condicions d'ús i la política de privacitat de Talaia.",
+    "signingIn": "Entrant…"
   },
   "notFound": {
     "title": "Aquesta pantalla no existeix",
@@ -181,6 +182,33 @@
     "signingOut": "Tancant la sessió…",
     "restoreError": "No s’ha pogut recuperar la sessió. Torna-ho a provar.",
     "logoutError": "No s’ha pogut tancar la sessió. Torna-ho a provar.",
-    "retry": "Torna-ho a provar"
+    "retry": "Torna-ho a provar",
+    "errors": {
+      "network": "No hi ha connexió. Revisa-la i torna-ho a provar.",
+      "invalidEmail": "Aquesta adreça de correu no és vàlida.",
+      "invalidCode": "El codi no és correcte o ha caducat.",
+      "rateLimited": "Massa intents seguits. Espera un moment i torna-ho a provar.",
+      "unavailable": "L'inici de sessió no està configurat en aquesta versió de l'app.",
+      "profile": "Has entrat, però no hem pogut preparar el teu perfil. Torna-ho a provar.",
+      "unknown": "No s'ha pogut iniciar la sessió. Torna-ho a provar."
+    }
+  },
+  "emailLogin": {
+    "title": "Entra amb el correu",
+    "emailSubtitle": "T'enviarem un codi de 6 xifres. Si no tens compte, en crearem un.",
+    "emailLabel": "Correu electrònic",
+    "emailPlaceholder": "nom@exemple.cat",
+    "send": "Envia el codi",
+    "sending": "Enviant…",
+    "codeTitle": "Escriu el codi",
+    "codeSubtitle": "L'hem enviat a {{email}}. Mira també el correu brossa.",
+    "codeLabel": "Codi de 6 xifres",
+    "verify": "Entra",
+    "verifying": "Comprovant…",
+    "resend": "Torna a enviar el codi",
+    "resendIn": "Torna a enviar el codi ({{seconds}} s)",
+    "resent": "T'hem enviat un codi nou.",
+    "changeEmail": "Canvia l'adreça",
+    "back": "Enrere"
   }
 }
