@@ -28,3 +28,15 @@ it('no trepitja un WebCrypto que ja hi és', () => {
   expect(target.crypto.getRandomValues).toBe(getRandomValues);
   expect(target.crypto.subtle.digest).toBe(digest);
 });
+
+it('funciona on `crypto` és només de lectura (navegador, Hermes)', async () => {
+  // Com al navegador sense context segur: getter sense setter i sense `subtle`.
+  const native = { getRandomValues: jest.fn() };
+  const target = {};
+  Object.defineProperty(target, 'crypto', { get: () => native, configurable: true });
+  expect(() => installWebCrypto(target)).not.toThrow();
+  const crypto = (target as { crypto: typeof native & { subtle: { digest: unknown } } }).crypto;
+  expect(crypto).toBe(native);
+  expect(crypto.getRandomValues).toBe(native.getRandomValues);
+  expect(typeof crypto.subtle.digest).toBe('function');
+});
