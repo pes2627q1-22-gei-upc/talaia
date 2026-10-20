@@ -2,7 +2,7 @@
 
 Procés de Talaia que ingesta les dades externes i recalcula l'índex de visibilitat de tots els punts **cada hora** ([ADR-0004](../../docs/decisions/0004-index-precalculat.md)). Node 22 + TypeScript (strict), mateixes eines que l'API.
 
-Estat: hi ha la **ingesta de la previsió d'Open-Meteo** (TG-95 i TG-114), el **càlcul astronòmic** amb Astronomy Engine (TG-96) i la **fórmula de l'índex v1** amb la seva persistència (TG-98). La planificació horària i el contenidor Docker arriben amb TG-99.
+Estat: hi ha la **ingesta de la previsió d'Open-Meteo** (TG-95 i TG-114), el **càlcul astronòmic** amb Astronomy Engine (TG-96) i la **fórmula de l'índex v1** amb la seva persistència (TG-98). El **procés horari** (TG-99) recalcula l'índex de tots els punts en arrencar i cada hora amb node-cron, dins del contenidor.
 
 ## Ordres
 
@@ -12,6 +12,7 @@ nvm use && npm install        # des de l'arrel: instal·la tots els workspaces
 
 | Ordre (`-w services/worker`) | Què fa |
 |---|---|
+| `npm run start` | Procés horari (`src/main.ts`): recalcula l'índex en arrencar i cada hora. Cal `DATABASE_URL` |
 | `npm run meteo -- <lat,lon> [<lat,lon> …]` | Demana la previsió d'un o més llocs a Open-Meteo i la mostra per pantalla |
 | `npm run astro -- <lat,lon[,altitud]> [YYYY-MM-DD]` | Mostra la nit d'un lloc (Sol, crepuscles, Lluna) i les efemèrides hora a hora, sense xarxa |
 | `npm run build` | Compila a `dist/` (sense els tests) |
@@ -33,6 +34,7 @@ Es llegeixen del `.env` de l'**arrel** del repo (`--env-file-if-exists`; vegeu `
 | Variable | Per defecte | Què és |
 |---|---|---|
 | `OPEN_METEO_BASE_URL` | `https://api.open-meteo.com/v1` | URL base de l'API d'Open-Meteo (sense clau; 10.000 crides/dia) |
+| `DATABASE_URL` | — | Postgres (`postgresql://…`). Obligatòria per a `npm run start`; les CLI de prova no la fan servir |
 
 ## Ingesta de la previsió d'Open-Meteo (TG-95 i TG-114)
 
@@ -116,6 +118,32 @@ Prova manual, sense base de dades:
 ```bash
 npm run index -w services/worker -- 42.0294,0.7112          # el Montsec, foscor estimada
 npm run index -w services/worker -- 42.0294,0.7112 21.56    # amb l'SQM del lloc (data/punts_observacio.geojson)
+```
+
+## Recàlcul horari (TG-99)
+
+```
+src/
+  main.ts                  Cablejat del procés llarg: pool, node-cron a «5 * * * *» (UTC) i senyals
+  recalcul/
+    executor.ts            Sense solapaments, errors que no aturen el procés i aturada que espera
+    recalcul.ts            Una execució, per lots: punts → Open-Meteo → efemèrides → índex → BD
+    repository.ts          Els ports sobre Kysely: punts, `index_visibilitat`, `execucions_worker`
+```
+
+Per què node-cron i no el cron del sistema: [ADR-0024](../../docs/decisions/0024-planificacio-worker-node-cron.md).
+
+- **Una execució** (`recalculaIndex`): llegeix els punts `PUBLICAT` (posició, altitud i SQM), i els recalcula **en lots de 10**: per a cada lot, en demana la previsió a Open-Meteo (timeout de 30 s i **un reintent** si l'error és de xarxa, timeout, 429 o 5xx), hi creua les efemèrides i desa l'índex de l'hora en curs i de les següents (`desaIndexs` substitueix les hores ja calculades). Un lot que falla no atura els altres. Després esborra l'índex de fa més de 24 hores.
+- **La marca de versió** (ADR-0012): en acabar, desa una fila a `execucions_worker` (`iniciada_el`, `acabada_el`, `estat`, punts i hores desats, i el missatge de l'error). L'estat és `ok` només si tots els lots han anat bé; si no, és `error` i l'error diu quins punts han fallat. Si el registre mateix falla, es mostra al log i no amaga l'error de l'execució. L'API fa servir l'última `acabada_el` d'una execució que ha desat algun punt (també si n'ha fallat algun lot) per saber quan ha de regenerar el GeoJSON del mapa.
+- **Errors:** si falla Open-Meteo o la base de dades, l'error queda a `execucions_worker`, es mostra al log i el procés continua: es torna a provar a l'hora següent. Si una execució encara no ha acabat quan arriba la següent, la nova se salta.
+- **Base de dades penjada:** el pool té timeouts (10 s per connectar, 30 s per consulta), i una BD que no respon no pot deixar l'execució encallada per sempre.
+- **Aturada:** amb `SIGTERM` (Docker) o `SIGINT` no comença cap lot més, espera el que està en curs i tanca el pool. El compose dona 75 s (`stop_grace_period`).
+- **Build:** `npm run build` compila amb tsup, que inclou `@talaia/db` i `@talaia/shared` dins de `dist/main.js` (no tenen build), com a l'API.
+
+Prova en local amb la base de dades de Supabase local (`npx supabase start`):
+
+```bash
+DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:54322/postgres npm run start -w services/worker
 ```
 
 ## Tests
