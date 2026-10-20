@@ -1,3 +1,4 @@
+import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 
@@ -58,6 +59,7 @@ export function useMapViewModel() {
       void query.refetch();
     },
     openPoint: async (id: string) => {
+      void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       router.push({ pathname: '/punt/[id]', params: { id } });
     },
     mapStyle: nightStyle,
