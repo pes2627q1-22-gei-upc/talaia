@@ -8,6 +8,7 @@ import { useEffect, useRef } from 'react';
 
 import {
   bindClusterInteraction,
+  MARKERS_LAYER,
   type MapPoints,
   type MarkerPalette,
   syncMapPoints,
@@ -37,6 +38,7 @@ type NightMapProps = {
   userLocationColor: string;
   points: MapPoints;
   markerPalette: MarkerPalette;
+  onPointPress: (id: string) => Promise<void>;
   dom?: DOMProps;
 };
 
@@ -56,6 +58,7 @@ export default function NightMap({
   userLocationLabel,
   userLocationColor,
   markerPalette,
+  onPointPress,
 }: NightMapProps) {
   const container = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
@@ -63,8 +66,13 @@ export default function NightMap({
   const locationMarker = useRef<maplibregl.Marker | null>(null);
   const headingMarker = useRef<maplibregl.Marker | null>(null);
   const latestPoints = useRef({ points, markerPalette });
+  const onPointPressRef = useRef(onPointPress);
   // El pont torna a enviar les props a cada render natiu: el mapa es crea un sol cop amb les inicials.
   const initial = useRef({ mapStyle, camera });
+
+  useEffect(() => {
+    onPointPressRef.current = onPointPress;
+  }, [onPointPress]);
 
   useEffect(() => {
     latestPoints.current = { points, markerPalette };
@@ -92,6 +100,19 @@ export default function NightMap({
     });
     mapRef.current = map;
     const unbindClusters = bindClusterInteraction(map);
+    const clickPoint = (event: maplibregl.MapLayerMouseEvent) => {
+      const id = event.features?.[0]?.properties?.id;
+      if (typeof id === 'string') void onPointPressRef.current(id);
+    };
+    const enterPoint = () => {
+      map.getCanvas().style.cursor = 'pointer';
+    };
+    const leavePoint = () => {
+      map.getCanvas().style.cursor = '';
+    };
+    map.on('click', MARKERS_LAYER, clickPoint);
+    map.on('mouseenter', MARKERS_LAYER, enterPoint);
+    map.on('mouseleave', MARKERS_LAYER, leavePoint);
     // Les dades poden arribar abans o després que l'estil s'hagi carregat.
     map.on('load', () => {
       ready.current = true;
@@ -103,6 +124,9 @@ export default function NightMap({
     });
     return () => {
       unbindClusters();
+      map.off('click', MARKERS_LAYER, clickPoint);
+      map.off('mouseenter', MARKERS_LAYER, enterPoint);
+      map.off('mouseleave', MARKERS_LAYER, leavePoint);
       ready.current = false;
       mapRef.current = null;
       map.remove();
