@@ -20,6 +20,8 @@ function fakeRepository(punts = PUNTS) {
       repository.calls += 1;
       return punts;
     },
+    findPublished: async () => undefined,
+    indexHores: async () => [],
   };
   return repository;
 }
@@ -115,6 +117,7 @@ describe('GET /api/v1/punts', () => {
     jest.spyOn(console, 'error').mockImplementation(() => {});
     const res = await request(
       appWith({
+        ...fakeRepository(),
         listPublished: () => Promise.reject(new Error('connexió tancada')),
       }),
     ).get('/api/v1/punts');
