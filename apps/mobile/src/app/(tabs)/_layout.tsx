@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Platform } from 'react-native';
 
 import { colors } from '@/core/theme/tokens';
+import { RestoreErrorScreen } from '@/features/auth/RestoreErrorScreen';
 import { useSessionGate } from '@/features/auth/useSessionGate';
 
 // Icones provisionals: SF Symbols a iOS i les del template a Android/web.
@@ -18,6 +19,7 @@ export default function TabsLayout() {
 
   // Sense sessió no s'entra a l'app: la benvinguda és la porta (HU35). Mentre es restaura, res.
   if (gate === 'restoring') return null;
+  if (gate === 'restoreFailed') return <RestoreErrorScreen />;
   if (gate === 'signedOut') return <Redirect href="/benvinguda" />;
 
   return (
