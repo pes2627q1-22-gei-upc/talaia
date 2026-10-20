@@ -5,6 +5,9 @@ import { createClient, processLock, type SupabaseClient } from '@supabase/supaba
 import { env } from '@/core/config/env';
 
 import { sessionStorage } from './sessionStorage';
+import { installWebCrypto } from './webCrypto';
+
+installWebCrypto();
 
 let client: SupabaseClient | undefined;
 
