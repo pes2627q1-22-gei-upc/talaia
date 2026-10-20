@@ -10,7 +10,14 @@ export const CODE_LENGTH = 6;
 /** Supabase no deixa demanar un altre codi abans d'un minut (`max_frequency`). */
 export const RESEND_AFTER_S = 60;
 
-const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+/** `nom@domini.tld` sense espais. Sense regex: Supabase ja valida l'adreça de debò. */
+function isEmail(value: string): boolean {
+  const at = value.indexOf('@');
+  if (at < 1 || at !== value.lastIndexOf('@') || /\s/.test(value)) return false;
+  const domain = value.slice(at + 1);
+  const dot = domain.lastIndexOf('.');
+  return dot > 0 && dot < domain.length - 1;
+}
 
 export type EmailLoginStep = 'email' | 'code';
 
@@ -35,7 +42,7 @@ export function useEmailLoginViewModel() {
   }, [resendIn]);
 
   const address = email.trim().toLowerCase();
-  const emailValid = EMAIL.test(address);
+  const emailValid = isEmail(address);
   const codeValid = code.length === CODE_LENGTH;
 
   const run = async (action: () => Promise<void>) => {

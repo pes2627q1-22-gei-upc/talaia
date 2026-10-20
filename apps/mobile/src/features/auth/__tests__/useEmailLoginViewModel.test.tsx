@@ -47,6 +47,15 @@ describe('useEmailLoginViewModel', () => {
     expect(result.current.subtitle).toContain('nom@exemple.cat');
   });
 
+  it.each(['nom@exemple', '@exemple.cat', 'nom@exemple.', 'n m@exemple.cat', 'a@b@exemple.cat'])(
+    'no accepta «%s»',
+    async (value) => {
+      const { result } = await renderHook(() => useEmailLoginViewModel());
+      await act(() => result.current.setEmail(value));
+      expect(result.current.canSubmit).toBe(false);
+    },
+  );
+
   it('si no es pot enviar, es queda a l’adreça amb el motiu', async () => {
     jest.mocked(authRepository.sendEmailCode).mockRejectedValue(new SignInFailure('rateLimited'));
     const { result } = await atCodeStep();
