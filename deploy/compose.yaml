@@ -17,6 +17,7 @@ services:
       API_PORT: 3000
       DATABASE_URL: ${DATABASE_URL:-}
       SUPABASE_URL: ${SUPABASE_URL:-}
+      APROP_API_KEY: ${APROP_API_KEY:-}
     expose:
       - '3000'
 

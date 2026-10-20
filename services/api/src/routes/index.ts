@@ -4,11 +4,12 @@ import swaggerUi from 'swagger-ui-express';
 import { version } from '../config/env';
 import { buildOpenApiDocument } from '../openapi';
 import type { PuntsService } from '../punts/puntsService';
+import type { EsdevenimentsService } from '../esdeveniments/esdevenimentsService';
 import type { JwksSource } from '../middleware/auth';
 import type { ProfileStore } from '../services/profileService';
 import { createAuthRouter } from './auth';
 import { healthRouter } from './health';
-import './esdeveniments.contract';
+import { createEsdevenimentsRouter } from './esdeveniments';
 import { createPuntsRouter } from './punts';
 
 /** Dependències dels routers. */
@@ -17,6 +18,8 @@ export type ApiDeps = {
   supabaseUrl?: string;
   jwks?: JwksSource;
   profileStore?: ProfileStore;
+  esdeveniments?: EsdevenimentsService;
+  apropApiKey?: string;
 };
 
 /** Router de `/api/v1`: un router per recurs (punts, recomanacions, esdeveniments…). */
@@ -25,10 +28,16 @@ export function createApiRouter({
   supabaseUrl,
   jwks,
   profileStore,
+  esdeveniments,
+  apropApiKey,
 }: ApiDeps & { profileStore: ProfileStore }): Router {
   const router = Router();
   router.use('/health', healthRouter);
   router.use('/punts', createPuntsRouter(punts));
+  router.use(
+    '/esdeveniments',
+    createEsdevenimentsRouter(esdeveniments, apropApiKey, { supabaseUrl, jwks }),
+  );
   router.use(createAuthRouter({ supabaseUrl, profileStore, jwks }));
 
   // Es genera quan ja s'han importat tots els routers, que són els que registren les rutes.

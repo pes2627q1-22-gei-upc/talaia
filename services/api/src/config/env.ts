@@ -14,6 +14,7 @@ const EnvSchema = z.object({
     (v) => (v === '' ? undefined : v),
     z.string().url().default('http://127.0.0.1:54321'),
   ),
+  APROP_API_KEY: z.preprocess((v) => (v === '' ? undefined : v), z.string().min(1).optional()),
 });
 
 export type Env = z.infer<typeof EnvSchema>;
