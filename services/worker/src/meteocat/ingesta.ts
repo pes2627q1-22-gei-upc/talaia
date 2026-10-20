@@ -21,9 +21,17 @@ export type XemaRepository = {
   estacionsDelsPunts(): Promise<string[]>;
   /** Desa les lectures; una que ja hi és s'actualitza sense esborrar els valors que no porta. */
   desaLectures(lectures: LecturaXema[]): Promise<void>;
+  /**
+   * Posa a `null` valors que ara són invàlids o fora de rang. En tornar a baixar un dia, una
+   * lectura que era pendent pot passar a «N», i el `coalesce` de `desaLectures` la conservaria.
+   */
+  anulaValors(valors: ValorAnulat[]): Promise<void>;
   /** Esborra les lectures anteriors a `abans`. */
   esborraLecturesAnteriors(abans: Date): Promise<void>;
 };
+
+/** Un valor concret d'una lectura que s'ha de buidar. */
+export type ValorAnulat = { estacio: string; data: string; variable: VariableXema };
 
 export type IngestaXemaDeps = {
   client: XemaClient;
@@ -79,7 +87,7 @@ export type ResumIngestaXema = {
   dia: string;
   estacions: number;
   lectures: number;
-  /** Valors fora del rang físic (`RANGS`) que s'han descartat. */
+  /** Valors invàlids (estat «N») o fora del rang físic (`RANGS`) que s'han descartat. */
   descartades: number;
   /** Variables que no s'han pogut baixar (la resta sí que s'han desat). */
   errors: string[];
@@ -104,9 +112,18 @@ export async function ingestaLecturesXema(
   if (estacions.size === 0) return { dia, estacions: 0, lectures: 0, descartades: 0, errors: [] };
 
   const files = new Map<string, LecturaXema>();
+  const anulats: ValorAnulat[] = [];
   const errors: string[] = [];
   const variables = Object.keys(VARIABLES_XEMA) as VariableXema[];
   let descartades = 0;
+  let errorDeCompte: unknown;
+
+  /** Desa el que s'ha baixat: també quan es para per la clau o la quota, per no perdre-ho. */
+  const desa = async () => {
+    await repository.desaLectures([...files.values()]);
+    if (anulats.length) await repository.anulaValors(anulats);
+  };
+
   for (const variable of variables) {
     if (senyal?.aborted) {
       errors.push(`${variable}: aturat abans de demanar-la`);
@@ -116,7 +133,10 @@ export async function ingestaLecturesXema(
     try {
       lectures = await client.lectures(variable, dia);
     } catch (error) {
-      if (esErrorDeCompte(error)) throw error;
+      if (esErrorDeCompte(error)) {
+        errorDeCompte = error;
+        break;
+      }
       errors.push(`${variable}: ${error instanceof Error ? error.message : String(error)}`);
       continue;
     }
@@ -124,8 +144,9 @@ export async function ingestaLecturesXema(
     for (const lectura of lectures) {
       if (!estacions.has(lectura.estacio)) continue;
       const valor = variable === 'ventVelocitat' ? lectura.valor * KMH_PER_MS : lectura.valor;
-      if (valor < minim || valor > maxim) {
+      if (lectura.invalida || valor < minim || valor > maxim) {
         descartades += 1;
+        anulats.push({ estacio: lectura.estacio, data: lectura.data, variable });
         continue;
       }
       const clau = `${lectura.estacio}|${lectura.data}`;
@@ -135,11 +156,15 @@ export async function ingestaLecturesXema(
       files.set(clau, fila);
     }
   }
+  if (errorDeCompte) {
+    await desa();
+    throw errorDeCompte;
+  }
   if (errors.length === variables.length) {
     throw new Error(`No s'ha pogut baixar cap variable de la XEMA (${dia}): ${errors.join('; ')}`);
   }
 
-  await repository.desaLectures([...files.values()]);
+  await desa();
   await repository.esborraLecturesAnteriors(
     new Date(ara().getTime() - DIES_LECTURES_GUARDATS * DIA_MS),
   );

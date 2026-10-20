@@ -122,4 +122,26 @@ describe('createKyselyXemaRepository', () => {
       'select distinct "estacio_xema" from "punts_observacio" where "estacio_xema" is not null',
     );
   });
+
+  it('anul·la valors amb una actualització per variable', async () => {
+    const { db, queries } = fakeDb();
+
+    await createKyselyXemaRepository(db).anulaValors([
+      { estacio: 'CC', data: '2026-10-18T21:00:00.000Z', variable: 'humitat' },
+      { estacio: 'UG', data: '2026-10-18T21:30:00.000Z', variable: 'humitat' },
+      { estacio: 'CC', data: '2026-10-18T21:00:00.000Z', variable: 'temperatura' },
+    ]);
+
+    expect(queries.map((q) => pla(q.sql))).toEqual([
+      'update "lectures_xema" set "humitat" = $1 where (estacio, data) in (($2, $3::timestamptz), ($4, $5::timestamptz))',
+      'update "lectures_xema" set "temperatura" = $1 where (estacio, data) in (($2, $3::timestamptz))',
+    ]);
+    expect(queries[0]?.parameters).toEqual([
+      null,
+      'CC',
+      '2026-10-18T21:00:00.000Z',
+      'UG',
+      '2026-10-18T21:30:00.000Z',
+    ]);
+  });
 });

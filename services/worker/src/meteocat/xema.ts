@@ -49,13 +49,18 @@ export type XemaClient = {
   /** Estacions operatives en una data (`YYYY-MM-DD`). */
   estacionsOperatives(data: string): Promise<EstacioXema[]>;
   /**
-   * Lectures semihoràries d'una variable de totes les estacions en un dia (`YYYY-MM-DD`, UTC),
-   * sense les que Meteocat marca com a invàlides (estat «N»).
+   * Lectures semihoràries d'una variable de totes les estacions en un dia (`YYYY-MM-DD`, UTC).
+   * Les que Meteocat marca com a invàlides (estat «N») porten `invalida: true`: no s'han de desar.
    */
-  lectures(
-    variable: VariableXema,
-    data: string,
-  ): Promise<Array<{ estacio: string; data: string; valor: number; validada: boolean }>>;
+  lectures(variable: VariableXema, data: string): Promise<LecturaVariable[]>;
+};
+
+export type LecturaVariable = {
+  estacio: string;
+  data: string;
+  valor: number;
+  validada: boolean;
+  invalida: boolean;
 };
 
 /** Error en parlar amb la XEMA: xarxa o timeout (sense `status`), HTTP o cos inesperat. */
@@ -158,15 +163,14 @@ export function createXemaClient(options: XemaClientOptions): XemaClient {
           .filter((v) => v.codi === codi)
           .flatMap((v) =>
             // Estats de Meteocat: «V» validada, «T» o buit pendent de validar, «N» invàlida.
-            v.lectures
-              .filter((l) => l.estat !== 'N')
-              .map((l) => ({
-                estacio: estacio.codi,
-                // La XEMA dona `2026-10-18T21:30Z`: es normalitza a ISO amb mil·lisegons, com la resta.
-                data: new Date(l.data).toISOString(),
-                valor: l.valor,
-                validada: l.estat === 'V',
-              })),
+            v.lectures.map((l) => ({
+              estacio: estacio.codi,
+              // La XEMA dona `2026-10-18T21:30Z`: es normalitza a ISO amb mil·lisegons, com la resta.
+              data: new Date(l.data).toISOString(),
+              valor: l.valor,
+              validada: l.estat === 'V',
+              invalida: l.estat === 'N',
+            })),
           ),
       );
     },

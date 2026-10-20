@@ -12,11 +12,14 @@ function xemaFalsa(
   {
     error = () => new XemaError('La XEMA ha respost 503', 503),
     valorDe = () => undefined,
+    invalidaDe = () => false,
     estacionsOperatives = [{ codi: 'CC', nom: 'Orís', lat: 42.07, lon: 2.2, altitud: 626 }],
   }: {
     error?: () => Error;
     /** Valor per a una estació i variable concretes; si no, el de `valors`. */
     valorDe?: (estacio: string, variable: VariableXema) => number | undefined;
+    /** Lectures que Meteocat marca com a invàlides («N»). */
+    invalidaDe?: (estacio: string, variable: VariableXema) => boolean;
     estacionsOperatives?: Awaited<ReturnType<XemaClient['estacionsOperatives']>>;
   } = {},
 ) {
@@ -38,6 +41,7 @@ function xemaFalsa(
           data: `${dia}T${hora}:00.000Z`,
           valor: valorDe(estacio, variable) ?? valors[variable],
           validada: !(estacio === 'UG' && variable === 'humitat'),
+          invalida: invalidaDe(estacio, variable),
         })),
       );
     }),
@@ -205,6 +209,34 @@ describe('ingestaLecturesXema', () => {
     const parcial = xemaFalsa(['humitat']);
     await ingestaLecturesXema({ client: parcial, repository, ara: () => ARA });
     expect(repository.lectures()[0]).toMatchObject({ humitat: 81, validada: false });
+  });
+
+  it('amb un 429 a mitja ingesta, desa les variables que ja havia baixat', async () => {
+    const repository = createInMemoryXemaRepository({ estacions: ['CC'] });
+    const client = xemaFalsa(['humitat'], {
+      error: () => new XemaError('La XEMA ha respost 429: quota exhaurida', 429),
+    });
+
+    await expect(ingestaLecturesXema({ client, repository, ara: () => ARA })).rejects.toThrow(
+      '429',
+    );
+
+    expect(client.lectures).toHaveBeenCalledTimes(4); // vent, direcció, temperatura i humitat
+    expect(repository.lectures()[0]).toMatchObject({ temperatura: 8.3, humitat: null });
+  });
+
+  it('en tornar a baixar un dia, un valor que ara és «N» queda a null', async () => {
+    const repository = createInMemoryXemaRepository({ estacions: ['CC'] });
+    await ingestaLecturesXema({ client: xemaFalsa(), repository, ara: () => ARA });
+
+    const resum = await ingestaLecturesXema({
+      client: xemaFalsa([], { invalidaDe: (_e, variable) => variable === 'humitat' }),
+      repository,
+      ara: () => ARA,
+    });
+
+    expect(resum.descartades).toBe(2);
+    expect(repository.lectures()[0]).toMatchObject({ humitat: null, temperatura: 8.3 });
   });
 });
 

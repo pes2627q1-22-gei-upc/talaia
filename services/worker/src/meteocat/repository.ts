@@ -3,7 +3,7 @@ import type { LecturaXema } from '@talaia/shared';
 import { sql, type Kysely } from 'kysely';
 
 import type { XemaRepository } from './ingesta';
-import type { EstacioXema } from './xema';
+import type { EstacioXema, VariableXema } from './xema';
 
 /** Files per `insert`: lluny del límit de 65.535 paràmetres de Postgres (9 columnes per fila). */
 const FILES_PER_INSERT = 1000;
@@ -124,6 +124,24 @@ export function createKyselyXemaRepository(db: Kysely<DB>): XemaRepository {
     async esborraLecturesAnteriors(abans) {
       await db.deleteFrom('lecturesXema').where('data', '<', abans).execute();
     },
+
+    async anulaValors(valors) {
+      // Una actualització per variable; les columnes es diuen com les variables (`LecturaXema`).
+      const perVariable = new Map<VariableXema, typeof valors>();
+      for (const v of valors)
+        perVariable.set(v.variable, [...(perVariable.get(v.variable) ?? []), v]);
+      for (const [variable, files] of perVariable) {
+        await db
+          .updateTable('lecturesXema')
+          .set({ [variable]: null })
+          .where(
+            sql<boolean>`(estacio, data) in (${sql.join(
+              files.map((f) => sql`(${f.estacio}, ${f.data}::timestamptz)`),
+            )})`,
+          )
+          .execute();
+      }
+    },
   };
 }
 
@@ -184,6 +202,12 @@ export function createInMemoryXemaRepository({
     async esborraLecturesAnteriors(abans) {
       for (const [clau, l] of lectures)
         if (Date.parse(l.data) < abans.getTime()) lectures.delete(clau);
+    },
+    async anulaValors(valors) {
+      for (const { estacio, data, variable } of valors) {
+        const fila = lectures.get(`${estacio}|${data}`);
+        if (fila) fila[variable] = null;
+      }
     },
     lectures: () => [...lectures.values()],
     estacions: () => [...estacions.values()],

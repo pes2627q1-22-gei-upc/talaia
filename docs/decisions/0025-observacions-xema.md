@@ -21,10 +21,10 @@ En mirar l'API de dades meteorològiques de Meteocat:
 - **Format:** `lectures_xema`, una fila per estació i lectura semihorària, amb les unitats d'Open-Meteo (`LecturaXema` a `@talaia/shared`; el vent, en km/h). Les lectures es guarden 90 dies.
 - **Quan:** la XEMA etiqueta per davant (la lectura de les 11:00Z cobreix de 11:00 a 11:30), i Open-Meteo etiqueta per darrere els valors acumulats (la precipitació de les 12:00 és la de 11:00 a 12:00). La TG-184 ho ha de tenir en compte en comparar-les, o es desquadrarà mitja hora o una hora.
 - **Qualitat de les dades:**
-  - Les lectures que Meteocat marca com a **invàlides** (estat «N») no es desen.
+  - Les lectures que Meteocat marca com a **invàlides** (estat «N») no es desen. Si en tornar a baixar un dia una lectura que era pendent ha passat a «N» (o fora de rang), aquell valor es posa a `null` (`anulaValors`): el `coalesce` no la pot conservar.
   - Els valors **fora del rang físic** (`RANGS`, els mateixos que els `check` de la taula: una humitat de 101) es descarten un a un: no fan perdre la resta del dia.
   - `validada` diu si **tots** els valors de la fila estan validats (estat «V»). Meteocat valida amb dies de retard, de manera que a les lectures d'ahir sol ser `false`. Si una ingesta parcial conserva valors antics, la fila només és validada si l'antiga també ho era.
-- **Robustesa:** si falla una variable es desen les altres, i tornar a baixar un dia no esborra els valors que la nova ingesta no porta (`coalesce`). Si fallen totes, o si la clau és rebutjada (401, 403) o la quota s'ha exhaurit (429), la ingesta falla de seguida i no continua gastant consultes. Respecta el senyal d'aturada del worker.
+- **Robustesa:** si falla una variable es desen les altres, i tornar a baixar un dia no esborra els valors que la nova ingesta no porta (`coalesce`). Si fallen totes, la ingesta falla. Si la clau és rebutjada (401, 403) o la quota s'ha exhaurit (429), para de seguida per no gastar més consultes, però abans desa les variables que ja havia baixat. Respecta el senyal d'aturada del worker.
 
 ### Alternatives descartades
 
