@@ -261,7 +261,33 @@ describe('OpenAPI', () => {
     expect(res.status).toBe(200);
     expect(res.body.openapi).toBe('3.0.3');
     expect(res.body.paths).toHaveProperty('/health');
+    expect(res.body.paths).toHaveProperty('/esdeveniments');
     expect(res.body.components.schemas).toHaveProperty('Error');
+    expect(res.body.components.schemas).toHaveProperty('Esdeveniment');
+    expect(res.body.components.securitySchemes).toHaveProperty('ApiKeyAprop');
+    expect(res.body.components.securitySchemes).toHaveProperty('BearerSupabase');
+
+    const tipus = res.body.paths['/esdeveniments'].get.parameters.find(
+      (parameter: { name: string }) => parameter.name === 'tipus',
+    );
+    expect(tipus.schema.enum).toEqual([
+      'fase_llunar',
+      'pluja_estels',
+      'eclipsi_solar',
+      'eclipsi_llunar',
+      'conjuncio',
+      'superlluna',
+    ]);
+    expect(
+      res.body.paths['/esdeveniments'].get.parameters.map(
+        (parameter: { name: string }) => parameter.name,
+      ),
+    ).toEqual(['des_de', 'fins_a', 'tipus']);
+    expect(res.body.paths['/esdeveniments'].get.operationId).toBe('listEsdeveniments');
+    expect(res.body.paths['/esdeveniments'].get.security).toEqual([
+      { ApiKeyAprop: [] },
+      { BearerSupabase: [] },
+    ]);
   });
 
   it('serveix la UI a /api/v1/docs/', async () => {
