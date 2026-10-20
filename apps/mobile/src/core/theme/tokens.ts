@@ -7,8 +7,6 @@ import { Easing } from 'react-native-reanimated';
  */
 export const colors = {
   nit: '#0E1433',
-  /** Transició del mapa cap al fons de la fitxa. */
-  mapFade: '#0E143333',
   card: '#141B42',
   sheet: '#161D45',
   vel: '#1E2657',
@@ -35,6 +33,18 @@ export const gradients = {
     colors: ['#0B1030', '#17205A', '#2F3680'],
     locations: [0, 0.58, 1],
   },
+  pointMapFade: {
+    colors: ['transparent', 'transparent', '#0E143333', colors.nit],
+    locations: [0, 0.35, 0.7, 1],
+  },
+} as const;
+
+/** Colors amb transparència del marcador i de l'atribució del mapa DOM. */
+export const pointMapColors = {
+  shadow: '#00000047',
+  markerPulse: '#5FD4C4B8',
+  markerGlow: '#5FD4C4B3',
+  markerHalo: '#5FD4C42E',
 } as const;
 
 export const spacing = {

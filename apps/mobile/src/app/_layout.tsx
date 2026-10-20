@@ -38,7 +38,12 @@ function RootStack() {
       <Stack.Screen name="(tabs)" options={{ animation: 'fade' }} />
       <Stack.Screen
         name="punt/[id]"
-        options={{ headerShown: true, title: t('point.title'), headerTintColor: colors.lluna }}
+        options={{
+          headerShown: true,
+          title: t('point.title'),
+          headerTintColor: colors.lluna,
+          headerBackButtonDisplayMode: 'minimal',
+        }}
       />
       <Stack.Screen
         name="benvinguda"
