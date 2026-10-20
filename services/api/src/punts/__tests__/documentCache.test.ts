@@ -153,3 +153,33 @@ describe('createContentHashCache amb period', () => {
     expect(second.etag).not.toBe(first.etag);
   });
 });
+
+describe('createContentHashCache: una regeneració que travessa el canvi de període', () => {
+  it('qui hi estava enganxat rep el document del període nou', async () => {
+    let t = 59_990;
+    let acaba: (doc: PuntsMapaGeoJson) => void = () => {};
+    const load = jest.fn(
+      (period: number | undefined) =>
+        new Promise<PuntsMapaGeoJson>((resolve) => {
+          if (period === 0) acaba = resolve;
+          else resolve(doc(2));
+        }),
+    );
+    const cache = createContentHashCache(load, {
+      ttlMs: 10 * 60_000,
+      period: (now) => Math.floor(now / 60_000),
+      now: () => t,
+    });
+
+    const primera = cache.get();
+    t = 60_010;
+    const segona = cache.get();
+    await new Promise((resolve) => setImmediate(resolve)); // que `load(0)` hagi començat
+    acaba(doc(1));
+
+    // Totes dues s'havien enganxat a la regeneració del període 0: reben la del període 1.
+    expect((await primera).geojson.features).toHaveLength(2);
+    expect((await segona).geojson.features).toHaveLength(2);
+    expect(load.mock.calls).toEqual([[0], [1]]);
+  });
+});

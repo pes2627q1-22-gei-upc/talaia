@@ -45,15 +45,15 @@ describe('puntsRepository.listPublished', () => {
 });
 
 describe('puntsRepository.indexVersion', () => {
-  it("llegeix l'última execució correcta del worker", async () => {
+  it("llegeix l'última execució del worker que ha desat algun punt", async () => {
     const { db, queries } = dummyDb();
 
     await expect(createPuntsRepository(db).indexVersion()).resolves.toBeNull();
 
     expect(queries[0]?.sql).toBe(
-      'select max("acabada_el") as "acabada_el" from "execucions_worker" where "estat" = $1',
+      'select max("acabada_el") as "acabada_el" from "execucions_worker" where "punts" > $1',
     );
-    expect(queries[0]?.parameters).toEqual(['ok']);
+    expect(queries[0]?.parameters).toEqual([0]);
   });
 });
 

@@ -108,7 +108,7 @@ A mà, a la VM, torna a desplegar el commit actual: `FORCE=1 ~/talaia/deploy/scr
 
 ## El worker
 
-El worker (`services/worker/dist/main.js`) és un procés llarg que recalcula l'índex de tots els punts en arrencar i cada hora al minut 5 (UTC), amb node-cron ([ADR-0024](decisions/0024-planificacio-worker-node-cron.md)). Necessita `DATABASE_URL`, la mateixa que l'API. Cada execució queda a la taula `execucions_worker`, i l'API en fa servir l'última correcta per regenerar el document del mapa. Un recàlcul que falla no atura el procés: es torna a provar a l'hora següent. En aturar-lo, Docker li dona 75 s (`stop_grace_period`) per acabar el lot en curs.
+El worker (`services/worker/dist/main.js`) és un procés llarg que recalcula l'índex de tots els punts en arrencar i cada hora al minut 5 (UTC), amb node-cron ([ADR-0024](decisions/0024-planificacio-worker-node-cron.md)). Necessita `DATABASE_URL`, la mateixa que l'API. Cada execució queda a la taula `execucions_worker`, i l'API en fa servir l'última que ha desat algun punt per regenerar el document del mapa. Un recàlcul que falla no atura el procés: es torna a provar a l'hora següent. En aturar-lo, Docker li dona 75 s (`stop_grace_period`) per acabar el lot en curs.
 
 ```bash
 tc logs -f worker            # «índex de 32 punts (… hores) en … s» a cada hora

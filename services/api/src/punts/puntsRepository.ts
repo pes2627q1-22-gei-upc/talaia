@@ -21,8 +21,8 @@ export type PuntsRepository = {
   /** Punts visibles al mapa (`estat = 'PUBLICAT'`), amb l'índex de l'`hora` (inici, en UTC). */
   listPublished(hora: Date): Promise<PuntMapa[]>;
   /**
-   * Versió de l'índex: quan va acabar l'última execució correcta del worker (ADR-0012, ADR-0024),
-   * o `null` si encara no n'hi ha cap.
+   * Versió de l'índex: quan va acabar l'última execució del worker que ha desat l'índex d'algun
+   * punt (ADR-0012, ADR-0024), o `null` si encara no n'hi ha cap.
    */
   indexVersion(): Promise<string | null>;
   /** Un punt publicat, o `undefined` si no existeix o no és `PUBLICAT`. */
@@ -61,7 +61,8 @@ export function createPuntsRepository(db: Db): PuntsRepository {
       const fila = await db
         .selectFrom('execucionsWorker')
         .select((eb) => eb.fn.max('acabadaEl').as('acabadaEl'))
-        .where('estat', '=', 'ok')
+        // També les execucions amb algun lot fallat: si n'han desat algun, el mapa ha canviat.
+        .where('punts', '>', 0)
         .executeTakeFirst();
       return fila?.acabadaEl ? new Date(fila.acabadaEl).toISOString() : null;
     },

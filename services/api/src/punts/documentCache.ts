@@ -103,11 +103,16 @@ export function createContentHashCache(
       ) {
         return current.doc;
       }
-      refreshing ??= refresh().finally(() => {
-        refreshing = undefined;
-      });
+      const regenera = () =>
+        (refreshing ??= refresh().finally(() => {
+          refreshing = undefined;
+        }));
       try {
-        return await refreshing;
+        const doc = await regenera();
+        // Una regeneració començada abans de canviar el període porta les dades de l'anterior: qui
+        // s'hi ha enganxat després en demana una de nova.
+        if (period && period(now()) !== current?.period) return await regenera();
+        return doc;
       } catch (err) {
         if (!current) throw err;
         console.error("[punts] no s'ha pogut regenerar el document; se serveix l'anterior", err);
