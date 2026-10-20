@@ -131,6 +131,22 @@ describe('JWT auth i perfil en el primer accés', () => {
     expect(res.body.created).toBe(false);
   });
 
+  it("passa al perfil el nom que envia l'app (Apple no el posa al token)", async () => {
+    const token = await signToken();
+    const res = await postPerfil(jwtApp, token).send({ nom: '  Martina Maldonado ' });
+    expect(res.status).toBeLessThan(300);
+    expect(profileStore.ensureProfile).toHaveBeenLastCalledWith(expect.anything(), {
+      nom: 'Martina Maldonado',
+    });
+  });
+
+  it('respon 400 si el nom no és vàlid', async () => {
+    const token = await signToken();
+    const res = await postPerfil(jwtApp, token).send({ nom: '' });
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe('validation_error');
+  });
+
   it.each<[string, () => Promise<string>]>([
     ['mal format', async () => 'invalid.token'],
     ['caducat', () => signToken({ exp: Math.floor(Date.now() / 1000) - 60 })],
@@ -261,7 +277,33 @@ describe('OpenAPI', () => {
     expect(res.status).toBe(200);
     expect(res.body.openapi).toBe('3.0.3');
     expect(res.body.paths).toHaveProperty('/health');
+    expect(res.body.paths).toHaveProperty('/esdeveniments');
     expect(res.body.components.schemas).toHaveProperty('Error');
+    expect(res.body.components.schemas).toHaveProperty('Esdeveniment');
+    expect(res.body.components.securitySchemes).toHaveProperty('ApiKeyAprop');
+    expect(res.body.components.securitySchemes).toHaveProperty('BearerSupabase');
+
+    const tipus = res.body.paths['/esdeveniments'].get.parameters.find(
+      (parameter: { name: string }) => parameter.name === 'tipus',
+    );
+    expect(tipus.schema.enum).toEqual([
+      'fase_llunar',
+      'pluja_estels',
+      'eclipsi_solar',
+      'eclipsi_llunar',
+      'conjuncio',
+      'superlluna',
+    ]);
+    expect(
+      res.body.paths['/esdeveniments'].get.parameters.map(
+        (parameter: { name: string }) => parameter.name,
+      ),
+    ).toEqual(['des_de', 'fins_a', 'tipus']);
+    expect(res.body.paths['/esdeveniments'].get.operationId).toBe('listEsdeveniments');
+    expect(res.body.paths['/esdeveniments'].get.security).toEqual([
+      { ApiKeyAprop: [] },
+      { BearerSupabase: [] },
+    ]);
   });
 
   it('serveix la UI a /api/v1/docs/', async () => {

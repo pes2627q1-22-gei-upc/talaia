@@ -8,6 +8,7 @@ import type { JwksSource } from '../middleware/auth';
 import type { ProfileStore } from '../services/profileService';
 import { createAuthRouter } from './auth';
 import { healthRouter } from './health';
+import './esdeveniments.contract';
 import { createPuntsRouter } from './punts';
 
 /** Dependències dels routers. */

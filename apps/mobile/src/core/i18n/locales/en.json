@@ -43,12 +43,22 @@
     "currentIndex": "Current visibility index",
     "noIndex": "Index not available yet",
     "bestHour": "Best time from <strong>{{from}}</strong> to <strong>{{to}}</strong>.",
-    "altitude": "Altitude",
     "altitudeTag": "Altitude: {{value}}",
     "metres": "{{value}} m",
     "unavailable": "No data",
     "darkness": "Sky darkness",
-    "darknessValue": "{{value}}/100",
+    "sqmLabel": "Sky darkness (SQM)",
+    "sqmValue": "{{value}} mag/arcsec²",
+    "sqmQuality": {
+      "excellent": "Very dark sky · excellent quality",
+      "veryGood": "Dark sky · very good quality",
+      "good": "Good darkness · good quality",
+      "moderate": "Moderate darkness",
+      "low": "Little darkness · low quality",
+      "poor": "Very little darkness · poor quality",
+      "veryPoor": "Very bright sky · very poor quality"
+    },
+    "sqmHint": "Reference darkness for this location",
     "darknessHint": "Higher values mean less light pollution.",
     "darknessEstimated": "Estimated value; light pollution data is not available yet.",
     "clouds": "Clouds",
@@ -81,7 +91,6 @@
     "timezone": "Local time in Catalonia · Europe/Madrid",
     "noHours": "There is no forecast for the next hours yet.",
     "hourA11y": "{{time}}: index {{value}} out of 100, {{level}}",
-    "bestHourA11y": "Within the best time window",
     "bestHourWithStatusA11y": "{{label}}. Within the best time window",
     "notFoundTitle": "Observation spot not found",
     "notFoundMessage": "It may no longer be available. Go back to the map and choose another spot.",
@@ -107,9 +116,9 @@
     "tagline": "Where and when to look at the sky.",
     "description": "We tell you the best place near you to watch sunsets, meteor showers and clear nights.",
     "continueGoogle": "Continue with Google",
-    "continueApple": "Continue with Apple",
     "continueEmail": "Continue with email",
-    "legal": "By continuing, you accept Talaia's terms of use and privacy policy."
+    "legal": "By continuing, you accept Talaia's terms of use and privacy policy.",
+    "signingIn": "Signing in…"
   },
   "notFound": {
     "title": "This screen doesn't exist",
@@ -233,6 +242,33 @@
     "signingOut": "Signing out…",
     "restoreError": "Could not restore your session. Please try again.",
     "logoutError": "Could not sign out. Please try again.",
-    "retry": "Try again"
+    "retry": "Try again",
+    "errors": {
+      "network": "You're offline. Check your connection and try again.",
+      "invalidEmail": "This email address isn't valid.",
+      "invalidCode": "The code is wrong or has expired.",
+      "rateLimited": "Too many attempts in a row. Wait a moment and try again.",
+      "unavailable": "Sign-in isn't set up in this version of the app.",
+      "profile": "You're signed in, but we couldn't set up your profile. Try again.",
+      "unknown": "Couldn't sign you in. Try again."
+    }
+  },
+  "emailLogin": {
+    "title": "Sign in with email",
+    "emailSubtitle": "We'll send you a 6-digit code. If you don't have an account, we'll create one.",
+    "emailLabel": "Email",
+    "emailPlaceholder": "name@example.com",
+    "send": "Send code",
+    "sending": "Sending…",
+    "codeTitle": "Enter the code",
+    "codeSubtitle": "We sent it to {{email}}. Check your spam folder too.",
+    "codeLabel": "6-digit code",
+    "verify": "Sign in",
+    "verifying": "Checking…",
+    "resend": "Resend code",
+    "resendIn": "Resend code ({{seconds}} s)",
+    "resent": "We've sent you a new code.",
+    "changeEmail": "Change address",
+    "back": "Back"
   }
 }

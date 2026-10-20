@@ -35,6 +35,8 @@ La VM no té ports 80 ni 443. La FIB en redirigeix 10: `nattech.fib.upc.edu:4000
 | 8080 | `40000 + XXX·10` | Nginx (HTTPS) |
 | 8081–8089 | `+1` … `+9` | Lliures: no es publiquen fins que es facin servir |
 
+**VM actual:** IP `172.16.4.50`, de manera que `nattech.fib.upc.edu:40500` va al 8080. El nom públic és `talaia-pes.duckdns.org` (A → `147.83.148.217`, la IP de `nattech`).
+
 La URL pública de l'API és, per tant, `https://<PUBLIC_HOST>:<40000+XXX·10>/api/v1`. És el valor d'`API_PUBLIC_URL` i el que han de fer servir l'app i els equips Aprop i Mobilicat.
 
 ## Muntar la VM de zero
@@ -43,11 +45,21 @@ La VM s'esborra a final de quadrimestre i no té còpia de seguretat. Tot el que
 
 ### 1. Docker
 
+La VM és **Ubuntu 20.04** (ADR-0019): la plantilla de la 24.04 ocupa 30 GB i supera la quota de 24 GB. A la 20.04, l'script `get.docker.com` falla perquè intenta instal·lar `docker-model-plugin`, que no existeix per a focal (i, com que `apt` no instal·la res si un paquet falla, Docker no queda instal·lat). Cal fer-ho amb `apt` des del repositori de Docker:
+
 ```bash
-curl -fsSL https://get.docker.com | sudo sh
+sudo install -m 0755 -d /etc/apt/keyrings
+sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+sudo apt-get update
+sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin docker-buildx-plugin
 sudo usermod -aG docker "$USER"   # torna a entrar perquè s'apliqui
-docker compose version
+docker --version && docker compose version
 ```
+
+Per a focal, les últimes versions publicades són **Docker 28.1.1 i Compose 2.35.1**, i ja no n'hi haurà més. Compose 2.35 admet tot el que fa servir `deploy/compose.yaml` (`--wait`, `profiles`, `${VAR:?}`). En una plantilla suportada (22.04, 24.04) n'hi ha prou amb `curl -fsSL https://get.docker.com | sudo sh`.
+
+Les actualitzacions de seguretat del sistema de la 20.04 es poden recuperar amb l'Ubuntu Pro gratuït (`sudo pro attach <token>`, amb un compte d'Ubuntu One): ESM fins al 2030. Docker no hi entra: continua congelat.
 
 ### 2. DuckDNS
 
@@ -55,22 +67,29 @@ docker compose version
 2. Posa-hi com a IP la de `nattech.fib.upc.edu` (`dig +short nattech.fib.upc.edu`).
 3. Copia el token del compte: va a `DUCKDNS_TOKEN`.
 
-### 3. Fitxer d'entorn
+### 3. Repositori i fitxer d'entorn
 
 ```bash
-sudo mkdir -p /opt/talaia
-sudo cp .env.example /opt/talaia/.env        # des d'un checkout del repo
-sudo chown "$USER" /opt/talaia/.env && chmod 600 /opt/talaia/.env
+cd ~ && git clone https://github.com/pes2627q1-22-gei-upc/talaia.git && cd talaia && git switch stable   # o snapshot, mentre stable no tingui deploy/
+sudo mkdir -p /opt/talaia && sudo chown "$USER": /opt/talaia && sudo chmod 700 /opt/talaia
+(umask 077 && cp ~/talaia/.env.example /opt/talaia/.env)
 ```
 
 Omple com a mínim `PUBLIC_HOST`, `PUBLIC_PORT` (`40000+XXX·10`), `ACME_EMAIL`, `DUCKDNS_TOKEN`, `DATABASE_URL` i `API_PUBLIC_URL`. Els valors reals són al gestor de contrasenyes de l'equip (P20), mai al repo ni al xat.
 
 Compte: Docker Compose llegeix un comentari al final d'una línia buida (`VAR=   # …`) com si fos el valor. Posa els comentaris a la línia de sobre.
 
+Quatre condicions per a `DATABASE_URL`. Si no es compleixen, l'API arrenca però `/punts` respon 503 (amb una URL mal formada, el log diu `getaddrinfo ENOTFOUND`):
+
+- Fes servir la cadena del **Session pooler** (Supabase → **Connect**), amb l'usuari `postgres.<ref>`. El host directe `db.<ref>.supabase.co` només té IPv6 i la VM no hi arriba.
+- La contrasenya és la **de la base de dades** (Supabase → **Project Settings → Database**), no la del compte de Supabase ni la de cap altre servei.
+- Ha d'anar **percent-encoded**: `/` → `%2F`, `#` → `%23`, `?` → `%3F`, `@` → `%40`, `%` → `%25`. Sense codificar, un d'aquests caràcters talla la URL i el client pren l'usuari per host. Compose expandeix els `$` del `--env-file`: escriu-los `$$`, o posa tot el valor entre cometes simples (`DATABASE_URL='postgresql://…'`), on Compose no expandeix res.
+- Acaba en `…/postgres?sslmode=no-verify`, **sense barra abans del `?`** (`/postgres/?` busca una base de dades amb un nom que no existeix).
+
 ### 4. Primera arrencada i certificat
 
 ```bash
-cd ~ && git clone https://github.com/pes2627q1-22-gei-upc/talaia.git && cd talaia && git switch stable
+cd ~/talaia
 docker compose -f deploy/compose.yaml --env-file /opt/talaia/.env up -d --build --wait
 deploy/scripts/emet-certificat.sh /opt/talaia/.env
 ```
@@ -91,6 +110,8 @@ Un cron de l'usuari executa `deploy/scripts/desplega.sh` cada 5 minuts. Si `orig
 (crontab -l 2>/dev/null; echo '*/5 * * * * $HOME/talaia/deploy/scripts/desplega.sh /opt/talaia/.env >> $HOME/talaia-deploy.log 2>&1') | crontab -
 crontab -l   # comprova-ho
 ```
+
+**Mentre `stable` no tingui `deploy/`** (fins a `release/0.1.0`, ADR-0009), la línia es deixa comentada (`#*/5 …`): el primer `git reset --hard origin/stable` esborraria `deploy/` del checkout, script inclòs, i el log s'ompliria d'`ERROR`. Fins llavors, la VM corre el que s'hi ha arrencat a mà (des de `snapshot`). Quan `stable` tingui `deploy/`, es descomenta amb `crontab -e`.
 
 L'script agafa un `flock` (`.git/talaia-deploy.lock`): si un build triga més de 5 minuts o se n'engega un a mà, el segon surt sense fer res. El `git fetch` té un límit d'1 minut i el `docker compose` de 20, perquè un procés penjat no bloquegi els següents. El cron torna a funcionar sol després d'un reinici de la VM. **No editis res a `~/talaia`:** el deploy fa `git reset --hard` i ho perdria.
 

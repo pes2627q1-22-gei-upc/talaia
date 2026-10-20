@@ -1,5 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { StyleSheet } from 'react-native';
 
 import { apiGet, ApiError } from '@/core/api/httpClient';
 import i18n from '@/core/i18n';
@@ -44,6 +45,8 @@ it('mostra les dades i les hores amb etiquetes accessibles', async () => {
   expect(screen.getByText(point.accessibilitat!)).toBeOnTheScreen();
   expect(screen.getByText('Vistes obertes')).toBeOnTheScreen();
   expect(screen.getByText('Cap al sud i al sud-oest')).toBeOnTheScreen();
+  expect(screen.getByText('21,4 mag/arcsec² · Foscor de referència del lloc')).toBeOnTheScreen();
+  expect(screen.getByText('Cel molt fosc · qualitat excel·lent')).toBeOnTheScreen();
   expect(screen.getByRole('header', { name: 'Informació del punt' })).toBeOnTheScreen();
   expect(screen.getByText('Sol')).toBeOnTheScreen();
   expect(screen.getByLabelText(/23:00.*87 de 100/)).toBeOnTheScreen();
@@ -65,6 +68,18 @@ it('permet consultar també una hora atenuada i tornar a amagar-ne el valor', as
   expect(hour.props.accessibilityState).toEqual({ selected: false });
   expect(screen.getAllByText('87')).toHaveLength(1);
   expect(screen.queryByTestId('selected-hour-silhouette')).toBeNull();
+});
+
+it('manté totes les barres visibles quan no hi ha cap millor franja', async () => {
+  get.mockResolvedValue(
+    asPointResponse({
+      ...point,
+      properesHores: point.properesHores.map((entry) => ({ ...entry, franja: 'tap' })),
+    }),
+  );
+  await renderScreen();
+  const bar = await screen.findByTestId('hour-bar-2026-10-18T21:00:00Z');
+  expect(StyleSheet.flatten(bar.props.style).opacity).toBeUndefined();
 });
 
 it('el botó de reintent recupera la fitxa després d’un error', async () => {

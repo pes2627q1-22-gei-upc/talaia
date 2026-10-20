@@ -177,6 +177,8 @@ export function createInMemoryXemaRepository({
     estacioDe(puntId: string): string | undefined;
   } = {
     async desaEstacions(noves) {
+      // Com el de Kysely: una resposta buida de Meteocat no deixa cap estació com a no operativa.
+      if (noves.length === 0) return;
       for (const e of estacions.values()) e.operativa = false;
       for (const e of noves) estacions.set(e.codi, { ...e, operativa: true });
     },

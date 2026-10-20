@@ -48,6 +48,12 @@ src/
 
 Els tipus de domini (`PuntObservacio`, `Esdeveniment`, `IndexVisibilitat`…) no es defineixen a l'app: vénen de [`@talaia/shared`](../../packages/shared/README.md), sempre amb `import type`.
 
+## Fitxa del punt (TG-93)
+
+`features/point/pointRepository.ts` consumeix `GET /api/v1/punts/{id}` amb el contracte compartit `PuntFitxa`. Mostra les dades del punt, l'índex actual, les properes hores i l'SQM si estan disponibles; els valors absents no es substitueixen per zero. L'SQM es classifica amb els [llindars de qualitat del cel nocturn de la Generalitat](https://mediambient.gencat.cat/web/.content/home/ambits_dactuacio/atmosfera/contaminacio_luminica/Avaluacio_de_la_qualitat_del_cel_de_nit/campanya-2024.pdf) i s'explica com a valor de referència del lloc, no com a previsió de la nit. Les hores UTC es presenten en `Europe/Madrid`. La millor finestra és una agrupació de presentació de les hores consecutives de la franja màxima, no un camp de l'API. El refresc es programa després de la publicació horària del worker (minut 5 UTC). Un 400 o 404 mostra el punt com a inexistent; els errors de xarxa permeten reintentar. Les dades fictícies només són als tests de `features/point/__fixtures__`.
+
+El mapa de situació és estàtic i mostra l'atribució. «Com arribar» obre Google Maps amb les coordenades; «Crea un pla» mostra un avís fins que existeixi aquest flux. El desglossament dels factors de l'índex correspon a TG-105. Proves específiques: `npm test -w apps/mobile -- --runInBand src/features/point`.
+
 ## Sessió (TG-83)
 
 `AppProviders` munta un únic `AuthProvider`. `useAuthViewModel` exposa l'usuari
@@ -71,26 +77,46 @@ Configura `EXPO_PUBLIC_SUPABASE_URL` i `EXPO_PUBLIC_SUPABASE_ANON_KEY` al `.env`
 de l'app. Sense aquestes variables, l'app continua en mode anònim. Mai no hi
 posis la clau `service_role`.
 
-TG-81 aporta la configuració de Google OAuth a Supabase. Aquesta implementació
-es limita a la gestió de sessió: **els botons de la benvinguda encara no inicien
-sessió real**, i no s'hi afegeix cap barrera d'accés. Quan s'implementi el login,
-el seu repository ha d'utilitzar el mateix client; `onAuthStateChange`
-actualitzarà automàticament el ViewModel.
+## Inici de sessió (TG-249)
 
-El punt d'entrada per al repository del futur login és:
+Sense sessió no s'entra a l'app: `(tabs)/_layout.tsx` redirigeix a `/benvinguda`
+(`useSessionGate`), i en tancar la sessió s'hi torna. Si la sessió hi és però no
+s'ha pogut recuperar (sense cobertura i amb el token caducat), no s'envia a la
+benvinguda: `RestoreErrorScreen` deixa tornar-ho a provar, i quan torna la xarxa el
+SDK la renova sol. Sense les variables de Supabase la porta queda oberta, per poder
+provar l'app en local sense compte.
 
-```ts
-import { getAuthClient } from '@/core/auth/supabase';
+Tots els mètodes són a `features/auth/authRepository.ts`, amb el client únic de
+`core/auth/supabase.ts` (flux PKCE amb S256: `core/auth/webCrypto.ts` hi posa el
+`crypto` d'`expo-crypto`, que React Native no porta). `signInAndEnsureProfile` (`signIn.ts`) hi
+afegeix `POST /api/v1/perfil` (TG-84) després de cada login; si el perfil falla,
+tanca la sessió i la vista ho diu, perquè no quedi cap compte a mitges.
 
-const supabase = getAuthClient();
-if (!supabase) throw new Error('Supabase Auth no està configurat');
-// Fer servir supabase.auth.* per iniciar sessió o completar el callback OAuth.
-// No crear un altre client ni desar els tokens manualment.
-```
+- **Google:** `signInWithOAuth` amb `skipBrowserRedirect` → `openAuthSessionAsync`
+  → `exchangeCodeForSession`. La redirecció és `Linking.createURL('auth/callback')`
+  (a Expo Go, `exp://…/--/auth/callback`, permesa a `supabase/config.toml`).
+  A Android l'enllaç també arriba a Expo Router: `app/+native-intent.tsx` el
+  deixa a la benvinguda.
+- **Apple (només iOS, ADR-0016):** `expo-apple-authentication` amb un nonce (Apple
+  en rep el hash) i `signInWithIdToken`. Apple només dona el nom el primer cop i no
+  el posa al token: va al cos de `POST /perfil` (`{ nom }`). Botó oficial d'Apple.
+- **Correu:** `/benvinguda-correu`, codi de 6 xifres (`signInWithOtp` + `verifyOtp`),
+  no enllaç màgic. Les plantilles de correu han de portar `{{ .Token }}`: en local
+  ja ho fan (`supabase/templates/codi-acces.html`); al projecte del núvol s'han de
+  canviar a *Authentication → Email Templates* («Magic Link» i «Confirm signup»).
+  Mentre no hi hagi SMTP propi (P21), el correu de Supabase només arriba a les
+  adreces de l'equip.
+- **Errors:** `SignInFailure.reason` (`network`, `invalidCode`, `rateLimited`…),
+  traduïts a `auth.errors.*`. Cancel·lar no mostra cap missatge.
 
-`AuthProvider` ja està muntat globalment i escolta els canvis de sessió a través
-del repository. El login només ha de completar l'autenticació amb aquest client:
-la sessió es persistirà i el ViewModel rebrà l'usuari automàticament.
+### Abans de publicar l'app
+
+- Treure `host.exp.Exponent` dels *Client IDs* d'Apple a Supabase: amb ell, qualsevol
+  projecte obert amb Expo Go pot obtenir un token d'Apple vàlid per a Talaia.
+- Treure `exp://**` de les adreces de redirecció (`supabase/config.toml` i el núvol).
+- Els comptes d'Apple creats des d'Expo Go no són els de l'app real (`cat.talaia.app`):
+  els de proves no es poden reaprofitar.
+- SMTP propi per al correu (P21).
 
 ### Contracte amb les tasques que consumeixen la sessió
 
@@ -111,14 +137,7 @@ la sessió es persistirà i el ViewModel rebrà l'usuari automàticament.
   de React Query. Un canvi de compte buida la memòria cau; renovar el mateix
   compte no la buida.
 
-**Pendent abans de donar HU35 per acabada:** connectar el login real, executar
-la creació/recuperació del perfil i validar el flux en dispositiu contra l'API.
-L'abast de TG-83 confirmat pel sprint master és restauració i persistència
-segura de la sessió, logout i JWT a l'API. El login real de Google, Apple i
-correu i la crida de creació del perfil es faran en una tasca nova de la Martina.
-El sprint master actualitzarà l'assignació anterior de l'ADR-0016.
-
-Validació pendent en dispositiu, quan hi hagi el login connectat: iniciar sessió,
+Validació pendent en dispositiu (Expo Go, iOS i Android): iniciar sessió,
 tancar i reobrir l'app, passar-la a segon pla i tornar-hi després de caducar el
 token, fer logout des del perfil i verificar que no es restaura en reobrir.
 Les proves unitàries cobreixen restauració, canvis de compte, errors,

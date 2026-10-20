@@ -5,7 +5,17 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import Animated, { FadeIn, ReduceMotion } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { colors, fonts, motion, radii, sizes, spacing, typography } from '@/core/theme/tokens';
+import {
+  colors,
+  fonts,
+  gradients,
+  motion,
+  pointMapColors,
+  radii,
+  sizes,
+  spacing,
+  typography,
+} from '@/core/theme/tokens';
 import { AppText } from '@/shared/ui/AppText';
 import { Button } from '@/shared/ui/Button';
 import { Card } from '@/shared/ui/Card';
@@ -23,6 +33,7 @@ const mapPalette = {
   text: colors.boira,
   link: colors.lluna,
   marker: colors.ras,
+  ...pointMapColors,
 };
 const mapMetrics = {
   touch: sizes.touch,
@@ -87,8 +98,8 @@ export function PointDetailScreen({ pointId }: { pointId: string }) {
               />
               <LinearGradient
                 pointerEvents="none"
-                colors={['transparent', 'transparent', colors.mapFade, colors.nit]}
-                locations={[0, 0.35, 0.7, 1]}
+                colors={gradients.pointMapFade.colors}
+                locations={gradients.pointMapFade.locations}
                 style={styles.mapFade}
               />
               <AppText variant="display" accessibilityRole="header" style={styles.mapTitle}>
@@ -186,7 +197,7 @@ export function PointDetailScreen({ pointId }: { pointId: string }) {
                 </View>
               ))}
             </View>
-            {vm.description || vm.accessibility || vm.horizon ? (
+            {vm.description || vm.accessibility || vm.horizon || vm.skyDarkness ? (
               <View style={styles.pointInfo}>
                 <AppText variant="heading" accessibilityRole="header">
                   {vm.pointInfoLabel}
@@ -215,6 +226,21 @@ export function PointDetailScreen({ pointId }: { pointId: string }) {
                     <AppText variant="body">{vm.horizon}</AppText>
                   </View>
                 ) : null}
+                {vm.skyDarkness ? (
+                  <View style={styles.sqmField}>
+                    <AppText variant="small" color="boira">
+                      {vm.skyDarknessLabel}
+                    </AppText>
+                    <AppText variant="small" color="lluna">
+                      {vm.skyDarkness} · {vm.skyDarknessHint}
+                    </AppText>
+                    <View style={styles.sqmQuality}>
+                      <AppText variant="chip" color="pedra">
+                        {vm.skyDarknessQuality}
+                      </AppText>
+                    </View>
+                  </View>
+                ) : null}
               </View>
             ) : null}
           </Animated.View>
@@ -225,6 +251,7 @@ export function PointDetailScreen({ pointId }: { pointId: string }) {
           <Button
             variant="secondary"
             label={vm.directionsLabel}
+            haptic
             icon={<Image source={directionsIcon} style={styles.actionIcon} accessible={false} />}
             onPress={vm.openDirections}
             style={styles.actionButton}
@@ -232,6 +259,7 @@ export function PointDetailScreen({ pointId }: { pointId: string }) {
           <Button
             variant="primary"
             label={vm.createPlanLabel}
+            haptic
             icon={<Image source={planIcon} style={styles.actionIcon} accessible={false} />}
             onPress={vm.createPlan}
             style={styles.actionButton}
@@ -296,6 +324,19 @@ const styles = StyleSheet.create({
   factors: { gap: spacing.md },
   pointInfo: { gap: spacing.md },
   infoField: { gap: spacing.xs },
+  sqmField: {
+    gap: spacing.sm,
+    paddingTop: spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: colors.linia,
+  },
+  sqmQuality: {
+    alignSelf: 'flex-start',
+    backgroundColor: colors.vel,
+    borderRadius: radii.sm,
+    paddingHorizontal: spacing.ms,
+    paddingVertical: spacing.xs,
+  },
   factorRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   factorIcon: { width: sizes.icon, height: sizes.icon },
   factorContent: { flex: 1, gap: spacing.xs },

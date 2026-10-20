@@ -13,7 +13,11 @@ export type ProfileRecord = {
 };
 
 export type ProfileStore = {
-  ensureProfile: (user: AuthenticatedUser) => Promise<{ created: boolean; profile: ProfileRecord }>;
+  ensureProfile: (
+    user: AuthenticatedUser,
+    /** El nom que envia l'app (Apple no el posa al token). */
+    hints?: { nom?: string },
+  ) => Promise<{ created: boolean; profile: ProfileRecord }>;
 };
 
 type Db = ReturnType<typeof createDb>;
@@ -21,7 +25,7 @@ type Db = ReturnType<typeof createDb>;
 /** Perfils a la base de dades. Rep el pool de `server.ts`, el mateix que fan servir els punts. */
 export function createDatabaseProfileStore(db: Db): ProfileStore {
   return {
-    async ensureProfile(user) {
+    async ensureProfile(user, hints) {
       const avatarUrl =
         typeof user.userMetadata?.avatar_url === 'string' ? user.userMetadata.avatar_url : null;
       const nomComplet =
@@ -33,7 +37,7 @@ export function createDatabaseProfileStore(db: Db): ProfileStore {
         .values({
           authUserId: user.id,
           email: user.email ?? null,
-          nom: nomComplet ?? nomDefault,
+          nom: hints?.nom ?? nomComplet ?? nomDefault,
           avatarUrl,
         })
         .onConflict((oc) => oc.column('authUserId').doNothing())

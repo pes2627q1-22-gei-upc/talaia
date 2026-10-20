@@ -20,6 +20,7 @@ export const point: PointDetailModel = {
   accessibilitat: 'Aparcament al costat del punt.',
   horitzoObert: ['S', 'SW'],
   altitud: 1570,
+  sqm: 21.4,
   indexActual: { ...hour, hora: '2026-10-18T20:00:00Z' },
   properesHores: [
     { ...hour, hora: '2026-10-18T23:00:00Z', valor: 94 },
@@ -40,7 +41,7 @@ export function asPointResponse(detail: PointDetailModel = point): PuntFitxa {
     altitud: detail.altitud,
     accessibilitat: detail.accessibilitat,
     horitzoObert: detail.horitzoObert,
-    sqm: 21.4,
+    sqm: detail.sqm,
     index: { actual: detail.indexActual, properesHores: detail.properesHores },
   };
 }

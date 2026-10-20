@@ -163,14 +163,21 @@ export function createXemaClient(options: XemaClientOptions): XemaClient {
           .filter((v) => v.codi === codi)
           .flatMap((v) =>
             // Estats de Meteocat: «V» validada, «T» o buit pendent de validar, «N» invàlida.
-            v.lectures.map((l) => ({
-              estacio: estacio.codi,
+            v.lectures.flatMap((l) => {
               // La XEMA dona `2026-10-18T21:30Z`: es normalitza a ISO amb mil·lisegons, com la resta.
-              data: new Date(l.data).toISOString(),
-              valor: l.valor,
-              validada: l.estat === 'V',
-              invalida: l.estat === 'N',
-            })),
+              // Una data que no s'entén descarta només aquella lectura, no tota la variable.
+              const data = new Date(l.data);
+              if (Number.isNaN(data.getTime())) return [];
+              return [
+                {
+                  estacio: estacio.codi,
+                  data: data.toISOString(),
+                  valor: l.valor,
+                  validada: l.estat === 'V',
+                  invalida: l.estat === 'N',
+                },
+              ];
+            }),
           ),
       );
     },
