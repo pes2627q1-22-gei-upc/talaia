@@ -48,6 +48,12 @@ src/
 
 Els tipus de domini (`PuntObservacio`, `Esdeveniment`, `IndexVisibilitat`…) no es defineixen a l'app: vénen de [`@talaia/shared`](../../packages/shared/README.md), sempre amb `import type`.
 
+## Fitxa del punt (TG-93)
+
+`features/point/pointRepository.ts` consumeix `GET /api/v1/punts/{id}` amb el contracte compartit `PuntFitxa`. Mostra les dades del punt, l'índex actual, les properes hores i l'SQM si estan disponibles; els valors absents no es substitueixen per zero. Les hores UTC es presenten en `Europe/Madrid`. La millor finestra és una agrupació de presentació de les hores consecutives de la franja màxima, no un camp de l'API. El refresc es programa després de la publicació horària del worker (minut 5 UTC). Un 400 o 404 mostra el punt com a inexistent; els errors de xarxa permeten reintentar. Les dades fictícies només són als tests de `features/point/__fixtures__`.
+
+El mapa de situació és estàtic i mostra l'atribució. «Com arribar» obre Google Maps amb les coordenades; «Crea un pla» mostra un avís fins que existeixi aquest flux. El desglossament dels factors de l'índex correspon a TG-105. Proves específiques: `npm test -w apps/mobile -- --runInBand src/features/point`.
+
 ## Sessió (TG-83)
 
 `AppProviders` munta un únic `AuthProvider`. `useAuthViewModel` exposa l'usuari

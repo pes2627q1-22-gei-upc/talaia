@@ -8,7 +8,16 @@ import { ATTRIBUTION } from '@/features/map/style/nightStyle';
 type Props = {
   mapStyle: StyleSpecification;
   coordinates: { lat: number; lon: number };
-  palette: { background: string; text: string; link: string; marker: string };
+  palette: {
+    background: string;
+    text: string;
+    link: string;
+    marker: string;
+    shadow: string;
+    markerPulse: string;
+    markerGlow: string;
+    markerHalo: string;
+  };
   metrics: {
     touch: number;
     icon: number;
@@ -131,7 +140,7 @@ export default function PointLocationMapContent({
           max-width: min(260px, calc(100vw - 64px)); margin-top: 0; padding: 8px 10px;
           border-radius: 8px; background: ${palette.background}; color: ${palette.text};
           font: 12px/18px Arial, sans-serif; text-align: left; direction: ltr;
-          box-shadow: 0 4px 14px rgba(0, 0, 0, .28); pointer-events: auto;
+          box-shadow: 0 4px 14px ${palette.shadow}; pointer-events: auto;
         }
         .talaia-map-credits__panel[hidden] { display: none; }
         .talaia-map-credits__panel a { color: ${palette.link}; }
@@ -144,7 +153,7 @@ export default function PointLocationMapContent({
         .talaia-point-marker::before {
           content: ''; position: absolute; top: 0; left: 0; box-sizing: border-box;
           width: var(--talaia-marker-size); height: var(--talaia-marker-size);
-          border: 1px solid color-mix(in srgb, var(--talaia-marker) 72%, transparent);
+          border: 1px solid ${palette.markerPulse};
           border-radius: 50%;
           animation: talaia-point-pulse 1.8s ease-out infinite;
         }
@@ -154,7 +163,7 @@ export default function PointLocationMapContent({
           left: calc((var(--talaia-marker-size) - 2px) / 2);
           width: 2px; height: var(--talaia-marker-stem);
           background: var(--talaia-marker);
-          box-shadow: 0 0 6px color-mix(in srgb, var(--talaia-marker) 70%, transparent);
+          box-shadow: 0 0 6px ${palette.markerGlow};
         }
         .talaia-point-marker__core {
           position: absolute; z-index: 2;
@@ -166,7 +175,7 @@ export default function PointLocationMapContent({
           border: 3px solid var(--talaia-marker); border-radius: 50%;
           background: ${palette.background};
           box-shadow: 0 0 0 var(--talaia-marker-halo)
-            color-mix(in srgb, var(--talaia-marker) 18%, transparent);
+            ${palette.markerHalo};
         }
         .talaia-point-marker__core svg { width: ${metrics.icon}px; height: ${metrics.icon}px; }
         @keyframes talaia-point-pulse {

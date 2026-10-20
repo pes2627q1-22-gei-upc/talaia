@@ -17,42 +17,60 @@ export function usePointDetailViewModel(pointId: string) {
     invalidId || (query.error instanceof ApiError && [400, 404].includes(query.error.status));
   const status = point ? 'ok' : query.isFetching ? 'loading' : notFound ? 'notFound' : 'error';
   const locale = i18n.resolvedLanguage ?? 'ca';
+  const dateTimeFormatter = useMemo(
+    () =>
+      new Intl.DateTimeFormat(locale, {
+        timeZone: 'Europe/Madrid',
+        day: 'numeric',
+        month: 'short',
+        hour: '2-digit',
+        minute: '2-digit',
+        hourCycle: 'h23',
+      }),
+    [locale],
+  );
+  const hourFormatter = useMemo(
+    () =>
+      new Intl.DateTimeFormat(locale, {
+        timeZone: 'Europe/Madrid',
+        hour: '2-digit',
+        hourCycle: 'h23',
+      }),
+    [locale],
+  );
+  const clockFormatter = useMemo(
+    () =>
+      new Intl.DateTimeFormat(locale, {
+        timeZone: 'Europe/Madrid',
+        hour: '2-digit',
+        minute: '2-digit',
+        hourCycle: 'h23',
+      }),
+    [locale],
+  );
   const hours = useMemo(() => {
-    const formatter = new Intl.DateTimeFormat(locale, {
-      timeZone: 'Europe/Madrid',
-      day: 'numeric',
-      month: 'short',
-      hour: '2-digit',
-      minute: '2-digit',
-      hourCycle: 'h23',
-    });
-    const time = new Intl.DateTimeFormat(locale, {
-      timeZone: 'Europe/Madrid',
-      hour: '2-digit',
-      hourCycle: 'h23',
-    });
     return [...(point?.properesHores ?? [])]
       .filter((entry) => Number.isFinite(Date.parse(entry.hora)))
       .sort((a, b) => Date.parse(a.hora) - Date.parse(b.hora))
       .map((entry) => ({
         id: entry.hora,
-        label: time.format(new Date(entry.hora)),
-        date: formatter.format(new Date(entry.hora)),
+        label: hourFormatter.format(new Date(entry.hora)),
+        date: dateTimeFormatter.format(new Date(entry.hora)),
         value: Math.round(Math.min(100, Math.max(0, entry.valor))),
         level: entry.franja,
         accessibilityLabel: t('point.hourA11y', {
-          time: formatter.format(new Date(entry.hora)),
+          time: dateTimeFormatter.format(new Date(entry.hora)),
           value: Math.round(Math.min(100, Math.max(0, entry.valor))),
           level: t(`index.level.${entry.franja}`),
         }),
       }));
-  }, [point?.properesHores, locale, t]);
-  const best = hours.reduce<(typeof hours)[number] | undefined>(
-    (current, hour) => (!current || hour.value > current.value ? hour : current),
-    undefined,
-  );
-  const bestPeriod =
-    best && best.level !== 'tap'
+  }, [point?.properesHores, dateTimeFormatter, hourFormatter, t]);
+  const bestPeriod = useMemo(() => {
+    const best = hours.reduce<(typeof hours)[number] | undefined>(
+      (current, hour) => (!current || hour.value > current.value ? hour : current),
+      undefined,
+    );
+    return best && best.level !== 'tap'
       ? (() => {
           const bestIndex = hours.findIndex((hour) => hour.id === best.id);
           let first = bestIndex;
@@ -74,13 +92,7 @@ export function usePointDetailViewModel(pointId: string) {
           const finalTimestamp = Date.parse(hours[last]!.id);
           const previousTimestamp = last > first ? Date.parse(hours[last - 1]!.id) : undefined;
           const duration = previousTimestamp ? finalTimestamp - previousTimestamp : 60 * 60 * 1000;
-          const formatTime = (timestamp: number) =>
-            new Intl.DateTimeFormat(locale, {
-              timeZone: 'Europe/Madrid',
-              hour: '2-digit',
-              minute: '2-digit',
-              hourCycle: 'h23',
-            }).format(new Date(timestamp));
+          const formatTime = (timestamp: number) => clockFormatter.format(new Date(timestamp));
           return {
             from: formatTime(Date.parse(hours[first]!.id)),
             to: formatTime(finalTimestamp + duration),
@@ -88,6 +100,18 @@ export function usePointDetailViewModel(pointId: string) {
           };
         })()
       : undefined;
+  }, [hours, clockFormatter]);
+  const displayHours = useMemo(
+    () =>
+      hours.map((hour) => ({
+        ...hour,
+        isBest: bestPeriod?.hourIds.has(hour.id) ?? false,
+        accessibilityLabel: bestPeriod?.hourIds.has(hour.id)
+          ? t('point.bestHourWithStatusA11y', { label: hour.accessibilityLabel })
+          : hour.accessibilityLabel,
+      })),
+    [hours, bestPeriod, t],
+  );
   const bestWindow = bestPeriod ? { from: bestPeriod.from, to: bestPeriod.to } : undefined;
   const factorRows = (
     [
@@ -142,14 +166,7 @@ export function usePointDetailViewModel(pointId: string) {
   const currentLabel =
     indexTime && Number.isFinite(Date.parse(indexTime))
       ? t('point.indexAt', {
-          time: new Intl.DateTimeFormat(locale, {
-            timeZone: 'Europe/Madrid',
-            day: 'numeric',
-            month: 'short',
-            hour: '2-digit',
-            minute: '2-digit',
-            hourCycle: 'h23',
-          }).format(new Date(indexTime)),
+          time: dateTimeFormatter.format(new Date(indexTime)),
         })
       : t('point.currentIndex');
   return {
@@ -168,6 +185,13 @@ export function usePointDetailViewModel(pointId: string) {
     bestWindow,
     altitude,
     altitudeTag: t('point.altitudeTag', { value: altitude }),
+    skyDarkness:
+      point?.sqm == null || !Number.isFinite(point.sqm)
+        ? undefined
+        : t('point.sqmValue', {
+            value: point.sqm.toLocaleString(locale, { maximumFractionDigits: 2 }),
+          }),
+    skyDarknessLabel: t('point.sqmLabel'),
     factorRows,
     pointInfoLabel: t('point.info'),
     horizonLabel: t('point.openHorizon'),
@@ -189,13 +213,7 @@ export function usePointDetailViewModel(pointId: string) {
     hoursLabel: t('point.nextHours'),
     timezoneLabel: t('point.timezone'),
     noHours: t('point.noHours'),
-    hours: hours.map((hour) => ({
-      ...hour,
-      isBest: bestPeriod?.hourIds.has(hour.id) ?? false,
-      accessibilityLabel: bestPeriod?.hourIds.has(hour.id)
-        ? t('point.bestHourWithStatusA11y', { label: hour.accessibilityLabel })
-        : hour.accessibilityLabel,
-    })),
+    hours: displayHours,
     errorTitle: notFound ? t('point.notFoundTitle') : t('point.errorTitle'),
     errorMessage: notFound ? t('point.notFoundMessage') : t('point.errorMessage'),
     staleMessage: point && query.isError ? t('point.refreshError') : undefined,

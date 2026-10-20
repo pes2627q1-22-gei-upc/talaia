@@ -9,6 +9,14 @@ export const pointKeys = {
   detail: (pointId: string) => ['punts', 'detail', pointId] as const,
 };
 
+/** El worker publica l'índex cada hora al minut 5; deixem 30 s de marge. */
+export function millisecondsUntilNextPointRefresh(now = Date.now()) {
+  const next = new Date(now);
+  next.setUTCMinutes(5, 30, 0);
+  if (next.getTime() <= now) next.setUTCHours(next.getUTCHours() + 1);
+  return next.getTime() - now;
+}
+
 export async function fetchPointDetail(
   pointId: string,
   signal?: AbortSignal,
@@ -24,6 +32,7 @@ export async function fetchPointDetail(
     lon: fitxa.lon,
     descripcio: fitxa.descripcio,
     altitud: fitxa.altitud,
+    sqm: fitxa.sqm,
     horitzoObert: fitxa.horitzoObert,
     accessibilitat: fitxa.accessibilitat,
     indexActual: fitxa.index.actual,
@@ -36,7 +45,7 @@ export function usePointDetailQuery(pointId: string) {
     queryKey: pointKeys.detail(pointId),
     queryFn: ({ signal }) => fetchPointDetail(pointId, signal),
     enabled: pointId.trim().length > 0,
-    // La fitxa pot quedar oberta mentre canvia l'hora de l'índex.
-    refetchInterval: (query) => (query.state.data ? 60_000 : false),
+    staleTime: 60_000,
+    refetchInterval: (query) => (query.state.data ? millisecondsUntilNextPointRefresh() : false),
   });
 }

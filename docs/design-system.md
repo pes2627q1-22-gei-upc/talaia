@@ -23,7 +23,7 @@ Font de veritat visual: els mockups de **Figma** (16 pantalles). Aquest document
 
 `vel` i `vora` surten del Figma (TG-113): `vora` unifica tres vores gairebé iguals (`#2E3875`, `#333D7A`, `#36408A`).
 
-**Degradats** (`gradients` a `tokens.ts`): `cel`, el fons de la benvinguda, de `#0B1030` a `#17205A` (58 %) i `#2F3680`, amb `expo-linear-gradient`. Els seus colors només existeixen dins del degradat.
+**Degradats** (`gradients` a `tokens.ts`): `cel`, el fons de la benvinguda, de `#0B1030` a `#17205A` (58 %) i `#2F3680`; `pointMapFade`, la transició transparent del mapa de la fitxa cap a `nit` (punt intermedi `#0E143333`). S'apliquen amb `expo-linear-gradient`. Els colors exclusius dels degradats viuen aquí. `pointMapColors` agrupa els colors amb alfa del marcador i de l'atribució del mapa DOM.
 
 Escala de l'índex de visibilitat: `tap` (0–39) → `jus` (40–69) → `ras` (70–100). *Llindars a confirmar amb la fórmula v1 (TG-98).* L'app no els calcula: la franja arriba de l'API (`IndexVisibilitat.franja`) i és el nom del token de color.
 
@@ -47,10 +47,11 @@ Es carreguen amb `@expo-google-fonts` al layout arrel. Cada pes és una família
 | `chip` | Atkinson 600 | 14 / 18 | Xips de filtre |
 | `link` | Atkinson 700 | 13 / 17 | Enllaços («Veure'ls tots») |
 | `caption` | Atkinson 400 | 12 / 17 | Notes petites |
+| `hourlyIndex` | Big Shoulders 800 | 27 / 30 | Valor de l'hora seleccionada a la fitxa del punt |
 | `tag` | Atkinson 700 | 12 / 16 | Etiquetes |
 | `overline` | Atkinson 800 | 10,5 / 14, majúscules | Franja sota la xifra («CEL RAS») |
 
-Espaiats (`spacing`): 4 · 8 · 12 · 16 · 20 · 24 · 32. Radis (`radii`): 10 (etiquetes) · 14 (camps i controls de formulari) · 16 (botons, targetes) · 20 (targeta de l'índex) · píndola. Mides fixes (`sizes`): botó 54, xip 34, tacte mínim 44, icona 22.
+Espaiats (`spacing`): 4 · 8 · 12 · 16 · 20 · 24 · 32. Radis (`radii`): 10 (etiquetes) · 14 (camps i controls de formulari) · 16 (botons, targetes) · 20 (targeta de l'índex) · píndola. Mides fixes (`sizes`): botó 54, xip 34, tacte mínim 44, icona 22. La fitxa del punt fa servir mapa de 300, gràfic horari de 64, columna horària de 44, amplada de l'índex de 96 i marcador de 66 (nucli 43, tija 18, halo 10).
 
 ## Components base (TG-113)
 

@@ -4,7 +4,7 @@ import { ApiError, apiGet } from '@/core/api/httpClient';
 import i18n from '@/core/i18n';
 import { createQueryWrapper } from '@/test-utils/queryWrapper';
 
-import { fetchPointDetail } from '../pointRepository';
+import { fetchPointDetail, millisecondsUntilNextPointRefresh } from '../pointRepository';
 import { usePointDetailViewModel } from '../usePointDetailViewModel';
 import { asPointResponse, hour, point } from '../__fixtures__/point';
 
@@ -53,6 +53,7 @@ it('ordena hores, respecta les franges del backend i converteix a l’hora de Ca
     ['lluna', 68],
   ]);
   expect(result.current.accessibility).toBe(point.accessibilitat);
+  expect(result.current.skyDarkness).toBe('21,4 mag/arcsec²');
   expect(result.current.horizon).toBe('Cap al sud i al sud-oest');
 });
 
@@ -74,6 +75,7 @@ it('no inventa índex ni altitud quan falten dades', async () => {
   expect(result.current.altitude).toBe('Sense dades');
   expect(result.current.horizon).toBeUndefined();
   expect(result.current.accessibility).toBeUndefined();
+  expect(result.current.skyDarkness).toBeUndefined();
   expect(result.current.hours).toEqual([]);
   expect(result.current.bestWindow).toBeUndefined();
 });
@@ -193,6 +195,7 @@ it('tradueix els estats buits en anglès', async () => {
 it('refresca l’índex quan la fitxa queda oberta i n’indica la data', async () => {
   jest.useFakeTimers();
   try {
+    jest.setSystemTime(new Date('2026-10-20T08:00:00Z'));
     get.mockResolvedValue(asPointResponse());
     const { result, unmount } = await renderVm();
     await waitFor(() => expect(result.current.status).toBe('ok'));
@@ -204,7 +207,11 @@ it('refresca l’índex quan la fitxa queda oberta i n’indica la data', async 
       }),
     );
     await act(async () => {
-      await jest.advanceTimersByTimeAsync(60_000);
+      await jest.advanceTimersByTimeAsync(5 * 60_000 + 29_000);
+    });
+    expect(get).toHaveBeenCalledTimes(1);
+    await act(async () => {
+      await jest.advanceTimersByTimeAsync(1_000);
     });
     await waitFor(() => expect(result.current.currentIndex?.valor).toBe(92));
     expect(result.current.currentLabel).toContain('00:00');
@@ -212,4 +219,9 @@ it('refresca l’índex quan la fitxa queda oberta i n’indica la data', async 
   } finally {
     jest.useRealTimers();
   }
+});
+
+it('calcula el següent refresc després del minut 5 UTC', () => {
+  expect(millisecondsUntilNextPointRefresh(Date.parse('2026-10-20T08:05:29Z'))).toBe(1_000);
+  expect(millisecondsUntilNextPointRefresh(Date.parse('2026-10-20T08:05:30Z'))).toBe(3_600_000);
 });
