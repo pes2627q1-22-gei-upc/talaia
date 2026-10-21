@@ -144,4 +144,13 @@ describe('createKyselyXemaRepository', () => {
       '2026-10-18T21:30:00.000Z',
     ]);
   });
+
+  it("llegeix l'instant de l'última lectura desada", async () => {
+    const { db, queries } = fakeDb([{ data: new Date('2026-10-20T23:30:00.000Z') }]);
+
+    await expect(createKyselyXemaRepository(db).ultimaLectura()).resolves.toBe(
+      '2026-10-20T23:30:00.000Z',
+    );
+    expect(queries[0]?.sql).toBe('select max("data") as "data" from "lectures_xema"');
+  });
 });

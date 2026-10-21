@@ -121,6 +121,14 @@ export function createKyselyXemaRepository(db: Kysely<DB>): XemaRepository {
       }
     },
 
+    async ultimaLectura() {
+      const fila = await db
+        .selectFrom('lecturesXema')
+        .select((eb) => eb.fn.max('data').as('data'))
+        .executeTakeFirst();
+      return fila?.data ? new Date(fila.data).toISOString() : null;
+    },
+
     async esborraLecturesAnteriors(abans) {
       await db.deleteFrom('lecturesXema').where('data', '<', abans).execute();
     },
@@ -200,6 +208,10 @@ export function createInMemoryXemaRepository({
         const anterior = lectures.get(clau);
         lectures.set(clau, anterior ? fusiona(anterior, l) : l);
       }
+    },
+    async ultimaLectura() {
+      const dates = [...lectures.values()].map((l) => Date.parse(l.data));
+      return dates.length ? new Date(Math.max(...dates)).toISOString() : null;
     },
     async esborraLecturesAnteriors(abans) {
       for (const [clau, l] of lectures)

@@ -26,6 +26,8 @@ export type XemaRepository = {
    * lectura que era pendent pot passar a «N», i el `coalesce` de `desaLectures` la conservaria.
    */
   anulaValors(valors: ValorAnulat[]): Promise<void>;
+  /** L'instant de l'última lectura desada (ISO), o `null` si encara no n'hi ha cap. */
+  ultimaLectura(): Promise<string | null>;
   /** Esborra les lectures anteriors a `abans`. */
   esborraLecturesAnteriors(abans: Date): Promise<void>;
 };
@@ -81,6 +83,32 @@ export async function actualitzaEstacionsXema({
   await repository.desaEstacions(estacions);
   const puntsAmbEstacio = await repository.assignaEstacionsProperes();
   return { estacions: estacions.length, puntsAmbEstacio };
+}
+
+/**
+ * Màxim de dies que es recuperen d'un cop: prou per tapar un cap de setmana amb Meteocat caigut o
+ * el worker aturat, sense gastar més de 24 consultes de la quota mensual.
+ */
+export const DIES_RECUPERATS_MAXIM = 4;
+
+/**
+ * Els dies (`YYYY-MM-DD`, UTC) que falten entre l'última lectura desada i ahir, del més antic al
+ * més recent i com a molt els `maxim` darrers. Sense cap lectura, només ahir. Un dia que no s'ha
+ * pogut ingerir (Meteocat no responia, el worker s'ha reiniciat a l'hora de la tasca) es torna a
+ * demanar a la següent execució.
+ */
+export function diesPendentsXema(
+  ultimaLectura: string | null,
+  ara: Date,
+  maxim = DIES_RECUPERATS_MAXIM,
+): string[] {
+  const ahir = diaUtc(new Date(ara.getTime() - DIA_MS));
+  if (ultimaLectura === null) return [ahir];
+  const dies: string[] = [];
+  let dia = Date.parse(`${diaUtc(new Date(ultimaLectura))}T00:00:00Z`) + DIA_MS;
+  const fins = Date.parse(`${ahir}T00:00:00Z`);
+  for (; dia <= fins; dia += DIA_MS) dies.push(diaUtc(new Date(dia)));
+  return dies.slice(-maxim);
 }
 
 export type ResumIngestaXema = {
