@@ -213,3 +213,125 @@ describe('secondsToNextHour', () => {
     expect(secondsToNextHour(Date.UTC(2026, 9, 14, 10, 59, 30))).toBe(30);
   });
 });
+
+describe('ETag i 304 entre execucions del worker (TG-91)', () => {
+  const HORA = Date.UTC(2026, 9, 19, 10, 10);
+
+  /** App amb rellotge controlat i un catàleg que el test pot canviar entre peticions. */
+  function appAmbRellotge() {
+    const estat = { t: HORA, punts: [...PUNTS] };
+    const repository = fakeRepository();
+    repository.listPublished = async () => {
+      repository.calls += 1;
+      return estat.punts;
+    };
+    jest.spyOn(Date, 'now').mockImplementation(() => estat.t);
+    const app = createApp({ punts: createDefaultPuntsService(repository, () => estat.t) });
+    const etagActual = async () => (await request(app).get('/api/v1/punts')).headers.etag as string;
+    return { app, estat, repository, etagActual };
+  }
+
+  afterEach(() => jest.restoreAllMocks());
+
+  it("si el worker canvia l'índex, l'ETag vell rep 200 amb el document i l'ETag nous", async () => {
+    const { app, estat, repository, etagActual } = appAmbRellotge();
+    const vell = await etagActual();
+
+    estat.t += 61_000;
+    repository.version = '2026-10-19T11:05:00.000Z';
+    estat.punts = PUNTS.map((p) =>
+      p.id === 'a' ? { ...p, index: { valor: 35, franja: 'tap' } } : p,
+    );
+
+    const res = await request(app).get('/api/v1/punts').set('If-None-Match', vell);
+    expect(res.status).toBe(200);
+    expect(res.headers.etag).not.toBe(vell);
+    expect(res.body.features[0].properties.index).toEqual({ valor: 35, franja: 'tap' });
+    expect(repository.calls).toBe(2);
+  });
+
+  it("si el worker acaba però les dades són iguals, l'ETag no canvia i continua sent 304", async () => {
+    const { app, estat, repository, etagActual } = appAmbRellotge();
+    const etag = await etagActual();
+
+    estat.t += 61_000;
+    repository.version = '2026-10-19T11:05:00.000Z';
+
+    const res = await request(app).get('/api/v1/punts').set('If-None-Match', etag);
+    expect(repository.calls).toBe(2); // s'ha regenerat…
+    expect(res.status).toBe(304); // …però l'ETag és del contingut, no de la data
+    expect(res.headers.etag).toBe(etag);
+  });
+
+  it("en canviar l'hora amb les mateixes dades, l'ETag es manté", async () => {
+    const { app, estat, repository, etagActual } = appAmbRellotge();
+    const etag = await etagActual();
+
+    estat.t = Date.UTC(2026, 9, 19, 11, 0, 5);
+
+    const res = await request(app).get('/api/v1/punts').set('If-None-Match', etag);
+    expect(repository.calls).toBe(2);
+    expect(res.status).toBe(304);
+  });
+
+  it('el 304 també porta Cache-Control fins a la propera hora', async () => {
+    const { app, estat, etagActual } = appAmbRellotge();
+    const etag = await etagActual();
+    estat.t = Date.UTC(2026, 9, 19, 10, 45, 0);
+
+    const res = await request(app).get('/api/v1/punts').set('If-None-Match', etag);
+    expect(res.status).toBe(304);
+    expect(res.headers['cache-control']).toBe('public, max-age=900');
+  });
+
+  it('If-None-Match: * respon 304', async () => {
+    const { app } = appAmbRellotge();
+    const res = await request(app).get('/api/v1/punts').set('If-None-Match', '*');
+    expect(res.status).toBe(304);
+    expect(res.text).toBe('');
+  });
+
+  it("amb bbox, l'ETag és el de la col·lecció sencera i el 304 també funciona", async () => {
+    const { app, etagActual } = appAmbRellotge();
+    const etag = await etagActual();
+    const bbox = '0.15,40.5,1.5,42.9';
+
+    const filtrat = await request(app).get('/api/v1/punts').query({ bbox });
+    expect(filtrat.status).toBe(200);
+    expect(filtrat.headers.etag).toBe(etag);
+
+    const res = await request(app).get('/api/v1/punts').query({ bbox }).set('If-None-Match', etag);
+    expect(res.status).toBe(304);
+  });
+
+  it('un bbox invàlid respon 400 encara que If-None-Match coincideixi', async () => {
+    const { app, etagActual } = appAmbRellotge();
+    const etag = await etagActual();
+    const res = await request(app)
+      .get('/api/v1/punts')
+      .query({ bbox: '3,40,0,42' })
+      .set('If-None-Match', etag);
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe('validation_error');
+  });
+
+  it('sense base de dades respon 503 encara que el client enviï If-None-Match', async () => {
+    const res = await request(createApp()).get('/api/v1/punts').set('If-None-Match', '*');
+    expect(res.status).toBe(503);
+    expect(res.body.error.code).toBe('database_unavailable');
+  });
+});
+
+describe('OpenAPI de GET /punts', () => {
+  it('documenta 200, 304, 400 i 503, amb ETag i Cache-Control i el paràmetre bbox', async () => {
+    const res = await request(createApp()).get('/api/v1/openapi.json');
+    const get = res.body.paths['/punts'].get;
+    expect(Object.keys(get.responses).sort()).toEqual(['200', '304', '400', '503']);
+    expect(Object.keys(get.responses['200'].headers).sort()).toEqual(['Cache-Control', 'ETag']);
+    expect(get.responses['304'].content).toBeUndefined();
+    expect(get.parameters.map((p: { name: string }) => p.name).sort()).toEqual([
+      'If-None-Match',
+      'bbox',
+    ]);
+  });
+});
