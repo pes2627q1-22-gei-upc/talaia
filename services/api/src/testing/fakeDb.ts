@@ -10,16 +10,27 @@ import {
 } from 'kysely';
 import type { DB } from '@talaia/db';
 
-/** Driver sense base de dades que respon cada consulta amb `rows`, tal com les retornaria `pg`. */
+type Rows = Record<string, unknown>[];
+
+/**
+ * Driver sense base de dades que respon cada consulta amb `rows`, tal com les retornaria `pg`.
+ * Amb una llista de llistes, cada consulta rep la seva, en ordre (i `[]` quan s'acaben).
+ */
 class RowsDriver extends DummyDriver {
-  constructor(private readonly rows: Record<string, unknown>[]) {
+  private next = 0;
+
+  constructor(private readonly rows: Rows | Rows[]) {
     super();
   }
 
+  private rowsForNextQuery(): Rows {
+    if (!isQueue(this.rows)) return this.rows;
+    return this.rows[this.next++] ?? [];
+  }
+
   override async acquireConnection(): Promise<DatabaseConnection> {
-    const rows = this.rows;
     return {
-      executeQuery: async <R>() => ({ rows: rows as R[] }),
+      executeQuery: async <R>() => ({ rows: this.rowsForNextQuery() as R[] }),
       // eslint-disable-next-line require-yield -- cap test fa servir streaming
       streamQuery: async function* () {
         throw new Error('streamQuery no està implementat al fake');
@@ -28,11 +39,14 @@ class RowsDriver extends DummyDriver {
   }
 }
 
+const isQueue = (rows: Rows | Rows[]): rows is Rows[] => Array.isArray(rows[0]);
+
 /**
  * Kysely sense base de dades, amb els mateixos plugins que `createDb`. Captura l'SQL de cada
- * consulta i respon amb `rows` (claus en snake_case i `numeric` com a text, com fa `pg`).
+ * consulta i respon amb `rows` (claus en snake_case i `numeric` com a text, com fa `pg`): les
+ * mateixes files a totes les consultes o, amb una llista de llistes, unes per a cada consulta.
  */
-export function fakeDb(rows: Record<string, unknown>[] = []) {
+export function fakeDb(rows: Rows | Rows[] = []) {
   const queries: CompiledQuery[] = [];
   const db = new Kysely<DB>({
     dialect: {
