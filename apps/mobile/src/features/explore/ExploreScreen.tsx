@@ -76,6 +76,8 @@ export function ExploreScreen() {
                     icon={GOAL_ICONS[goal.id]}
                     selected={goal.selected}
                     onPress={goal.onPress}
+                    badge={goal.badge}
+                    disabled={goal.disabled}
                   />
                 ))}
               </View>
