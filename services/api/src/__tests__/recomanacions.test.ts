@@ -55,6 +55,7 @@ describe('GET /api/v1/recomanacions', () => {
       distanciaKm: 150,
       tempsEstimat: 195,
       mitjana: 88,
+      horesAmbIndex: 1,
       millorHora: {
         hora: '2099-12-15T23:00:00.000Z',
         valor: 88,
@@ -64,6 +65,44 @@ describe('GET /api/v1/recomanacions', () => {
       },
     });
     expect(res.body.punts[1]).toMatchObject({ id: 'b', millorHora: null, mitjana: null });
+    expect(res.body.total).toBe(2);
+  });
+
+  it('una franja de matinada (01–05) és la de després del vespre de data', async () => {
+    const res = await request(appWith())
+      .get('/api/v1/recomanacions')
+      .query({ ...QUERY, desDe: '1', finsA: '5' });
+    expect(res.status).toBe(200);
+    expect(res.body.franja).toEqual({
+      desDe: '2099-12-16T00:00:00.000Z',
+      finsA: '2099-12-16T04:00:00.000Z',
+    });
+  });
+
+  it('?limit= retalla el rànquing', async () => {
+    const res = await request(appWith())
+      .get('/api/v1/recomanacions')
+      .query({ ...QUERY, limit: '1' });
+    expect(res.status).toBe(200);
+    expect(res.body.total).toBe(2);
+    expect(res.body.punts.map((p: { id: string }) => p.id)).toEqual(['a']);
+  });
+
+  it.each([
+    ['lat', { lat: '91' }, 'lat ha de ser un número entre -90 i 90'],
+    ['desDe', { desDe: '24' }, 'desDe ha de ser una hora entera de 0 a 23'],
+    [
+      'tempsMaxim',
+      { tempsMaxim: '601' },
+      'tempsMaxim ha de ser un nombre enter de minuts de 1 a 600',
+    ],
+    ['limit', { limit: '101' }, 'limit ha de ser un nombre enter de 1 a 100'],
+  ])('el missatge de %s fora de rang és en català', async (_camp, canvis, missatge) => {
+    const res = await request(appWith())
+      .get('/api/v1/recomanacions')
+      .query({ ...QUERY, ...canvis });
+    expect(res.status).toBe(400);
+    expect(res.body.error.message).toBe(missatge);
   });
 
   it('porta Cache-Control fins a la propera hora', async () => {
@@ -82,11 +121,16 @@ describe('GET /api/v1/recomanacions', () => {
     ['lon text', { lon: 'est' }],
     ['data mal formada', { data: '15/12/2099' }],
     ['data que no existeix', { data: '2099-02-30' }],
+    ['data després del 2100', { data: '9999-12-31' }],
+    ['data abans del 2000', { data: '1999-12-31' }],
     ['desDe > 23', { desDe: '24' }],
     ['finsA no enter', { finsA: '5.5' }],
     ['desDe = finsA', { desDe: '22', finsA: '22' }],
     ['tempsMaxim 0', { tempsMaxim: '0' }],
     ['tempsMaxim massa gran', { tempsMaxim: '601' }],
+    ['tempsMaxim buit', { tempsMaxim: '' }],
+    ['limit 0', { limit: '0' }],
+    ['limit massa gran', { limit: '101' }],
   ])('%s → 400 validation_error', async (_cas, canvis) => {
     const query = Object.fromEntries(
       Object.entries({ ...QUERY, ...canvis }).filter(([, v]) => v !== undefined),
@@ -131,7 +175,14 @@ describe('GET /api/v1/recomanacions', () => {
     const res = await request(createApp()).get('/api/v1/openapi.json');
     const ruta = res.body.paths['/recomanacions'];
     expect(Object.keys(ruta.get.responses)).toEqual(['200', '400', '503']);
-    expect(ruta.get.parameters.map((p: { name: string }) => p.name)).toEqual([
+    // Els paràmetres es documenten amb la mateixa definició que els valida: tipus, rangs i format.
+    const params = Object.fromEntries(
+      ruta.get.parameters.map((p: { name: string; required: boolean; schema: object }) => [
+        p.name,
+        { required: p.required, ...p.schema },
+      ]),
+    );
+    expect(Object.keys(params)).toEqual([
       'objectiu',
       'lat',
       'lon',
@@ -139,9 +190,23 @@ describe('GET /api/v1/recomanacions', () => {
       'desDe',
       'finsA',
       'tempsMaxim',
+      'limit',
     ]);
-    expect(res.body.components.schemas.Recomanacions.required).toEqual(
-      expect.arrayContaining(['radiKm', 'franja', 'punts']),
+    expect(params.lat).toMatchObject({ required: true, type: 'number', minimum: -90, maximum: 90 });
+    expect(params.data).toMatchObject({ required: true, type: 'string', format: 'date' });
+    expect(params.desDe).toMatchObject({
+      required: true,
+      type: 'integer',
+      minimum: 0,
+      maximum: 23,
+    });
+    expect(params.limit).toMatchObject({ required: false, type: 'integer', maximum: 100 });
+    const recomanacions = res.body.components.schemas.Recomanacions;
+    expect(recomanacions.required).toEqual(
+      expect.arrayContaining(['radiKm', 'franja', 'total', 'punts']),
+    );
+    expect(recomanacions.properties.punts.items.properties.millorHora.allOf[0].$ref).toBe(
+      '#/components/schemas/IndexHora',
     );
   });
 });

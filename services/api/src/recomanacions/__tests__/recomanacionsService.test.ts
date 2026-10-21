@@ -61,14 +61,15 @@ function fakeRepository(punts: PuntCandidat[], index: IndexHoraPunt[], error?: E
 
 describe('resumeix', () => {
   it('sense hores, millorHora i mitjana són null', () => {
-    expect(resumeix([])).toEqual({ millorHora: null, mitjana: null });
+    expect(resumeix([])).toEqual({ millorHora: null, mitjana: null, horesAmbIndex: 0 });
   });
 
   it("la millor hora és la de l'índex més alt; si n'hi ha d'empatades, la primera", () => {
     const hores = [hora(H(0), 40), hora(H(1), 81), hora(H(2), 81), hora(H(3), 20)];
-    const { millorHora, mitjana } = resumeix(hores);
+    const { millorHora, mitjana, horesAmbIndex } = resumeix(hores);
     expect(millorHora?.hora).toBe(H(1));
     expect(mitjana).toBe(56); // 222 / 4 = 55,5
+    expect(horesAmbIndex).toBe(4);
   });
 });
 
@@ -109,9 +110,15 @@ describe('recomanacionsService.getRecomanacions', () => {
       distanciaKm: 30,
       tempsEstimat: 39,
       mitjana: 90,
+      horesAmbIndex: 1,
       millorHora: { hora: H(3), valor: 90, franja: 'ras' },
     });
-    expect(res.punts[4]).toMatchObject({ id: 'e', millorHora: null, mitjana: null });
+    expect(res.punts[4]).toMatchObject({
+      id: 'e',
+      millorHora: null,
+      mitjana: null,
+      horesAmbIndex: 0,
+    });
     expect(res.punts[0]).not.toHaveProperty('distanciaM');
   });
 
@@ -122,6 +129,30 @@ describe('recomanacionsService.getRecomanacions', () => {
       ['b', null],
       ['a', null],
     ]);
+  });
+
+  it('retorna 20 punts per defecte, o els de limit, i el total dins del radi', async () => {
+    const punts = Array.from({ length: 30 }, (_, k) => punt(`p${k}`, 1_000 * (k + 1)));
+    const { repository } = fakeRepository(punts, []);
+    const servei = createRecomanacionsService(repository);
+
+    const perDefecte = await servei.getRecomanacions(CONSULTA, ABANS);
+    expect(perDefecte.total).toBe(30);
+    expect(perDefecte.punts).toHaveLength(20);
+
+    const cinc = await servei.getRecomanacions({ ...CONSULTA, limit: 5 }, ABANS);
+    expect(cinc.total).toBe(30);
+    expect(cinc.punts.map((p) => p.id)).toEqual(['p0', 'p1', 'p2', 'p3', 'p4']);
+  });
+
+  it('el límit es fa després d’ordenar: el millor punt hi és encara que sigui el més llunyà', async () => {
+    const punts = Array.from({ length: 30 }, (_, k) => punt(`p${k}`, 1_000 * (k + 1)));
+    const { repository } = fakeRepository(punts, [{ puntId: 'p29', ...hora(H(0), 70) }]);
+    const res = await createRecomanacionsService(repository).getRecomanacions(
+      { ...CONSULTA, limit: 1 },
+      ABANS,
+    );
+    expect(res.punts.map((p) => p.id)).toEqual(['p29']);
   });
 
   it('arrodoneix la distància a 1 decimal', async () => {

@@ -15,6 +15,9 @@ import type {
 } from './recomanacionsRepository';
 import { rutesEnLiniaRecta, type EstimadorRutes } from './rutes';
 
+/** Punts del rànquing si la consulta no en demana un altre nombre. */
+export const LIMIT_PER_DEFECTE = 20;
+
 export type RecomanacionsService = {
   /** El rànquing de punts per a la consulta. `now` decideix quines hores de la franja queden. */
   getRecomanacions(consulta: ConsultaRecomanacions, now?: Date): Promise<RecomanacionsResposta>;
@@ -24,11 +27,13 @@ export type RecomanacionsService = {
  * La millor hora (la primera, si n'hi ha d'empatades) i la mitjana arrodonida de l'índex d'un
  * punt. Sense cap hora, totes dues són `null`.
  */
-export function resumeix(hores: IndexHora[]): Pick<Recomanacio, 'millorHora' | 'mitjana'> {
-  if (hores.length === 0) return { millorHora: null, mitjana: null };
+export function resumeix(
+  hores: IndexHora[],
+): Pick<Recomanacio, 'millorHora' | 'mitjana' | 'horesAmbIndex'> {
+  if (hores.length === 0) return { millorHora: null, mitjana: null, horesAmbIndex: 0 };
   const millorHora = hores.reduce((millor, h) => (h.valor > millor.valor ? h : millor));
   const mitjana = Math.round(hores.reduce((suma, h) => suma + h.valor, 0) / hores.length);
-  return { millorHora, mitjana };
+  return { millorHora, mitjana, horesAmbIndex: hores.length };
 }
 
 /** Ordre del rànquing: millor hora, mitjana i distància. Sense índex, al final per distància. */
@@ -110,7 +115,8 @@ export function createRecomanacionsService(
       return {
         radiKm,
         franja: { desDe: desDe.toISOString(), finsA: franja.finsA.toISOString() },
-        punts: rankeja(punts, index, rutes),
+        total: punts.length,
+        punts: rankeja(punts, index, rutes).slice(0, consulta.limit ?? LIMIT_PER_DEFECTE),
       };
     },
   };
