@@ -21,7 +21,7 @@ if (env.DATABASE_URL) {
   esdeveniments = createEsdevenimentsService(createEsdevenimentsRepository(db));
 } else {
   console.warn(
-    'Avís: sense DATABASE_URL. /api/v1/health funciona, però /api/v1/punts i /api/v1/perfil responen 503.',
+    'Avís: sense DATABASE_URL. /api/v1/health funciona, però /api/v1/punts, /api/v1/perfil i /api/v1/esdeveniments responen 503.',
   );
 }
 

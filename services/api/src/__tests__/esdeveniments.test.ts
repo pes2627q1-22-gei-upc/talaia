@@ -9,6 +9,8 @@ import {
   type FilaEsdeveniment,
 } from '../esdeveniments/esdevenimentsRepository';
 import { createEsdevenimentsService } from '../esdeveniments/esdevenimentsService';
+import { TIPUS_FENOMEN } from '../esdeveniments/tipus';
+import { EsdevenimentsQuerySchema } from '../routes/esdeveniments.contract';
 import { fakeDb } from '../testing/fakeDb';
 
 const PATH = '/api/v1/esdeveniments?des_de=2026-10-25&fins_a=2026-10-25';
@@ -55,6 +57,28 @@ describe('dies civils de Catalunya', () => {
     });
     expect(iniciDiaCatala('2026-10-26')).toEqual(new Date('2026-10-25T23:00:00Z'));
     expect(Number.isFinite(intervalCatala('9999-12-31', '9999-12-31').fi.getTime())).toBe(true);
+  });
+
+  it('accepta l’offset històric de Madrid amb segons', () => {
+    expect(iniciDiaCatala('1900-01-01')).toEqual(new Date('1900-01-01T00:14:44Z'));
+  });
+});
+
+describe('validació del període', () => {
+  it('no afegeix errors d’interval quan una data no té format ISO o és impossible', () => {
+    const format = EsdevenimentsQuerySchema.safeParse({ des_de: '2027-1-1', fins_a: '2027-01-02' });
+    expect(format.success).toBe(false);
+    if (!format.success)
+      expect(format.error.issues.map((issue) => issue.path)).toEqual([['des_de']]);
+
+    const impossible = EsdevenimentsQuerySchema.safeParse({
+      des_de: '2027-02-30',
+      fins_a: '2027-03-01',
+    });
+    expect(impossible.success).toBe(false);
+    if (!impossible.success) {
+      expect(impossible.error.issues.map((issue) => issue.path)).toEqual([['des_de']]);
+    }
   });
 });
 
@@ -218,6 +242,14 @@ describe('consultes Kysely del calendari', () => {
     expect(queries[0]?.sql).toContain('"f"."tipus_codi" in');
     expect(queries[0]?.sql).toContain('"f"."tipus_codi" =');
     expect(queries[0]?.sql).toContain('order by "e"."inici", "e"."codi"');
+    expect(queries[0]?.parameters).toEqual([
+      new Date('2026-10-25T23:00:00Z'),
+      new Date('2026-10-25T22:00:00Z'),
+      true,
+      true,
+      ...TIPUS_FENOMEN,
+      'fase_llunar',
+    ]);
   });
 
   it('llegeix només el punt de referència oficial i publicat', async () => {

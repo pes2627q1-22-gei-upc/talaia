@@ -52,8 +52,8 @@ export const EsdevenimentsQuerySchema = z
   })
   .refine(
     ({ des_de, fins_a }) =>
-      !Number.isFinite(Date.parse(des_de)) ||
-      !Number.isFinite(Date.parse(fins_a)) ||
+      !z.iso.date().safeParse(des_de).success ||
+      !z.iso.date().safeParse(fins_a).success ||
       des_de <= fins_a,
     {
       path: ['fins_a'],
@@ -62,8 +62,8 @@ export const EsdevenimentsQuerySchema = z
   )
   .refine(
     ({ des_de, fins_a }) =>
-      !Number.isFinite(Date.parse(des_de)) ||
-      !Number.isFinite(Date.parse(fins_a)) ||
+      !z.iso.date().safeParse(des_de).success ||
+      !z.iso.date().safeParse(fins_a).success ||
       Date.parse(fins_a) - Date.parse(des_de) <= 365 * 86_400_000,
     {
       path: ['fins_a'],
@@ -112,7 +112,7 @@ registry.registerPath({
       content: { 'application/json': { schema: ErrorSchema } },
     },
     503: {
-      description: 'Base de dades o validació JWT temporalment indisponible.',
+      description: 'Base de dades, punt de referència, clau API o validació JWT indisponibles.',
       content: { 'application/json': { schema: ErrorSchema } },
     },
     500: {

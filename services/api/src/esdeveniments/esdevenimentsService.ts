@@ -24,6 +24,7 @@ function mapEsdeveniment(fila: FilaEsdeveniment, ubicacio: PuntReferencia): Esde
   const nota = text(esdeveniment?.ca?.notaVisibilitat);
   const font = fila.organitzacio ?? fila.metodeCalcul;
   if (!nom || !descripcioBase || !font) {
+    console.error('[esdeveniments] dades incompletes', fila.codi);
     throw new ApiError(
       500,
       'invalid_event_data',
