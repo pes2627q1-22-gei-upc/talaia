@@ -4,8 +4,11 @@
  * redirecció amb IP. Fa el mateix que els passos del panell, però queda al repo i es pot repetir
  * (quan hi hagi domini i Resend, només canvien les variables SMTP).
  *
- *   npm run supabase:correu              # mostra la configuració actual i què canviaria
- *   npm run supabase:correu -- --aplica  # l'aplica i la torna a llegir per comprovar-ho
+ *   npm run supabase:correu                           # mostra la configuració actual i què canviaria
+ *   npm run supabase:correu -- --aplica               # l'aplica i la torna a llegir per comprovar-ho
+ *   npm run supabase:correu -- --aplica --sense-smtp  # només el que no depèn de l'SMTP: codi de
+ *                                                     # 6 xifres i redirects (les plantilles i el
+ *                                                     # límit, Supabase no els deixa tocar sense ell)
  *
  * Variables (al .env de l'arrel o a l'entorn):
  *   SUPABASE_ACCESS_TOKEN  token personal de https://supabase.com/dashboard/account/tokens
@@ -36,6 +39,11 @@ const EMAILS_PER_HOUR = 30;
 const OTP = { mailer_otp_length: 6, mailer_otp_exp: 3600 };
 
 const aplica = process.argv.includes('--aplica');
+/**
+ * Sense contrasenya d'aplicació encara: no tocar l'SMTP (amb una de dolenta no sortiria cap correu).
+ * Al pla gratuït, Supabase tampoc no deixa canviar les plantilles ni el límit sense SMTP propi.
+ */
+const senseSmtp = process.argv.includes('--sense-smtp');
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   main().catch((error) => {
@@ -57,6 +65,9 @@ async function main() {
   mostra('Ara', actual);
 
   const canvis = canvisPrevistos(actual);
+  if (senseSmtp) {
+    console.log("(--sense-smtp: es deixen com estan l'SMTP, les plantilles i el límit de correus)");
+  }
   console.log('\nCanvis:');
   for (const [clau, valor] of Object.entries(canvis)) {
     if (actual[clau] === valor) continue;
@@ -68,12 +79,16 @@ async function main() {
     return;
   }
   const pass = process.env.SUPABASE_SMTP_PASS;
-  if (!pass) {
+  if (!pass && !senseSmtp) {
     throw new Error(
       "Falta SUPABASE_SMTP_PASS (la contrasenya d'aplicació «Supabase» de talaia.pes@gmail.com).",
     );
   }
-  await patch(`/projects/${ref}/config/auth`, token, { ...canvis, smtp_pass: pass });
+  await patch(
+    `/projects/${ref}/config/auth`,
+    token,
+    senseSmtp ? canvis : { ...canvis, smtp_pass: pass },
+  );
   const nou = await get(`/projects/${ref}/config/auth`, token);
   console.log('');
   mostra('Després', nou);
@@ -82,7 +97,9 @@ async function main() {
     throw new Error(`No s'han aplicat: ${pendents.map(([clau]) => clau).join(', ')}`);
   }
   console.log(
-    "\n✔ Fet. Prova-ho a l'app: «Continua amb el correu» amb una adreça de fora de l'equip.",
+    senseSmtp
+      ? "\n✔ Fet (sense SMTP). Quan tinguis la contrasenya d'aplicació: --aplica sense --sense-smtp."
+      : "\n✔ Fet. Prova-ho a l'app: «Continua amb el correu» amb una adreça de fora de l'equip.",
   );
 }
 
@@ -90,15 +107,21 @@ async function main() {
 function canvisPrevistos(actual) {
   const plantilla = readFileSync(resolve(ROOT, 'supabase/templates/codi-acces.html'), 'utf8');
   const config = readFileSync(resolve(ROOT, 'supabase/config.toml'), 'utf8');
+  // Les plantilles i el límit de correus només es poden canviar amb SMTP propi: van amb ell.
+  const ambSmtp = senseSmtp
+    ? {}
+    : {
+        ...SMTP,
+        mailer_subjects_magic_link: assumpte(config, 'magic_link'),
+        mailer_templates_magic_link_content: plantilla,
+        mailer_subjects_confirmation: assumpte(config, 'confirmation'),
+        mailer_templates_confirmation_content: plantilla,
+        rate_limit_email_sent: EMAILS_PER_HOUR,
+      };
   return {
-    ...SMTP,
+    ...ambSmtp,
     external_email_enabled: true,
-    mailer_subjects_magic_link: assumpte(config, 'magic_link'),
-    mailer_templates_magic_link_content: plantilla,
-    mailer_subjects_confirmation: assumpte(config, 'confirmation'),
-    mailer_templates_confirmation_content: plantilla,
     ...OTP,
-    rate_limit_email_sent: EMAILS_PER_HOUR,
     uri_allow_list: senseRedirectsAmbIp(actual.uri_allow_list ?? ''),
   };
 }

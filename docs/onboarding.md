@@ -201,9 +201,16 @@ Per això el projecte del núvol envia amb el Gmail de l'equip (`talaia.pes@gmai
 configuració no es fa al panell sinó amb un script, perquè quedi al repo i es pugui repetir:
 
 ```bash
-npm run supabase:correu              # mostra la configuració actual i què canviaria
-npm run supabase:correu -- --aplica  # l'aplica i la torna a llegir per comprovar-ho
+npm run supabase:correu                           # mostra la configuració actual i què canviaria
+npm run supabase:correu -- --aplica               # l'aplica i la torna a llegir per comprovar-ho
+npm run supabase:correu -- --aplica --sense-smtp  # només el codi de 6 xifres i els redirects
 ```
+
+Al pla gratuït, Supabase no deixa canviar les plantilles ni el límit de correus sense SMTP propi
+(respon 400): per això `--sense-smtp` només toca el que no en depèn. I compte: `SUPABASE_SMTP_PASS`
+és la **contrasenya d'aplicació** de 16 lletres, no la del compte de Gmail (amb la del compte, Google
+respon `535 BadCredentials` i no sortiria cap correu). L'script no la comprova: prova-la abans amb
+l'app.
 
 Necessita dues variables al `.env` de l'arrel (secrets, mai al repo):
 
