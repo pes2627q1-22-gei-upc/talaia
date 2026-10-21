@@ -8,7 +8,8 @@ import { z } from 'zod';
 
 import { ApiError } from '../middleware/errors';
 import { ErrorSchema, registry } from '../openapi';
-import { ANY_MAX, ANY_MIN, INICI_NIT } from '../recomanacions/franja';
+import { NIGHT_YEAR_MAX as ANY_MAX, NIGHT_YEAR_MIN as ANY_MIN } from '../index/night';
+import { INICI_NIT } from '../recomanacions/franja';
 import {
   LIMIT_PER_DEFECTE,
   type RecomanacionsService,

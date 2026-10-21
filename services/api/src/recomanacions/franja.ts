@@ -1,22 +1,19 @@
+import { NIGHT_START_HOUR, TIME_ZONE } from '../index/night';
+
 /**
  * La franja horària de «Què vols veure?» és en hores locals de Catalunya (`Europe/Madrid`) i
  * l'índex es desa per hores en UTC: aquí es passa de l'una a l'altra, amb el canvi d'hora.
  */
-const ZONA = 'Europe/Madrid';
 const DIA_MS = 86_400_000;
 
 /**
- * Una nit va de les 12:00 locals del dia `data` a les 12:00 de l'endemà, com a `GET
- * /punts/{id}/index` (TG-104): una hora de 0 a 11 és la de l'endemà del vespre.
+ * Una nit va de les 12:00 locals del dia `data` a les 12:00 de l'endemà: la mateixa definició que
+ * `GET /punts/{id}/index` (`index/night.ts`). Una hora de 0 a 11 és la de l'endemà del vespre.
  */
-export const INICI_NIT = 12;
-
-/** Anys acceptats: fora d'aquí `Intl` i `Date` no són de fiar (el 9999 desborda), com a TG-104. */
-export const ANY_MIN = 2000;
-export const ANY_MAX = 2100;
+export const INICI_NIT = NIGHT_START_HOUR;
 
 const FORMAT = new Intl.DateTimeFormat('en-CA', {
-  timeZone: ZONA,
+  timeZone: TIME_ZONE,
   year: 'numeric',
   month: '2-digit',
   day: '2-digit',

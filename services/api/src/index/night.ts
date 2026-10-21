@@ -7,6 +7,9 @@ import { z } from 'zod';
  */
 export const TIME_ZONE = 'Europe/Madrid';
 
+/** Hora local on comença (i acaba) una nit. La fan servir també les recomanacions (TG-100). */
+export const NIGHT_START_HOUR = 12;
+
 /** Anys que accepta `NightSchema`: fora d'aquí `Intl` i `Date` no són de fiar (abans del 1901 el desplaçament de Madrid tenia segons; el 9999 desborda). */
 export const NIGHT_YEAR_MIN = 2000;
 export const NIGHT_YEAR_MAX = 2100;
@@ -39,7 +42,7 @@ export function defaultNight(now: Date = new Date(), timeZone = TIME_ZONE): stri
 /** Les 12:00 locals d'un dia, en UTC. El canvi d'hora és de matinada, així que el migdia no hi cau mai. */
 function localNoon(date: string, timeZone: string): Date {
   const [y = NaN, m = NaN, d = NaN] = date.split('-').map(Number);
-  const noonUtc = new Date(Date.UTC(y, m - 1, d, 12));
+  const noonUtc = new Date(Date.UTC(y, m - 1, d, NIGHT_START_HOUR));
   return new Date(noonUtc.getTime() - utcOffsetMs(noonUtc, timeZone));
 }
 
