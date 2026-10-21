@@ -78,6 +78,7 @@ src/meteocat/
   xema.ts                Client de l'API de dades mesurades (x-api-key, zod, timeout)
   ingesta.ts             Estacions operatives i la més propera a cada punt; lectures d'un dia
   repository.ts          Taules `estacions_xema` i `lectures_xema` amb Kysely, i en memòria
+  planificacio.ts        Les dues tasques dins del procés horari (`main.ts`), amb node-cron en UTC
   cli.ts                 `npm run xema`: prova manual amb la clau, sense base de dades
 ```
 
@@ -88,6 +89,7 @@ El que es va mesurar de debò, per contrastar-ho amb la previsió d'Open-Meteo. 
 - **Format:** una fila per estació i lectura semihorària (`LecturaXema` de `@talaia/shared`), amb les unitats d'Open-Meteo (el vent, de m/s a km/h). La XEMA etiqueta per davant: la de les 11:00Z cobreix de 11:00 a 11:30. `validada` diu si Meteocat ja ha validat tots els valors de la fila (estat «V»); a les d'ahir sol ser `false`.
 - **Qualitat:** les lectures invàlides (estat «N») no es desen, i els valors fora del rang físic (`RANGS`, els mateixos que els `check`, i un test ho vigila) es descarten un a un (`descartades` al resum). En tornar a baixar un dia, un valor que ara és invàlid es posa a `null`.
 - **Errors:** si falla una variable, es desen les altres i l'error queda al resum. Si fallen totes, llança un error. Amb la clau rebutjada (401, 403) o la quota exhaurida (429), desa el que ja ha baixat i llança de seguida. Si el procés s'atura abans de demanar res, torna el resum amb els motius en lloc d'un error. Una lectura amb una data que no s'entén es descarta sola. Tornar a baixar un dia no esborra els valors que la nova ingesta no porta. Les lectures es guarden 90 dies.
+- **Planificació** (`planificaXema`, des de `main.ts`): amb `METEOCAT_API_KEY`, les lectures cada dia a les **06:15 UTC** (`15 6 * * *`) i les estacions el **dia 1 de cada mes a les 06:00 UTC** (`0 6 1 * *`) i també en arrencar si `estacions_xema` és buida. Fan servir el mateix pool que el recàlcul i comparteixen un executor: no van mai a la vegada (la que arriba amb l'altra en curs se salta), un error o els `errors` del resum es mostren al log sense aturar el procés, i l'aturada espera la tasca en curs. Sense la clau, un avís al log en arrencar i no es planifica res.
 - **Quota:** unes 190 consultes al mes (6 al dia i les metadades), sigui quin sigui el nombre de punts.
 
 ```bash
@@ -149,7 +151,7 @@ npm run index -w services/worker -- 42.0294,0.7112 21.56    # amb l'SQM del lloc
 
 ```
 src/
-  main.ts                  Cablejat del procés llarg: pool, node-cron a «5 * * * *» (UTC) i senyals
+  main.ts                  Cablejat del procés llarg: pool, node-cron a «5 * * * *» (UTC), la XEMA i senyals
   recalcul/
     executor.ts            Sense solapaments, errors que no aturen el procés i aturada que espera
     recalcul.ts            Una execució, per lots: punts → Open-Meteo → efemèrides → índex → BD
