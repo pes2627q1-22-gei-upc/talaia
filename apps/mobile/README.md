@@ -134,7 +134,9 @@ tanca la sessió i la vista ho diu, perquè no quedi cap compte a mitges.
 - Treure `exp://**` de les adreces de redirecció (`supabase/config.toml` i el núvol).
 - Els comptes d'Apple creats des d'Expo Go no són els de l'app real (`cat.talaia.app`):
   els de proves no es poden reaprofitar.
-- SMTP propi per al correu (P21).
+- El correu del codi surt pel Gmail de l'equip (P21, ~500 correus/dia): amb domini, passar a
+  Resend canviant les constants `SMTP` de `supabase/scripts/configura-correu.mjs` i tornant a
+  executar `npm run supabase:correu` (`docs/onboarding.md` → secció 5).
 
 ### Contracte amb les tasques que consumeixen la sessió
 
