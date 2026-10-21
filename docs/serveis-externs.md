@@ -5,12 +5,12 @@ tasca **TG-109** (Victor, límit 14/10) cobreix dues integracions independents:
 
 | Integració | Rol de Talaia | Estat del contracte |
 |---|---|---|
-| Aprop | Proveïdor d'esdeveniments astronòmics | **Acordat** per correu i confirmat en persona; TG-108 en farà la implementació |
+| Aprop | Proveïdor d'esdeveniments astronòmics | **Acordat** per correu i confirmat en persona; endpoint implementat a TG-108 |
 | Mobilicat | Consumidor de rutes sostenibles | **Proposta enviada; pendent de resposta**. No bloqueja TG-108 |
 
 ## Oferim a Aprop: esdeveniments astronòmics
 
-Història: **HU43** (E12). [ADR-0026](decisions/0026-contracte-esdeveniments-aprop.md) recull les decisions de TG-109 i TG-108 implementarà l'endpoint. La
+Història: **HU43** (E12). [ADR-0026](decisions/0026-contracte-esdeveniments-aprop.md) recull les decisions de TG-109 i TG-108 implementa l'endpoint. La
 font executable del contracte és l'OpenAPI generat per `services/api`, disponible a
 `GET /api/v1/openapi.json` i a la interfície `/api/v1/docs`.
 
@@ -43,8 +43,8 @@ nom diferencia, per exemple, les Perseids de les Gemínids o la lluna plena de l
 
 | `tipus` | Exemples de `nom` | Origen |
 |---|---|---|
-| `fase_llunar` | Lluna nova, quart creixent, lluna plena, quart minvant | TG-107 |
-| `pluja_estels` | Perseids, Gemínids, Oriònids | TG-106 |
+| `fase_llunar` | Lluna nova, lluna plena | TG-107 |
+| `pluja_estels` | Perseides, Gemínides, Oriònides | TG-106 |
 | `eclipsi_solar` | Eclipsi solar total | TG-106 |
 | `eclipsi_llunar` | Eclipsi lunar penumbral, eclipsi total («lluna de sang») | TG-106 |
 | `conjuncio` | Conjunció de Venus i Júpiter | TG-107 |
@@ -89,7 +89,7 @@ Decisions incorporades arran de la resposta d'Aprop:
 - Els textos es retornen en català. Aprop va plantejar castellà i anglès, amb
   `?idioma=ca|es|en`, com una possibilitat opcional i disposa de traducció pròpia. No formen part
   de la primera versió del contracte; si s'afegeixen, caldrà versionar-ne la documentació.
-- L'autenticació és mitjançant API key.
+- Aprop s'autentica amb API key; l'app de Talaia usa JWT de Supabase.
 - No es retorna `estat`: apareixia a la proposta inicial, però després es va acordar en persona
   que el període `inici`--`fi` ja permet saber si és futur, actiu o passat. Un fenomen
   astronòmic no es cancel·la; la meteorologia s'ha de tractar separadament.
@@ -100,7 +100,7 @@ Decisions incorporades arran de la resposta d'Aprop:
   la base de dades o del JWKS de Supabase és 503; no es promet cap 429 sense un límit definit.
 
 La ubicació forma part del contracte públic, però no del dataset estàtic de TG-106: TG-108
-la llegirà del catàleg de punts oficials. Si el punt de referència no existeix o no és publicat,
+la llegeix del catàleg de punts oficials. Si el punt de referència no existeix o no és publicat,
 el servei ha de fallar explícitament en lloc de retornar una ubicació inventada o `null`.
 
 El contracte amb Aprop es pot integrar i revisar independentment del de Mobilicat: aquest darrer
