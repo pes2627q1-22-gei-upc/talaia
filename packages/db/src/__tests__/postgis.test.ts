@@ -8,7 +8,7 @@ import {
   type RawBuilder,
 } from 'kysely';
 import { createDb } from '../createDb';
-import { dinsBbox, distancia, lat, lon, puntDesDeLonLat } from '../postgis';
+import { dinsBbox, dinsRadi, distancia, lat, lon, puntDesDeLonLat } from '../postgis';
 
 // Compila sense connectar-se enlloc: només comprova l'SQL i els paràmetres.
 const db = new Kysely<unknown>({
@@ -51,6 +51,14 @@ describe('postgis', () => {
       'select st_distance("ubicacio", st_setsrid(st_makepoint($1, $2), 4326)::geography) as "v"',
     );
     expect(q.parameters).toEqual([2.17, 41.38]);
+  });
+
+  it('dinsRadi compara en metres amb st_dwithin sobre geography', () => {
+    const q = compila(dinsRadi(ubicacio, puntDesDeLonLat(2.17, 41.38), 50_000));
+    expect(q.sql).toBe(
+      'select st_dwithin("ubicacio", st_setsrid(st_makepoint($1, $2), 4326)::geography, $3) as "v"',
+    );
+    expect(q.parameters).toEqual([2.17, 41.38, 50_000]);
   });
 });
 
