@@ -2,6 +2,7 @@ import type { PuntFitxa, PuntsMapaGeoJson } from '@talaia/shared';
 import { Router } from 'express';
 import { z } from 'zod';
 
+import { IndexHoraSchema } from '../index/indexSchemas';
 import { ApiError } from '../middleware/errors';
 import { ErrorSchema, registry } from '../openapi';
 import type { PuntsService } from '../punts/puntsService';
@@ -118,20 +119,6 @@ const FitxaQuerySchema = z.object({
       example: HORES_PER_DEFECTE,
     }),
 });
-
-const IndexHoraSchema = IndexSchema.extend({
-  hora: z
-    .string()
-    .meta({ description: "Inici de l'hora, ISO 8601 en UTC", example: '2026-10-18T21:00:00.000Z' }),
-  factors: z
-    .object({ nuvols: z.number(), sol: z.number(), foscor: z.number(), lluna: z.number() })
-    .meta({
-      description: "Factors de l'índex v1, de 0 a 1 (ADR-0018): el desglossament de la fitxa",
-    }),
-  foscorEstimada: z
-    .boolean()
-    .meta({ description: 'La foscor del factor és provisional (sense SQM del punt)' }),
-}).meta({ id: 'IndexHora' });
 
 const PuntFitxaSchema: z.ZodType<PuntFitxa> = z
   .object({
