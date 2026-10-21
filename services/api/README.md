@@ -32,7 +32,7 @@ Es llegeixen del `.env` de l'**arrel** del repo (`dev` i `start` el carreguen am
 | Variable | Per defecte | Què és |
 |---|---|---|
 | `API_PORT` | `3000` | Port on escolta l'API |
-| `DATABASE_URL` | — | Postgres (`postgresql://…`). **Opcional:** sense ella l'API arrenca amb un avís, `/health` funciona i `/punts`, `/punts/{id}`, `/punts/{id}/index` i `/perfil` responen 503 `database_unavailable`. Amb Supabase local: `postgresql://postgres:postgres@127.0.0.1:54322/postgres` |
+| `DATABASE_URL` | — | Postgres (`postgresql://…`). **Opcional:** sense ella l'API arrenca amb un avís, `/health` funciona i `/punts`, `/punts/{id}`, `/punts/{id}/index`, `/recomanacions` i `/perfil` responen 503 `database_unavailable`. Amb Supabase local: `postgresql://postgres:postgres@127.0.0.1:54322/postgres` |
 | `SUPABASE_URL` | `http://127.0.0.1:54321` | URL del projecte de Supabase. `requireAuth` hi valida els JWT amb el JWKS (`/auth/v1/.well-known/jwks.json`, ADR-0023): 401 si el token és dolent, 503 si Supabase no respon |
 
 Una variable nova s'afegeix a l'esquema de `src/config/env.ts` i a `.env.example`. Cap secret al repo.
@@ -50,6 +50,7 @@ src/
     health.ts           GET /health
     punts.ts            GET /punts (bbox, ETag, Cache-Control i 304) i GET /punts/{id}
     puntIndex.ts        GET /punts/{id}/index: desglossament de l'índex per hores i factors (HU04)
+    recomanacions.ts    GET /recomanacions (validació de la consulta i OpenAPI)
   punts/
     puntsRepository.ts  Consultes dels punts publicats i del seu índex amb @talaia/db (ADR-0013)
     mapDocument.ts      GeoJSON del mapa i retall per bbox
@@ -59,6 +60,11 @@ src/
     night.ts            Què és «una nit» (12:00 → 12:00, hora de Catalunya) i la nit per defecte
     indexSchemas.ts     Esquemes zod/OpenAPI de l'índex per hora (IndexHora), compartits per /punts/{id} i /punts/{id}/index
     breakdownService.ts Punt + nit → DesglossamentIndex; 404 si el punt no és públic, 503 si la BD falla
+  recomanacions/
+    franja.ts           Franja horària local de Catalunya (Europe/Madrid) → UTC, amb el canvi d'hora
+    rutes.ts            Temps en cotxe ↔ radi en línia recta, fins que hi hagi Mobilicat
+    recomanacionsRepository.ts  Punts dins del radi (PostGIS) i índex de la franja
+    recomanacionsService.ts     Rànquing: millor hora, mitjana i distància; errors de la base de dades → 503
   middleware/errors.ts  ApiError, 404 i handler central d'errors
 ```
 
@@ -116,6 +122,7 @@ Tota resposta d'error té el format `{ error: { code, message } }`:
 |---|---|---|
 | 400 | `validation_error` | Un esquema zod rebutja l'entrada |
 | 400 | `invalid_json` | El cos no és JSON vàlid |
+| 400 | `franja_passada` | `GET /recomanacions` amb una franja horària que ja ha acabat |
 | 404 | `not_found` | La ruta no existeix |
 | 404 | `punt_not_found` | `/punts/{id}` i `/punts/{id}/index`: cap punt publicat amb aquest `id` |
 | 503 | `database_unavailable` | No hi ha `DATABASE_URL` o no es pot llegir la base de dades |
