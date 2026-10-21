@@ -97,7 +97,7 @@ El desglossament de l'índex d'un punt per a una nit: una entrada per hora amb e
 
 - **La nit** (`?nit=YYYY-MM-DD`, el dia del vespre, com `ConsultaRecomanacions.data`) va de les **12:00 locals** d'aquell dia a les 12:00 de l'endemà, en hora de Catalunya (`Europe/Madrid`, `src/index/night.ts`): la nit del canvi d'hora té 25 o 23 hores. Sense `nit`, la d'avui: fins al migdia, la que s'està acabant; a partir del migdia, la que ve.
 - **Només les hores calculades.** Si el worker encara no ha passat, `hores` és `[]` amb 200. Les hores de dia hi són amb `factors.sol = 0` i valor 0, perquè el component (TG-105) pugui mostrar on comença la nit.
-- **Errors:** `id` que no és un UUID o `nit` invàlida → 400 `validation_error`; cap punt `PUBLICAT` amb aquest `id` → 404 `punt_not_found` (com a `/punts/{id}`); sense `DATABASE_URL` o amb la base de dades caiguda → 503 `database_unavailable`.
+- **Errors:** `id` que no és un UUID o `nit` invàlida o fora del 2000–2100 → 400 `validation_error`; cap punt `PUBLICAT` amb aquest `id` → 404 `punt_not_found` (com a `/punts/{id}`); sense `DATABASE_URL` o amb la base de dades caiguda → 503 `database_unavailable`.
 - **HTTP:** `Cache-Control: public, max-age=<segons fins a la propera hora>`, com `/punts`: l'índex només canvia quan el worker recalcula.
 - **Comparteix amb `/punts/{id}`** les consultes del repositori (`findPublished`, `indexHores`) i l'esquema `IndexHora` de l'OpenAPI (`src/index/indexSchemas.ts`); la ruta és un router a part (`routes/puntIndex.ts`).
 
@@ -117,7 +117,7 @@ Tota resposta d'error té el format `{ error: { code, message } }`:
 | 400 | `validation_error` | Un esquema zod rebutja l'entrada |
 | 400 | `invalid_json` | El cos no és JSON vàlid |
 | 404 | `not_found` | La ruta no existeix |
-| 404 | `punt_not_found` | `/punts/{id}/index`: cap punt publicat amb aquest `id` |
+| 404 | `punt_not_found` | `/punts/{id}` i `/punts/{id}/index`: cap punt publicat amb aquest `id` |
 | 503 | `database_unavailable` | No hi ha `DATABASE_URL` o no es pot llegir la base de dades |
 | 500 | `internal_error` | Error inesperat (es registra al log i no s'envia el detall) |
 

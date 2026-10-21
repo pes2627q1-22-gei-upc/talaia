@@ -145,6 +145,8 @@ describe('GET /api/v1/punts/{id}/index', () => {
     ['mes 13', '2026-13-01'],
     ['30 de febrer', '2026-02-30'],
     ['buida', ''],
+    ['abans del 2000', '1900-06-01'],
+    ['després del 2100', '9999-12-31'],
   ])('nit invàlida (%s) → 400 validation_error', async (_cas, nit) => {
     const res = await request(appWith()).get(url()).query({ nit });
     expect(res.status).toBe(400);
@@ -199,5 +201,14 @@ describe('GET /api/v1/punts/{id}/index', () => {
     expect(schemas.DesglossamentIndex.properties.hores.items.$ref).toBe(
       '#/components/schemas/IndexHora',
     );
+    // El paràmetre `nit` es documenta amb el mateix esquema que el valida.
+    const nit = openapi.body.paths['/punts/{id}/index'].get.parameters.find(
+      (p: { name: string }) => p.name === 'nit',
+    );
+    expect(nit).toMatchObject({
+      in: 'query',
+      required: false,
+      schema: { type: 'string', format: 'date' },
+    });
   });
 });

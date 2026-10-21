@@ -55,12 +55,21 @@ describe('defaultNight', () => {
 });
 
 describe('NightSchema', () => {
-  it.each(['2026-10-19', '2028-02-29'])('accepta %s', (nit) => {
+  it.each(['2026-10-19', '2028-02-29', '2000-01-01', '2100-12-31'])('accepta %s', (nit) => {
     expect(NightSchema.safeParse(nit).success).toBe(true);
   });
 
   it.each(['19/10/2026', '2026-10-9', '2026-13-01', '2026-02-30', '2027-02-29', ''])(
     'rebutja %s',
+    (nit) => {
+      expect(NightSchema.safeParse(nit).success).toBe(false);
+    },
+  );
+
+  // Fora del rang, `Intl` i `Date` peten (desplaçament amb segons abans del 1901, desbordament al 9999):
+  // millor un 400 que un 500.
+  it.each(['1999-12-31', '2101-01-01', '1900-06-01', '9999-12-31'])(
+    'rebutja %s (fora del 2000–2100)',
     (nit) => {
       expect(NightSchema.safeParse(nit).success).toBe(false);
     },

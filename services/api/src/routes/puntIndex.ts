@@ -4,7 +4,7 @@ import { z } from 'zod';
 
 import type { BreakdownService } from '../index/breakdownService';
 import { IndexHoraSchema } from '../index/indexSchemas';
-import { NightSchema } from '../index/night';
+import { NIGHT_YEAR_MAX, NIGHT_YEAR_MIN, NightSchema } from '../index/night';
 import { ApiError } from '../middleware/errors';
 import { ErrorSchema, registry } from '../openapi';
 import { secondsToNextHour } from './punts';
@@ -14,7 +14,13 @@ const ParamsSchema = z.object({
     .uuid({ error: 'id ha de ser un UUID' })
     .meta({ description: 'Id del punt (`properties.id` del GeoJSON del mapa)' }),
 });
-const QuerySchema = z.object({ nit: NightSchema.optional() });
+// El mateix esquema valida i documenta (ADR-0011): a l'OpenAPI surt amb `format: date`.
+const QuerySchema = z.object({
+  nit: NightSchema.meta({
+    description: `La nit, \`YYYY-MM-DD\` (el dia del vespre), entre el ${NIGHT_YEAR_MIN} i el ${NIGHT_YEAR_MAX}. Per defecte, la d’avui.`,
+    example: '2026-10-19',
+  }).optional(),
+});
 
 const DesglossamentSchema: z.ZodType<DesglossamentIndex> = z
   .object({
@@ -38,12 +44,7 @@ registry.registerPath({
     "L'índex de visibilitat d'una nit hora a hora, amb els factors que l'expliquen (núvols, Sol, foscor del cel i Lluna). Una nit va de les 12:00 locals del dia `nit` a les 12:00 de l'endemà; sense `nit`, la d'avui (fins al migdia, la que s'està acabant). Respon amb `Cache-Control` fins a la propera hora, que és quan el worker recalcula.",
   request: {
     params: ParamsSchema,
-    query: z.object({
-      nit: z.string().optional().meta({
-        description: 'La nit, `YYYY-MM-DD` (el dia del vespre). Per defecte, la d’avui.',
-        example: '2026-10-19',
-      }),
-    }),
+    query: QuerySchema,
   },
   responses: {
     200: {
@@ -54,7 +55,8 @@ registry.registerPath({
       content: { 'application/json': { schema: DesglossamentSchema } },
     },
     400: {
-      description: '`id` no és un UUID o `nit` és invàlida (`validation_error`)',
+      description:
+        '`id` no és un UUID o `nit` és invàlida o fora del 2000–2100 (`validation_error`)',
       content: { 'application/json': { schema: ErrorSchema } },
     },
     404: {

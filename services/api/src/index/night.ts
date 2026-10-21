@@ -7,10 +7,16 @@ import { z } from 'zod';
  */
 export const TIME_ZONE = 'Europe/Madrid';
 
-/** `YYYY-MM-DD` i que sigui un dia del calendari (`2026-02-30` es rebutja). */
-export const NightSchema = z.string().refine(isCalendarDate, {
-  error: 'nit ha de ser un dia del calendari en format YYYY-MM-DD',
-});
+/** Anys que accepta `NightSchema`: fora d'aquí `Intl` i `Date` no són de fiar (abans del 1901 el desplaçament de Madrid tenia segons; el 9999 desborda). */
+export const NIGHT_YEAR_MIN = 2000;
+export const NIGHT_YEAR_MAX = 2100;
+
+/** `YYYY-MM-DD`, un dia del calendari (`2026-02-30` es rebutja) entre el 2000 i el 2100. */
+export const NightSchema = z.iso
+  .date({ error: 'nit ha de ser un dia del calendari en format YYYY-MM-DD' })
+  .refine((date) => isYearInRange(Number(date.slice(0, 4))), {
+    error: `nit ha de ser entre el ${NIGHT_YEAR_MIN} i el ${NIGHT_YEAR_MAX}`,
+  });
 
 /** Instants UTC `[from, to)` de les hores d'una nit. */
 export type NightWindow = { from: Date; to: Date };
@@ -69,11 +75,4 @@ function shiftDay(date: string, days: number): string {
   return new Date(Date.UTC(y, m - 1, d + days)).toISOString().slice(0, 10);
 }
 
-function isCalendarDate(date: string): boolean {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return false;
-  const [y = NaN, m = NaN, d = NaN] = date.split('-').map(Number);
-  const parsed = new Date(Date.UTC(y, m - 1, d));
-  return (
-    parsed.getUTCFullYear() === y && parsed.getUTCMonth() === m - 1 && parsed.getUTCDate() === d
-  );
-}
+const isYearInRange = (year: number) => year >= NIGHT_YEAR_MIN && year <= NIGHT_YEAR_MAX;
