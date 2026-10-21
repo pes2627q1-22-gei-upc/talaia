@@ -18,6 +18,8 @@ export type SignInFailureReason =
   | 'network'
   | 'invalidEmail'
   | 'invalidCode'
+  | 'invalidLink'
+  | 'emailNotAllowed'
   | 'rateLimited'
   | 'unavailable'
   | 'profile'
@@ -35,9 +37,18 @@ export class SignInFailure extends Error {
 
 /** Expo Router la redirigeix a la benvinguda (`+native-intent.tsx`). */
 export const OAUTH_CALLBACK_PATH = 'auth/callback';
+/** On torna l'enllaç del correu: la ruta `app/auth/correu.tsx` hi completa l'inici de sessió. */
+export const EMAIL_LINK_PATH = 'auth/correu';
 
 const RATE_LIMIT_CODES = new Set(['over_email_send_rate_limit', 'over_request_rate_limit']);
 const INVALID_EMAIL_CODES = new Set(['email_address_invalid', 'validation_failed']);
+/** L'enllaç ja s'ha fet servir, ha caducat o s'obre en un altre mòbil (sense el verificador PKCE). */
+const INVALID_LINK_CODES = new Set([
+  'flow_state_not_found',
+  'flow_state_expired',
+  'bad_code_verifier',
+  'pkce_code_verifier_not_found',
+]);
 
 /** Tradueix un error de Supabase (o de xarxa) al motiu que entén la vista. */
 export function toSignInFailure(error: unknown): SignInFailure {
@@ -52,6 +63,13 @@ export function toSignInFailure(error: unknown): SignInFailure {
   if (isAuthError(error)) {
     const code = error.code ?? '';
     if (code === 'otp_expired') return new SignInFailure('invalidCode', { cause: error });
+    if (INVALID_LINK_CODES.has(code) || error.name === 'AuthPKCECodeVerifierMissingError') {
+      return new SignInFailure('invalidLink', { cause: error });
+    }
+    // Sense SMTP propi, Supabase només envia correus a les adreces de l'equip (P21).
+    if (code === 'email_address_not_authorized') {
+      return new SignInFailure('emailNotAllowed', { cause: error });
+    }
     if (RATE_LIMIT_CODES.has(code) || error.status === 429) {
       return new SignInFailure('rateLimited', { cause: error });
     }
@@ -155,10 +173,22 @@ export const authRepository = {
     const nom = [givenName, familyName].filter(Boolean).join(' ');
     return nom ? { nom } : {};
   },
-  /** Envia un codi de 6 xifres (no un enllaç màgic: a Expo Go fallen). */
+  /**
+   * Envia el correu per entrar. Amb la plantilla de Talaia porta un codi de 6 xifres; amb la de
+   * Supabase per defecte (sense SMTP propi, P21) només porta un enllaç, que torna a
+   * `EMAIL_LINK_PATH` amb un `code` PKCE d'un sol ús.
+   */
   async sendEmailCode(email: string): Promise<void> {
     const client = requireClient();
-    await guard(() => client.auth.signInWithOtp({ email, options: { shouldCreateUser: true } }));
+    const emailRedirectTo = Linking.createURL(EMAIL_LINK_PATH);
+    await guard(() =>
+      client.auth.signInWithOtp({ email, options: { shouldCreateUser: true, emailRedirectTo } }),
+    );
+  },
+  /** Completa l'enllaç del correu. Només funciona al mateix mòbil on s'ha demanat (PKCE). */
+  async completeEmailLink(code: string): Promise<void> {
+    const client = requireClient();
+    await guard(() => client.auth.exchangeCodeForSession(code));
   },
   async verifyEmailCode(email: string, token: string): Promise<void> {
     const client = requireClient();

@@ -132,11 +132,14 @@ describe('Apple', () => {
 });
 
 describe('correu', () => {
-  it('demana un codi (no un enllaç) i el comprova', async () => {
+  it("demana el correu (amb la tornada de l'enllaç) i comprova el codi", async () => {
     await authRepository.sendEmailCode('nom@exemple.cat');
     expect(auth.signInWithOtp).toHaveBeenCalledWith({
       email: 'nom@exemple.cat',
-      options: { shouldCreateUser: true },
+      options: {
+        shouldCreateUser: true,
+        emailRedirectTo: 'exp://192.168.1.50:8081/--/auth/correu',
+      },
     });
     await authRepository.verifyEmailCode('nom@exemple.cat', '123456');
     expect(auth.verifyOtp).toHaveBeenCalledWith({
@@ -144,6 +147,21 @@ describe('correu', () => {
       token: '123456',
       type: 'email',
     });
+  });
+
+  it("completa l'enllaç del correu canviant el code PKCE per la sessió", async () => {
+    await authRepository.completeEmailLink('pkce-code');
+    expect(auth.exchangeCodeForSession).toHaveBeenCalledWith('pkce-code');
+
+    auth.exchangeCodeForSession.mockResolvedValue({
+      data: {},
+      error: new AuthApiError(
+        'invalid flow state, no valid flow state found',
+        404,
+        'flow_state_not_found',
+      ),
+    });
+    expect(await reason(authRepository.completeEmailLink('gastat'))).toBe('invalidLink');
   });
 
   it('un codi incorrecte o caducat torna invalidCode', async () => {
@@ -169,6 +187,8 @@ it.each([
   [new TypeError('Network request failed'), 'network'],
   [new AuthApiError('rate', 429, 'over_email_send_rate_limit'), 'rateLimited'],
   [new AuthApiError('bad', 400, 'email_address_invalid'), 'invalidEmail'],
+  [new AuthApiError('not authorized', 400, 'email_address_not_authorized'), 'emailNotAllowed'],
+  [new AuthApiError('verifier', 400, 'bad_code_verifier'), 'invalidLink'],
   [new AuthApiError('boom', 500, 'unexpected_failure'), 'unknown'],
   [new TypeError("Cannot read properties of undefined (reading 'url')"), 'unknown'],
 ])('tradueix %p a %s', (error, expected) => {
