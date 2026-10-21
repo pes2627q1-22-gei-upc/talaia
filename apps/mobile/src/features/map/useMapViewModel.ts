@@ -1,3 +1,5 @@
+import * as Haptics from 'expo-haptics';
+import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 
 import { useCurrentPlaceQuery } from '../explore/locationRepository';
@@ -55,6 +57,10 @@ export function useMapViewModel() {
     retryLabel: t('map.retry'),
     retry: () => {
       void query.refetch();
+    },
+    openPoint: async (id: string) => {
+      void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      router.push({ pathname: '/punt/[id]', params: { id } });
     },
     mapStyle: nightStyle,
     camera,

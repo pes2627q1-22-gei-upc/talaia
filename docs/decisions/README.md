@@ -29,5 +29,8 @@ Format: **Context → Decisió → Conseqüències**. Estat: `Acceptada`, `Propo
 | [0021](0021-deploy-per-pull-des-de-la-vm.md) | Deploy de `stable` per pull: un cron de la VM cada 5 minuts, sense runner de GitHub | Acceptada |
 | [0022](0022-perfil-horitzo-icgc.md) | Perfil d'horitzó per punt: el model de 5 m de l'ICGC pel WCS, a tres resolucions, omple la columna `horitzo` de `punts_observacio` (360 alçades aparents) | Acceptada |
 | [0023](0023-validacio-jwt-jwks.md) | Validació del JWT a l'API amb el JWKS de Supabase i `jose`: 401 només si el token és dolent, 503 si Supabase no respon (P6) | Acceptada |
+| [0024](0024-planificacio-worker-node-cron.md) | El worker recalcula l'índex en arrencar i cada hora amb node-cron dins del contenidor; cada execució queda a `execucions_worker`, que l'API fa servir com a versió del mapa (P9) | Acceptada |
+| [0025](0025-observacions-xema.md) | Observacions de la XEMA de Meteocat: les lectures d'ahir de l'estació més propera a cada punt, un cop al dia (unes 190 consultes al mes) | Acceptada |
+| [0026](0026-contracte-esdeveniments-aprop.md) | Contracte del calendari amb Aprop: sis tipus, dies civils de Catalunya, ubicació general i accés amb API key o JWT (P14) | Acceptada |
 
 Decisions encara obertes: [pendents.md](pendents.md).

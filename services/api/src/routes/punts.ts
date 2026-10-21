@@ -52,7 +52,7 @@ const PuntsMapaSchema: z.ZodType<PuntsMapaGeoJson> = z
           municipi: z.string(),
           index: IndexSchema.nullable().meta({
             description:
-              "Índex actual. `null` = encara no s'ha calculat (TG-98, TG-99): marcador gris.",
+              "Índex de l'hora en curs (worker horari, TG-99). `null` = encara no s'ha calculat: marcador gris.",
           }),
         }),
       }),

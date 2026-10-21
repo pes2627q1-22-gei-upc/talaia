@@ -53,6 +53,7 @@ export function MapScreen() {
         userLocationColor={colors.ubicacio}
         points={vm.points}
         markerPalette={markerPalette}
+        onPointPress={vm.openPoint}
         dom={{
           style: { flex: 1, backgroundColor: colors.nit },
           scrollEnabled: false,

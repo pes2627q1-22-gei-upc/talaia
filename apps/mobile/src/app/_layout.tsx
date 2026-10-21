@@ -38,11 +38,26 @@ function RootStack() {
       <Stack.Screen name="(tabs)" options={{ animation: 'fade' }} />
       <Stack.Screen
         name="punt/[id]"
-        options={{ headerShown: true, title: t('point.title'), headerTintColor: colors.lluna }}
+        options={{
+          headerShown: true,
+          title: t('point.title'),
+          headerTintColor: colors.lluna,
+          headerBackButtonDisplayMode: 'minimal',
+        }}
       />
       <Stack.Screen
         name="benvinguda"
         options={{ presentation: 'fullScreenModal', animation: 'fade' }}
+      />
+      <Stack.Screen
+        name="benvinguda-correu"
+        options={{
+          headerShown: true,
+          title: '',
+          headerBackTitle: t('emailLogin.back'),
+          headerTransparent: true,
+          headerTintColor: colors.lluna,
+        }}
       />
     </Stack>
   );

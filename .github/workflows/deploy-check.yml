@@ -7,6 +7,8 @@ on:
     paths:
       - 'deploy/**'
       - 'services/*/Dockerfile'
+      - 'services/worker/**'
+      - 'packages/db/**'
       - '.dockerignore'
       - 'package-lock.json'
       - '.github/workflows/deploy*.yml'
@@ -35,15 +37,28 @@ jobs:
         run: sh -n deploy/scripts/desplega.sh
 
       - name: Valida el compose
-        run: $COMPOSE --profile worker config -q
+        run: $COMPOSE config -q
 
       - name: Construeix les imatges
-        run: $COMPOSE --profile worker build
+        run: $COMPOSE build
 
+      # El worker necessita DATABASE_URL: aquí n'hi ha una que no respon. L'execució ha de fallar
+      # sense aturar el procés (`up --wait` no veu un contenidor que es reinicia).
       - name: Arrenca i comprova /api/v1/health per Nginx
+        env:
+          DATABASE_URL: postgresql://talaia:talaia@127.0.0.1:1/talaia
         run: |
           $COMPOSE up -d --wait
           curl -fsS -k --resolve talaia.duckdns.org:8080:127.0.0.1 https://talaia.duckdns.org:8080/api/v1/health
+
+      - name: El worker es manté en marxa
+        run: |
+          sleep 15
+          id=$($COMPOSE ps -q worker)
+          estat=$(docker inspect -f '{{.State.Status}} {{.RestartCount}}' "$id")
+          echo "worker: $estat"
+          test "$estat" = "running 0"
+          $COMPOSE logs worker | grep -q "en marxa"
 
       - name: Logs
         if: failure()

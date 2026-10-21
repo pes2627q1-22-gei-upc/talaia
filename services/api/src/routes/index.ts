@@ -9,6 +9,7 @@ import type { PuntsService } from '../punts/puntsService';
 import type { ProfileStore } from '../services/profileService';
 import { createAuthRouter } from './auth';
 import { healthRouter } from './health';
+import './esdeveniments.contract';
 import { createPuntIndexRouter } from './puntIndex';
 import { createPuntsRouter } from './punts';
 

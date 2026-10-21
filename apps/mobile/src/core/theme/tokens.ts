@@ -33,6 +33,18 @@ export const gradients = {
     colors: ['#0B1030', '#17205A', '#2F3680'],
     locations: [0, 0.58, 1],
   },
+  pointMapFade: {
+    colors: ['transparent', 'transparent', '#0E143333', colors.nit],
+    locations: [0, 0.35, 0.7, 1],
+  },
+} as const;
+
+/** Colors amb transparència del marcador i de l'atribució del mapa DOM. */
+export const pointMapColors = {
+  shadow: '#00000047',
+  markerPulse: '#5FD4C4B8',
+  markerGlow: '#5FD4C4B3',
+  markerHalo: '#5FD4C42E',
 } as const;
 
 export const spacing = {
@@ -61,6 +73,16 @@ export const sizes = {
   touch: 44,
   /** Caixa de les icones (botons, files). */
   icon: 22,
+  /** Fitxa del punt (mockup 05): mapa de capçalera i evolució horària. */
+  pointMap: 300,
+  hourlyChart: 64,
+  hourlyColumn: 44,
+  /** Amplada reservada al valor gran de la fitxa (evita retallar «87»). */
+  pointIndex: 96,
+  pointMarker: 66,
+  pointMarkerCore: 43,
+  pointMarkerStem: 18,
+  pointMarkerHalo: 10,
 } as const;
 
 /** Noms amb què `_layout.tsx` registra les fonts (`useFonts`). Cada pes és una família. */
@@ -74,7 +96,8 @@ export const fonts = {
 
 /** Escala tipogràfica del Figma. Sense `fontWeight`: el pes ja és a la família. */
 export const typography = {
-  indexLg: { fontFamily: fonts.display, fontSize: 66, lineHeight: 62 },
+  // The font's glyphs extend past a 62px line box at this size on native platforms.
+  indexLg: { fontFamily: fonts.display, fontSize: 66, lineHeight: 76 },
   indexMd: { fontFamily: fonts.display, fontSize: 40, lineHeight: 38 },
   display: { fontFamily: fonts.display, fontSize: 38, lineHeight: 40 },
   title: { fontFamily: fonts.bold, fontSize: 22, lineHeight: 28 },
@@ -84,6 +107,7 @@ export const typography = {
   small: { fontFamily: fonts.regular, fontSize: 14, lineHeight: 20 },
   chip: { fontFamily: fonts.semibold, fontSize: 14, lineHeight: 18 },
   caption: { fontFamily: fonts.regular, fontSize: 12, lineHeight: 17 },
+  hourlyIndex: { fontFamily: fonts.display, fontSize: 27, lineHeight: 30 },
   tag: { fontFamily: fonts.bold, fontSize: 12, lineHeight: 16 },
   link: { fontFamily: fonts.bold, fontSize: 13, lineHeight: 17 },
   overline: {
