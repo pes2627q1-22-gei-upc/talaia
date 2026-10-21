@@ -241,18 +241,20 @@
       "rateLimited": "Too many attempts in a row. Wait a moment and try again.",
       "unavailable": "Sign-in isn't set up in this version of the app.",
       "profile": "You're signed in, but we couldn't set up your profile. Try again.",
-      "unknown": "Couldn't sign you in. Try again."
+      "unknown": "Couldn't sign you in. Try again.",
+      "invalidLink": "This link isn't valid or has already been used. Open it on the same phone you requested it from, or ask for a new one.",
+      "emailNotAllowed": "We can't send emails to this address right now. Try signing in with Google."
     }
   },
   "emailLogin": {
     "title": "Sign in with email",
-    "emailSubtitle": "We'll send you a 6-digit code. If you don't have an account, we'll create one.",
+    "emailSubtitle": "We'll send you an email to sign in. If you don't have an account, we'll create one.",
     "emailLabel": "Email",
     "emailPlaceholder": "name@example.com",
     "send": "Send code",
     "sending": "Sending…",
     "codeTitle": "Enter the code",
-    "codeSubtitle": "We sent it to {{email}}. Check your spam folder too.",
+    "codeSubtitle": "We sent it to {{email}}. Enter the code or open the link in the email on this phone. Check your spam folder too.",
     "codeLabel": "6-digit code",
     "verify": "Sign in",
     "verifying": "Checking…",
@@ -261,5 +263,11 @@
     "resent": "We've sent you a new code.",
     "changeEmail": "Change address",
     "back": "Back"
+  },
+  "emailLink": {
+    "title": "Signing in…",
+    "subtitle": "One moment: we're checking the link from your email.",
+    "errorTitle": "We couldn't sign you in",
+    "back": "Back to start"
   }
 }

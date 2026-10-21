@@ -94,14 +94,32 @@ tanca la sessió i la vista ho diu, perquè no quedi cap compte a mitges.
 - **Apple (només iOS, ADR-0016):** `expo-apple-authentication` amb un nonce (Apple
   en rep el hash) i `signInWithIdToken`. Apple només dona el nom el primer cop i no
   el posa al token: va al cos de `POST /perfil` (`{ nom }`). Botó oficial d'Apple.
-- **Correu:** `/benvinguda-correu`, codi de 6 xifres (`signInWithOtp` + `verifyOtp`),
-  no enllaç màgic. Les plantilles de correu han de portar `{{ .Token }}`: en local
-  ja ho fan (`supabase/templates/codi-acces.html`); al projecte del núvol s'han de
-  canviar a *Authentication → Email Templates* («Magic Link» i «Confirm signup»).
-  Mentre no hi hagi SMTP propi (P21), el correu de Supabase només arriba a les
-  adreces de l'equip.
+- **Correu:** `/benvinguda-correu` (`signInWithOtp`). El correu pot portar un codi de 6
+  xifres (`verifyOtp`) o un enllaç, i l'app accepta tots dos:
+  - **Codi:** cal una plantilla amb `{{ .Token }}`. En local ja la té
+    (`supabase/templates/codi-acces.html`); al núvol, Supabase no deixa editar les
+    plantilles sense SMTP propi (P21).
+  - **Enllaç:** la plantilla per defecte. Torna a `…/--/auth/correu?code=…` (ruta
+    `app/auth/correu.tsx`), on l'app canvia el `code` PKCE per la sessió. Només
+    funciona al mateix mòbil on s'ha demanat.
+  - Sense SMTP propi, el núvol envia com a molt **2 correus per hora** a tot el
+    projecte i només a adreces de l'equip; a la resta, `emailNotAllowed`.
 - **Errors:** `SignInFailure.reason` (`network`, `invalidCode`, `rateLimited`…),
   traduïts a `auth.errors.*`. Cancel·lar no mostra cap missatge.
+
+### Provar el login a Expo Go
+
+- El mòbil ha d'estar a la mateixa wifi que l'ordinador (no amb dades mòbils).
+- Supabase **rebutja qualsevol adreça de tornada amb una IP com a host** (`exp://192.168.…`)
+  i envia el navegador a la *Site URL*. Per a Google i per a l'enllaç del correu, arrenca
+  Expo amb un nom de [nip.io](https://nip.io) que resol a la teva IP:
+
+  ```bash
+  REACT_NATIVE_PACKAGER_HOSTNAME=192-168-1-50.nip.io npx expo start --go
+  ```
+
+  `Linking.createURL` torna llavors `exp://192-168-1-50.nip.io:8081/--/…`, que
+  `exp://**` ja permet. `EXPO_PUBLIC_API_URL` pot continuar amb la IP.
 
 ### Abans de publicar l'app
 

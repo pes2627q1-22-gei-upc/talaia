@@ -241,18 +241,20 @@
       "rateLimited": "Demasiados intentos seguidos. Espera un momento y vuelve a intentarlo.",
       "unavailable": "El inicio de sesión no está configurado en esta versión de la app.",
       "profile": "Has entrado, pero no hemos podido preparar tu perfil. Vuelve a intentarlo.",
-      "unknown": "No se ha podido iniciar sesión. Vuelve a intentarlo."
+      "unknown": "No se ha podido iniciar sesión. Vuelve a intentarlo.",
+      "invalidLink": "El enlace no es válido o ya se ha usado. Ábrelo en el mismo móvil donde lo pediste, o pide otro.",
+      "emailNotAllowed": "Ahora mismo no podemos enviar correos a esta dirección. Prueba a entrar con Google."
     }
   },
   "emailLogin": {
     "title": "Entra con el correo",
-    "emailSubtitle": "Te enviaremos un código de 6 cifras. Si no tienes cuenta, crearemos una.",
+    "emailSubtitle": "Te enviaremos un correo para entrar. Si no tienes cuenta, crearemos una.",
     "emailLabel": "Correo electrónico",
     "emailPlaceholder": "nombre@ejemplo.es",
     "send": "Envía el código",
     "sending": "Enviando…",
     "codeTitle": "Escribe el código",
-    "codeSubtitle": "Lo hemos enviado a {{email}}. Mira también el correo no deseado.",
+    "codeSubtitle": "Lo hemos enviado a {{email}}. Escribe el código o abre el enlace del correo en este móvil. Mira también el correo no deseado.",
     "codeLabel": "Código de 6 cifras",
     "verify": "Entra",
     "verifying": "Comprobando…",
@@ -261,5 +263,11 @@
     "resent": "Te hemos enviado un código nuevo.",
     "changeEmail": "Cambia la dirección",
     "back": "Atrás"
+  },
+  "emailLink": {
+    "title": "Entrando…",
+    "subtitle": "Un momento: estamos comprobando el enlace del correo.",
+    "errorTitle": "No hemos podido entrar",
+    "back": "Vuelve al inicio"
   }
 }
