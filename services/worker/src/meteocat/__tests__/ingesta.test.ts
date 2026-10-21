@@ -238,6 +238,24 @@ describe('ingestaLecturesXema', () => {
     expect(resum.descartades).toBe(2);
     expect(repository.lectures()[0]).toMatchObject({ humitat: null, temperatura: 8.3 });
   });
+
+  it("amb el senyal d'aturada ja activat, no demana res i torna el resum en lloc d'un error", async () => {
+    const aturada = new AbortController();
+    aturada.abort();
+    const client = xemaFalsa();
+
+    const resum = await ingestaLecturesXema({
+      client,
+      repository: createInMemoryXemaRepository({ estacions: ['CC'] }),
+      ara: () => ARA,
+      senyal: aturada.signal,
+    });
+
+    expect(client.lectures).not.toHaveBeenCalled();
+    expect(resum.lectures).toBe(0);
+    expect(resum.errors).toHaveLength(6);
+    expect(resum.errors.every((e) => e.endsWith('aturat abans de demanar-la'))).toBe(true);
+  });
 });
 
 describe('actualitzaEstacionsXema', () => {
@@ -278,6 +296,24 @@ describe('actualitzaEstacionsXema', () => {
       expect.arrayContaining([expect.objectContaining({ codi: 'U7', operativa: false })]),
     );
     expect(repository.estacioDe('delta')).toBe('CC');
+  });
+
+  it('una resposta buida de Meteocat no deixa cap estació com a no operativa', async () => {
+    const repository = createInMemoryXemaRepository({ punts: PUNTS });
+    await actualitzaEstacionsXema({
+      client: xemaFalsa([], { estacionsOperatives: [ORIS, AMPOSTA] }),
+      repository,
+      ara: () => ARA,
+    });
+
+    await actualitzaEstacionsXema({
+      client: xemaFalsa([], { estacionsOperatives: [] }),
+      repository,
+      ara: () => ARA,
+    });
+
+    expect(repository.estacions().every((e) => e.operativa)).toBe(true);
+    expect(repository.estacioDe('delta')).toBe('U7');
   });
 });
 

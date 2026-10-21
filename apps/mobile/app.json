@@ -9,7 +9,8 @@
     "userInterfaceStyle": "dark",
     "ios": {
       "bundleIdentifier": "cat.talaia.app",
-      "icon": "./assets/expo.icon"
+      "icon": "./assets/expo.icon",
+      "usesAppleSignIn": true
     },
     "android": {
       "package": "cat.talaia.app",
@@ -42,7 +43,8 @@
           "locationWhenInUsePermission": "Talaia fa servir la teva ubicació per recomanar-te els millors llocs per mirar el cel a prop d'on ets."
         }
       ],
-      "expo-secure-store"
+      "expo-secure-store",
+      "expo-apple-authentication"
     ],
     "experiments": {
       "typedRoutes": true,

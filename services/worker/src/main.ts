@@ -1,7 +1,7 @@
 /**
  * Procés llarg del worker (TG-99, ADR-0024): recalcula l'índex en arrencar i cada hora amb
  * node-cron, dins del contenidor. És el `CMD` del Dockerfile (`dist/main.js`). La lògica és a
- * `recalcul/`; aquí només hi ha el cablejat (pool, cron i senyals).
+ * `recalcul/` i la de la XEMA a `meteocat/planificacio.ts`; aquí només hi ha el cablejat (pool, cron i senyals).
  *
  *   npm run start -w services/worker          # cal DATABASE_URL al .env de l'arrel
  */
@@ -10,6 +10,9 @@ import cron from 'node-cron';
 
 import { loadEnv } from './config/env';
 import { createOpenMeteoClient } from './meteo/openMeteo';
+import { planificaXema } from './meteocat/planificacio';
+import { createKyselyXemaRepository } from './meteocat/repository';
+import { createXemaClient } from './meteocat/xema';
 import { createExecutor } from './recalcul/executor';
 import { PUNTS_PER_LOT, recalculaIndex } from './recalcul/recalcul';
 import { createKyselyRecalculRepositories } from './recalcul/repository';
@@ -47,14 +50,27 @@ const tasca = cron.schedule(PLANIFICACIO, () => void executor.executa('hora'), {
 void executor.executa('arrencada');
 console.log(`[worker] en marxa: recàlcul de l'índex a «${PLANIFICACIO}» (UTC)`);
 
+// Observacions de la XEMA (TG-115, ADR-0025): només amb la clau de Meteocat, amb el mateix pool.
+const xema = planificaXema({
+  xema: env.METEOCAT_API_KEY
+    ? {
+        client: createXemaClient({ apiKey: env.METEOCAT_API_KEY }),
+        repository: createKyselyXemaRepository(db),
+        hiHaEstacions: async () =>
+          (await db.selectFrom('estacionsXema').select('codi').limit(1).executeTakeFirst()) !==
+          undefined,
+      }
+    : undefined,
+  programa: (expressio, tasca, opcions) => cron.schedule(expressio, tasca, opcions),
+});
+
 // Docker envia SIGTERM en aturar el contenidor (`stop_grace_period` al compose): no es comença
 // cap lot més, s'espera el que està en curs i es tanca el pool.
 for (const senyal of ['SIGTERM', 'SIGINT'] as const) {
   process.once(senyal, () => {
     console.log(`[worker] ${senyal}: aturant`);
     void tasca.stop();
-    void executor
-      .atura()
+    void Promise.all([executor.atura(), xema.atura()])
       .then(() => db.destroy())
       .finally(() => process.exit(0));
   });

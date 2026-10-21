@@ -5,6 +5,9 @@ import { createClient, processLock, type SupabaseClient } from '@supabase/supaba
 import { env } from '@/core/config/env';
 
 import { sessionStorage } from './sessionStorage';
+import { installWebCrypto } from './webCrypto';
+
+installWebCrypto();
 
 let client: SupabaseClient | undefined;
 
@@ -17,6 +20,8 @@ export function getAuthClient(): SupabaseClient | null {
       persistSession: true,
       autoRefreshToken: true,
       detectSessionInUrl: false,
+      // Google torna un `code` d'un sol ús a la redirecció, no els tokens (TG-249).
+      flowType: 'pkce',
       lock: processLock,
     },
   });

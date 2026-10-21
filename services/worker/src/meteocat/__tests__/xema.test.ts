@@ -129,4 +129,33 @@ describe('createXemaClient', () => {
     const error = await client.estacionsOperatives('2026-10-18').catch((e: unknown) => e);
     expect(error).toMatchObject({ name: 'XemaError', status: undefined });
   });
+
+  it('una lectura amb la data mal formada es descarta sense perdre la resta', async () => {
+    const { client } = clientAmb(() =>
+      json([
+        {
+          codi: 'CC',
+          variables: [
+            {
+              codi: 33,
+              lectures: [
+                { data: 'no és una data', valor: 80, estat: 'V' },
+                { data: '2026-10-18T21:30Z', valor: 81, estat: 'V' },
+              ],
+            },
+          ],
+        },
+      ]),
+    );
+
+    await expect(client.lectures('humitat', '2026-10-18')).resolves.toEqual([
+      {
+        estacio: 'CC',
+        data: '2026-10-18T21:30:00.000Z',
+        valor: 81,
+        validada: true,
+        invalida: false,
+      },
+    ]);
+  });
 });

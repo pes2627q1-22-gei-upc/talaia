@@ -1,3 +1,4 @@
+import * as AppleAuthentication from 'expo-apple-authentication';
 import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -5,6 +6,7 @@ import { useLocalSearchParams } from 'expo-router';
 import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 import Animated, {
+  FadeIn,
   type SharedValue,
   useAnimatedStyle,
   useSharedValue,
@@ -12,7 +14,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { gradients, motion, sizes, spacing } from '@/core/theme/tokens';
+import { gradients, motion, radii, sizes, spacing } from '@/core/theme/tokens';
 import { AppText } from '@/shared/ui/AppText';
 import { Button } from '@/shared/ui/Button';
 
@@ -26,6 +28,8 @@ import { ILLUSTRATION, illustrationScale, WelcomeIllustration } from './WelcomeI
 const logotip = require('@/assets/images/welcome/logotip.svg');
 const sparkStar = require('@/assets/images/welcome/torre/estel.svg');
 const mailIcon = require('@/assets/images/welcome/mail.svg');
+/** Logotip «G» oficial de Google (pautes de marca, ADR-0016). */
+const googleIcon = require('@/assets/images/welcome/google.svg');
 
 /** Mides del logotip del Figma i de l'estel de la «i» (Vector_7 de `logotip.svg`). */
 const LOGO = { width: 190, height: 77, star: { x: 141.68, y: 10.5, size: 18 } } as const;
@@ -76,9 +80,8 @@ function Logo({ t, label }: { t: SharedValue<number>; label: string }) {
   );
 }
 
-/** Benvinguda i accés (HU35, mockup 01). La sessió arriba amb TG-81 i TG-83. */
+/** Benvinguda i accés (HU35, mockup 01). Google i Apple hi inicien sessió; el correu, a part. */
 export function WelcomeScreen() {
-  const vm = useWelcomeViewModel();
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
   const [contentHeight, setContentHeight] = useState(0);
@@ -102,7 +105,7 @@ export function WelcomeScreen() {
     else if (!still) tap.set({ x, y, at: clock.get() });
   };
 
-  // En triar una opció: salt a la velocitat de la llum cap a l'estel de la torre i, després, l'app.
+  // En entrar amb èxit: salt a la velocitat de la llum cap a l'estel de la torre i, després, l'app.
   const exit = useSharedValue(0);
   const leaving = useRef<ReturnType<typeof setTimeout>[]>([]);
   useEffect(() => () => leaving.current.forEach(clearTimeout), []);
@@ -116,6 +119,7 @@ export function WelcomeScreen() {
       leaving.current.push(setTimeout(flash, duration * 0.65));
     }
   };
+  const vm = useWelcomeViewModel(leave);
   const contentStyle = useAnimatedStyle(() => ({
     opacity: 1 - Math.min(1, exit.get() * 2.5),
     transform: [{ translateY: still ? 0 : exit.get() * spacing.lg }],
@@ -187,17 +191,25 @@ export function WelcomeScreen() {
             <Button
               variant="light"
               label={vm.googleLabel}
-              onPress={() => leave(vm.continueWithGoogle)}
+              onPress={() => void vm.continueWithGoogle()}
+              disabled={vm.busy}
               haptic
+              icon={
+                <View style={styles.icon}>
+                  <Image source={googleIcon} style={styles.googleIcon} />
+                </View>
+              }
             />
           </Appear>
           {vm.showApple ? (
             <Appear index={4} t={t}>
-              <Button
-                variant="secondary"
-                label={vm.appleLabel}
-                onPress={() => leave(vm.continueWithApple)}
-                haptic
+              {/* El botó oficial d'Apple: logotip, text i traducció els posa el sistema. */}
+              <AppleAuthentication.AppleAuthenticationButton
+                buttonType={AppleAuthentication.AppleAuthenticationButtonType.CONTINUE}
+                buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
+                cornerRadius={radii.md}
+                style={styles.apple}
+                onPress={() => void vm.continueWithApple()}
               />
             </Appear>
           ) : null}
@@ -205,7 +217,8 @@ export function WelcomeScreen() {
             <Button
               variant="secondary"
               label={vm.emailLabel}
-              onPress={() => leave(vm.continueWithEmail)}
+              onPress={vm.continueWithEmail}
+              disabled={vm.busy}
               haptic
               icon={
                 <View style={styles.icon}>
@@ -215,6 +228,13 @@ export function WelcomeScreen() {
             />
           </Appear>
         </View>
+        {vm.errorMessage ? (
+          <Animated.View entering={FadeIn.duration(motion.base)}>
+            <AppText variant="small" color="tap" accessibilityRole="alert" style={styles.error}>
+              {vm.errorMessage}
+            </AppText>
+          </Animated.View>
+        ) : null}
         <Appear index={6} t={t}>
           <AppText variant="caption" color="boira" style={styles.legal}>
             {vm.legal}
@@ -240,6 +260,9 @@ const styles = StyleSheet.create({
   },
   fill: { width: '100%', height: '100%' },
   mailIcon: { width: 19.25, height: 15.58 },
+  googleIcon: { width: 18, height: 18 },
+  apple: { height: sizes.button },
+  error: { marginTop: spacing.ms, textAlign: 'center' },
   tagline: { marginTop: spacing.ms },
   description: { marginTop: spacing.xs },
   buttons: { marginTop: spacing.lg, gap: spacing.ms },

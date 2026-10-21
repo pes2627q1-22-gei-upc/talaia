@@ -116,9 +116,9 @@
     "tagline": "Dónde y cuándo mirar el cielo.",
     "description": "Te decimos cuál es el mejor lugar cerca de ti para ver puestas de sol, lluvias de estrellas y noches despejadas.",
     "continueGoogle": "Continuar con Google",
-    "continueApple": "Continuar con Apple",
     "continueEmail": "Continuar con el correo",
-    "legal": "Al continuar aceptas las condiciones de uso y la política de privacidad de Talaia."
+    "legal": "Al continuar aceptas las condiciones de uso y la política de privacidad de Talaia.",
+    "signingIn": "Entrando…"
   },
   "notFound": {
     "title": "Esta pantalla no existe",
@@ -242,6 +242,33 @@
     "signingOut": "Cerrando sesión…",
     "restoreError": "No se ha podido recuperar la sesión. Inténtalo de nuevo.",
     "logoutError": "No se ha podido cerrar la sesión. Inténtalo de nuevo.",
-    "retry": "Reintentar"
+    "retry": "Reintentar",
+    "errors": {
+      "network": "No hay conexión. Revísala y vuelve a intentarlo.",
+      "invalidEmail": "Esta dirección de correo no es válida.",
+      "invalidCode": "El código no es correcto o ha caducado.",
+      "rateLimited": "Demasiados intentos seguidos. Espera un momento y vuelve a intentarlo.",
+      "unavailable": "El inicio de sesión no está configurado en esta versión de la app.",
+      "profile": "Has entrado, pero no hemos podido preparar tu perfil. Vuelve a intentarlo.",
+      "unknown": "No se ha podido iniciar sesión. Vuelve a intentarlo."
+    }
+  },
+  "emailLogin": {
+    "title": "Entra con el correo",
+    "emailSubtitle": "Te enviaremos un código de 6 cifras. Si no tienes cuenta, crearemos una.",
+    "emailLabel": "Correo electrónico",
+    "emailPlaceholder": "nombre@ejemplo.es",
+    "send": "Envía el código",
+    "sending": "Enviando…",
+    "codeTitle": "Escribe el código",
+    "codeSubtitle": "Lo hemos enviado a {{email}}. Mira también el correo no deseado.",
+    "codeLabel": "Código de 6 cifras",
+    "verify": "Entra",
+    "verifying": "Comprobando…",
+    "resend": "Vuelve a enviar el código",
+    "resendIn": "Vuelve a enviar el código ({{seconds}} s)",
+    "resent": "Te hemos enviado un código nuevo.",
+    "changeEmail": "Cambia la dirección",
+    "back": "Atrás"
   }
 }
