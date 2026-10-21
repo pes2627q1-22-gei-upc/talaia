@@ -1,4 +1,9 @@
-import { actualitzaEstacionsXema, ingestaLecturesXema, type XemaRepository } from './ingesta';
+import {
+  actualitzaEstacionsXema,
+  diesPendentsXema,
+  ingestaLecturesXema,
+  type XemaRepository,
+} from './ingesta';
 import type { XemaClient } from './xema';
 
 /**
@@ -25,6 +30,8 @@ export type PlanificacioXemaDeps = {
     hiHaEstacions(): Promise<boolean>;
   };
   programa: Programa;
+  /** Rellotge injectable als tests. */
+  ara?: () => Date;
 };
 
 export type PlanificacioXema = {
@@ -36,7 +43,11 @@ export type PlanificacioXema = {
  * Planifica la ingesta de la XEMA (TG-115) al procés del worker. Les dues tasques comparteixen un
  * executor: mai no van a la vegada, i un error queda al log sense aturar el procés.
  */
-export function planificaXema({ xema, programa }: PlanificacioXemaDeps): PlanificacioXema {
+export function planificaXema({
+  xema,
+  programa,
+  ara = () => new Date(),
+}: PlanificacioXemaDeps): PlanificacioXema {
   if (!xema) {
     console.warn("[worker] sense METEOCAT_API_KEY: no s'ingesten les observacions de la XEMA");
     return { atura: () => Promise.resolve() };
@@ -65,12 +76,20 @@ export function planificaXema({ xema, programa }: PlanificacioXemaDeps): Planifi
     const { estacions, puntsAmbEstacio } = await actualitzaEstacionsXema({ client, repository });
     console.log(`[worker] xema: ${estacions} estacions, ${puntsAmbEstacio} punts amb estació`);
   };
+  /** Els dies que falten fins ahir (com a molt 4), del més antic al més recent. */
   const lectures = async () => {
-    const resum = await ingestaLecturesXema({ client, repository, senyal: aturada.signal });
-    console.log(
-      `[worker] xema: ${resum.lectures} lectures del ${resum.dia} (${resum.estacions} estacions, ${resum.descartades} descartades)`,
-    );
-    for (const error of resum.errors) console.error(`[worker] xema ${resum.dia}: ${error}`);
+    const dies = diesPendentsXema(await repository.ultimaLectura(), ara());
+    for (const dia of dies) {
+      if (aturada.signal.aborted) return;
+      const resum = await ingestaLecturesXema(
+        { client, repository, senyal: aturada.signal, ara },
+        dia,
+      );
+      console.log(
+        `[worker] xema: ${resum.lectures} lectures del ${resum.dia} (${resum.estacions} estacions, ${resum.descartades} descartades)`,
+      );
+      for (const error of resum.errors) console.error(`[worker] xema ${resum.dia}: ${error}`);
+    }
   };
 
   const tasques = [
@@ -83,8 +102,11 @@ export function planificaXema({ xema, programa }: PlanificacioXemaDeps): Planifi
       timezone: 'UTC',
     }),
   ];
+  // En arrencar: les estacions si no n'hi ha cap, i els dies que s'hagin perdut mentre el worker
+  // estava aturat (un deploy a l'hora de la tasca, per exemple).
   void executa('arrencada', async () => {
     if (!(await hiHaEstacions())) await estacions();
+    await lectures();
   });
   console.log(
     `[worker] xema: lectures a «${PLANIFICACIO_LECTURES}» i estacions a «${PLANIFICACIO_ESTACIONS}» (UTC)`,
