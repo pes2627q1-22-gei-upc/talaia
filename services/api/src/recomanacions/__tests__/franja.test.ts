@@ -38,6 +38,36 @@ describe('horaLocalAUtc', () => {
 });
 
 describe('franjaUtc', () => {
+  it('una franja que comença de matinada és la de després del vespre de data', () => {
+    const f = franjaUtc('2026-10-21', 1, 5);
+    expect(iso(f.desDe)).toBe('2026-10-21T23:00:00.000Z'); // 22/10 01:00 CEST
+    expect(iso(f.finsA)).toBe('2026-10-22T03:00:00.000Z');
+  });
+
+  it('de 00 a 06 també és la matinada de l’endemà', () => {
+    const f = franjaUtc('2026-12-15', 0, 6);
+    expect(iso(f.desDe)).toBe('2026-12-15T23:00:00.000Z'); // 16/12 00:00 CET
+    expect(iso(f.finsA)).toBe('2026-12-16T05:00:00.000Z');
+  });
+
+  it("la nit talla a les 12: de 10 a 14 és el matí de l'endemà", () => {
+    const f = franjaUtc('2026-12-15', 10, 14);
+    expect(iso(f.desDe)).toBe('2026-12-16T09:00:00.000Z');
+    expect(iso(f.finsA)).toBe('2026-12-16T13:00:00.000Z');
+  });
+
+  it('de 12 a 23 és el mateix dia', () => {
+    const f = franjaUtc('2026-12-15', 12, 23);
+    expect(iso(f.desDe)).toBe('2026-12-15T11:00:00.000Z');
+    expect(iso(f.finsA)).toBe('2026-12-15T22:00:00.000Z');
+  });
+
+  it("de 05 a 02 comença la matinada de l'endemà i acaba l'endemà d'aquesta", () => {
+    const f = franjaUtc('2026-12-15', 5, 2);
+    expect(iso(f.desDe)).toBe('2026-12-16T04:00:00.000Z');
+    expect(iso(f.finsA)).toBe('2026-12-17T01:00:00.000Z');
+  });
+
   it('si finsA < desDe, la franja acaba l’endemà', () => {
     const f = franjaUtc('2026-12-15', 22, 6);
     expect(iso(f.desDe)).toBe('2026-12-15T21:00:00.000Z');

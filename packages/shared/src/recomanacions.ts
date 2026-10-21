@@ -20,11 +20,16 @@ export type ConsultaRecomanacions = {
   objectiu: ObjectiuObservacio;
   /** D'on surt l'usuari, en graus WGS84. */
   origen: { lat: number; lon: number };
-  /** Nit de l'observació (`YYYY-MM-DD`): el dia del vespre, encara que la franja passi de mitjanit. */
+  /**
+   * Nit de l'observació (`YYYY-MM-DD`): el dia del vespre. La nit va de les 12:00 d'aquest dia a
+   * les 12:00 de l'endemà, com a `GET /punts/{id}/index`.
+   */
   data: string;
   /**
-   * Franja horària en hores locals de Catalunya (0–23). Si `finsA` < `desDe`, acaba l'endemà.
-   * L'app la calcula amb l'hora del mòbil: es dona per fet que és a `Europe/Madrid`.
+   * Franja horària en hores locals de Catalunya (0–23), diferents. Una hora d'abans de les 12 és
+   * la de l'endemà de `data` (de 01 a 05 és la matinada després del vespre). Si `finsA` < `desDe`,
+   * acaba l'endemà de `desDe`. L'app la calcula amb l'hora del mòbil: es dona per fet que és a
+   * `Europe/Madrid`.
    */
   desDe: number;
   finsA: number;
@@ -33,6 +38,8 @@ export type ConsultaRecomanacions = {
    * Mobilicat, l'API el converteix en un radi aproximat.
    */
   tempsMaxim: number;
+  /** Quants punts del rànquing es retornen com a màxim (l'API en dona 20 per defecte, fins a 100). */
+  limit?: number;
 };
 
 /** Un punt del rànquing de `GET /api/v1/recomanacions`. */
@@ -45,6 +52,8 @@ export type Recomanacio = PuntObservacio & {
   millorHora: IndexHora | null;
   /** Mitjana de l'índex de les hores de la franja que tenen índex, arrodonida. `null` sense índex. */
   mitjana: number | null;
+  /** Quantes hores de la franja tenen índex (la mitjana surt d'aquestes). 0 si no n'hi ha cap. */
+  horesAmbIndex: number;
 };
 
 /** `GET /api/v1/recomanacions`: el rànquing de punts per a una consulta (HU01). */
@@ -56,9 +65,12 @@ export type RecomanacionsResposta = {
    * ha començat, `desDe` és l'hora en curs.
    */
   franja: { desDe: string; finsA: string };
+  /** Quants punts publicats hi ha dins del radi, abans d'aplicar `limit`. */
+  total: number;
   /**
-   * Punts publicats dins del radi, de millor a pitjor: per `millorHora`, després per `mitjana` i
-   * després per distància. Els que no tenen índex (més enllà de la previsió) van al final.
+   * Els `limit` primers punts publicats dins del radi, de millor a pitjor: per `millorHora`,
+   * després per `mitjana` i després per distància. Els que no tenen índex (més enllà de la
+   * previsió) van al final.
    */
   punts: Recomanacio[];
 };

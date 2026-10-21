@@ -5,6 +5,16 @@
 const ZONA = 'Europe/Madrid';
 const DIA_MS = 86_400_000;
 
+/**
+ * Una nit va de les 12:00 locals del dia `data` a les 12:00 de l'endemà, com a `GET
+ * /punts/{id}/index` (TG-104): una hora de 0 a 11 és la de l'endemà del vespre.
+ */
+export const INICI_NIT = 12;
+
+/** Anys acceptats: fora d'aquí `Intl` i `Date` no són de fiar (el 9999 desborda), com a TG-104. */
+export const ANY_MIN = 2000;
+export const ANY_MAX = 2100;
+
 const FORMAT = new Intl.DateTimeFormat('en-CA', {
   timeZone: ZONA,
   year: 'numeric',
@@ -30,6 +40,8 @@ export function diaUtc(data: string): number {
   return new Date(ms).toISOString().slice(0, 10) === data ? ms : Number.NaN;
 }
 
+const endema = (data: string) => new Date(diaUtc(data) + DIA_MS).toISOString().slice(0, 10);
+
 /**
  * L'instant UTC de l'hora local `hora` (0–23) del dia `data`. Una hora que no existeix (la que se
  * salta el canvi d'hora de primavera) passa a la següent; una de repetida (tardor), a la segona.
@@ -41,14 +53,16 @@ export function horaLocalAUtc(data: string, hora: number): Date {
 }
 
 /**
- * La franja d'una nit en UTC, `[desDe, finsA)`. Si `finsA` ≤ `desDe`, acaba l'endemà
- * (`ConsultaRecomanacions`).
+ * La franja de la nit `data` en UTC, `[desDe, finsA)` (`ConsultaRecomanacions`). Una hora d'abans
+ * de les 12 (`INICI_NIT`) és la de l'endemà: de 01 a 05 és la matinada després del vespre de
+ * `data`. Si `finsA` < `desDe`, la franja acaba l'endemà de `desDe`.
  */
 export function franjaUtc(
   data: string,
   desDe: number,
   finsA: number,
 ): { desDe: Date; finsA: Date } {
-  const diaFi = finsA <= desDe ? new Date(diaUtc(data) + DIA_MS).toISOString().slice(0, 10) : data;
-  return { desDe: horaLocalAUtc(data, desDe), finsA: horaLocalAUtc(diaFi, finsA) };
+  const diaInici = desDe < INICI_NIT ? endema(data) : data;
+  const diaFi = finsA <= desDe ? endema(diaInici) : diaInici;
+  return { desDe: horaLocalAUtc(diaInici, desDe), finsA: horaLocalAUtc(diaFi, finsA) };
 }
