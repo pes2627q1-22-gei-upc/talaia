@@ -33,6 +33,7 @@ export function createApp({ profileStore, ...apiDeps }: AppOptions = {}) {
     createApiRouter({
       ...apiDeps,
       supabaseUrl: resolvedSupabaseUrl,
+      apropApiKey: apiDeps.apropApiKey ?? env.APROP_API_KEY,
       profileStore: resolvedProfileStore,
     }),
   );

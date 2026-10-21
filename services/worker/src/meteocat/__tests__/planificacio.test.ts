@@ -1,3 +1,4 @@
+import { DIES_RECUPERATS_MAXIM, diesPendentsXema } from '../ingesta';
 import { PLANIFICACIO_ESTACIONS, PLANIFICACIO_LECTURES, planificaXema } from '../planificacio';
 import { createInMemoryXemaRepository } from '../repository';
 import { XemaError, type EstacioXema, type XemaClient } from '../xema';
@@ -84,10 +85,12 @@ describe('planificaXema', () => {
     const repository = createInMemoryXemaRepository({ estacions: ['CC'] });
     planificaXema({ xema: { client, repository, hiHaEstacions: async () => true }, programa });
     await flush();
+    // En arrencar, sense cap lectura desada, ja baixa ahir: una petició per variable.
+    expect(client.lectures).toHaveBeenCalledTimes(6);
 
     tasques.get(PLANIFICACIO_LECTURES)?.();
     await flush();
-    expect(client.lectures).toHaveBeenCalledTimes(6);
+    expect(client.lectures).toHaveBeenCalledTimes(12);
 
     tasques.get(PLANIFICACIO_ESTACIONS)?.();
     await flush();
@@ -179,5 +182,70 @@ describe('planificaXema', () => {
     tasques.get(PLANIFICACIO_LECTURES)?.();
     await flush();
     expect(client.lectures).not.toHaveBeenCalled();
+  });
+});
+
+describe('recuperació dels dies que falten', () => {
+  const ARA = new Date('2026-10-21T06:15:00.000Z');
+
+  beforeEach(() => jest.spyOn(console, 'log').mockImplementation(() => {}));
+  afterEach(() => jest.restoreAllMocks());
+
+  it.each<[string, string | null, string[]]>([
+    ['sense cap lectura, només ahir', null, ['2026-10-20']],
+    ['amb ahir ja desat, cap', '2026-10-20T23:30:00.000Z', []],
+    ["amb l'últim de abans-d'ahir, ahir", '2026-10-19T23:30:00.000Z', ['2026-10-20']],
+    [
+      'després de tres dies sense ingerir, els tres',
+      '2026-10-17T23:30:00.000Z',
+      ['2026-10-18', '2026-10-19', '2026-10-20'],
+    ],
+    [
+      `com a molt els ${DIES_RECUPERATS_MAXIM} darrers`,
+      '2026-10-01T23:30:00.000Z',
+      ['2026-10-17', '2026-10-18', '2026-10-19', '2026-10-20'],
+    ],
+  ])('%s', (_cas, ultima, dies) => {
+    expect(diesPendentsXema(ultima, ARA)).toEqual(dies);
+  });
+
+  it('en arrencar, baixa els dies que falten del més antic al més recent', async () => {
+    const { programa } = programaFals();
+    const client = clientFals();
+    const repository = createInMemoryXemaRepository({ estacions: ['CC'] });
+    jest.spyOn(repository, 'ultimaLectura').mockResolvedValue('2026-10-18T23:30:00.000Z');
+
+    planificaXema({
+      xema: { client, repository, hiHaEstacions: async () => true },
+      programa,
+      ara: () => ARA,
+    });
+    await flush();
+
+    const dies = [...new Set(client.lectures.mock.calls.map(([, dia]) => dia))];
+    expect(dies).toEqual(['2026-10-19', '2026-10-20']);
+  });
+
+  it('un 429 en un dia atura la recuperació i no demana els dies següents', async () => {
+    const { programa } = programaFals();
+    jest.spyOn(console, 'error').mockImplementation(() => {});
+    const client = clientFals(async () => {
+      throw new XemaError('La XEMA ha respost 429', 429);
+    });
+    const repository = createInMemoryXemaRepository({ estacions: ['CC'] });
+    jest.spyOn(repository, 'ultimaLectura').mockResolvedValue('2026-10-17T23:30:00.000Z');
+
+    planificaXema({
+      xema: { client, repository, hiHaEstacions: async () => true },
+      programa,
+      ara: () => ARA,
+    });
+    await flush();
+
+    expect(client.lectures).toHaveBeenCalledTimes(1);
+    expect(console.error).toHaveBeenCalledWith(
+      '[worker] xema arrencada: ha fallat',
+      expect.any(XemaError),
+    );
   });
 });
