@@ -92,7 +92,15 @@ export async function actualitzaEstacionsXema({
 export const DIES_RECUPERATS_MAXIM = 4;
 
 /**
- * Els dies (`YYYY-MM-DD`, UTC) que falten entre l'última lectura desada i ahir, del més antic al
+ * Fins a les 03:00 UTC la XEMA encara no té sencer el dia anterior (ADR-0025). Abans d'aquesta
+ * hora, «ahir» és el dia d'abans: si el worker es reinicia de matinada, no baixa un dia a mitges
+ * que després ja no es tornaria a demanar.
+ */
+export const HORES_MARGE_XEMA = 3;
+
+/**
+ * Els dies (`YYYY-MM-DD`, UTC) que falten entre l'última lectura desada i ahir (abans de les
+ * 03:00 UTC, el dia d'abans: `HORES_MARGE_XEMA`), del més antic al
  * més recent i com a molt els `maxim` darrers. Sense cap lectura, només ahir. Un dia que no s'ha
  * pogut ingerir (Meteocat no responia, el worker s'ha reiniciat a l'hora de la tasca) es torna a
  * demanar a la següent execució.
@@ -102,7 +110,7 @@ export function diesPendentsXema(
   ara: Date,
   maxim = DIES_RECUPERATS_MAXIM,
 ): string[] {
-  const ahir = diaUtc(new Date(ara.getTime() - DIA_MS));
+  const ahir = diaUtc(new Date(ara.getTime() - HORES_MARGE_XEMA * 3_600_000 - DIA_MS));
   if (ultimaLectura === null) return [ahir];
   const dies: string[] = [];
   let dia = Date.parse(`${diaUtc(new Date(ultimaLectura))}T00:00:00Z`) + DIA_MS;

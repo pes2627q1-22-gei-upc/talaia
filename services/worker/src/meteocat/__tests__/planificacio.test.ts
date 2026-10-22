@@ -209,6 +209,24 @@ describe('recuperació dels dies que falten', () => {
     expect(diesPendentsXema(ultima, ARA)).toEqual(dies);
   });
 
+  it.each<[string, string, string | null, string[]]>([
+    [
+      'a les 02:59 UTC, ahir encara no es dona per sencer',
+      '2026-10-21T02:59:00.000Z',
+      '2026-10-19T23:30:00.000Z',
+      [],
+    ],
+    ['a les 03:00 UTC, sí', '2026-10-21T03:00:00.000Z', '2026-10-19T23:30:00.000Z', ['2026-10-20']],
+    [
+      "sense lectures, de matinada baixa el dia d'abans d'ahir",
+      '2026-10-21T01:00:00.000Z',
+      null,
+      ['2026-10-19'],
+    ],
+  ])('%s', (_cas, ara, ultima, dies) => {
+    expect(diesPendentsXema(ultima, new Date(ara))).toEqual(dies);
+  });
+
   it('en arrencar, baixa els dies que falten del més antic al més recent', async () => {
     const { programa } = programaFals();
     const client = clientFals();
