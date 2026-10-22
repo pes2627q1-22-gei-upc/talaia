@@ -3,6 +3,7 @@ import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 
 import { useCurrentPlaceQuery } from '../explore/locationRepository';
+import { useRecommendationsViewModel } from '../recommendations/useRecommendationsViewModel';
 
 import type { MapCamera } from './NightMap';
 import { useMapPointsQuery } from './mapRepository';
@@ -32,21 +33,25 @@ export function useMapViewModel() {
       ? { lat: location.data.place.lat, lon: location.data.place.lon }
       : null;
   const { heading, active: locationActive } = useDeviceHeading(userLocation !== null);
-  const query = useMapPointsQuery();
-  const points = query.data ?? EMPTY_MAP_POINTS;
+  // Amb una cerca de «Què vols veure?», el mapa ensenya el rànquing i no tot el catàleg (TG-102).
+  const recommendations = useRecommendationsViewModel();
+  const query = useMapPointsQuery(recommendations === null);
+  const points = recommendations?.points ?? query.data ?? EMPTY_MAP_POINTS;
   const isLoading =
     query.isPending || ((query.isError || points.features.length === 0) && query.isFetching);
-  const notice = isLoading
-    ? { kind: 'loading' as const, title: t('map.pointsLoading'), description: null }
-    : query.isError
-      ? { kind: 'error' as const, title: t('map.pointsError'), description: null }
-      : points.features.length === 0
-        ? {
-            kind: 'empty' as const,
-            title: t('map.pointsEmpty'),
-            description: t('map.pointsEmptyHint'),
-          }
-        : null;
+  const notice = recommendations
+    ? null
+    : isLoading
+      ? { kind: 'loading' as const, title: t('map.pointsLoading'), description: null }
+      : query.isError
+        ? { kind: 'error' as const, title: t('map.pointsError'), description: null }
+        : points.features.length === 0
+          ? {
+              kind: 'empty' as const,
+              title: t('map.pointsEmpty'),
+              description: t('map.pointsEmptyHint'),
+            }
+          : null;
   return {
     userLocation,
     userHeading: heading,
@@ -54,6 +59,8 @@ export function useMapViewModel() {
     userLocationLabel: t('map.userLocation'),
     points,
     notice,
+    recommendations,
+    back: { label: t('map.back'), onPress: () => router.back() },
     retryLabel: t('map.retry'),
     retry: () => {
       void query.refetch();

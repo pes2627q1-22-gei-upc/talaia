@@ -16,7 +16,8 @@
     "pointsError": "No hemos podido cargar los lugares",
     "pointsEmptyHint": "Vuelve a intentarlo más adelante.",
     "pointsEmpty": "Todavía no hay lugares disponibles",
-    "retry": "Volver a intentar"
+    "retry": "Volver a intentar",
+    "back": "Atrás"
   },
   "calendar": {
     "title": "Calendario",
@@ -278,5 +279,29 @@
     "subtitle": "Un momento: estamos comprobando el enlace del correo.",
     "errorTitle": "No hemos podido entrar",
     "back": "Vuelve al inicio"
+  },
+  "recommendations": {
+    "title": "{{goal}}, {{when}}",
+    "when": {
+      "tonight": "esta noche",
+      "tomorrow": "mañana por la noche"
+    },
+    "from": "Desde {{place}}, hasta {{travel}}",
+    "fromHere": "Desde donde estás, hasta {{travel}}",
+    "duration": {
+      "minutes": "{{minutes}} min",
+      "hours": "{{hours}} h",
+      "hoursMinutes": "{{hours}} h {{minutes}} min"
+    },
+    "best": "Mejores puntos para {{when}}",
+    "showAll": "Ver todos",
+    "showLess": "Ver menos",
+    "loading": "Buscando los mejores puntos…",
+    "error": "No hemos podido cargar las recomendaciones",
+    "empty": "No hay ningún punto a menos de {{travel}}",
+    "emptyHint": "Amplía la distancia o elige otra noche.",
+    "noIndex": "Aún sin previsión",
+    "bestHour": "Mejor hora: {{hour}}",
+    "byCar": "{{travel}} en coche"
   }
 }

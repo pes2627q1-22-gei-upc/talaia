@@ -142,6 +142,8 @@ export function useExploreViewModel() {
         desDe: String(query.desDe),
         finsA: String(query.finsA),
         tempsMaxim: String(query.tempsMaxim),
+        // Només per a la capçalera del mapa («Des de Girona…»): no va a l'API.
+        ...(place.name ? { lloc: place.name } : {}),
       },
     });
   };
