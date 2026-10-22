@@ -87,9 +87,9 @@ Els secrets **mai** van al repo (és públic). Hi ha dos fitxers, i tots dos ja 
 
 Si tens accés al projecte de Supabase, els valors també són al panell (vegeu la [secció 5](#5-supabase-base-de-dades-i-migracions)).
 
-Sense `.env` tot arrenca igualment: l'API fa servir el port 3000 i l'app, `http://localhost:3000/api/v1`. El que no funcionarà és res que parli amb Supabase.
+Sense `.env` tot arrenca igualment: l'API fa servir el port 3000 i l'app la busca al mateix ordinador d'on carrega (Metro). El que no funcionarà és res que parli amb Supabase.
 
-> **No deixis mai `EXPO_PUBLIC_API_URL=` buida.** Si la poses, ha de tenir un valor; si no, treu la línia. Una línia buida fa que l'app no pugui construir l'adreça de l'API.
+> **`EXPO_PUBLIC_API_URL` no cal.** A Expo Go, l'app treu l'adreça de l'API de l'ordinador d'on s'ha carregat (`http://<el mateix host>:3000/api/v1`). Posa-la només si l'API és en una altra màquina (p. ex. la VM).
 
 ---
 
@@ -122,7 +122,7 @@ S'obre Metro amb un codi QR. Tria on la vols veure:
 
 | On | Com | Adreça de l'API (`EXPO_PUBLIC_API_URL` a `apps/mobile/.env`) |
 |---|---|---|
-| **El teu mòbil** amb Expo Go | Escaneja el QR (Android: des d'Expo Go; iPhone: amb la càmera). Mòbil i ordinador a la **mateixa wifi** | `http://<IP del teu ordinador>:3000/api/v1`. La IP: macOS `ipconfig getifaddr en0` · Windows `ipconfig` · Linux `hostname -I` |
+| **El teu mòbil** amb Expo Go | Escaneja el QR (Android: des d'Expo Go; iPhone: amb la càmera). Mòbil i ordinador a la **mateixa wifi** | No cal: l'app la dedueix de Metro (`npm run mobile` ja s'anuncia amb un nom de nip.io) |
 | Simulador d'iOS (Mac) | Prem `i` | No cal: el valor per defecte (`localhost`) funciona |
 | Emulador d'Android | Obre l'emulador i prem `a` | `http://10.0.2.2:3000/api/v1` (és com l'emulador veu el teu ordinador) |
 

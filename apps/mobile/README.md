@@ -125,7 +125,8 @@ tanca la sessió i la vista ho diu, perquè no quedi cap compte a mitges.
   (`scripts/start.mjs`) arrenca Expo amb un nom de [nip.io](https://nip.io) que resol a la
   IP de la wifi, p. ex. `exp://192-168-1-50.nip.io:8081`, que `exp://**` ja permet. No cal
   fer res més; per forçar-ne un altre, `REACT_NATIVE_PACKAGER_HOSTNAME=… npm run mobile`.
-- `EXPO_PUBLIC_API_URL` pot continuar amb la IP.
+- `EXPO_PUBLIC_API_URL` no cal: si no hi és, l'app fa servir el mateix host de Metro
+  (`core/config/env.ts`), on també corre l'API.
 
 ### Abans de publicar l'app
 
