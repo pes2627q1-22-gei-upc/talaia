@@ -41,4 +41,13 @@ describe('contracte de consulta dels esdeveniments', () => {
     expect(query('2027-08-31', '2027-08-01').error?.issues[0]?.message).toMatch(/posterior/);
     expect(query('2027-01-01', '2028-01-02').error?.issues[0]?.message).toMatch(/366 dies/);
   });
+
+  it('no afegeix errors de rang falsos a una data impossible i tradueix el tipus', () => {
+    const invalid = query('2027-13-01', '2027-12-01');
+    expect(invalid.error?.issues).toHaveLength(1);
+    expect(invalid.error?.issues[0]?.message).toMatch(/data/);
+    expect(query('2027-08-01', '2027-08-31', 'desconegut').error?.issues[0]?.message).toMatch(
+      /categoria/,
+    );
+  });
 });

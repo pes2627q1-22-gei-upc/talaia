@@ -8,7 +8,7 @@ Accés a la base de dades de l'API i el worker: [Kysely](https://kysely.dev) sob
 |---|---|
 | `src/createDb.ts` | `createDb(databaseUrl, { max })`: `Kysely<DB>` amb un `Pool` de `pg` i el `CamelCasePlugin` |
 | `src/schema.ts` | Tipus `DB` generats amb `kysely-codegen`. **No s'edita a mà**. Les columnes amb un `check` de valors (`estat`, `origen`) es tipen com a unions a `kysely-codegen.overrides` del `package.json` de l'arrel |
-| `src/postgis.ts` | Helpers de PostGIS: `puntDesDeLonLat`, `lon`, `lat`, `dinsBbox`, `distancia` |
+| `src/postgis.ts` | Helpers de PostGIS: `puntDesDeLonLat`, `lon`, `lat`, `dinsBbox`, `dinsRadi`, `distancia` |
 
 TG-106 afegeix `tipus_fenomen`, `fonts_astronomiques`, `fenomens_astronomics` i
 `esdeveniments_astronomics`. Els seus registres inicials venen del JSON de
