@@ -257,6 +257,7 @@
   },
   "emailLogin": {
     "title": "Entra amb el correu",
+    "close": "Tanca",
     "emailSubtitle": "T'enviarem un correu per entrar. Si no tens compte, en crearem un.",
     "emailLabel": "Correu electrònic",
     "emailPlaceholder": "nom@exemple.cat",

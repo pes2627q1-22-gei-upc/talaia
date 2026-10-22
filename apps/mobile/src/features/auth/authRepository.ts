@@ -145,6 +145,14 @@ export const authRepository = {
     await guard(() => client.auth.exchangeCodeForSession(code));
   },
   /** Apple amb el full natiu d'iOS (ADR-0016): el token va directe a Supabase. */
+  /**
+   * Si el dispositiu pot fer servir Sign in with Apple. Fora d'iOS, o amb un Expo Go que no porta
+   * el mòdul natiu, no: el botó oficial sortiria com un error.
+   */
+  async isAppleAvailable(): Promise<boolean> {
+    if (Platform.OS !== 'ios') return false;
+    return AppleAuthentication.isAvailableAsync().catch(() => false);
+  },
   async signInWithApple(): Promise<ProfileHints> {
     const client = requireClient();
     // Apple rep el hash del nonce i Supabase el nonce: així el token no es pot reutilitzar.

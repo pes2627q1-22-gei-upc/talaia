@@ -257,6 +257,7 @@
   },
   "emailLogin": {
     "title": "Entra con el correo",
+    "close": "Cerrar",
     "emailSubtitle": "Te enviaremos un correo para entrar. Si no tienes cuenta, crearemos una.",
     "emailLabel": "Correo electrónico",
     "emailPlaceholder": "nombre@ejemplo.es",

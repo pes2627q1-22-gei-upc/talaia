@@ -1,6 +1,5 @@
 import { act, renderHook } from '@testing-library/react-native';
 import { useRouter } from 'expo-router';
-import { Platform } from 'react-native';
 
 import i18n from '@/core/i18n';
 
@@ -11,7 +10,11 @@ import { useWelcomeViewModel } from '../useWelcomeViewModel';
 jest.mock('expo-router', () => ({ useRouter: jest.fn() }));
 jest.mock('../signIn', () => ({ signInAndEnsureProfile: jest.fn() }));
 jest.mock('../authRepository', () => ({
-  authRepository: { signInWithGoogle: jest.fn(), signInWithApple: jest.fn() },
+  authRepository: {
+    signInWithGoogle: jest.fn(),
+    signInWithApple: jest.fn(),
+    isAppleAvailable: jest.fn(async () => true),
+  },
 }));
 const replace = jest.fn();
 const push = jest.fn();
@@ -40,14 +43,14 @@ describe('useWelcomeViewModel', () => {
     expect(result.current.googleLabel).toBe('Continue with Google');
   });
 
-  it('ofereix Apple a iOS i no a Android (ADR-0016)', async () => {
-    const ios = await renderHook(() => useWelcomeViewModel());
-    expect(ios.result.current.showApple).toBe(true);
+  it('ofereix Apple només si el dispositiu el pot fer servir (ADR-0016)', async () => {
+    const available = await renderHook(() => useWelcomeViewModel());
+    expect(available.result.current.showApple).toBe(true);
 
-    const restore = jest.replaceProperty(Platform, 'OS', 'android');
-    const android = await renderHook(() => useWelcomeViewModel());
-    expect(android.result.current.showApple).toBe(false);
-    restore.restore();
+    // Android, o un Expo Go sense el mòdul natiu: el botó oficial sortiria com un error.
+    jest.mocked(authRepository.isAppleAvailable).mockResolvedValueOnce(false);
+    const unavailable = await renderHook(() => useWelcomeViewModel());
+    expect(unavailable.result.current.showApple).toBe(false);
   });
 
   it("amb Google, inicia sessió i deixa a la vista l'entrada a l'app", async () => {

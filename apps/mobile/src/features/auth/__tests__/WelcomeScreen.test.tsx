@@ -10,6 +10,7 @@ import { motion } from '@/core/theme/tokens';
 
 import { TL } from '../intro/timeline';
 import { INTRO_LEAD, INTRO_SEEN_KEY, SKIP_DURATION } from '../intro/useIntro';
+import { authRepository } from '../authRepository';
 import { signInAndEnsureProfile } from '../signIn';
 import { WelcomeScreen } from '../WelcomeScreen';
 
@@ -44,7 +45,11 @@ jest.mock('expo-apple-authentication', () => {
 });
 jest.mock('../signIn', () => ({ signInAndEnsureProfile: jest.fn() }));
 jest.mock('../authRepository', () => ({
-  authRepository: { signInWithGoogle: jest.fn(), signInWithApple: jest.fn() },
+  authRepository: {
+    signInWithGoogle: jest.fn(),
+    signInWithApple: jest.fn(),
+    isAppleAvailable: jest.fn(async () => true),
+  },
 }));
 const replace = jest.fn();
 const push = jest.fn();
@@ -86,12 +91,13 @@ describe('WelcomeScreen', () => {
     expect(screen.getByRole('header', { name: 'Talaia' })).toBeOnTheScreen();
     expect(screen.getByText('On i quan mirar el cel.')).toBeOnTheScreen();
     for (const label of ['Continua amb Google', 'Continua amb Apple', 'Continua amb el correu']) {
-      expect(screen.getByRole('button', { name: label })).toBeOnTheScreen();
+      expect(await screen.findByRole('button', { name: label })).toBeOnTheScreen();
     }
   });
 
-  it('a Android no ofereix Apple (ADR-0016)', async () => {
+  it('a Android, o sense el mòdul natiu, no ofereix Apple (ADR-0016)', async () => {
     const restore = jest.replaceProperty(Platform, 'OS', 'android');
+    jest.mocked(authRepository.isAppleAvailable).mockResolvedValueOnce(false);
     await renderWelcome();
     expect(screen.queryByRole('button', { name: 'Continua amb Apple' })).toBeNull();
     restore.restore();

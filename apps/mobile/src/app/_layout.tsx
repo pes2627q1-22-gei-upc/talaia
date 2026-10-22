@@ -6,7 +6,8 @@ import {
 } from '@expo-google-fonts/atkinson-hyperlegible-next';
 import { BigShouldersDisplay_800ExtraBold } from '@expo-google-fonts/big-shoulders-display';
 import { useFonts } from 'expo-font';
-import { DarkTheme, Stack, ThemeProvider } from 'expo-router';
+import { Image } from 'expo-image';
+import { DarkTheme, router, Stack, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
@@ -14,9 +15,23 @@ import { useTranslation } from 'react-i18next';
 
 import { AppProviders } from '@/core/providers/AppProviders';
 import { stackOptions } from '@/core/navigation/transitions';
-import { colors } from '@/core/theme/tokens';
+import { colors, sizes, spacing } from '@/core/theme/tokens';
+import { PressableScale } from '@/shared/ui/PressableScale';
 
 void SplashScreen.preventAutoHideAsync();
+
+const closeIcon = {
+  uri: `data:image/svg+xml;utf8,${encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="${colors.lluna}" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>`,
+  )}`,
+};
+const closeStyle = {
+  width: sizes.touch,
+  height: sizes.touch,
+  alignItems: 'center',
+  justifyContent: 'center',
+} as const;
+const closeIconStyle = { width: sizes.icon, height: sizes.icon };
 
 const navigationTheme = {
   ...DarkTheme,
@@ -57,6 +72,17 @@ function RootStack() {
           headerBackTitle: t('emailLogin.back'),
           headerTransparent: true,
           headerTintColor: colors.lluna,
+          // Sobre la benvinguda (un modal) es presenta com a full i no té botó enrere.
+          headerLeft: () => (
+            <PressableScale
+              onPress={() => router.back()}
+              accessibilityLabel={t('emailLogin.close')}
+              hitSlop={spacing.sm}
+              style={closeStyle}
+            >
+              <Image source={closeIcon} style={closeIconStyle} accessible={false} />
+            </PressableScale>
+          ),
         }}
       />
     </Stack>

@@ -257,6 +257,7 @@
   },
   "emailLogin": {
     "title": "Sign in with email",
+    "close": "Close",
     "emailSubtitle": "We'll send you an email to sign in. If you don't have an account, we'll create one.",
     "emailLabel": "Email",
     "emailPlaceholder": "name@example.com",
