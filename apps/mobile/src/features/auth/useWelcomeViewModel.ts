@@ -48,8 +48,9 @@ export function useWelcomeViewModel(onSignedIn: (enterApp: () => void) => void =
     description: t('welcome.description'),
     legal: t('welcome.legal'),
     googleLabel: t(pending === 'google' ? 'welcome.signingIn' : 'welcome.continueGoogle'),
+    appleLabel: t(pending === 'apple' ? 'welcome.signingIn' : 'welcome.continueApple'),
     emailLabel: t('welcome.continueEmail'),
-    /** Sign in with Apple només a iOS (ADR-0016). */
+    /** Sign in with Apple només a iOS (ADR-0016): natiu si es pot, i si no, pel navegador. */
     showApple: Platform.OS === 'ios',
     busy: pending !== null,
     errorMessage: errorMessage(failure),

@@ -1,6 +1,7 @@
 import type { Esdeveniment } from '@talaia/shared';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { AppState } from 'react-native';
 
 import type { ColorToken } from '@/core/theme/tokens';
 import {
@@ -17,6 +18,7 @@ import {
   eventDate,
   eventFilter,
   filterEvents,
+  millisecondsUntilNextCataloniaDay,
   monthBounds,
   nextDay,
   orderEventsAroundToday,
@@ -29,10 +31,25 @@ export function useCalendarViewModel() {
   const { t, i18n } = useTranslation();
   const [today, setToday] = useState(() => cataloniaDate(new Date().toISOString()));
   useEffect(() => {
-    const timer = setInterval(() => {
-      setToday(cataloniaDate(new Date().toISOString()));
-    }, 60_000);
-    return () => clearInterval(timer);
+    let active = AppState.currentState !== 'background';
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const syncToday = () => {
+      if (timer) clearTimeout(timer);
+      if (!active) return;
+      const now = new Date();
+      setToday(cataloniaDate(now.toISOString()));
+      timer = setTimeout(syncToday, millisecondsUntilNextCataloniaDay(now) + 50);
+    };
+    syncToday();
+    const subscription = AppState.addEventListener('change', (state) => {
+      active = state === 'active';
+      syncToday();
+    });
+    return () => {
+      active = false;
+      if (timer) clearTimeout(timer);
+      subscription.remove();
+    };
   }, []);
   const [requestedMonth, setMonth] = useState(() => monthOf(today));
   const [filter, setFilter] = useState<CalendarFilter>('all');
@@ -48,8 +65,6 @@ export function useCalendarViewModel() {
   const query = useCalendarEventsQuery(month);
   const previousMonth = shiftMonth(month, -1);
   const nextMonth = shiftMonth(month, 1);
-  const previousQuery = useCalendarEventsQuery(previousMonth);
-  const nextQuery = useCalendarEventsQuery(nextMonth);
   const visibleByStatus = (items: Esdeveniment[]) =>
     showPast ? items : items.filter((event) => eventDate(event) >= today);
   const events = visibleByStatus(filterEvents(query.data?.data ?? [], filter));
@@ -67,12 +82,6 @@ export function useCalendarViewModel() {
       day,
       [...new Set(dayEvents.map((event) => filterColors[eventFilter(event.tipus)]))],
     ]),
-  );
-  const previousEventsByDay = groupByDay(
-    visibleByStatus(filterEvents(previousQuery.data?.data ?? [], filter)),
-  );
-  const nextEventsByDay = groupByDay(
-    visibleByStatus(filterEvents(nextQuery.data?.data ?? [], filter)),
   );
   const bounds = monthBounds(month);
   const visibleEvents = orderEventsAroundToday(
@@ -179,8 +188,6 @@ export function useCalendarViewModel() {
     events: visibleEvents,
     eventsByDay,
     markersByDay,
-    previousEventsByDay,
-    nextEventsByDay,
     emptyMessage: t(
       `calendar.empty.${showPast ? (selectedDay ? 'day' : 'month') : selectedDay ? 'upcomingDay' : 'upcomingMonth'}`,
     ),

@@ -15,6 +15,7 @@ import { useTranslation } from 'react-i18next';
 import { AppProviders } from '@/core/providers/AppProviders';
 import { stackOptions } from '@/core/navigation/transitions';
 import { colors } from '@/core/theme/tokens';
+import { EmailLoginCloseButton } from '@/features/auth/EmailLoginCloseButton';
 
 void SplashScreen.preventAutoHideAsync();
 
@@ -59,6 +60,7 @@ function RootStack() {
           headerBackTitle: t('emailLogin.back'),
           headerTransparent: true,
           headerTintColor: colors.lluna,
+          headerLeft: () => <EmailLoginCloseButton />,
         }}
       />
     </Stack>

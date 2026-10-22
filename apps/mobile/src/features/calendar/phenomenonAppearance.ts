@@ -26,10 +26,10 @@ export const filterIcons: Record<CalendarFilter, ImageSource> = {
 };
 
 export const filterColors: Record<Exclude<CalendarFilter, 'all'>, ColorToken> = {
-  meteor: 'pedra',
-  moon: 'ubicacio',
-  sun: 'far',
-  other: 'tap',
+  meteor: 'fenomenEstels',
+  moon: 'fenomenLluna',
+  sun: 'fenomenSol',
+  other: 'fenomenConjuncio',
 };
 
 export function eventTypeLabelKey(type: string) {

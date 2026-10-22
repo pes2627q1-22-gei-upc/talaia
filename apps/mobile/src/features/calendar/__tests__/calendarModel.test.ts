@@ -4,6 +4,7 @@ import {
   calendarWindowBounds,
   eventDate,
   filterEvents,
+  millisecondsUntilNextCataloniaDay,
   monthBounds,
   nextDay,
   orderEventsAroundToday,
@@ -38,6 +39,19 @@ describe('calendarModel', () => {
   it('calcula demà encara que canviï el mes o l’any', () => {
     expect(nextDay('2026-10-31')).toBe('2026-11-01');
     expect(nextDay('2026-12-31')).toBe('2027-01-01');
+  });
+
+  it('programa el canvi de dia a la mitjanit catalana, també amb horari d’estiu', () => {
+    const cases = [
+      ['2026-10-22T21:30:00Z', '2026-10-22T22:00:00Z'],
+      ['2026-03-28T23:30:00Z', '2026-03-29T22:00:00Z'],
+      ['2026-10-24T22:30:00Z', '2026-10-25T23:00:00Z'],
+    ] as const;
+    for (const [now, midnight] of cases) {
+      expect(millisecondsUntilNextCataloniaDay(new Date(now))).toBe(
+        new Date(midnight).getTime() - new Date(now).getTime(),
+      );
+    }
   });
 
   it('agrupa els tipus acordats i ordena cronològicament els resultats', () => {

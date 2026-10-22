@@ -27,24 +27,12 @@ jest.mock('react-native-reanimated', () => {
     useReducedMotion: jest.fn(() => false),
   };
 });
-// El botó natiu d'Apple: a Jest, un botó amb el nom que hi posa el sistema.
-jest.mock('expo-apple-authentication', () => {
-  const { Pressable } = jest.requireActual('react-native');
-  return {
-    AppleAuthenticationButton: ({ onPress }: { onPress: () => void }) => (
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="Continua amb Apple"
-        onPress={onPress}
-      />
-    ),
-    AppleAuthenticationButtonType: { CONTINUE: 1 },
-    AppleAuthenticationButtonStyle: { BLACK: 2 },
-  };
-});
 jest.mock('../signIn', () => ({ signInAndEnsureProfile: jest.fn() }));
 jest.mock('../authRepository', () => ({
-  authRepository: { signInWithGoogle: jest.fn(), signInWithApple: jest.fn() },
+  authRepository: {
+    signInWithGoogle: jest.fn(),
+    signInWithApple: jest.fn(),
+  },
 }));
 const replace = jest.fn();
 const push = jest.fn();
@@ -90,7 +78,7 @@ describe('WelcomeScreen', () => {
     expect(screen.getByRole('header', { name: 'Talaia' })).toBeOnTheScreen();
     expect(screen.getByText('On i quan mirar el cel.')).toBeOnTheScreen();
     for (const label of ['Continua amb Google', 'Continua amb Apple', 'Continua amb el correu']) {
-      expect(screen.getByRole('button', { name: label })).toBeOnTheScreen();
+      expect(await screen.findByRole('button', { name: label })).toBeOnTheScreen();
     }
   });
 

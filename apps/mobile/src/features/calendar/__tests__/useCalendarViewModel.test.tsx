@@ -166,36 +166,23 @@ describe('useCalendarViewModel', () => {
     expect(result.current.emptyMessage).toBe('No hi ha fenòmens pendents aquest dia');
   });
 
-  it('prepara els punts del mes següent abans de lliscar-hi', async () => {
+  it('només consulta el mes visible, també després de lliscar-hi', async () => {
     jest.useFakeTimers().setSystemTime(new Date('2026-10-20T12:00:00Z'));
-    const empty = { data: { data: [] }, isPending: false, isError: false, refetch: jest.fn() };
-    query.mockImplementation((targetMonth) =>
-      targetMonth.year === 2026 && targetMonth.month === 10
-        ? ({
-            ...empty,
-            data: {
-              data: [
-                {
-                  id: 'next-month-event',
-                  tipus: 'pluja_estels',
-                  nom: 'Pluja d’estels',
-                  descripcio: '',
-                  inici: '2026-11-08T20:00:00Z',
-                  fi: '2026-11-08T20:00:00Z',
-                  maxim: '2026-11-08T20:00:00Z',
-                  ubicacio: { nom: 'Àger', latitud: 42.02, longitud: 0.73 },
-                  font: 'test',
-                },
-              ],
-            },
-          } as unknown as ReturnType<typeof useCalendarEventsQuery>)
-        : (empty as unknown as ReturnType<typeof useCalendarEventsQuery>),
-    );
+    query.mockClear();
     const { result } = await renderHook(() => useCalendarViewModel());
     expect(result.current.month).toEqual({ year: 2026, month: 9 });
-    expect(result.current.nextEventsByDay.get('2026-11-08')?.[0]?.id).toBe('next-month-event');
-    await act(() => result.current.selectFilter('moon'));
-    expect(result.current.nextEventsByDay.get('2026-11-08')).toBeUndefined();
+    expect(query).toHaveBeenCalled();
+    expect(query.mock.calls.every(([month]) => month.year === 2026 && month.month === 9)).toBe(
+      true,
+    );
+
+    query.mockClear();
+    await act(() => result.current.nextMonth());
+    expect(result.current.month).toEqual({ year: 2026, month: 10 });
+    expect(query).toHaveBeenCalled();
+    expect(query.mock.calls.every(([month]) => month.year === 2026 && month.month === 10)).toBe(
+      true,
+    );
   });
 
   it('mostra sempre els mesos veïns sense l’any', async () => {
