@@ -105,12 +105,92 @@ describe('GET /api/v1/recomanacions', () => {
     expect(res.body.error.message).toBe(missatge);
   });
 
+  it('ordena el rànquing HTTP per índex i deixa els punts sense previsió al final', async () => {
+    const res = await request(
+      appWith({
+        ...repository,
+        puntsDinsRadi: async () => [
+          { id: 'a', nom: 'A', municipi: 'Àger', lat: 42, lon: 1, distanciaM: 1_000 },
+          { id: 'c', nom: 'C', municipi: 'Àger', lat: 42, lon: 1, distanciaM: 500 },
+          { id: 'b', nom: 'B', municipi: 'Àger', lat: 42, lon: 1, distanciaM: 10_000 },
+        ],
+        indexHores: async () => [
+          {
+            puntId: 'a',
+            hora: '2099-12-15T22:00:00.000Z',
+            valor: 88,
+            franja: 'ras',
+            factors: { nuvols: 1, sol: 1, foscor: 1, lluna: 0.7 },
+            foscorEstimada: false,
+          },
+          {
+            puntId: 'b',
+            hora: '2099-12-15T22:00:00.000Z',
+            valor: 95,
+            franja: 'ras',
+            factors: { nuvols: 1, sol: 1, foscor: 1, lluna: 0.9 },
+            foscorEstimada: false,
+          },
+          {
+            puntId: 'b',
+            hora: '2099-12-15T23:00:00.000Z',
+            valor: 40,
+            franja: 'jus',
+            factors: { nuvols: 0.5, sol: 1, foscor: 1, lluna: 0.9 },
+            foscorEstimada: false,
+          },
+        ],
+      }),
+    )
+      .get('/api/v1/recomanacions')
+      .query(QUERY);
+
+    expect(res.status).toBe(200);
+    expect(res.body.punts.map((p: { id: string }) => p.id)).toEqual(['b', 'a', 'c']);
+    expect(res.body.punts.map((p: { mitjana: number | null }) => p.mitjana)).toEqual([
+      68,
+      88,
+      null,
+    ]);
+    expect(res.body.punts[0].millorHora).toMatchObject({ valor: 95, franja: 'ras' });
+    expect(res.body.punts.map((p: { horesAmbIndex: number }) => p.horesAmbIndex)).toEqual([
+      2, 1, 0,
+    ]);
+    expect(res.body.punts[2].millorHora).toBeNull();
+    expect(res.body.total).toBe(3);
+  });
+
   it('porta Cache-Control privat fins a la propera hora (la query té la ubicació)', async () => {
     const res = await request(appWith()).get('/api/v1/recomanacions').query(QUERY);
     expect(res.headers['cache-control']).toMatch(/^private, /);
     const maxAge = Number(/max-age=(\d+)/.exec(res.headers['cache-control'] ?? '')?.[1]);
     expect(maxAge).toBeGreaterThan(0);
     expect(maxAge).toBeLessThanOrEqual(3600);
+  });
+
+  it('passa al servei els paràmetres validats amb coordenades i hores numèriques', async () => {
+    const getRecomanacions = jest.fn().mockResolvedValue({
+      radiKm: 0,
+      franja: { desDe: '2099-12-15T21:00:00.000Z', finsA: '2099-12-16T05:00:00.000Z' },
+      total: 0,
+      punts: [],
+    });
+    const res = await request(createApp({ recomanacions: { getRecomanacions } }))
+      .get('/api/v1/recomanacions')
+      .query({ ...QUERY, limit: '3' });
+
+    expect(res.status).toBe(200);
+    expect(res.body.punts).toEqual([]);
+    expect(getRecomanacions).toHaveBeenCalledTimes(1);
+    expect(getRecomanacions).toHaveBeenCalledWith({
+      objectiu: 'cel_estrellat',
+      origen: { lat: 41.3874, lon: 2.1686 },
+      data: '2099-12-15',
+      desDe: 22,
+      finsA: 6,
+      tempsMaxim: 150,
+      limit: 3,
+    });
   });
 
   it.each([
@@ -139,6 +219,16 @@ describe('GET /api/v1/recomanacions', () => {
     const res = await request(appWith()).get('/api/v1/recomanacions').query(query);
     expect(res.status).toBe(400);
     expect(res.body).toEqual({ error: { code: 'validation_error', message: expect.any(String) } });
+  });
+
+  it('rebutja la query invàlida abans de consultar el servei', async () => {
+    const getRecomanacions = jest.fn();
+    const res = await request(createApp({ recomanacions: { getRecomanacions } }))
+      .get('/api/v1/recomanacions')
+      .query({ ...QUERY, lat: '91' });
+
+    expect(res.status).toBe(400);
+    expect(getRecomanacions).not.toHaveBeenCalled();
   });
 
   it('una nit que ja ha passat → 400 franja_passada', async () => {
@@ -170,6 +260,26 @@ describe('GET /api/v1/recomanacions', () => {
     expect(res.status).toBe(503);
     expect(res.body.error.code).toBe('database_unavailable');
     spy.mockRestore();
+  });
+
+  it('si falla la consulta de l’índex → 503 database_unavailable', async () => {
+    const spy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      const res = await request(
+        appWith({
+          ...repository,
+          indexHores: async () => {
+            throw new Error('índex no disponible');
+          },
+        }),
+      )
+        .get('/api/v1/recomanacions')
+        .query(QUERY);
+      expect(res.status).toBe(503);
+      expect(res.body.error.code).toBe('database_unavailable');
+    } finally {
+      spy.mockRestore();
+    }
   });
 
   it("surt a l'OpenAPI amb l'esquema Recomanacions", async () => {
