@@ -83,6 +83,35 @@ describe('validació del període', () => {
 });
 
 describe('GET /api/v1/esdeveniments', () => {
+  it('retorna una llista buida i consulta tots els tipus quan no hi ha filtre', async () => {
+    const rebuts: Array<string | undefined> = [];
+    const repo = fakeRepository({
+      list: async (_inici, _fi, tipus) => {
+        rebuts.push(tipus);
+        return [];
+      },
+    });
+    const res = await request(appWith(repo)).get(PATH).set('X-API-Key', 'clau-secreta');
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ data: [] });
+    expect(rebuts).toEqual([undefined]);
+  });
+
+  it.each(TIPUS_FENOMEN)('accepta el tipus públic %s i el passa al repositori', async (tipus) => {
+    const repo = fakeRepository({
+      list: async (_inici, _fi, rebut) => {
+        expect(rebut).toBe(tipus);
+        return [];
+      },
+    });
+    const res = await request(appWith(repo))
+      .get('/api/v1/esdeveniments')
+      .query({ des_de: '2026-10-25', fins_a: '2026-10-25', tipus })
+      .set('X-API-Key', 'clau-secreta');
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ data: [] });
+  });
+
   it('retorna els camps acordats en català, amb la ubicació oficial i la font del càlcul', async () => {
     const repo = fakeRepository();
     const res = await request(appWith(repo))
@@ -203,6 +232,25 @@ describe('GET /api/v1/esdeveniments', () => {
       const res = await request(appWith(failed)).get(PATH).set('X-API-Key', 'clau-secreta');
       expect(res.status).toBe(503);
       expect(res.body.error.code).toBe('database_unavailable');
+    } finally {
+      spy.mockRestore();
+    }
+  });
+
+  it('registra el codi d’una fila incompleta i respon 500 sense dades parcials', async () => {
+    const repo = fakeRepository({
+      list: async () => [
+        FILA,
+        { ...FILA, codi: 'sense-descripcio', textosFenomen: { ca: { nom: 'Sense descripció' } } },
+      ],
+    });
+    const spy = jest.spyOn(console, 'error').mockImplementation();
+    try {
+      const res = await request(appWith(repo)).get(PATH).set('X-API-Key', 'clau-secreta');
+      expect(res.status).toBe(500);
+      expect(res.body.error.code).toBe('invalid_event_data');
+      expect(res.body.data).toBeUndefined();
+      expect(spy).toHaveBeenCalledWith('[esdeveniments] dades incompletes', 'sense-descripcio');
     } finally {
       spy.mockRestore();
     }
