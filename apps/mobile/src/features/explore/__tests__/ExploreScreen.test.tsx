@@ -73,6 +73,15 @@ describe('ExploreScreen', () => {
     expect(screen.getByRole('button', { name: 'Cel estrellat' })).not.toBeSelected();
   });
 
+  it('un fenomen «Aviat» no es pot triar', async () => {
+    await renderScreen();
+    await screen.findByLabelText('Girona, Ubicació actual');
+    const posta = screen.getByRole('button', { name: 'Posta de sol. Aviat' });
+    expect(posta).toBeDisabled();
+    await fireEvent.press(posta);
+    expect(screen.getByRole('button', { name: 'Cel estrellat' })).toBeSelected();
+  });
+
   it('«Tria el dia» obre el calendari; en triar un dia, el segment el mostra', async () => {
     await renderScreen();
     await fireEvent.press(screen.getByRole('tab', { name: 'Tria el dia' }));

@@ -20,6 +20,7 @@ import {
   nightOf,
   rangeHours,
   roundCoord,
+  SOON_GOALS,
   stepHour,
   TRAVEL,
   travelParts,
@@ -142,6 +143,8 @@ export function useExploreViewModel() {
         desDe: String(query.desDe),
         finsA: String(query.finsA),
         tempsMaxim: String(query.tempsMaxim),
+        // Només per a la capçalera del mapa («Des de Girona…»): no va a l'API.
+        ...(place.name ? { lloc: place.name } : {}),
       },
     });
   };
@@ -149,12 +152,19 @@ export function useExploreViewModel() {
   return {
     greeting: t(`explore.greeting.${greetingFor(now)}`),
     title: t('explore.title'),
-    goals: GRID_GOALS.map((id) => ({
-      id,
-      label: t(`explore.goals.${id}`),
-      selected: goal === id,
-      onPress: () => setGoal(id),
-    })),
+    goals: GRID_GOALS.map((id) => {
+      const soon = SOON_GOALS.includes(id);
+      return {
+        id,
+        label: t(`explore.goals.${id}`),
+        badge: soon ? t('explore.soon') : undefined,
+        disabled: soon,
+        selected: goal === id,
+        onPress: () => {
+          if (!soon) setGoal(id);
+        },
+      };
+    }),
     constellations: {
       label: t('explore.goals.constellacions'),
       hint: t('explore.constellationsHint'),

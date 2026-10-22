@@ -125,6 +125,8 @@ describe('JWT auth i perfil en el primer accés', () => {
     expect(res.status).toBe(201);
     expect(res.body.created).toBe(true);
     expect(res.body.profile.avatarUrl).toBe('https://example.com/avatar.png');
+    // Dades personals: cap memòria cau no les desa.
+    expect(res.headers['cache-control']).toBe('no-store');
 
     res = await postPerfil(jwtApp, token);
     expect(res.status).toBe(200);

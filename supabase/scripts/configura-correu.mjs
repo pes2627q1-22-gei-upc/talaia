@@ -12,7 +12,8 @@
  *
  * Variables (a .env.supabase de l'arrel, que només llegeix aquest script, o a l'entorn):
  *   SUPABASE_ACCESS_TOKEN  token personal de https://supabase.com/dashboard/account/tokens
- *   SUPABASE_SMTP_PASS     contrasenya d'aplicació «Supabase» de talaia.pes@gmail.com
+ *   SUPABASE_SMTP_USER     el Gmail que envia (P20; l'adreça no va al repo, que és públic)
+ *   SUPABASE_SMTP_PASS     la seva contrasenya d'aplicació «Supabase» (16 lletres, no la del compte)
  *   SUPABASE_PROJECT_REF   opcional; per defecte el de supabase/.temp/project-ref o el de Talaia
  *
  * Sense dependències: només `fetch` de Node 22. Les plantilles i els assumptes surten de
@@ -26,13 +27,7 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const API = 'https://api.supabase.com/v1';
 const PROJECT_REF_TALAIA = 'jdftndjsqvqcbzkivdgh';
 
-const SMTP = {
-  smtp_host: 'smtp.gmail.com',
-  smtp_port: '587',
-  smtp_user: 'talaia.pes@gmail.com',
-  smtp_admin_email: 'talaia.pes@gmail.com',
-  smtp_sender_name: 'Talaia',
-};
+const SMTP = { smtp_host: 'smtp.gmail.com', smtp_port: '587', smtp_sender_name: 'Talaia' };
 /**
  * Correus per hora a tot el projecte (el del correu integrat de Supabase és 2). Gmail en deixa
  * enviar uns 500 al dia: 20 per hora són 480, i així un atac de correu brossa (qualsevol pot fer
@@ -84,9 +79,7 @@ async function main() {
   }
   const pass = process.env.SUPABASE_SMTP_PASS;
   if (!pass && !senseSmtp) {
-    throw new Error(
-      "Falta SUPABASE_SMTP_PASS (la contrasenya d'aplicació «Supabase» de talaia.pes@gmail.com).",
-    );
+    throw new Error("Falta SUPABASE_SMTP_PASS (la contrasenya d'aplicació «Supabase» del Gmail).");
   }
   await patch(
     `/projects/${ref}/config/auth`,
@@ -116,6 +109,8 @@ function canvisPrevistos(actual) {
     ? {}
     : {
         ...SMTP,
+        smtp_user: usuariSmtp(),
+        smtp_admin_email: usuariSmtp(),
         mailer_subjects_magic_link: assumpte(config, 'magic_link'),
         mailer_templates_magic_link_content: plantilla,
         mailer_subjects_confirmation: assumpte(config, 'confirmation'),
@@ -128,6 +123,13 @@ function canvisPrevistos(actual) {
     ...OTP,
     uri_allow_list: senseRedirectsAmbIp(actual.uri_allow_list ?? ''),
   };
+}
+
+/** El Gmail que envia: per variable, perquè l'adreça de l'equip no vagi al repo (P20). */
+function usuariSmtp() {
+  const user = process.env.SUPABASE_SMTP_USER;
+  if (!user) throw new Error("Falta SUPABASE_SMTP_USER (el Gmail de l'equip que envia el correu).");
+  return user;
 }
 
 /** `subject` de `[auth.email.template.<nom>]` a config.toml: una sola font per a local i núvol. */

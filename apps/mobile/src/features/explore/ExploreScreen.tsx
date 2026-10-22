@@ -76,6 +76,8 @@ export function ExploreScreen() {
                     icon={GOAL_ICONS[goal.id]}
                     selected={goal.selected}
                     onPress={goal.onPress}
+                    badge={goal.badge}
+                    disabled={goal.disabled}
                   />
                 ))}
               </View>
@@ -159,7 +161,12 @@ export function ExploreScreen() {
             icon={<Image source={searchIcon} style={styles.ctaIcon} accessible={false} />}
             style={styles.cta}
           />
-          <Button label={vm.browse.label} onPress={vm.browse.onPress} variant="text" />
+          <Button
+            label={vm.browse.label}
+            onPress={vm.browse.onPress}
+            variant="text"
+            style={styles.browse}
+          />
         </Enter>
       </ScrollView>
 
@@ -171,7 +178,7 @@ export function ExploreScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.nit },
-  content: { paddingHorizontal: spacing.ml, paddingTop: spacing.sm, paddingBottom: spacing.lg },
+  content: { paddingHorizontal: spacing.ml, paddingTop: spacing.sm, paddingBottom: spacing.xl },
   title: { marginTop: spacing.sm },
   goals: { marginTop: spacing.ms, gap: spacing.sm + 1 },
   goalRow: { flexDirection: 'row', gap: spacing.sm + 2 },
@@ -181,4 +188,6 @@ const styles = StyleSheet.create({
   limits: { flexDirection: 'row', justifyContent: 'space-between' },
   ctaIcon: { width: sizes.icon, height: sizes.icon },
   cta: { marginTop: spacing.ms },
+  // Centrat sota el botó principal, amb aire abans de la barra de pestanyes.
+  browse: { alignSelf: 'center', marginTop: spacing.sm },
 });

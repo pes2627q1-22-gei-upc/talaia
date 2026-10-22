@@ -3,7 +3,8 @@
 #   docker compose -f deploy/compose.yaml --env-file /opt/talaia/.env up -d --build
 #
 # Les variables es llegeixen del fitxer de --env-file, que és fora del repo. Cada servei rep
-# només les que necessita (llista explícita a `environment`).
+# només les que necessita (llista explícita a `environment`). Cada contenidor té un sostre de
+# memòria (un procés desbocat no tomba la VM) i cap procés no pot guanyar privilegis.
 
 name: talaia
 
@@ -13,11 +14,17 @@ services:
       context: ..
       dockerfile: services/api/Dockerfile
     restart: unless-stopped
+    mem_limit: 512m
+    security_opt: ['no-new-privileges:true']
     environment:
       API_PORT: 3000
       DATABASE_URL: ${DATABASE_URL:-}
       SUPABASE_URL: ${SUPABASE_URL:-}
       APROP_API_KEY: ${APROP_API_KEY:-}
+    volumes:
+      # Certificat arrel de Supabase per validar la connexió a la BD (sslmode=verify-full,
+      # docs/desplegament.md). Sense SUPABASE_CA_CERT, s'hi munta un fitxer buit.
+      - ${SUPABASE_CA_CERT:-/dev/null}:/run/talaia/supabase-ca.crt:ro
     expose:
       - '3000'
 
@@ -29,10 +36,14 @@ services:
       context: ..
       dockerfile: services/worker/Dockerfile
     restart: unless-stopped
+    mem_limit: 512m
+    security_opt: ['no-new-privileges:true']
     environment:
       DATABASE_URL: ${DATABASE_URL:-}
       OPEN_METEO_BASE_URL: ${OPEN_METEO_BASE_URL:-}
       METEOCAT_API_KEY: ${METEOCAT_API_KEY:-}
+    volumes:
+      - ${SUPABASE_CA_CERT:-/dev/null}:/run/talaia/supabase-ca.crt:ro
 
   # Emet i renova el certificat de Let's Encrypt amb el repte DNS-01 de DuckDNS
   # (sense ports 80/443 no hi ha repte HTTP). Mentre no n'hi ha cap, en genera un
@@ -40,6 +51,8 @@ services:
   acme:
     image: neilpang/acme.sh:3.1.1
     restart: unless-stopped
+    mem_limit: 128m
+    security_opt: ['no-new-privileges:true']
     entrypoint: ['/bin/sh', '-c']
     command:
       - |
@@ -63,6 +76,8 @@ services:
   nginx:
     image: nginx:1.28-alpine
     restart: unless-stopped
+    mem_limit: 128m
+    security_opt: ['no-new-privileges:true']
     depends_on:
       api:
         condition: service_healthy

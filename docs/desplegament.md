@@ -35,7 +35,7 @@ La VM no té ports 80 ni 443. La FIB en redirigeix 10: `nattech.fib.upc.edu:4000
 | 8080 | `40000 + XXX·10` | Nginx (HTTPS) |
 | 8081–8089 | `+1` … `+9` | Lliures: no es publiquen fins que es facin servir |
 
-**VM actual:** IP `172.16.4.50`, de manera que `nattech.fib.upc.edu:40500` va al 8080. El nom públic és `talaia-pes.duckdns.org` (A → `147.83.148.217`, la IP de `nattech`).
+**VM actual:** la IP, el port públic i el subdomini de DuckDNS són al gestor de contrasenyes de l'equip (P20), al costat del `.env`. No es posen aquí, perquè el repo és públic.
 
 La URL pública de l'API és, per tant, `https://<PUBLIC_HOST>:<40000+XXX·10>/api/v1`. És el valor d'`API_PUBLIC_URL` i el que han de fer servir l'app i els equips Aprop i Mobilicat.
 
@@ -63,7 +63,7 @@ Les actualitzacions de seguretat del sistema de la 20.04 es poden recuperar amb 
 
 ### 2. DuckDNS
 
-1. Entra a [duckdns.org](https://www.duckdns.org) amb el compte de l'equip (`talaia.pes@gmail.com`, P20) i crea el subdomini (p. ex. `talaia`).
+1. Entra a [duckdns.org](https://www.duckdns.org) amb el compte de l'equip (P20) i crea el subdomini (p. ex. `talaia`).
 2. Posa-hi com a IP la de `nattech.fib.upc.edu` (`dig +short nattech.fib.upc.edu`).
 3. Copia el token del compte: va a `DUCKDNS_TOKEN`.
 
@@ -84,7 +84,8 @@ Quatre condicions per a `DATABASE_URL`. Si no es compleixen, l'API arrenca però
 - Fes servir la cadena del **Session pooler** (Supabase → **Connect**), amb l'usuari `postgres.<ref>`. El host directe `db.<ref>.supabase.co` només té IPv6 i la VM no hi arriba.
 - La contrasenya és la **de la base de dades** (Supabase → **Project Settings → Database**), no la del compte de Supabase ni la de cap altre servei.
 - Ha d'anar **percent-encoded**: `/` → `%2F`, `#` → `%23`, `?` → `%3F`, `@` → `%40`, `%` → `%25`. Sense codificar, un d'aquests caràcters talla la URL i el client pren l'usuari per host. Compose expandeix els `$` del `--env-file`: escriu-los `$$`, o posa tot el valor entre cometes simples (`DATABASE_URL='postgresql://…'`), on Compose no expandeix res.
-- Acaba en `…/postgres?sslmode=no-verify`, **sense barra abans del `?`** (`/postgres/?` busca una base de dades amb un nom que no existeix).
+- Acaba en `…/postgres?sslmode=verify-full&sslrootcert=/run/talaia/supabase-ca.crt`, **sense barra abans del `?`** (`/postgres/?` busca una base de dades amb un nom que no existeix). Així la connexió va xifrada **i** es comprova que l'altre extrem és Supabase. Amb `no-verify` també va xifrada, però qualsevol que s'interposi entre la VM i Supabase podria llegir la contrasenya de la BD.
+- El certificat: Supabase → **Project Settings → Database → SSL Configuration → Download certificate**. Desa'l a la VM com a `/opt/talaia/supabase-ca.crt` i posa `SUPABASE_CA_CERT=/opt/talaia/supabase-ca.crt` al `.env`: Compose el munta a l'API i al worker. Sense `SUPABASE_CA_CERT`, `verify-full` falla en arrencar (`self-signed certificate in certificate chain`).
 
 ### 4. Primera arrencada i certificat
 

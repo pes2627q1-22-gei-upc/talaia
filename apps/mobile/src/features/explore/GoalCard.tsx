@@ -21,6 +21,8 @@ type GoalCardProps = {
   /** Targeta ampla (Constel·lacions): icona, títol i subtítol en fila, i una etiqueta a la dreta. */
   hint?: string;
   badge?: string;
+  /** Encara no es pot triar («Aviat»): s'apaga i no respon. */
+  disabled?: boolean;
 };
 
 /** Mides del Figma (mockup 02). */
@@ -28,7 +30,7 @@ const ICON = 26;
 const GRID_HEIGHT = 81;
 
 /** Un fenomen de «Què vols veure?». El triat s'omple de `far` amb una fosa curta. */
-export function GoalCard({ label, icon, selected, onPress, hint, badge }: GoalCardProps) {
+export function GoalCard({ label, icon, selected, onPress, hint, badge, disabled }: GoalCardProps) {
   const reduceMotion = useReducedMotion();
   const fill = useSharedValue(selected ? 1 : 0);
   const wide = hint !== undefined;
@@ -44,19 +46,20 @@ export function GoalCard({ label, icon, selected, onPress, hint, badge }: GoalCa
     <PressableScale
       onPress={onPress}
       haptic="selection"
-      accessibilityLabel={hint ? `${label}. ${hint}` : label}
-      accessibilityState={{ selected }}
+      disabled={disabled}
+      accessibilityLabel={hint ? `${label}. ${hint}` : badge ? `${label}. ${badge}` : label}
+      accessibilityState={{ selected, disabled }}
       style={[styles.card, wide ? styles.wide : styles.grid, selected && styles.selected]}
     >
       <Animated.View style={[styles.fill, fillStyle]} />
-      <Image
-        source={icon}
-        tintColor={selected ? colors.nit : colors.pedra}
-        style={styles.icon}
-        accessible={false}
-      />
       {wide ? (
         <>
+          <Image
+            source={icon}
+            tintColor={selected ? colors.nit : colors.pedra}
+            style={styles.icon}
+            accessible={false}
+          />
           <View style={styles.wideText}>
             <AppText variant="link" color={selected ? 'nit' : 'lluna'}>
               {label}
@@ -65,20 +68,35 @@ export function GoalCard({ label, icon, selected, onPress, hint, badge }: GoalCa
               {hint}
             </AppText>
           </View>
-          {badge ? (
-            <View style={styles.badge}>
-              <AppText variant="overline" color="far">
-                {badge}
-              </AppText>
-            </View>
-          ) : null}
+          {badge ? <Badge text={badge} /> : null}
         </>
       ) : (
-        <AppText variant="link" color={selected ? 'nit' : 'lluna'}>
-          {label}
-        </AppText>
+        <>
+          <View style={styles.gridTop}>
+            <Image
+              source={icon}
+              tintColor={selected ? colors.nit : colors.pedra}
+              style={[styles.icon, disabled && styles.off]}
+              accessible={false}
+            />
+            {badge ? <Badge text={badge} /> : null}
+          </View>
+          <AppText variant="link" color={selected ? 'nit' : 'lluna'} style={disabled && styles.off}>
+            {label}
+          </AppText>
+        </>
       )}
     </PressableScale>
+  );
+}
+
+function Badge({ text }: { text: string }) {
+  return (
+    <View style={styles.badge}>
+      <AppText variant="overline" color="far">
+        {text}
+      </AppText>
+    </View>
   );
 }
 
@@ -112,7 +130,9 @@ const styles = StyleSheet.create({
     left: 0,
     backgroundColor: colors.far,
   },
+  gridTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
   icon: { width: ICON, height: ICON },
+  off: { opacity: 0.5 },
   wideText: { flex: 1, gap: 2 },
   badge: {
     paddingHorizontal: spacing.sm,
