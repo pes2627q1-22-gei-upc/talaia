@@ -193,6 +193,47 @@ Mostra cada migració amb la columna *Local* i *Remote* iguals.
 
 Una migració aplicada **no es modifica mai**: si t'has equivocat, en fas una de nova que ho corregeixi.
 
+### Correu d'inici de sessió (SMTP, P21)
+
+El correu integrat de Supabase només serveix per a proves: 2 correus per hora a tot el projecte,
+només a adreces de l'equip i amb una plantilla que no porta el codi de 6 xifres que espera l'app.
+Per això el projecte del núvol envia amb el Gmail de l'equip (P20 i P21), i la
+configuració no es fa al panell sinó amb un script, perquè quedi al repo i es pugui repetir:
+
+```bash
+npm run supabase:correu                           # mostra la configuració actual i què canviaria
+npm run supabase:correu -- --aplica               # l'aplica i la torna a llegir per comprovar-ho
+npm run supabase:correu -- --aplica --sense-smtp  # només el codi de 6 xifres i els redirects
+```
+
+Al pla gratuït, Supabase no deixa canviar les plantilles ni el límit de correus sense SMTP propi
+(respon 400): per això `--sense-smtp` només toca el que no en depèn. I compte: `SUPABASE_SMTP_PASS`
+és la **contrasenya d'aplicació** de 16 lletres, no la del compte de Gmail (amb la del compte, Google
+respon `535 BadCredentials` i no sortiria cap correu). L'script no la comprova: prova-la abans amb
+l'app.
+
+Necessita tres variables a **`.env.supabase`** de l'arrel (copia `.env.supabase.example`; és un fitxer a
+part perquè el token pot gestionar tots els projectes de Supabase de qui el genera, i així no el
+carreguen l'API ni el worker):
+
+| Variable | On és |
+|---|---|
+| `SUPABASE_ACCESS_TOKEN` | Panell de Supabase → avatar → *Account → Access Tokens* → *Generate new token* (és personal: cadascú el seu) |
+| `SUPABASE_SMTP_USER` | El Gmail de l'equip que envia el correu (P20: l'adreça és al gestor de contrasenyes, no al repo) |
+| `SUPABASE_SMTP_PASS` | La seva contrasenya d'aplicació «Supabase» (Google → *Seguretat → Verificació en dos passos → Contrasenyes d'aplicació*). La guarda qui administra el compte (P20); si Google demana verificar la identitat, cal el telèfon de recuperació |
+
+Què aplica (`supabase/scripts/configura-correu.mjs`): l'SMTP de Gmail (`smtp.gmail.com:587`, remitent
+«Talaia»), les plantilles de *Magic link* i *Confirm signup* amb l'assumpte de `supabase/config.toml` i
+el cos de `supabase/templates/codi-acces.html` (les mateixes del Supabase local, amb `{{ .Token }}`),
+el codi de 6 xifres amb una hora de validesa, 20 correus per hora (Gmail en deixa uns 500 al dia, i qualsevol pot fer que Talaia enviï codis a qualsevol adreça), i treu de les adreces de redirecció
+les que tenen una IP com a host (Supabase les rebutja; a Expo Go es fa servir `nip.io`, vegeu
+`apps/mobile/README.md`).
+
+Comprovació: a l'app, «Continua amb el correu» amb una adreça **de fora de l'equip**; ha d'arribar
+«El teu codi de Talaia» amb 6 xifres i, en escriure'l, s'entra al mapa.
+
+Per enviar des d'un altre Gmail només canvien les variables; per passar a Resend (P17), les constants `SMTP` de l'script. En els dos casos es torna a executar.
+
 El codi de l'API i del worker hi accedeix amb Kysely des del paquet `@talaia/db`, i els tipus es generen de la base de dades local (`npx supabase start`, cal Docker). Detalls i ordres: [ADR-0013](decisions/0013-acces-bd-kysely.md).
 
 ---

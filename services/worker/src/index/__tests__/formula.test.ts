@@ -66,6 +66,49 @@ describe('fórmula de l’índex v1 (ADR-0018)', () => {
     expect(i.factors.lluna).toBe(0.67);
   });
 
+  it('combina els quatre factors abans d’arrodonir el valor final', () => {
+    const i = calculaIndex({
+      meteo: meteo({ nuvolsBaixos: 25 }),
+      efemerides: efemerides({ llunaAlcada: 15, illuminada: 1 }),
+      sqm: 19.5,
+    });
+    // 100 × 0,75 × (0,6 × 0,5 + 0,4 × 0,5) = 37,5 → 38.
+    expect(i).toMatchObject({ hora: HORA, valor: 38, franja: 'tap', foscorEstimada: false });
+    expect(i.factors).toEqual({ nuvols: 0.75, sol: 1, foscor: 0.5, lluna: 0.5 });
+  });
+
+  it.each([
+    [60, 40, 'jus'],
+    [30, 70, 'ras'],
+  ] as const)(
+    'aplica la franja al valor final arrodonit: %i %% de núvols → %i',
+    (nuvols, valor, franja) => {
+      const i = calculaIndex({
+        meteo: meteo({ nuvolsBaixos: nuvols }),
+        efemerides: efemerides(),
+        sqm: 21.5,
+      });
+      expect(i).toMatchObject({ valor, franja });
+    },
+  );
+
+  it.each([
+    [60.6, 39, 'tap'],
+    [60.5, 40, 'jus'],
+    [30.6, 69, 'jus'],
+    [30.5, 70, 'ras'],
+  ] as const)(
+    'assigna la franja després d’arrodonir: %s %% de núvols → %i',
+    (nuvols, valor, franja) => {
+      const i = calculaIndex({
+        meteo: meteo({ nuvolsBaixos: nuvols }),
+        efemerides: efemerides(),
+        sqm: 21.5,
+      });
+      expect(i).toMatchObject({ valor, franja });
+    },
+  );
+
   it('els núvols i el Sol multipliquen: tapat o de dia és 0, faci la nit que faci', () => {
     expect(
       calculaIndex({ meteo: meteo({ nuvolsBaixos: 100 }), efemerides: efemerides(), sqm: 22 })
@@ -99,6 +142,13 @@ describe('fórmula de l’índex v1 (ADR-0018)', () => {
     const senseCapes = { nuvolsBaixos: null, nuvolsMitjans: null, nuvolsAlts: null };
     expect(factorNuvols(meteo({ ...senseCapes, nuvolsTotal: 40 }))).toBeCloseTo(0.6);
     expect(factorNuvols(meteo({ ...senseCapes, nuvolsTotal: null }))).toBe(0);
+    expect(
+      calculaIndex({
+        meteo: meteo({ ...senseCapes, nuvolsTotal: null }),
+        efemerides: efemerides(),
+        sqm: 21.5,
+      }),
+    ).toMatchObject({ valor: 0, franja: 'tap', factors: { nuvols: 0 } });
   });
 
   it('la Lluna resta segons la llum i l’alçada; sota l’horitzó no compta', () => {

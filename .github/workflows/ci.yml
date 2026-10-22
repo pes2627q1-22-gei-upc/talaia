@@ -81,6 +81,10 @@ jobs:
         if: ${{ !cancelled() && matrix.check == 'tests' }}
         run: npm run test --workspace data
 
+      - name: Tests dels scripts de Supabase
+        if: ${{ !cancelled() && matrix.check == 'tests' }}
+        run: npm run test:supabase
+
       - name: Desa la cobertura
         if: ${{ !cancelled() && matrix.check == 'tests' && (steps.tests.outcome == 'success' || steps.tests.outcome == 'failure') }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
