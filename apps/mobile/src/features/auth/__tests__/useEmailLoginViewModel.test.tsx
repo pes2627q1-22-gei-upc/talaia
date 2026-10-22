@@ -98,18 +98,18 @@ describe('useEmailLoginViewModel', () => {
     expect(result.current.canResend).toBe(true);
   });
 
-  it('es pot tornar a enviar el codi quan passa el minut', async () => {
+  it('es pot tornar a enviar el correu quan passa el minut', async () => {
     jest.useFakeTimers();
     const { result } = await atCodeStep();
     expect(result.current.canResend).toBe(false);
-    expect(result.current.resendLabel).toBe(`Torna a enviar el codi (${RESEND_AFTER_S} s)`);
+    expect(result.current.resendLabel).toBe(`Torna a enviar el correu (${RESEND_AFTER_S} s)`);
     for (let s = 0; s < RESEND_AFTER_S; s++) {
       await act(() => jest.advanceTimersByTime(1000));
     }
     expect(result.current.canResend).toBe(true);
     await act(() => result.current.resend());
     expect(authRepository.sendEmailCode).toHaveBeenCalledTimes(2);
-    expect(result.current.notice).toBe("T'hem enviat un codi nou.");
+    expect(result.current.notice).toBe("T'hem tornat a enviar el correu.");
     jest.useRealTimers();
   });
 
