@@ -9,7 +9,25 @@ const arrel = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const entrada = resolve(arrel, 'data/astronomia/calendaris-2026-2027.json');
 const sortida = resolve(arrel, 'supabase/seeds/02_calendari_astronomic.sql');
 const codiValid = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-const instantValid = /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ$/;
+const formatDia = /^\d{4}-\d\d-\d\d$/;
+const formatInstant = /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ$/;
+
+const diaValid = (valor: string): boolean => {
+  const instant = Date.parse(`${valor}T00:00:00Z`);
+  return (
+    formatDia.test(valor) &&
+    Number.isFinite(instant) &&
+    new Date(instant).toISOString().slice(0, 10) === valor
+  );
+};
+const instantValid = (valor: string): boolean => {
+  const instant = Date.parse(valor);
+  return (
+    formatInstant.test(valor) &&
+    Number.isFinite(instant) &&
+    new Date(instant).toISOString() === valor.replace('Z', '.000Z')
+  );
+};
 
 type Font = {
   codi: string;
@@ -77,7 +95,7 @@ export function validarCalendari(dades: Calendari): string[] {
     return ['Estructura o versió del calendari invàlida'];
   }
   const { des_de, fins_a } = dades.periode;
-  if (!/^\d{4}-\d\d-\d\d$/.test(des_de) || !/^\d{4}-\d\d-\d\d$/.test(fins_a) || des_de > fins_a) {
+  if (!diaValid(des_de) || !diaValid(fins_a) || des_de > fins_a) {
     errors.push('Període invàlid');
   }
   const fonts = codiUnic(dades.fonts, 'font', errors);
@@ -89,7 +107,7 @@ export function validarCalendari(dades: Calendari): string[] {
       !['IMO', 'NASA'].includes(f.organitzacio) ||
       !f.titol?.trim() ||
       !f.url?.startsWith('https://') ||
-      !/^\d{4}-\d\d-\d\d$/.test(f.consultat_el)
+      !diaValid(f.consultat_el)
     ) {
       errors.push(`${f.codi}: font incompleta`);
     }
@@ -115,9 +133,9 @@ export function validarCalendari(dades: Calendari): string[] {
     if (!fenomens.has(e.fenomen_codi)) errors.push(`${e.codi}: fenomen desconegut`);
     if (!fonts.has(e.font_codi)) errors.push(`${e.codi}: font desconeguda`);
     if (
-      !instantValid.test(e.inici) ||
-      !instantValid.test(e.fi) ||
-      (e.maxim !== null && !instantValid.test(e.maxim)) ||
+      !instantValid(e.inici) ||
+      !instantValid(e.fi) ||
+      (e.maxim !== null && !instantValid(e.maxim)) ||
       !(e.inici < e.fi) ||
       (e.maxim !== null && (e.maxim < e.inici || e.maxim > e.fi))
     ) {
