@@ -37,3 +37,15 @@ export function dinsBbox(ubicacio: Expression<string>, bbox: Bbox): RawBuilder<b
 export function distancia(a: Expression<string>, b: Expression<string>): RawBuilder<number> {
   return sql<number>`st_distance(${a}, ${b})`;
 }
+
+/**
+ * Cert si `a` és a `metres` o menys de `b`. `st_dwithin` sobre `geography` mesura sobre
+ * l'esferoide i fa servir l'índex GIST de la columna.
+ */
+export function dinsRadi(
+  a: Expression<string>,
+  b: Expression<string>,
+  metres: number,
+): RawBuilder<boolean> {
+  return sql<boolean>`st_dwithin(${a}, ${b}, ${metres})`;
+}
