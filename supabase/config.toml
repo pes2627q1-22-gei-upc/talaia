@@ -161,7 +161,9 @@ site_url = "talaia://"
 # The public URL that Auth serves on. Defaults to the API external URL with `/auth/v1` appended.
 # external_url = ""
 # A list of *exact* URLs that auth providers are permitted to redirect to post authentication.
-additional_redirect_urls = ["talaia://**", "exp://**"]
+# Només les rutes d'auth de l'app (auth/callback i auth/correu). `exp://**` és per a Expo Go i es
+# treu abans de publicar.
+additional_redirect_urls = ["talaia://auth/**", "exp://**"]
 # How long tokens are valid for, in seconds. Defaults to 3600 (1 hour), maximum 604,800 (1 week).
 jwt_expiry = 3600
 # JWT issuer URL. If not set, defaults to auth.external_url.

@@ -112,6 +112,25 @@ describe('createDatabaseProfileStore.ensureProfile', () => {
     expect(await avatarInserit(MARIA)).toBe('https://example.com/maria.png');
     expect(await avatarInserit({ ...MARIA, userMetadata: undefined })).toBeNull();
     expect(await avatarInserit({ ...MARIA, userMetadata: { avatar_url: null } })).toBeNull();
+    // L'usuari pot escriure les seves metadades: res que no sigui un enllaç https.
+    expect(
+      await avatarInserit({ ...MARIA, userMetadata: { avatar_url: 'javascript:alert(1)' } }),
+    ).toBeNull();
+    expect(
+      await avatarInserit({ ...MARIA, userMetadata: { avatar_url: 'http://example.com/a.png' } }),
+    ).toBeNull();
+    expect(
+      await avatarInserit({ ...MARIA, userMetadata: { avatar_url: 'no és un enllaç' } }),
+    ).toBeNull();
+  });
+
+  it('retalla el full_name del token a 100 caràcters, com el nom de POST /perfil', async () => {
+    const { db, queries } = fakeDb([FILA]);
+    await createDatabaseProfileStore(db).ensureProfile({
+      ...MARIA,
+      userMetadata: { full_name: `  ${'a'.repeat(300)}  ` },
+    });
+    expect(queries[0]?.parameters[2]).toBe('a'.repeat(100));
   });
 
   it('tolera files amb les dates com a text i els camps opcionals buits', async () => {
