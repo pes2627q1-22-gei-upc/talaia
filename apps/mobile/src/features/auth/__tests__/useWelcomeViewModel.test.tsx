@@ -11,7 +11,10 @@ import { useWelcomeViewModel } from '../useWelcomeViewModel';
 jest.mock('expo-router', () => ({ useRouter: jest.fn() }));
 jest.mock('../signIn', () => ({ signInAndEnsureProfile: jest.fn() }));
 jest.mock('../authRepository', () => ({
-  authRepository: { signInWithGoogle: jest.fn(), signInWithApple: jest.fn() },
+  authRepository: {
+    signInWithGoogle: jest.fn(),
+    signInWithApple: jest.fn(),
+  },
 }));
 const replace = jest.fn();
 const push = jest.fn();
@@ -40,9 +43,10 @@ describe('useWelcomeViewModel', () => {
     expect(result.current.googleLabel).toBe('Continue with Google');
   });
 
-  it('ofereix Apple a iOS i no a Android (ADR-0016)', async () => {
+  it('ofereix Apple a iOS, també a Expo Go, i no a Android (ADR-0016)', async () => {
     const ios = await renderHook(() => useWelcomeViewModel());
     expect(ios.result.current.showApple).toBe(true);
+    expect(ios.result.current.appleLabel).toBe('Continua amb Apple');
 
     const restore = jest.replaceProperty(Platform, 'OS', 'android');
     const android = await renderHook(() => useWelcomeViewModel());

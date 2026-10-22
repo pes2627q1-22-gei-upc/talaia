@@ -97,9 +97,12 @@ tanca la sessió i la vista ho diu, perquè no quedi cap compte a mitges.
   (a Expo Go, `exp://…/--/auth/callback`, permesa a `supabase/config.toml`).
   A Android l'enllaç també arriba a Expo Router: `app/+native-intent.tsx` el
   deixa a la benvinguda.
-- **Apple (només iOS, ADR-0016):** `expo-apple-authentication` amb un nonce (Apple
-  en rep el hash) i `signInWithIdToken`. Apple només dona el nom el primer cop i no
-  el posa al token: va al cos de `POST /perfil` (`{ nom }`). Botó oficial d'Apple.
+- **Apple (només iOS, ADR-0016):** als builds natius, `expo-apple-authentication` amb un
+  nonce (Apple en rep el hash) i `signInWithIdToken`. Apple només dona el nom el primer cop
+  i no el posa al token: va al cos de `POST /perfil` (`{ nom }`). **Expo Go no porta el
+  mòdul natiu**: allà va pel navegador, com Google (Services ID `cat.talaia.web`). El
+  secret d'aquest flux caduca cada 6 mesos: `supabase/scripts/apple-secret.mjs`. Botó
+  propi, amb el logotip i el text de les pautes d'Apple.
 - **Correu:** `/benvinguda-correu` (`signInWithOtp`). El correu pot portar un codi de 6
   xifres (`verifyOtp`) o un enllaç, i l'app accepta tots dos:
   - **Codi:** cal una plantilla amb `{{ .Token }}`. En local ja la té
@@ -125,8 +128,6 @@ tanca la sessió i la vista ho diu, perquè no quedi cap compte a mitges.
 
 ### Abans de publicar l'app
 
-- Treure `host.exp.Exponent` dels *Client IDs* d'Apple a Supabase: amb ell, qualsevol
-  projecte obert amb Expo Go pot obtenir un token d'Apple vàlid per a Talaia.
 - Treure `exp://**` de les adreces de redirecció (`supabase/config.toml` i el núvol).
 - Els comptes d'Apple creats des d'Expo Go no són els de l'app real (`cat.talaia.app`):
   els de proves no es poden reaprofitar.

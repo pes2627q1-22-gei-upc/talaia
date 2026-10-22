@@ -1,4 +1,3 @@
-import * as AppleAuthentication from 'expo-apple-authentication';
 import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -14,7 +13,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { gradients, motion, radii, sizes, spacing } from '@/core/theme/tokens';
+import { gradients, motion, sizes, spacing } from '@/core/theme/tokens';
 import { AppText } from '@/shared/ui/AppText';
 import { Button } from '@/shared/ui/Button';
 
@@ -30,6 +29,8 @@ const sparkStar = require('@/assets/images/welcome/torre/estel.svg');
 const mailIcon = require('@/assets/images/welcome/mail.svg');
 /** Logotip «G» oficial de Google (pautes de marca, ADR-0016). */
 const googleIcon = require('@/assets/images/welcome/google.svg');
+/** Logotip d'Apple per a «Continua amb Apple» (pautes de Sign in with Apple, ADR-0016). */
+const appleIcon = require('@/assets/images/welcome/apple.svg');
 
 /** Mides del logotip del Figma i de l'estel de la «i» (Vector_7 de `logotip.svg`). */
 const LOGO = { width: 190, height: 77, star: { x: 141.68, y: 10.5, size: 18 } } as const;
@@ -203,13 +204,18 @@ export function WelcomeScreen() {
           </Appear>
           {vm.showApple ? (
             <Appear index={4} t={t}>
-              {/* El botó oficial d'Apple: logotip, text i traducció els posa el sistema. */}
-              <AppleAuthentication.AppleAuthenticationButton
-                buttonType={AppleAuthentication.AppleAuthenticationButtonType.CONTINUE}
-                buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
-                cornerRadius={radii.md}
-                style={styles.apple}
+              {/* Botó propi (pautes d'Apple): el component oficial no existeix a Expo Go. */}
+              <Button
+                variant="secondary"
+                label={vm.appleLabel}
                 onPress={() => void vm.continueWithApple()}
+                disabled={vm.busy}
+                haptic
+                icon={
+                  <View style={styles.icon}>
+                    <Image source={appleIcon} style={styles.appleIcon} />
+                  </View>
+                }
               />
             </Appear>
           ) : null}
@@ -261,7 +267,7 @@ const styles = StyleSheet.create({
   fill: { width: '100%', height: '100%' },
   mailIcon: { width: 19.25, height: 15.58 },
   googleIcon: { width: 18, height: 18 },
-  apple: { height: sizes.button },
+  appleIcon: { width: 18, height: 18 },
   error: { marginTop: spacing.ms, textAlign: 'center' },
   tagline: { marginTop: spacing.ms },
   description: { marginTop: spacing.xs },
