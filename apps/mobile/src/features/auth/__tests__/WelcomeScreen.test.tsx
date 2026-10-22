@@ -10,6 +10,7 @@ import { motion } from '@/core/theme/tokens';
 
 import { TL } from '../intro/timeline';
 import { INTRO_LEAD, INTRO_SEEN_KEY, SKIP_DURATION } from '../intro/useIntro';
+import { authRepository } from '../authRepository';
 import { signInAndEnsureProfile } from '../signIn';
 import { WelcomeScreen } from '../WelcomeScreen';
 
@@ -27,11 +28,28 @@ jest.mock('react-native-reanimated', () => {
     useReducedMotion: jest.fn(() => false),
   };
 });
+// El botó natiu d'Apple: a Jest, un botó amb el nom que hi posa el sistema.
+jest.mock('expo-apple-authentication', () => {
+  const { Pressable } = jest.requireActual('react-native');
+  return {
+    AppleAuthenticationButton: ({ onPress }: { onPress: () => void }) => (
+      <Pressable
+        testID="apple-oficial"
+        accessibilityRole="button"
+        accessibilityLabel="Continua amb Apple"
+        onPress={onPress}
+      />
+    ),
+    AppleAuthenticationButtonType: { CONTINUE: 1 },
+    AppleAuthenticationButtonStyle: { BLACK: 2 },
+  };
+});
 jest.mock('../signIn', () => ({ signInAndEnsureProfile: jest.fn() }));
 jest.mock('../authRepository', () => ({
   authRepository: {
     signInWithGoogle: jest.fn(),
     signInWithApple: jest.fn(),
+    isAppleNativeAvailable: jest.fn(async () => false),
   },
 }));
 const replace = jest.fn();
@@ -80,6 +98,18 @@ describe('WelcomeScreen', () => {
     for (const label of ['Continua amb Google', 'Continua amb Apple', 'Continua amb el correu']) {
       expect(await screen.findByRole('button', { name: label })).toBeOnTheScreen();
     }
+  });
+
+  it("a Expo Go, el botó d'Apple és el propi", async () => {
+    await renderWelcome();
+    expect(await screen.findByRole('button', { name: 'Continua amb Apple' })).toBeOnTheScreen();
+    expect(screen.queryByTestId('apple-oficial')).toBeNull();
+  });
+
+  it("amb el mòdul natiu (builds natius), el botó d'Apple és l'oficial", async () => {
+    jest.mocked(authRepository.isAppleNativeAvailable).mockResolvedValueOnce(true);
+    await renderWelcome();
+    expect(await screen.findByTestId('apple-oficial')).toBeOnTheScreen();
   });
 
   it('a Android no ofereix Apple (ADR-0016)', async () => {

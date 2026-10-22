@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Platform } from 'react-native';
 
@@ -27,6 +27,17 @@ export function useWelcomeViewModel(onSignedIn: (enterApp: () => void) => void =
   const [pending, setPending] = useState<AuthMethod | null>(null);
   const [failure, setFailure] = useState<SignInFailureReason | null>(null);
   const busy = useRef(false);
+  const [appleNative, setAppleNative] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    void authRepository.isAppleNativeAvailable().then((available) => {
+      if (active) setAppleNative(available);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const signIn = async (method: AuthMethod) => {
     if (busy.current) return;
@@ -52,6 +63,8 @@ export function useWelcomeViewModel(onSignedIn: (enterApp: () => void) => void =
     emailLabel: t('welcome.continueEmail'),
     /** Sign in with Apple només a iOS (ADR-0016): natiu si es pot, i si no, pel navegador. */
     showApple: Platform.OS === 'ios',
+    /** Als builds natius, el botó oficial d'Apple (l'App Store el revisa); a Expo Go, el propi. */
+    appleNative,
     busy: pending !== null,
     errorMessage: errorMessage(failure),
     continueWithGoogle: () => signIn('google'),
