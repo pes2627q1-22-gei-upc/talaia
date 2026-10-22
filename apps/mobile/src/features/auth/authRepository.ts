@@ -144,15 +144,15 @@ export const authRepository = {
     }
     await guard(() => client.auth.exchangeCodeForSession(code));
   },
-  /** Apple amb el full natiu d'iOS (ADR-0016): el token va directe a Supabase. */
   /**
-   * Si el dispositiu pot fer servir Sign in with Apple. Fora d'iOS, o amb un Expo Go que no porta
-   * el mòdul natiu, no: el botó oficial sortiria com un error.
+   * Si es pot fer servir Sign in with Apple: només a iOS i amb el mòdul natiu, que Expo Go (SDK 57)
+   * no porta, ni al simulador ni al mòbil. Sense el mòdul, el botó oficial sortiria com un error.
    */
   async isAppleAvailable(): Promise<boolean> {
     if (Platform.OS !== 'ios') return false;
     return AppleAuthentication.isAvailableAsync().catch(() => false);
   },
+  /** Apple amb el full natiu d'iOS (ADR-0016): el token va directe a Supabase. */
   async signInWithApple(): Promise<ProfileHints> {
     const client = requireClient();
     // Apple rep el hash del nonce i Supabase el nonce: així el token no es pot reutilitzar.
