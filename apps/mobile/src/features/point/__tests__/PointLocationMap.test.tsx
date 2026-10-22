@@ -3,7 +3,11 @@ import { act, type ComponentProps } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import maplibregl from 'maplibre-gl';
 
-import PointLocationMapContent from '../PointLocationMapContent';
+import PointLocationMapContent, {
+  ORBIT_DEGREES_PER_MS,
+  ORBIT_RAMP_MS,
+  POINT_VIEW,
+} from '../PointLocationMapContent';
 
 jest.mock('maplibre-gl/dist/maplibre-gl.css', () => ({}));
 jest.mock('maplibre-gl', () => ({
@@ -24,17 +28,27 @@ const props: ComponentProps<typeof PointLocationMapContent> = {
     markerGlow: '#5FD4C4B3',
     markerHalo: '#5FD4C42E',
   },
-  metrics: { touch: 44, icon: 22, marker: 66, core: 43, stem: 18, halo: 10 },
+  metrics: { touch: 44, icon: 22, marker: 66, core: 43, stem: 18, halo: 10, top: 59 },
   label: 'Serra del Montsec',
   attributionLabel: 'Crèdits del mapa',
   unavailableLabel: 'Mapa no disponible',
+  orbit: false,
 };
 
 let root: Root;
 let host: HTMLDivElement;
 let mapContainer: HTMLDivElement;
 let handlers: Record<string, () => void>;
-let map: { getContainer: jest.Mock; on: jest.Mock; areTilesLoaded: jest.Mock; remove: jest.Mock };
+let bearing: number;
+let map: {
+  getContainer: jest.Mock;
+  on: jest.Mock;
+  areTilesLoaded: jest.Mock;
+  remove: jest.Mock;
+  getBearing: jest.Mock;
+  setBearing: jest.Mock;
+  setPadding: jest.Mock;
+};
 let marker: { setLngLat: jest.Mock; addTo: jest.Mock };
 
 beforeEach(() => {
@@ -52,7 +66,13 @@ beforeEach(() => {
     }),
     areTilesLoaded: jest.fn(() => true),
     remove: jest.fn(),
+    getBearing: jest.fn(() => bearing),
+    setBearing: jest.fn((value: number) => {
+      bearing = value;
+    }),
+    setPadding: jest.fn(),
   };
+  bearing = POINT_VIEW.bearing;
   marker = { setLngLat: jest.fn().mockReturnThis(), addTo: jest.fn().mockReturnThis() };
   jest.mocked(maplibregl.Map).mockImplementation(() => map as unknown as maplibregl.Map);
   jest.mocked(maplibregl.Marker).mockImplementation(() => marker as unknown as maplibregl.Marker);
@@ -63,18 +83,20 @@ afterEach(async () => {
   host.remove();
 });
 
-it('centra el mapa fix, situa la talaia i permet obrir i tancar els crèdits', async () => {
+it('centra el mapa inclinat sobre el relleu, situa la talaia i permet obrir i tancar els crèdits', async () => {
   await act(async () => root.render(<PointLocationMapContent {...props} />));
 
   expect(maplibregl.Map).toHaveBeenCalledWith(
     expect.objectContaining({
       center: [0.8, 41.9],
-      zoom: 10,
+      ...POINT_VIEW,
       interactive: false,
       attributionControl: false,
     }),
   );
   expect(marker.setLngLat).toHaveBeenCalledWith([0.8, 41.9]);
+  // El punt, al centre de la part visible: sota la zona segura i el botó enrere.
+  expect(map.setPadding).toHaveBeenCalledWith({ top: 59 + 44, bottom: 0, left: 0, right: 0 });
   expect(marker.addTo).toHaveBeenCalledWith(map);
   expect(
     jest.mocked(maplibregl.Marker).mock.calls[0]?.[0]?.element?.getAttribute('aria-label'),
@@ -84,6 +106,8 @@ it('centra el mapa fix, situa la talaia i permet obrir i tancar els crèdits', a
   const panel = mapContainer.querySelector<HTMLElement>('[role="region"]');
   expect(button?.getAttribute('aria-label')).toBe(props.attributionLabel);
   expect(host.querySelector('style')?.textContent).toContain('width: 44px; height: 44px');
+  // Els crèdits van a dalt a la dreta, sota la barra d'estat, on no toquen el botó enrere.
+  expect(host.querySelector('style')?.textContent).toContain('top: 59px; right: 8px');
   expect(host.querySelector('style')?.textContent).not.toContain('color-mix');
   expect(button?.getAttribute('aria-expanded')).toBe('false');
   expect(panel?.hidden).toBe(true);
@@ -119,4 +143,45 @@ it('mostra un avís quan el mapa no es pot inicialitzar', async () => {
   await act(async () => root.render(<PointLocationMapContent {...props} />));
   expect(host.querySelector<HTMLElement>('[role="status"]')?.hidden).toBe(false);
   expect(maplibregl.Marker).not.toHaveBeenCalled();
+});
+
+describe('òrbita', () => {
+  beforeEach(() => jest.useFakeTimers());
+  afterEach(() => jest.useRealTimers());
+
+  const advance = (ms: number) => act(async () => jest.advanceTimersByTime(ms));
+
+  it('gira al voltant del punt quan el mapa ha carregat, i arrenca a poc a poc', async () => {
+    await act(async () => root.render(<PointLocationMapContent {...props} orbit />));
+    await advance(1_000);
+    // Fins que no ha carregat l'estil, no es mou.
+    expect(map.setBearing).not.toHaveBeenCalled();
+
+    await act(async () => handlers.load?.());
+    await advance(ORBIT_RAMP_MS / 4);
+    const duringRamp = bearing - POINT_VIEW.bearing;
+    expect(duringRamp).toBeGreaterThan(0);
+    // En arrencar va més lent que la velocitat de creuer.
+    expect(duringRamp).toBeLessThan((ORBIT_DEGREES_PER_MS * ORBIT_RAMP_MS) / 4);
+
+    const before = bearing;
+    await advance(ORBIT_RAMP_MS);
+    const cruising = bearing;
+    await advance(10_000);
+    // A velocitat de creuer, una volta cada dos minuts.
+    expect(bearing - cruising).toBeCloseTo(ORBIT_DEGREES_PER_MS * 10_000, 0);
+    expect(cruising).toBeGreaterThan(before);
+  });
+
+  it("s'atura si la fitxa deixa de veure's o es vol reduir el moviment", async () => {
+    await act(async () => root.render(<PointLocationMapContent {...props} orbit />));
+    await act(async () => handlers.load?.());
+    await advance(1_000);
+    expect(map.setBearing).toHaveBeenCalled();
+
+    await act(async () => root.render(<PointLocationMapContent {...props} orbit={false} />));
+    map.setBearing.mockClear();
+    await advance(5_000);
+    expect(map.setBearing).not.toHaveBeenCalled();
+  });
 });

@@ -39,8 +39,10 @@ function RootStack() {
       <Stack.Screen
         name="punt/[id]"
         options={{
+          // El mapa de la fitxa arriba fins a dalt i el botó enrere hi sura a sobre (mockup 05).
           headerShown: true,
-          title: t('point.title'),
+          headerTransparent: true,
+          title: '',
           headerTintColor: colors.lluna,
           headerBackButtonDisplayMode: 'minimal',
         }}

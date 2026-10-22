@@ -1,7 +1,7 @@
 import 'maplibre-gl/dist/maplibre-gl.css';
 
 import maplibregl, { type StyleSpecification } from 'maplibre-gl';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { ATTRIBUTION } from '@/features/map/style/nightStyle';
 
@@ -25,13 +25,29 @@ type Props = {
     core: number;
     stem: number;
     halo: number;
+    /** Alçada de la zona segura de dalt: els crèdits van a l'altura del botó enrere, a la dreta. */
+    top: number;
   };
   label: string;
   attributionLabel: string;
   unavailableLabel: string;
+  /** Volta lenta al voltant del punt. Fals si la pantalla no es veu o es vol reduir el moviment. */
+  orbit: boolean;
 };
 
-/** Mapa de situació sense gestos: permet desplaçar la fitxa sense capturar el dit. */
+/** Prou a prop i inclinat perquè el relleu 3D de l'ICGC es llegeixi al voltant del punt. */
+export const POINT_VIEW = { zoom: 12.6, pitch: 62, bearing: -20 };
+/** Una volta sencera cada dos minuts: es veu que el relleu gira, però no distreu. */
+export const ORBIT_DEGREES_PER_MS = 360 / 120_000;
+/** La volta arrenca i torna a arrencar a poc a poc, sense cap salt. */
+export const ORBIT_RAMP_MS = 4_000;
+
+const smoothstep = (t: number) => t * t * (3 - 2 * t);
+
+/**
+ * Mapa de situació sense gestos (permet desplaçar la fitxa sense capturar el dit), inclinat sobre
+ * el relleu i amb una òrbita lenta al voltant del punt.
+ */
 export default function PointLocationMapContent({
   mapStyle,
   coordinates,
@@ -40,9 +56,12 @@ export default function PointLocationMapContent({
   label,
   attributionLabel,
   unavailableLabel,
+  orbit,
 }: Props) {
   const container = useRef<HTMLDivElement>(null);
   const failure = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<maplibregl.Map | null>(null);
+  const [loaded, setLoaded] = useState(false);
   // El pont DOM reenvia objectes: conservem l'estil inicial, com fa NightMap.
   const initialStyle = useRef(mapStyle);
   useEffect(() => {
@@ -54,12 +73,15 @@ export default function PointLocationMapContent({
         container: container.current,
         style: initialStyle.current,
         center: [coordinates.lon, coordinates.lat],
-        zoom: 10,
-        pitch: 0,
+        ...POINT_VIEW,
         interactive: false,
         attributionControl: false,
       });
       const current = map;
+      mapRef.current = current;
+      // El punt, al centre de la part que es veu sota la capçalera (no de tot el mapa).
+      current.setPadding({ top: metrics.top + metrics.touch, bottom: 0, left: 0, right: 0 });
+      current.on('load', () => setLoaded(true));
       creditControl = document.createElement('div');
       creditControl.className = 'talaia-map-credits';
       const creditsButton = document.createElement('button');
@@ -99,9 +121,32 @@ export default function PointLocationMapContent({
     }
     return () => {
       creditControl?.remove();
+      mapRef.current = null;
+      setLoaded(false);
       map?.remove();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- la zona segura només canvia si gira la pantalla, i no cal tornar a crear el mapa
   }, [coordinates.lat, coordinates.lon, label, attributionLabel]);
+
+  // La càmera gira al voltant del centre, que és el punt. Cada fotograma avança segons el temps
+  // real, i la velocitat puja amb una corba suau en començar o en tornar a la pantalla.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!orbit || !loaded || !map) return;
+    let frame = 0;
+    let start: number | undefined;
+    let last: number | undefined;
+    const step = (now: number) => {
+      start ??= now;
+      const elapsed = last === undefined ? 0 : now - last;
+      last = now;
+      const speed = smoothstep(Math.min(1, (now - start) / ORBIT_RAMP_MS));
+      map.setBearing(map.getBearing() + ORBIT_DEGREES_PER_MS * elapsed * speed);
+      frame = requestAnimationFrame(step);
+    };
+    frame = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(frame);
+  }, [orbit, loaded]);
 
   return (
     <div
@@ -118,8 +163,9 @@ export default function PointLocationMapContent({
           --talaia-marker-halo: ${metrics.halo}px;
         }
         .talaia-map-credits {
-          position: absolute; z-index: 4; top: 8px; left: 8px;
-          display: flex; align-items: flex-start; gap: 8px; pointer-events: none;
+          position: absolute; z-index: 4; top: ${metrics.top}px; right: 8px;
+          display: flex; flex-direction: row-reverse; align-items: flex-start; gap: 8px;
+          pointer-events: none;
         }
         .talaia-map-credits__button {
           display: grid; place-items: center; flex: 0 0 ${metrics.touch}px;
