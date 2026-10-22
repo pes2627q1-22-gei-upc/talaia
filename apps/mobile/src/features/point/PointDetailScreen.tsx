@@ -1,8 +1,10 @@
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useFocusEffect } from 'expo-router';
+import { useCallback, useState } from 'react';
 import { Trans } from 'react-i18next';
 import { ScrollView, StyleSheet, View } from 'react-native';
-import Animated, { FadeIn, ReduceMotion } from 'react-native-reanimated';
+import Animated, { FadeIn, ReduceMotion, useReducedMotion } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import {
@@ -55,6 +57,15 @@ const factorIcons = {
 /** TG-93 / mockup 05. Els factors detallats són TG-105; rutes i plans, altres històries. */
 export function PointDetailScreen({ pointId }: { pointId: string }) {
   const vm = usePointDetailViewModel(pointId);
+  const reduceMotion = useReducedMotion();
+  // El mapa gira només mentre la fitxa es veu: amb una altra pantalla a sobre, s'atura.
+  const [focused, setFocused] = useState(false);
+  useFocusEffect(
+    useCallback(() => {
+      setFocused(true);
+      return () => setFocused(false);
+    }, []),
+  );
   return (
     <SafeAreaView edges={['left', 'right', 'bottom']} style={styles.root}>
       {vm.status === 'loading' ? (
@@ -88,6 +99,7 @@ export function PointDetailScreen({ pointId }: { pointId: string }) {
                 label={vm.mapLabel}
                 attributionLabel={vm.mapCreditsLabel}
                 unavailableLabel={vm.mapUnavailable}
+                orbit={focused && !reduceMotion}
                 dom={{
                   style: styles.map,
                   scrollEnabled: false,

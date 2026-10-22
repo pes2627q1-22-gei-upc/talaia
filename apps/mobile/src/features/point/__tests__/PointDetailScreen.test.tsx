@@ -15,6 +15,10 @@ jest.mock('@/core/api/httpClient', () => ({
 }));
 // El WebView no existeix a Jest; es comprova la pantalla nativa amb el repository real.
 jest.mock('../PointLocationMap', () => () => null);
+jest.mock('expo-router', () => ({
+  ...jest.requireActual('expo-router'),
+  useFocusEffect: (effect: () => void) => jest.requireActual('react').useEffect(effect, [effect]),
+}));
 const get = jest.mocked(apiGet);
 
 async function renderScreen() {
