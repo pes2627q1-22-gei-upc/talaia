@@ -21,7 +21,51 @@
   },
   "calendar": {
     "title": "Calendari",
-    "subtitle": "Fenòmens astronòmics del mes: pluges d'estels, eclipsis i fases de la Lluna."
+    "subtitle": "Fenòmens astronòmics del mes: pluges d'estels, eclipsis i fases de la Lluna.",
+    "previous": "Mes anterior",
+    "next": "Mes següent",
+    "goToday": "Torna a avui",
+    "events": "Fenòmens",
+    "allMonth": "Veure tot el mes",
+    "relative": { "today": "Avui", "tomorrow": "Demà", "past": "Passat" },
+    "filterLabel": "Filtra fenòmens: {{filter}}",
+    "filterTitle": "Filtra fenòmens",
+    "closeFilter": "Tanca els filtres",
+    "showPast": "Mostra els passats",
+    "filterShort": {
+      "all": "Tots",
+      "meteor": "Estels",
+      "moon": "Lluna",
+      "sun": "Sol",
+      "other": "Conjuncions"
+    },
+    "weekdays": ["dl", "dt", "dc", "dj", "dv", "ds", "dg"],
+    "filters": {
+      "all": "Tots els fenòmens",
+      "meteor": "Pluges d'estels",
+      "moon": "Lluna",
+      "sun": "Sol",
+      "other": "Conjuncions"
+    },
+    "types": {
+      "fase_llunar": "fase lunar",
+      "pluja_estels": "pluja d'estels",
+      "eclipsi_solar": "eclipsi solar",
+      "eclipsi_llunar": "eclipsi lunar",
+      "conjuncio": "conjunció",
+      "superlluna": "superlluna",
+      "other": "fenomen astronòmic"
+    },
+    "dayWithEvents_one": "{{day}}: {{count}} fenomen, {{types}}",
+    "dayWithEvents_other": "{{day}}: {{count}} fenòmens, {{types}}",
+    "error": "No hem pogut carregar els fenòmens",
+    "retry": "Torna-ho a provar",
+    "empty": {
+      "day": "No hi ha fenòmens aquest dia",
+      "month": "No hi ha fenòmens aquest mes",
+      "upcomingDay": "No hi ha fenòmens pendents aquest dia",
+      "upcomingMonth": "No hi ha fenòmens pendents aquest mes"
+    }
   },
   "profile": {
     "title": "Perfil",
