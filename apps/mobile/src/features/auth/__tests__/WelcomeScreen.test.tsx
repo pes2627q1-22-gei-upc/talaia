@@ -73,6 +73,10 @@ async function layOut() {
   await act(async () => {});
 }
 
+// Pantalla sencera amb la intro de Skia: en paral·lel amb la resta (i amb la màquina carregada),
+// els tests que avancen la intro amb rellotge fals passen dels 5 s per defecte.
+jest.setTimeout(15_000);
+
 describe('WelcomeScreen', () => {
   beforeEach(async () => {
     jest.clearAllMocks();
