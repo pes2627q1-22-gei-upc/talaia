@@ -118,7 +118,9 @@
       },
       "sol": "Aún queda luz del crepúsculo"
     },
-    "factorsAt": "Factores a las {{time}}"
+    "factorsAt": "Factores a las {{time}}",
+    "daytime": "Es de día",
+    "daytimeHint": "El índice cuenta a partir del anochecer."
   },
   "index": {
     "level": {

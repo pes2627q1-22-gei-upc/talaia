@@ -44,6 +44,7 @@ const mapMetrics = {
   halo: sizes.pointMarkerHalo,
 };
 const directionsIcon = require('@/assets/images/point/directions.svg');
+const sunIcon = require('@/assets/images/point/sun.svg');
 const planIcon = require('@/assets/images/point/plan.svg');
 
 /** TG-93 / mockup 05, amb el desglossament d'aquesta nit (TG-105). Rutes i plans, altres històries. */
@@ -130,9 +131,21 @@ export function PointDetailScreen({ pointId }: { pointId: string }) {
                 <View style={styles.indexValue}>
                   <IndexIndicator index={vm.currentIndex} size="lg" />
                 </View>
+              ) : vm.daytime ? (
+                <View style={styles.indexValue}>
+                  <Image
+                    source={sunIcon}
+                    tintColor={colors.pedra}
+                    style={styles.daytimeIcon}
+                    accessible={false}
+                  />
+                </View>
               ) : null}
               <View style={styles.indexCopy}>
-                <AppText variant="heading" color={vm.currentIndex?.franja ?? 'boira'}>
+                <AppText
+                  variant="heading"
+                  color={vm.daytime ? 'lluna' : (vm.currentIndex?.franja ?? 'boira')}
+                >
                   {vm.currentLevel ?? vm.noIndex}
                 </AppText>
                 <AppText variant="small" color="boira">
@@ -288,6 +301,7 @@ const styles = StyleSheet.create({
   },
   indexCopy: { flex: 1, flexBasis: sizes.hourlyColumn * 3, gap: spacing.xs },
   bestHourStrong: { fontFamily: fonts.bold },
+  daytimeIcon: { width: sizes.pointMarker - spacing.md, height: sizes.pointMarker - spacing.md },
   pointInfo: { gap: spacing.md },
   infoField: { gap: spacing.xs },
   sqmField: {

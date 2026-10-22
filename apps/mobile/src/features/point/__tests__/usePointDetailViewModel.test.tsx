@@ -9,6 +9,7 @@ import {
   fetchPointDetail,
   millisecondsUntilNextPointRefresh,
 } from '../pointRepository';
+import { twoDigitHours } from '../pointModel';
 import { skyDarknessBand } from '../skyDarkness';
 import { usePointDetailViewModel } from '../usePointDetailViewModel';
 import { asPointResponse, hour, point, respond } from '../__fixtures__/point';
@@ -134,6 +135,34 @@ it('distingeix una altitud zero i una foscor estimada', async () => {
   expect(
     result.current.hours[0]?.factors.find((factor) => factor.key === 'foscor')?.hint,
   ).toContain('estimat');
+});
+
+it('de dia, la targeta diu que és de dia i no «0 Tapat»', async () => {
+  get.mockImplementation(
+    respond({
+      ...point,
+      indexActual: {
+        ...hour,
+        valor: 0,
+        franja: 'tap',
+        factors: { ...hour.factors, sol: 0 },
+      },
+    }),
+  );
+  const { result } = await renderVm();
+  await waitFor(() => expect(result.current.status).toBe('ok'));
+  expect(result.current.daytime).toBe(true);
+  expect(result.current.currentIndex).toBeNull();
+  expect(result.current.currentLevel).toBe('És de dia');
+  expect(result.current.currentLabel).toBe("L'índex compta a partir del vespre.");
+});
+
+it('les hores sempre surten amb dues xifres (Hermes treu el zero)', () => {
+  expect(twoDigitHours('4:00')).toBe('04:00');
+  expect(twoDigitHours('0')).toBe('00');
+  expect(twoDigitHours('23')).toBe('23');
+  expect(twoDigitHours('1 de nov., 9:05')).toBe('1 de nov., 09:05');
+  expect(twoDigitHours('22 oct., 16:00')).toBe('22 oct., 16:00');
 });
 
 it('només ensenya les hores de nit, i el Sol només quan resta (crepuscle)', async () => {

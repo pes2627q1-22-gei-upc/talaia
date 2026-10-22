@@ -118,7 +118,9 @@
       },
       "sol": "There's still twilight"
     },
-    "factorsAt": "Factors at {{time}}"
+    "factorsAt": "Factors at {{time}}",
+    "daytime": "It's daytime",
+    "daytimeHint": "The index counts from dusk onwards."
   },
   "index": {
     "level": {

@@ -6,6 +6,7 @@ import type { DireccioHoritzo, IndexHora } from '@talaia/shared';
 import { ApiError } from '@/core/api/httpClient';
 import { nightStyle } from '@/features/map/style/nightStyle';
 
+import { twoDigitHours } from './pointModel';
 import { usePointBreakdownQuery, usePointDetailQuery } from './pointRepository';
 import { skyDarknessBand } from './skyDarkness';
 
@@ -84,12 +85,14 @@ export function usePointDetailViewModel(pointId: string) {
       .sort((a, b) => Date.parse(a.hora) - Date.parse(b.hora))
       .map((entry) => ({
         id: entry.hora,
-        label: hourFormatter.format(new Date(entry.hora)),
+        label: twoDigitHours(hourFormatter.format(new Date(entry.hora))),
         date: dateTimeFormatter.format(new Date(entry.hora)),
         value: Math.round(Math.min(100, Math.max(0, entry.valor))),
         level: entry.franja,
         factors: factorRows(entry),
-        factorsTitle: t('point.factorsAt', { time: clockFormatter.format(new Date(entry.hora)) }),
+        factorsTitle: t('point.factorsAt', {
+          time: twoDigitHours(clockFormatter.format(new Date(entry.hora))),
+        }),
         accessibilityLabel: t('point.hourA11y', {
           time: dateTimeFormatter.format(new Date(entry.hora)),
           value: Math.round(Math.min(100, Math.max(0, entry.valor))),
@@ -124,7 +127,8 @@ export function usePointDetailViewModel(pointId: string) {
           const finalTimestamp = Date.parse(hours[last]!.id);
           const previousTimestamp = last > first ? Date.parse(hours[last - 1]!.id) : undefined;
           const duration = previousTimestamp ? finalTimestamp - previousTimestamp : 60 * 60 * 1000;
-          const formatTime = (timestamp: number) => clockFormatter.format(new Date(timestamp));
+          const formatTime = (timestamp: number) =>
+            twoDigitHours(clockFormatter.format(new Date(timestamp)));
           return {
             from: formatTime(Date.parse(hours[first]!.id)),
             to: formatTime(finalTimestamp + duration),
@@ -177,9 +181,11 @@ export function usePointDetailViewModel(pointId: string) {
   const currentLabel =
     indexTime && Number.isFinite(Date.parse(indexTime))
       ? t('point.indexAt', {
-          time: dateTimeFormatter.format(new Date(indexTime)),
+          time: twoDigitHours(dateTimeFormatter.format(new Date(indexTime))),
         })
       : t('point.currentIndex');
+  // De dia, el Sol anul·la l'índex (ADR-0018): no és que estigui tapat, és que no és de nit.
+  const daytime = point?.indexActual?.factors.sol === 0;
   return {
     status,
     title: point?.nom ?? t('point.title'),
@@ -189,9 +195,14 @@ export function usePointDetailViewModel(pointId: string) {
     mapCreditsLabel: t('point.mapCredits'),
     mapStyle: nightStyle,
     mapUnavailable: t('point.mapUnavailable'),
-    currentIndex: point?.indexActual ?? null,
-    currentLevel: point?.indexActual ? t(`index.level.${point.indexActual.franja}`) : undefined,
-    currentLabel,
+    daytime,
+    currentIndex: daytime ? null : (point?.indexActual ?? null),
+    currentLevel: daytime
+      ? t('point.daytime')
+      : point?.indexActual
+        ? t(`index.level.${point.indexActual.franja}`)
+        : undefined,
+    currentLabel: daytime ? t('point.daytimeHint') : currentLabel,
     noIndex: t('point.noIndex'),
     bestWindow,
     altitude,

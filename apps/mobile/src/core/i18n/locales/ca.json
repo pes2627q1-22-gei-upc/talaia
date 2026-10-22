@@ -118,7 +118,9 @@
       },
       "sol": "Encara queda llum del crepuscle"
     },
-    "factorsAt": "Factors a les {{time}}"
+    "factorsAt": "Factors a les {{time}}",
+    "daytime": "És de dia",
+    "daytimeHint": "L'índex compta a partir del vespre."
   },
   "index": {
     "level": {
