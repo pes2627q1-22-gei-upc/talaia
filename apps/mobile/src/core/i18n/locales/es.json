@@ -21,7 +21,51 @@
   },
   "calendar": {
     "title": "Calendario",
-    "subtitle": "Fenómenos astronómicos del mes: lluvias de estrellas, eclipses y fases de la Luna."
+    "subtitle": "Fenómenos astronómicos del mes: lluvias de estrellas, eclipses y fases de la Luna.",
+    "previous": "Mes anterior",
+    "next": "Mes siguiente",
+    "goToday": "Volver a hoy",
+    "events": "Fenómenos",
+    "allMonth": "Ver todo el mes",
+    "relative": { "today": "Hoy", "tomorrow": "Mañana", "past": "Pasado" },
+    "filterLabel": "Filtrar fenómenos: {{filter}}",
+    "filterTitle": "Filtrar fenómenos",
+    "closeFilter": "Cerrar filtros",
+    "showPast": "Mostrar los pasados",
+    "filterShort": {
+      "all": "Todos",
+      "meteor": "Estrellas",
+      "moon": "Luna",
+      "sun": "Sol",
+      "other": "Conjunciones"
+    },
+    "weekdays": ["lu", "ma", "mi", "ju", "vi", "sá", "do"],
+    "filters": {
+      "all": "Todos los fenómenos",
+      "meteor": "Lluvias de estrellas",
+      "moon": "Luna",
+      "sun": "Sol",
+      "other": "Conjunciones"
+    },
+    "types": {
+      "fase_llunar": "fase lunar",
+      "pluja_estels": "lluvia de estrellas",
+      "eclipsi_solar": "eclipse solar",
+      "eclipsi_llunar": "eclipse lunar",
+      "conjuncio": "conjunción",
+      "superlluna": "superluna",
+      "other": "fenómeno astronómico"
+    },
+    "dayWithEvents_one": "{{day}}: {{count}} fenómeno, {{types}}",
+    "dayWithEvents_other": "{{day}}: {{count}} fenómenos, {{types}}",
+    "error": "No hemos podido cargar los fenómenos",
+    "retry": "Volver a intentar",
+    "empty": {
+      "day": "No hay fenómenos este día",
+      "month": "No hay fenómenos este mes",
+      "upcomingDay": "No hay fenómenos pendientes este día",
+      "upcomingMonth": "No hay fenómenos pendientes este mes"
+    }
   },
   "profile": {
     "title": "Perfil",

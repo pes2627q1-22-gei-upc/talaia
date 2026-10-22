@@ -21,7 +21,51 @@
   },
   "calendar": {
     "title": "Calendar",
-    "subtitle": "This month's sky events: meteor showers, eclipses and Moon phases."
+    "subtitle": "This month's sky events: meteor showers, eclipses and Moon phases.",
+    "previous": "Previous month",
+    "next": "Next month",
+    "goToday": "Back to today",
+    "events": "Events",
+    "allMonth": "View whole month",
+    "relative": { "today": "Today", "tomorrow": "Tomorrow", "past": "Past" },
+    "filterLabel": "Filter events: {{filter}}",
+    "filterTitle": "Filter events",
+    "closeFilter": "Close filters",
+    "showPast": "Show past events",
+    "filterShort": {
+      "all": "All",
+      "meteor": "Meteors",
+      "moon": "Moon",
+      "sun": "Sun",
+      "other": "Conjunctions"
+    },
+    "weekdays": ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"],
+    "filters": {
+      "all": "All events",
+      "meteor": "Meteor showers",
+      "moon": "Moon",
+      "sun": "Sun",
+      "other": "Conjunctions"
+    },
+    "types": {
+      "fase_llunar": "lunar phase",
+      "pluja_estels": "meteor shower",
+      "eclipsi_solar": "solar eclipse",
+      "eclipsi_llunar": "lunar eclipse",
+      "conjuncio": "conjunction",
+      "superlluna": "supermoon",
+      "other": "sky event"
+    },
+    "dayWithEvents_one": "{{day}}: {{count}} event, {{types}}",
+    "dayWithEvents_other": "{{day}}: {{count}} events, {{types}}",
+    "error": "Could not load sky events",
+    "retry": "Try again",
+    "empty": {
+      "day": "No sky events this day",
+      "month": "No sky events this month",
+      "upcomingDay": "No upcoming events this day",
+      "upcomingMonth": "No upcoming events this month"
+    }
   },
   "profile": {
     "title": "Profile",

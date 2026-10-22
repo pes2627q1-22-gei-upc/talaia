@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 
 import { MonthCalendar } from '../MonthCalendar';
 
@@ -53,7 +53,7 @@ describe('MonthCalendar', () => {
     expect(screen.getByRole('button', { name: 'Mes anterior' })).toBeDisabled();
 
     await fireEvent.press(screen.getByRole('button', { name: 'Mes següent' }));
-    expect(screen.getByRole('header', { name: 'nov 2026' })).toBeOnTheScreen();
+    await waitFor(() => expect(screen.getByRole('header', { name: 'nov 2026' })).toBeOnTheScreen());
     await fireEvent.press(screen.getByRole('button', { name: 'dia 2026-11-02' }));
     expect(onChange).toHaveBeenCalledWith('2026-11-02');
 
@@ -68,5 +68,33 @@ describe('MonthCalendar', () => {
   it('en anglès, la setmana comença en diumenge', async () => {
     await renderCalendar(jest.fn(), 0);
     expect(screen.getAllByText(/^d.\.$/)[0]?.props.children).toBe('dg.');
+  });
+
+  it('permet controlar el mes externament i deixar el dia sense seleccionar', async () => {
+    const onMonthChange = jest.fn();
+    const onChange = jest.fn();
+    const props = {
+      value: null,
+      today: '2026-10-22',
+      visibleMonth: { year: 2026, month: 9 },
+      onMonthChange,
+      onChange,
+      firstDay: 1 as const,
+      weekdayNames: ['dg.', 'dl.', 'dt.', 'dc.', 'dj.', 'dv.', 'ds.'],
+      formatTitle: ({ year, month }: { year: number; month: number }) => `${MONTHS[month]} ${year}`,
+      dayLabel: (date: string) => `dia ${date}`,
+      previousLabel: 'Mes anterior',
+      nextLabel: 'Mes següent',
+      markersByDay: new Map([['2026-10-22', ['far' as const]]]),
+      dimPastDays: true,
+      outlineToday: true,
+    };
+    const view = await render(<MonthCalendar {...props} />);
+
+    expect(screen.getByRole('button', { name: 'dia 2026-10-22' })).not.toBeSelected();
+    await fireEvent.press(screen.getByRole('button', { name: 'Mes següent' }));
+    expect(onMonthChange).toHaveBeenCalledWith({ year: 2026, month: 10 });
+    view.rerender(<MonthCalendar {...props} visibleMonth={{ year: 2026, month: 10 }} />);
+    await waitFor(() => expect(screen.getByRole('header', { name: 'nov 2026' })).toBeOnTheScreen());
   });
 });
