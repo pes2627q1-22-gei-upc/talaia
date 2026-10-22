@@ -85,6 +85,7 @@ export function PointDetailScreen({ pointId }: { pointId: string }) {
           title={vm.errorTitle}
           message={vm.errorMessage}
           action={vm.status === 'error' ? { label: vm.retryLabel, onPress: vm.retry } : undefined}
+          fill
         />
       ) : (
         <ScrollView contentInsetAdjustmentBehavior="never" contentContainerStyle={styles.scroll}>

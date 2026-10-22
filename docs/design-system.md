@@ -20,8 +20,14 @@ Font de veritat visual: els mockups de **Figma** (16 pantalles). Aquest document
 | `tap` | `#E0708A` | Índex dolent / cel tapat, errors |
 | `jus` | `#E3C58F` | Índex regular |
 | `pedra` | `#D9C4A0` | Accent càlid secundari |
+| `fenomenEstels` | `#DDD0B8` | Calendari: pluges d'estels |
+| `fenomenLluna` | `#AEBDEB` | Calendari: fases i eclipsis lunars, superllunes |
+| `fenomenSol` | `#F6C56B` | Calendari: eclipsis solars |
+| `fenomenConjuncio` | `#CCA6E6` | Calendari: conjuncions i altres fenòmens |
 
 `vel` i `vora` surten del Figma (TG-113): `vora` unifica tres vores gairebé iguals (`#2E3875`, `#333D7A`, `#36408A`).
+
+Els quatre tokens `fenomen*` són categories del calendari, sense significat de qualitat de l'índex ni d'estat. Els punts, les icones i els filtres comparteixen el color de cada categoria. Les etiquetes «Avui» i «Demà» i la icona de passat fan servir colors neutres.
 
 **Degradats** (`gradients` a `tokens.ts`): `cel`, el fons de la benvinguda, de `#0B1030` a `#17205A` (58 %) i `#2F3680`; `pointMapFade`, la transició transparent del mapa de la fitxa cap a `nit` (punt intermedi `#0E143333`). S'apliquen amb `expo-linear-gradient`. Els colors exclusius dels degradats viuen aquí. `pointMapColors` agrupa els colors amb alfa del marcador i de l'atribució del mapa DOM.
 
@@ -51,7 +57,7 @@ Es carreguen amb `@expo-google-fonts` al layout arrel. Cada pes és una família
 | `tag` | Atkinson 700 | 12 / 16 | Etiquetes |
 | `overline` | Atkinson 800 | 10,5 / 14, majúscules | Franja sota la xifra («CEL RAS») |
 
-Espaiats (`spacing`): 4 · 8 · 12 · 16 · 20 · 24 · 32. Radis (`radii`): 10 (etiquetes) · 14 (camps i controls de formulari) · 16 (botons, targetes) · 20 (targeta de l'índex) · píndola. Mides fixes (`sizes`): botó 54, xip 34, tacte mínim 44, icona 22. La fitxa del punt fa servir mapa de 300, gràfic horari de 64, columna horària de 44, amplada de l'índex de 96 i marcador de 66 (nucli 43, tija 18, halo 10).
+Espaiats (`spacing`): 4 · 8 · 12 · 16 · 20 · 24 · 32. Radis (`radii`): 10 (etiquetes) · 14 (camps i controls de formulari) · 16 (botons, targetes) · 20 (targeta de l'índex) · píndola. Mides fixes (`sizes`): botó 54, xip 34, tacte mínim 44, icona 22. La fitxa del punt fa servir mapa de 300, gràfic horari de 64, columna horària de 44, amplada de l'índex de 96 i marcador de 66 (nucli 43, tija 18, halo 10). El calendari fa servir files de fenomen de 82 i una caixa de data de 46 × 54.
 
 ## Components base (TG-113)
 

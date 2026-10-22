@@ -111,9 +111,9 @@ export function CalendarScreen() {
             </View>
             {vm.isLoading ? (
               <>
-                <Skeleton height={82} />
-                <Skeleton height={82} />
-                <Skeleton height={82} />
+                <Skeleton height={sizes.calendarEvent} />
+                <Skeleton height={sizes.calendarEvent} />
+                <Skeleton height={sizes.calendarEvent} />
               </>
             ) : vm.isError ? (
               <StateMessage
@@ -173,7 +173,7 @@ export function CalendarScreen() {
                       />
                     ) : relativeDay ? (
                       <View style={styles.relativeBadge}>
-                        <AppText variant="tag" color={relativeDay === 'today' ? 'ras' : 'far'}>
+                        <AppText variant="tag" color={relativeDay === 'today' ? 'lluna' : 'boira'}>
                           {vm.t(`calendar.relative.${relativeDay}`)}
                         </AppText>
                       </View>
@@ -353,7 +353,7 @@ const styles = StyleSheet.create({
     height: sizes.touch * 2 - spacing.sm,
   },
   event: {
-    minHeight: 82,
+    minHeight: sizes.calendarEvent,
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.ms,
@@ -366,8 +366,8 @@ const styles = StyleSheet.create({
   pastEvent: { backgroundColor: colors.nit },
   activeEvent: { borderColor: colors.far },
   dateBadge: {
-    width: 46,
-    height: 54,
+    width: sizes.calendarDateWidth,
+    height: sizes.calendarDateHeight,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: radii.sm,

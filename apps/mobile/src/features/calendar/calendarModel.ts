@@ -53,6 +53,19 @@ export function cataloniaDate(instant: string) {
   return `${value('year')}-${value('month')}-${value('day')}`;
 }
 
+/** Mil·lisegons fins al següent dia civil a Catalunya, inclosos els canvis d'hora. */
+export function millisecondsUntilNextCataloniaDay(now: Date) {
+  const next = nextDay(cataloniaDate(now.toISOString()));
+  let before = now.getTime();
+  let after = before + 27 * 60 * 60 * 1000;
+  while (after - before > 1) {
+    const middle = Math.floor((before + after) / 2);
+    if (cataloniaDate(new Date(middle).toISOString()) >= next) after = middle;
+    else before = middle;
+  }
+  return after - now.getTime();
+}
+
 export function eventDate(event: Esdeveniment) {
   return cataloniaDate(event.maxim ?? event.inici);
 }
