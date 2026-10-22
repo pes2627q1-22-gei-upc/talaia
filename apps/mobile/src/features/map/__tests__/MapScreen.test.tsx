@@ -302,6 +302,30 @@ describe('MapScreen amb una cerca (TG-102, mockup 03)', () => {
     expect(router.push).toHaveBeenCalledWith({ pathname: '/punt/[id]', params: { id: 'montsec' } });
   });
 
+  it('el full es plega per veure el mapa, i la càmera aprofita l’espai', async () => {
+    mockRecommendations = {
+      ...mockRecommendations,
+      isPending: false,
+      isFetching: false,
+      data: resposta([
+        punt('montsec', 'Serra del Montsec', 87, 135),
+        punt('prades', 'Muntanyes de Prades', 81, 100),
+      ]),
+    };
+    await render(<MapScreen />);
+    const lastFit = () =>
+      (mockNightMap.mock.calls.at(-1)![0] as { fit: { padding: { bottom: number } } }).fit;
+    const open = lastFit().padding.bottom;
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Plega la llista' }));
+    expect(screen.queryByText('Serra del Montsec')).toBeNull();
+    expect(lastFit().padding.bottom).toBeLessThan(open);
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Desplega la llista' }));
+    expect(screen.getByText('Serra del Montsec')).toBeOnTheScreen();
+    expect(lastFit().padding.bottom).toBe(open);
+  });
+
   it('mentre carrega ho diu, i si falla es pot tornar a provar', async () => {
     const { rerender } = await render(<MapScreen />);
     expect(screen.getByLabelText('Buscant els millors punts…')).toBeOnTheScreen();

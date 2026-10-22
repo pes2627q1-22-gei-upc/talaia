@@ -34,6 +34,11 @@ export type MapFit = {
 
 /** Prou a prop per veure el relleu al voltant dels punts, sense acostar-s'hi massa si n'hi ha un. */
 const FIT_MAX_ZOOM = 10.5;
+/**
+ * Un rànquing es mira des de dalt, com al mockup 03: MapLibre enquadra com si el mapa fos pla, i
+ * amb la càmera inclinada els punts del sud quedaven sota el full.
+ */
+const FIT_PITCH = 0;
 
 type NightMapProps = {
   mapStyle: StyleSpecification;
@@ -284,7 +289,7 @@ function applyFit(map: maplibregl.Map, fit: MapFit | null, applied: { current: s
   map.fitBounds(fit.bounds, {
     padding: fit.padding,
     maxZoom: FIT_MAX_ZOOM,
-    pitch: map.getPitch(),
+    pitch: FIT_PITCH,
     // Amb «reduir moviment», la càmera hi salta sense animació.
     duration: globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 0 : 1600,
   });

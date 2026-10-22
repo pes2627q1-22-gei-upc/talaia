@@ -302,6 +302,8 @@
     "emptyHint": "Amplía la distancia o elige otra noche.",
     "noIndex": "Aún sin previsión",
     "bestHour": "Mejor hora: {{hour}}",
-    "byCar": "{{travel}} en coche"
+    "byCar": "{{travel}} en coche",
+    "collapseSheet": "Plegar la lista",
+    "expandSheet": "Desplegar la lista"
   }
 }

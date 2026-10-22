@@ -198,7 +198,8 @@ it('amb un rànquing, no agrupa els punts i enquadra la càmera un sol cop per z
   expect(map.fitBounds).toHaveBeenCalledTimes(1);
   expect(map.fitBounds).toHaveBeenCalledWith(
     fit.bounds,
-    expect.objectContaining({ padding: fit.padding, pitch: 50 }),
+    // Un rànquing es mira des de dalt: amb inclinació, l'enquadrament de MapLibre no és exacte.
+    expect.objectContaining({ padding: fit.padding, pitch: 0 }),
   );
 
   // El pont torna a enviar les props a cada render: la mateixa zona no torna a moure la càmera.

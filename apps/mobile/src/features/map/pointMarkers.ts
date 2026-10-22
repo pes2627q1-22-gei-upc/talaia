@@ -76,6 +76,8 @@ export function markerData(points: MapPoints): FeatureCollection<Point> {
           nom: properties.nom,
           label: hasIndex ? String(index.valor) : '—',
           band: hasIndex ? index.franja : 'unknown',
+          // Quan dos marcadors es trepitgen, el de més índex queda al damunt.
+          rank: hasIndex ? index.valor : -1,
         },
       };
     }),
@@ -147,6 +149,7 @@ export function markerLayers(palette: MarkerPalette): LayerSpecification[] {
         'icon-rotation-alignment': 'viewport',
         'icon-allow-overlap': true,
         'icon-ignore-placement': true,
+        'symbol-sort-key': ['get', 'rank'],
         'text-field': ['get', 'label'],
         // Font disponible als glyphs de l'ICGC que ja fa servir el mapa.
         'text-font': ['FiraSans-Bold'],

@@ -15,9 +15,14 @@ import { useMapViewModel } from './useMapViewModel';
 
 const chrome = { background: colors.nit, text: colors.boira, link: colors.lluna };
 
-/** Marges de l'enquadrament (mockup 03): la capçalera i la llegenda a dalt, el full a baix. */
-const FIT_TOP = 150;
-const FIT_BOTTOM = 380;
+/**
+ * Marges de l'enquadrament (mockup 03): la capçalera i la llegenda a dalt, i el full a baix (obert
+ * o plegat). A dalt i als costats, també l'espai del marcador, que es dibuixa per sobre del punt.
+ */
+const FIT_TOP = 210;
+const FIT_BOTTOM = 390;
+const FIT_BOTTOM_COLLAPSED = 170;
+const FIT_SIDE = 44;
 
 const markerPalette = {
   background: colors.nit,
@@ -61,6 +66,7 @@ export function MapScreen() {
   const canRetry = vm.notice?.kind === 'error' || vm.notice?.kind === 'empty';
   const recommendations = vm.recommendations;
   const bounds = recommendations?.bounds ?? null;
+  const collapsed = recommendations?.sheet.collapsed ?? false;
   // Amb un rànquing, la càmera s'enquadra als punts i a l'origen, sense que els tapin la capçalera
   // ni el full dels millors punts.
   const fit = useMemo(
@@ -70,13 +76,13 @@ export function MapScreen() {
             bounds,
             padding: {
               top: insets.top + FIT_TOP,
-              bottom: FIT_BOTTOM,
-              left: spacing.xl,
-              right: spacing.xl,
+              bottom: collapsed ? FIT_BOTTOM_COLLAPSED : FIT_BOTTOM,
+              left: FIT_SIDE,
+              right: FIT_SIDE,
             },
           }
         : null,
-    [bounds, insets.top],
+    [bounds, insets.top, collapsed],
   );
 
   return (

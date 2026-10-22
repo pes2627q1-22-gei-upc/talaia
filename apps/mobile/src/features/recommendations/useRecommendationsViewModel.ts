@@ -29,6 +29,8 @@ export function useRecommendationsViewModel() {
   const query = parseQuery(params);
   const result = useRecommendationsQuery(query);
   const [expanded, setExpanded] = useState(false);
+  // Plegat, el full només ensenya el títol: el mapa queda gairebé sencer.
+  const [collapsed, setCollapsed] = useState(false);
   const data = result.data;
   const points = useMemo(() => (data ? toMapPoints(data.punts) : EMPTY_MAP_POINTS), [data]);
   const originLat = query?.origen.lat;
@@ -125,8 +127,11 @@ export function useRecommendationsViewModel() {
       onRetry: () => void result.refetch(),
       emptyTitle: t('recommendations.empty', { travel }),
       emptyHint: t('recommendations.emptyHint'),
+      collapsed,
+      collapseLabel: t(collapsed ? 'recommendations.expandSheet' : 'recommendations.collapseSheet'),
+      onToggleCollapsed: () => setCollapsed((value) => !value),
       toggle:
-        punts.length > VISIBLE_ROWS
+        !collapsed && punts.length > VISIBLE_ROWS
           ? {
               label: t(expanded ? 'recommendations.showLess' : 'recommendations.showAll'),
               onPress: () => setExpanded((value) => !value),

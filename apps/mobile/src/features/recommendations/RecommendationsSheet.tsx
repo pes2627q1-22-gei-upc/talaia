@@ -38,9 +38,22 @@ export function RecommendationsSheet({ sheet }: { sheet: Sheet }) {
 
   return (
     <View style={[styles.sheet, { paddingBottom: insets.bottom + spacing.sm }]}>
-      <View style={styles.handle} />
+      {/* Tocar la nansa o el títol plega el full i deixa veure el mapa. */}
+      <PressableScale
+        onPress={sheet.onToggleCollapsed}
+        accessibilityLabel={sheet.collapseLabel}
+        accessibilityState={{ expanded: !sheet.collapsed }}
+        style={styles.header}
+      >
+        <View style={styles.handle} />
+      </PressableScale>
       <View style={styles.titleRow}>
-        <AppText variant="heading" accessibilityRole="header" style={styles.title}>
+        <AppText
+          variant="heading"
+          accessibilityRole="header"
+          style={styles.title}
+          onPress={sheet.onToggleCollapsed}
+        >
           {sheet.title}
         </AppText>
         {sheet.toggle && (
@@ -52,7 +65,7 @@ export function RecommendationsSheet({ sheet }: { sheet: Sheet }) {
         )}
       </View>
 
-      {sheet.state === 'loading' && (
+      {!sheet.collapsed && sheet.state === 'loading' && (
         <View
           accessible
           accessibilityLabel={sheet.loadingLabel}
@@ -65,7 +78,7 @@ export function RecommendationsSheet({ sheet }: { sheet: Sheet }) {
         </View>
       )}
 
-      {sheet.state === 'error' && (
+      {!sheet.collapsed && sheet.state === 'error' && (
         <View style={styles.message} accessibilityLiveRegion="polite">
           <AppText variant="label">{sheet.errorLabel}</AppText>
           <PressableScale onPress={sheet.onRetry} hitSlop={spacing.sm}>
@@ -76,7 +89,7 @@ export function RecommendationsSheet({ sheet }: { sheet: Sheet }) {
         </View>
       )}
 
-      {sheet.state === 'empty' && (
+      {!sheet.collapsed && sheet.state === 'empty' && (
         <View style={styles.message} accessibilityLiveRegion="polite">
           <AppText variant="label">{sheet.emptyTitle}</AppText>
           <AppText variant="small" color="boira">
@@ -85,7 +98,7 @@ export function RecommendationsSheet({ sheet }: { sheet: Sheet }) {
         </View>
       )}
 
-      {sheet.state === 'ready' && (
+      {!sheet.collapsed && sheet.state === 'ready' && (
         <ScrollView style={{ maxHeight: height * MAX_HEIGHT }} showsVerticalScrollIndicator={false}>
           {sheet.rows.map((row) => (
             <RecommendationRow key={row.id} row={row} />
@@ -154,6 +167,7 @@ const styles = StyleSheet.create({
     borderColor: colors.vora,
     backgroundColor: colors.sheet,
   },
+  header: { alignSelf: 'stretch', alignItems: 'center', paddingVertical: spacing.xs },
   handle: {
     alignSelf: 'center',
     width: 36,

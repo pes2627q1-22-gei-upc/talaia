@@ -302,6 +302,8 @@
     "emptyHint": "Try a longer distance or another night.",
     "noIndex": "No forecast yet",
     "bestHour": "Best time: {{hour}}",
-    "byCar": "{{travel}} by car"
+    "byCar": "{{travel}} by car",
+    "collapseSheet": "Collapse the list",
+    "expandSheet": "Expand the list"
   }
 }
