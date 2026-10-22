@@ -7,16 +7,10 @@ import type {
 import { z } from 'zod';
 
 import { ErrorSchema, registry } from '../openapi';
+import { TIPUS_FENOMEN } from '../esdeveniments/tipus';
 
-const TipusFenomenSchema: z.ZodType<TipusFenomen> = z
-  .enum([
-    'fase_llunar',
-    'pluja_estels',
-    'eclipsi_solar',
-    'eclipsi_llunar',
-    'conjuncio',
-    'superlluna',
-  ])
+export const TipusFenomenSchema: z.ZodType<TipusFenomen> = z
+  .enum(TIPUS_FENOMEN, { error: 'tipus ha de ser una categoria del calendari coneguda' })
   .meta({ id: 'TipusFenomen' });
 
 const UbicacioEsdevenimentSchema: z.ZodType<UbicacioEsdeveniment> = z
@@ -56,14 +50,26 @@ export const EsdevenimentsQuerySchema = z
     }),
     tipus: TipusFenomenSchema.optional().meta({ description: 'Filtre opcional per tipus.' }),
   })
-  .refine(({ des_de, fins_a }) => des_de <= fins_a, {
-    path: ['fins_a'],
-    error: 'fins_a ha de ser igual o posterior a des_de',
-  })
-  .refine(({ des_de, fins_a }) => Date.parse(fins_a) - Date.parse(des_de) <= 365 * 86_400_000, {
-    path: ['fins_a'],
-    error: "L'interval no pot superar 366 dies civils",
-  });
+  .refine(
+    ({ des_de, fins_a }) =>
+      !z.iso.date().safeParse(des_de).success ||
+      !z.iso.date().safeParse(fins_a).success ||
+      des_de <= fins_a,
+    {
+      path: ['fins_a'],
+      error: 'fins_a ha de ser igual o posterior a des_de',
+    },
+  )
+  .refine(
+    ({ des_de, fins_a }) =>
+      !z.iso.date().safeParse(des_de).success ||
+      !z.iso.date().safeParse(fins_a).success ||
+      Date.parse(fins_a) - Date.parse(des_de) <= 365 * 86_400_000,
+    {
+      path: ['fins_a'],
+      error: "L'interval no pot superar 366 dies civils",
+    },
+  );
 
 registry.registerComponent('securitySchemes', 'ApiKeyAprop', {
   type: 'apiKey',
@@ -78,10 +84,7 @@ registry.registerComponent('securitySchemes', 'BearerSupabase', {
   description: "JWT d'accés de Supabase per a l'app de Talaia (ADR-0023).",
 });
 
-/**
- * Contracte primer: TG-109 el publica a l'OpenAPI i TG-108 n'afegeix el router i la consulta.
- * Registrar-lo no crea encara l'endpoint d'Express.
- */
+/** Contracte compartit per l'OpenAPI i el router d'esdeveniments. */
 registry.registerPath({
   method: 'get',
   path: '/esdeveniments',
@@ -89,7 +92,7 @@ registry.registerPath({
   tags: ['Esdeveniments'],
   summary: "Consulta els esdeveniments astronòmics d'un període",
   description:
-    "Pendent d'implementació a TG-108. Les dates són dies civils de Catalunya " +
+    'Les dates són dies civils de Catalunya ' +
     '(Europe/Madrid): [des_de 00:00, fins_a + 1 dia 00:00). Hi entra un esdeveniment si ' +
     'inici < final i fi > començament. La ubicació és un punt general recomanat per situar ' +
     "l'esdeveniment al mapa, no una garantia meteorològica.",
@@ -109,7 +112,7 @@ registry.registerPath({
       content: { 'application/json': { schema: ErrorSchema } },
     },
     503: {
-      description: 'Base de dades o validació JWT temporalment indisponible.',
+      description: 'Base de dades, punt de referència, clau API o validació JWT indisponibles.',
       content: { 'application/json': { schema: ErrorSchema } },
     },
     500: {

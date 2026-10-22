@@ -12,7 +12,9 @@ npm run api                   # = npm run dev -w services/api, amb recàrrega
 - Salut: <http://localhost:3000/api/v1/health>
 - Punts del mapa: <http://localhost:3000/api/v1/punts> (cal `DATABASE_URL`)
 - Fitxa d'un punt: `http://localhost:3000/api/v1/punts/<id>?hores=24`
+- Calendari: `GET /api/v1/esdeveniments?des_de=2026-10-01&fins_a=2026-10-31` (JWT de Talaia o `X-API-Key` d'Aprop)
 - Desglossament de l'índex d'un punt: `http://localhost:3000/api/v1/punts/{id}/index?nit=2026-10-19` (cal `DATABASE_URL`)
+- Recomanacions: `http://localhost:3000/api/v1/recomanacions?objectiu=cel_estrellat&lat=41.39&lon=2.17&data=<YYYY-MM-DD>&desDe=22&finsA=6&tempsMaxim=150`
 - Documentació (Swagger UI): <http://localhost:3000/api/v1/docs>
 - OpenAPI: <http://localhost:3000/api/v1/openapi.json>
 
@@ -32,8 +34,9 @@ Es llegeixen del `.env` de l'**arrel** del repo (`dev` i `start` el carreguen am
 | Variable | Per defecte | Què és |
 |---|---|---|
 | `API_PORT` | `3000` | Port on escolta l'API |
-| `DATABASE_URL` | — | Postgres (`postgresql://…`). **Opcional:** sense ella l'API arrenca amb un avís, `/health` funciona i `/punts`, `/punts/{id}`, `/punts/{id}/index` i `/perfil` responen 503 `database_unavailable`. Amb Supabase local: `postgresql://postgres:postgres@127.0.0.1:54322/postgres` |
+| `DATABASE_URL` | — | Postgres (`postgresql://…`). **Opcional:** sense ella l'API arrenca amb un avís, `/health` funciona i `/punts`, `/punts/{id}`, `/punts/{id}/index`, `/recomanacions` i `/perfil` responen 503 `database_unavailable`. Amb Supabase local: `postgresql://postgres:postgres@127.0.0.1:54322/postgres` |
 | `SUPABASE_URL` | `http://127.0.0.1:54321` | URL del projecte de Supabase. `requireAuth` hi valida els JWT amb el JWKS (`/auth/v1/.well-known/jwks.json`, ADR-0023): 401 si el token és dolent, 503 si Supabase no respon |
+| `APROP_API_KEY` | — | Secret de l'API assignat a Aprop. No s'inclou al repositori ni a l'app; sense configurar-lo, l'accés amb API key retorna 503, però l'accés JWT continua disponible. |
 
 Una variable nova s'afegeix a l'esquema de `src/config/env.ts` i a `.env.example`. Cap secret al repo.
 
@@ -49,16 +52,27 @@ src/
     index.ts            Router de /api/v1: munta un router per recurs, /openapi.json i /docs
     health.ts           GET /health
     punts.ts            GET /punts (bbox, ETag, Cache-Control i 304) i GET /punts/{id}
+    esdeveniments.ts    GET /esdeveniments, autenticació API key o JWT
     puntIndex.ts        GET /punts/{id}/index: desglossament de l'índex per hores i factors (HU04)
+    recomanacions.ts    GET /recomanacions (validació de la consulta i OpenAPI)
   punts/
     puntsRepository.ts  Consultes dels punts publicats i del seu índex amb @talaia/db (ADR-0013)
     mapDocument.ts      GeoJSON del mapa i retall per bbox
     documentCache.ts    Document en memòria amb ETag del contingut (MapDocumentCache)
     puntsService.ts     Memòria cau i bbox del mapa, i fitxa amb l'índex per hores; errors de la base de dades → 503
+  esdeveniments/
+    dates.ts            Límits del dia civil de Catalunya convertits a UTC
+    esdevenimentsRepository.ts  Consulta Kysely del calendari i el punt oficial
+    esdevenimentsService.ts     Mapatge a la resposta pública i errors de la BD
   index/
     night.ts            Què és «una nit» (12:00 → 12:00, hora de Catalunya) i la nit per defecte
     indexSchemas.ts     Esquemes zod/OpenAPI de l'índex per hora (IndexHora), compartits per /punts/{id} i /punts/{id}/index
     breakdownService.ts Punt + nit → DesglossamentIndex; 404 si el punt no és públic, 503 si la BD falla
+  recomanacions/
+    franja.ts           Franja horària local de Catalunya (Europe/Madrid) → UTC, amb el canvi d'hora
+    rutes.ts            Temps en cotxe ↔ radi en línia recta, fins que hi hagi Mobilicat
+    recomanacionsRepository.ts  Punts dins del radi (PostGIS) i índex de la franja
+    recomanacionsService.ts     Rànquing: millor hora, mitjana i distància; errors de la base de dades → 503
   middleware/errors.ts  ApiError, 404 i handler central d'errors
 ```
 
@@ -101,6 +115,18 @@ El desglossament de l'índex d'un punt per a una nit: una entrada per hora amb e
 - **HTTP:** `Cache-Control: public, max-age=<segons fins a la propera hora>`, com `/punts`: l'índex només canvia quan el worker recalcula.
 - **Comparteix amb `/punts/{id}`** les consultes del repositori (`findPublished`, `indexHores`) i l'esquema `IndexHora` de l'OpenAPI (`src/index/indexSchemas.ts`); la ruta és un router a part (`routes/puntIndex.ts`).
 
+## `GET /recomanacions` (HU01, TG-100)
+
+El rànquing de punts per a la consulta de «Què vols veure?» (`ConsultaRecomanacions` → `RecomanacionsResposta` a `@talaia/shared`). Paràmetres obligatoris: `objectiu`, `lat`, `lon` (l'origen), `data` (la nit, `YYYY-MM-DD`, entre el 2000 i el 2100), `desDe` i `finsA` (hores locals de Catalunya, 0–23, diferents) i `tempsMaxim` (minuts en cotxe, 1–600). Opcional: `limit` (1–100, per defecte 20). La mateixa definició valida i documenta la query (ADR-0011).
+
+- **Radi:** fins que hi hagi el servei de rutes de Mobilicat (`docs/serveis-externs.md`), el temps en cotxe es converteix en un radi en línia recta amb **60 km/h** i un **desviament ×1,3** per les carreteres (`rutes.ts`): 150 min → 115,4 km. El `tempsEstimat` de cada punt surt de la mateixa fórmula a la inversa.
+- **Nit i franja:** una nit va de les 12:00 locals de `data` a les 12:00 de l'endemà, com a `GET /punts/{id}/index` (`INICI_NIT` a `franja.ts`). Una hora d'abans de les 12 és la de l'endemà: de 01 a 05 amb `data=2026-10-21` és la matinada del 22. Si `finsA` < `desDe`, la franja acaba l'endemà de `desDe`. Es passa a UTC amb el canvi d'hora. Si ja ha començat, només compten les hores des de l'hora en curs; si ja ha acabat, 400 `franja_passada`.
+- **Rànquing:** per a cada punt publicat dins del radi, la **millor hora** de la franja (l'índex més alt; la primera si n'hi ha d'empatades), la **mitjana** i `horesAmbIndex` (de quantes hores surt la mitjana). S'ordena per la millor hora, després per la mitjana i després per la distància. Es retornen els `limit` primers; `total` diu quants punts hi ha dins del radi.
+- **Sense índex** (una nit més enllà de la previsió, ~4 dies): 200 amb `millorHora` i `mitjana` a `null` i els punts per distància. L'app hi pot dir «encara no hi ha previsió».
+- **Objectiu:** es valida, però l'índex v1 és el mateix per a tots (ADR-0018). Per a `posta_sol` i `sortida_sol` surt baix, perquè el factor Sol val 0 de dia: l'adaptació per fenomen és d'un sprint posterior.
+
+Errors: paràmetres invàlids → 400 `validation_error`; franja passada → 400 `franja_passada`; sense base de dades → 503. `Cache-Control` fins a la propera hora.
+
 ## Afegir una ruta
 
 1. Crea `src/routes/<recurs>.ts` amb el seu `Router`, els esquemes zod (`.meta({ id })` per als que han de sortir a l'OpenAPI) i `registry.registerPath(...)` per a cada ruta.
@@ -116,6 +142,7 @@ Tota resposta d'error té el format `{ error: { code, message } }`:
 |---|---|---|
 | 400 | `validation_error` | Un esquema zod rebutja l'entrada |
 | 400 | `invalid_json` | El cos no és JSON vàlid |
+| 400 | `franja_passada` | `GET /recomanacions` amb una franja horària que ja ha acabat |
 | 404 | `not_found` | La ruta no existeix |
 | 404 | `punt_not_found` | `/punts/{id}` i `/punts/{id}/index`: cap punt publicat amb aquest `id` |
 | 503 | `database_unavailable` | No hi ha `DATABASE_URL` o no es pot llegir la base de dades |
