@@ -1,6 +1,6 @@
 import type { Recomanacio } from '@talaia/shared';
 
-import { localTime, ordinal, parseQuery, toMapPoints } from '../recommendationsModel';
+import { boundsOf, localTime, ordinal, parseQuery, toMapPoints } from '../recommendationsModel';
 
 const PARAMS = {
   objectiu: 'via_lactia',
@@ -97,4 +97,18 @@ it.each([
   ],
 ])('ordinal en %s', (language, positions, expected) => {
   expect(positions.map((position) => ordinal(position, language))).toEqual(expected);
+});
+
+it('boundsOf dona la zona que conté tots els llocs, o res si no n’hi ha', () => {
+  expect(
+    boundsOf([
+      { lat: 42.05, lon: 0.75 },
+      { lat: 41.98, lon: 2.82 },
+      { lat: 42.32, lon: 3.3 },
+    ]),
+  ).toEqual([
+    [0.75, 41.98],
+    [3.3, 42.32],
+  ]);
+  expect(boundsOf([])).toBeNull();
 });

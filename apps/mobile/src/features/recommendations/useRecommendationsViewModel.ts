@@ -7,6 +7,7 @@ import { addDays, dayParts, nightOf, travelParts } from '../explore/exploreModel
 import { EMPTY_MAP_POINTS } from '../map/pointMarkers';
 
 import {
+  boundsOf,
   localTime,
   ordinal,
   parseQuery,
@@ -30,6 +31,16 @@ export function useRecommendationsViewModel() {
   const [expanded, setExpanded] = useState(false);
   const data = result.data;
   const points = useMemo(() => (data ? toMapPoints(data.punts) : EMPTY_MAP_POINTS), [data]);
+  const originLat = query?.origen.lat;
+  const originLon = query?.origen.lon;
+  // El mapa s'enquadra als punts del rànquing i a l'origen, perquè es vegi d'on surts.
+  const bounds = useMemo(
+    () =>
+      data?.punts.length && originLat !== undefined && originLon !== undefined
+        ? boundsOf([...data.punts, { lat: originLat, lon: originLon }])
+        : null,
+    [data, originLat, originLon],
+  );
 
   if (!query) return null;
 
@@ -96,6 +107,7 @@ export function useRecommendationsViewModel() {
 
   return {
     points,
+    bounds,
     header: {
       title: t('recommendations.title', { goal: t(`explore.goals.${query.objectiu}`), when }),
       subtitle: params.lloc

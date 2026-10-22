@@ -26,6 +26,15 @@ export type MapCamera = {
 /** Colors dels controls de MapLibre: dins del WebView no hi ha tokens, arriben com a props. */
 export type MapChrome = { background: string; text: string; link: string };
 
+/** Zona que ha d'omplir la càmera (`[[oest, sud], [est, nord]]`) i els marges que tapa la interfície. */
+export type MapFit = {
+  bounds: [[number, number], [number, number]];
+  padding: { top: number; bottom: number; left: number; right: number };
+};
+
+/** Prou a prop per veure el relleu al voltant dels punts, sense acostar-s'hi massa si n'hi ha un. */
+const FIT_MAX_ZOOM = 10.5;
+
 type NightMapProps = {
   mapStyle: StyleSpecification;
   camera: MapCamera;
@@ -39,6 +48,10 @@ type NightMapProps = {
   points: MapPoints;
   markerPalette: MarkerPalette;
   onPointPress: (id: string) => Promise<void>;
+  /** Agrupa els punts propers (el catàleg). Només compta en crear el mapa. */
+  cluster?: boolean;
+  /** Si n'hi ha, la càmera hi va (un rànquing); cada zona nova la torna a moure. */
+  fit?: MapFit | null;
   dom?: DOMProps;
 };
 
@@ -59,6 +72,8 @@ export default function NightMap({
   userLocationColor,
   markerPalette,
   onPointPress,
+  cluster = true,
+  fit = null,
 }: NightMapProps) {
   const container = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
@@ -68,7 +83,9 @@ export default function NightMap({
   const latestPoints = useRef({ points, markerPalette });
   const onPointPressRef = useRef(onPointPress);
   // El pont torna a enviar les props a cada render natiu: el mapa es crea un sol cop amb les inicials.
-  const initial = useRef({ mapStyle, camera });
+  const initial = useRef({ mapStyle, camera, cluster });
+  const latestFit = useRef(fit);
+  const appliedFit = useRef<string | null>(null);
 
   useEffect(() => {
     onPointPressRef.current = onPointPress;
@@ -77,8 +94,17 @@ export default function NightMap({
   useEffect(() => {
     latestPoints.current = { points, markerPalette };
     const map = mapRef.current;
-    if (map && ready.current) syncMapPoints(map, points, markerPalette);
+    if (map && ready.current) syncMapPoints(map, points, markerPalette, initial.current.cluster);
   }, [points, markerPalette]);
+
+  // El pont torna a enviar les props a cada render: només es mou la càmera si la zona ha canviat.
+  const fitKey = fit ? JSON.stringify(fit) : null;
+  useEffect(() => {
+    latestFit.current = fit;
+    const map = mapRef.current;
+    if (map && ready.current) applyFit(map, latestFit.current, appliedFit);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `fitKey` ja resumeix `fit`, que arriba com un objecte nou a cada render
+  }, [fitKey]);
 
   useEffect(() => {
     if (!container.current) return;
@@ -116,7 +142,13 @@ export default function NightMap({
     // Les dades poden arribar abans o després que l'estil s'hagi carregat.
     map.on('load', () => {
       ready.current = true;
-      syncMapPoints(map, latestPoints.current.points, latestPoints.current.markerPalette);
+      syncMapPoints(
+        map,
+        latestPoints.current.points,
+        latestPoints.current.markerPalette,
+        initial.current.cluster,
+      );
+      applyFit(map, latestFit.current, appliedFit);
       // L'atribució compacta arrenca desplegada: es plega i queda al botó (i).
       container.current
         ?.querySelector('.maplibregl-ctrl-attrib')
@@ -243,4 +275,17 @@ export default function NightMap({
       />
     </>
   );
+}
+
+function applyFit(map: maplibregl.Map, fit: MapFit | null, applied: { current: string | null }) {
+  const key = fit ? JSON.stringify(fit) : null;
+  if (!fit || key === applied.current) return;
+  applied.current = key;
+  map.fitBounds(fit.bounds, {
+    padding: fit.padding,
+    maxZoom: FIT_MAX_ZOOM,
+    pitch: map.getPitch(),
+    // Amb «reduir moviment», la càmera hi salta sense animació.
+    duration: globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 0 : 1600,
+  });
 }

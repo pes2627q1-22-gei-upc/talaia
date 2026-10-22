@@ -51,7 +51,14 @@ const props: ComponentProps<typeof NightMap> = {
 let root: Root;
 let host: HTMLDivElement;
 let load: () => void;
-let map: { on: jest.Mock; off: jest.Mock; getCanvas: jest.Mock; remove: jest.Mock };
+let map: {
+  on: jest.Mock;
+  off: jest.Mock;
+  getCanvas: jest.Mock;
+  remove: jest.Mock;
+  fitBounds: jest.Mock;
+  getPitch: jest.Mock;
+};
 let unbind: jest.Mock;
 let markers: {
   element: HTMLElement;
@@ -77,6 +84,8 @@ beforeEach(() => {
     off: jest.fn(),
     getCanvas: jest.fn(() => ({ style: {} })),
     remove: jest.fn(),
+    fitBounds: jest.fn(),
+    getPitch: jest.fn(() => 50),
   };
   jest.mocked(maplibregl.Map).mockImplementation(() => map as unknown as maplibregl.Map);
   markers = [];
@@ -117,14 +126,14 @@ it('espera l’estil, utilitza les últimes dades i conserva el mapa en actualit
   };
   await act(async () => root.render(<NightMap {...props} points={points} />));
   await act(async () => load());
-  expect(syncMapPoints).toHaveBeenLastCalledWith(map, points, props.markerPalette);
+  expect(syncMapPoints).toHaveBeenLastCalledWith(map, points, props.markerPalette, true);
   const pointClick = map.on.mock.calls.find(
     ([event, layer]) => event === 'click' && layer === 'talaia-point-markers',
   )?.[2];
   pointClick?.({ features: [{ properties: { id: 'test' } }] });
   expect(props.onPointPress).toHaveBeenCalledWith('test');
   await act(async () => root.render(<NightMap {...props} />));
-  expect(syncMapPoints).toHaveBeenLastCalledWith(map, props.points, props.markerPalette);
+  expect(syncMapPoints).toHaveBeenLastCalledWith(map, props.points, props.markerPalette, true);
   expect(maplibregl.Map).toHaveBeenCalledTimes(1);
   expect(maplibregl.Marker).not.toHaveBeenCalled();
   await act(async () => root.unmount());
@@ -171,4 +180,39 @@ it.each([
 ])('no crea marcadors amb coordenades invàlides (%s)', async (userLocation) => {
   await act(async () => root.render(<NightMap {...props} userLocation={userLocation} />));
   expect(maplibregl.Marker).not.toHaveBeenCalled();
+});
+
+it('amb un rànquing, no agrupa els punts i enquadra la càmera un sol cop per zona', async () => {
+  const fit = {
+    bounds: [
+      [2.8, 41.9],
+      [3.3, 42.4],
+    ] as [[number, number], [number, number]],
+    padding: { top: 209, bottom: 380, left: 32, right: 32 },
+  };
+  await act(async () => root.render(<NightMap {...props} cluster={false} fit={fit} />));
+  // Fins que l'estil no ha carregat, la càmera no es mou.
+  expect(map.fitBounds).not.toHaveBeenCalled();
+  await act(async () => load());
+  expect(syncMapPoints).toHaveBeenLastCalledWith(map, props.points, props.markerPalette, false);
+  expect(map.fitBounds).toHaveBeenCalledTimes(1);
+  expect(map.fitBounds).toHaveBeenCalledWith(
+    fit.bounds,
+    expect.objectContaining({ padding: fit.padding, pitch: 50 }),
+  );
+
+  // El pont torna a enviar les props a cada render: la mateixa zona no torna a moure la càmera.
+  await act(async () => root.render(<NightMap {...props} cluster={false} fit={{ ...fit }} />));
+  expect(map.fitBounds).toHaveBeenCalledTimes(1);
+
+  const other = {
+    ...fit,
+    bounds: [
+      [1, 41],
+      [2, 42],
+    ] as typeof fit.bounds,
+  };
+  await act(async () => root.render(<NightMap {...props} cluster={false} fit={other} />));
+  expect(map.fitBounds).toHaveBeenCalledTimes(2);
+  await act(async () => root.unmount());
 });

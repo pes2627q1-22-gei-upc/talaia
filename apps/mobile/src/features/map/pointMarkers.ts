@@ -195,8 +195,11 @@ export function markerLayers(palette: MarkerPalette): LayerSpecification[] {
   ];
 }
 
-/** Actualitza la font existent: les dades noves no recreen el mapa ni mouen la càmera. */
-export function syncMapPoints(map: Map, points: MapPoints, palette: MarkerPalette) {
+/**
+ * Actualitza la font existent: les dades noves no recreen el mapa ni mouen la càmera. `cluster` només
+ * compta en crear la font: amb un rànquing, els grups amagarien els millors punts.
+ */
+export function syncMapPoints(map: Map, points: MapPoints, palette: MarkerPalette, cluster = true) {
   const data = markerData(points);
   const serialized = JSON.stringify(data);
   const source = map.getSource(POINTS_SOURCE) as GeoJSONSource | undefined;
@@ -218,7 +221,7 @@ export function syncMapPoints(map: Map, points: MapPoints, palette: MarkerPalett
       });
     }
   }
-  map.addSource(POINTS_SOURCE, { type: 'geojson', data, ...CLUSTER_OPTIONS });
+  map.addSource(POINTS_SOURCE, { type: 'geojson', data, ...(cluster ? CLUSTER_OPTIONS : {}) });
   const createdSource = map.getSource(POINTS_SOURCE) as GeoJSONSource | undefined;
   if (createdSource) sourceData.set(createdSource, serialized);
   for (const layer of markerLayers(palette)) map.addLayer(layer);

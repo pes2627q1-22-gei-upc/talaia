@@ -261,6 +261,19 @@ describe('MapScreen amb una cerca (TG-102, mockup 03)', () => {
     );
     expect(screen.queryByText('Serra del Cadí')).toBeNull();
 
+    // Amb un rànquing, sense grups i amb la càmera als punts i a l'origen (Girona).
+    expect(mockNightMap).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        cluster: false,
+        fit: expect.objectContaining({
+          bounds: [
+            [1, 41.98],
+            [2.82, 42],
+          ],
+        }),
+      }),
+    );
+
     // El número del marcador és el de la fila: la millor hora.
     expect(mockNightMap).toHaveBeenLastCalledWith(
       expect.objectContaining({

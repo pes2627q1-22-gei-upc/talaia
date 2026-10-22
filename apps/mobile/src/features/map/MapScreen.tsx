@@ -1,4 +1,5 @@
 import { Image } from 'expo-image';
+import { useMemo } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -13,6 +14,10 @@ import NightMap from './NightMap';
 import { useMapViewModel } from './useMapViewModel';
 
 const chrome = { background: colors.nit, text: colors.boira, link: colors.lluna };
+
+/** Marges de l'enquadrament (mockup 03): la capçalera i la llegenda a dalt, el full a baix. */
+const FIT_TOP = 150;
+const FIT_BOTTOM = 380;
 
 const markerPalette = {
   background: colors.nit,
@@ -55,6 +60,24 @@ export function MapScreen() {
   const insets = useSafeAreaInsets();
   const canRetry = vm.notice?.kind === 'error' || vm.notice?.kind === 'empty';
   const recommendations = vm.recommendations;
+  const bounds = recommendations?.bounds ?? null;
+  // Amb un rànquing, la càmera s'enquadra als punts i a l'origen, sense que els tapin la capçalera
+  // ni el full dels millors punts.
+  const fit = useMemo(
+    () =>
+      bounds
+        ? {
+            bounds,
+            padding: {
+              top: insets.top + FIT_TOP,
+              bottom: FIT_BOTTOM,
+              left: spacing.xl,
+              right: spacing.xl,
+            },
+          }
+        : null,
+    [bounds, insets.top],
+  );
 
   return (
     <View style={styles.container}>
@@ -71,6 +94,8 @@ export function MapScreen() {
         points={vm.points}
         markerPalette={markerPalette}
         onPointPress={vm.openPoint}
+        cluster={!recommendations}
+        fit={fit}
         dom={{
           style: { flex: 1, backgroundColor: colors.nit },
           scrollEnabled: false,

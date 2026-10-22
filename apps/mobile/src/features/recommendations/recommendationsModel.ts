@@ -73,3 +73,16 @@ export function ordinal(position: number, language: string): string {
   const catalan: Record<number, string> = { 1: 'r', 2: 'n', 3: 'r', 4: 't' };
   return `${position}${catalan[position] ?? 'è'}`;
 }
+
+/** La zona que conté els punts i l'origen: `[[oest, sud], [est, nord]]`, per enquadrar-hi el mapa. */
+export function boundsOf(
+  places: { lat: number; lon: number }[],
+): [[number, number], [number, number]] | null {
+  if (places.length === 0) return null;
+  const lons = places.map((place) => place.lon);
+  const lats = places.map((place) => place.lat);
+  return [
+    [Math.min(...lons), Math.min(...lats)],
+    [Math.max(...lons), Math.max(...lats)],
+  ];
+}
