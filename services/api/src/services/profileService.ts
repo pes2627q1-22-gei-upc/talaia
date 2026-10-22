@@ -18,6 +18,10 @@ export type ProfileStore = {
     /** El nom que envia l'app (Apple no el posa al token). */
     hints?: { nom?: string },
   ) => Promise<{ created: boolean; profile: ProfileRecord }>;
+  /** El perfil de l'usuari, o `null` si encara no n'hi ha (l'app no ha fet `POST /perfil`). */
+  getProfile: (authUserId: string) => Promise<ProfileRecord | null>;
+  /** Canvia el nom; `null` si l'usuari no té perfil. */
+  updateProfile: (authUserId: string, changes: { nom: string }) => Promise<ProfileRecord | null>;
 };
 
 type Db = ReturnType<typeof createDb>;
@@ -58,6 +62,26 @@ export function createDatabaseProfileStore(db: Db): ProfileStore {
         .executeTakeFirstOrThrow();
 
       return { created: false, profile: deserializeProfile(existing) };
+    },
+
+    async getProfile(authUserId) {
+      const row = await db
+        .selectFrom('perfils')
+        .selectAll()
+        .where('authUserId', '=', authUserId)
+        .executeTakeFirst();
+      return row ? deserializeProfile(row) : null;
+    },
+
+    async updateProfile(authUserId, { nom }) {
+      // `data_actualitzacio` la posa el trigger de la taula.
+      const row = await db
+        .updateTable('perfils')
+        .set({ nom })
+        .where('authUserId', '=', authUserId)
+        .returningAll()
+        .executeTakeFirst();
+      return row ? deserializeProfile(row) : null;
     },
   };
 }

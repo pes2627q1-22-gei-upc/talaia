@@ -159,3 +159,39 @@ describe('createDatabaseProfileStore.ensureProfile', () => {
     });
   });
 });
+
+describe('createDatabaseProfileStore.getProfile', () => {
+  it("llegeix el perfil de l'usuari", async () => {
+    const { db, queries } = fakeDb([FILA]);
+
+    await expect(createDatabaseProfileStore(db).getProfile(MARIA.id)).resolves.toEqual(PERFIL);
+    expect(queries[0]?.sql).toBe('select * from "perfils" where "auth_user_id" = $1');
+    expect(queries[0]?.parameters).toEqual([MARIA.id]);
+  });
+
+  it('torna null si encara no té perfil', async () => {
+    const { db } = fakeDb([]);
+    await expect(createDatabaseProfileStore(db).getProfile(MARIA.id)).resolves.toBeNull();
+  });
+});
+
+describe('createDatabaseProfileStore.updateProfile', () => {
+  it('canvia només el nom del perfil de l’usuari i el torna', async () => {
+    const { db, queries } = fakeDb([{ ...FILA, nom: 'Maria P.' }]);
+
+    await expect(
+      createDatabaseProfileStore(db).updateProfile(MARIA.id, { nom: 'Maria P.' }),
+    ).resolves.toEqual({ ...PERFIL, nom: 'Maria P.' });
+    expect(queries[0]?.sql).toBe(
+      'update "perfils" set "nom" = $1 where "auth_user_id" = $2 returning *',
+    );
+    expect(queries[0]?.parameters).toEqual(['Maria P.', MARIA.id]);
+  });
+
+  it('torna null si encara no té perfil', async () => {
+    const { db } = fakeDb([]);
+    await expect(
+      createDatabaseProfileStore(db).updateProfile(MARIA.id, { nom: 'Maria' }),
+    ).resolves.toBeNull();
+  });
+});

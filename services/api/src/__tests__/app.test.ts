@@ -31,6 +31,15 @@ describe('JWT auth i perfil en el primer accés', () => {
   const issuer = `${supabaseUrl}/auth/v1`;
 
   let profileExists = false;
+  const storedProfile = (authUserId: string, nom: string) => ({
+    id: 'profile-1',
+    authUserId,
+    email: 'maria@example.com',
+    nom,
+    avatarUrl: null,
+    dataCreacio: new Date('2026-10-14T12:00:00.000Z'),
+    dataActualitzacio: new Date('2026-10-14T12:00:00.000Z'),
+  });
   const profileStore = {
     ensureProfile: jest.fn(async (user: AuthenticatedUser) => {
       const created = !profileExists;
@@ -49,6 +58,12 @@ describe('JWT auth i perfil en el primer accés', () => {
         },
       };
     }),
+    getProfile: jest.fn(async (authUserId: string) =>
+      profileExists ? storedProfile(authUserId, 'maria') : null,
+    ),
+    updateProfile: jest.fn(async (authUserId: string, { nom }: { nom: string }) =>
+      profileExists ? storedProfile(authUserId, nom) : null,
+    ),
   };
 
   let privateKey: CryptoKey;
@@ -69,6 +84,8 @@ describe('JWT auth i perfil en el primer accés', () => {
   beforeEach(() => {
     profileExists = false;
     profileStore.ensureProfile.mockClear();
+    profileStore.getProfile.mockClear();
+    profileStore.updateProfile.mockClear();
   });
 
   type TokenOptions = {
@@ -147,6 +164,74 @@ describe('JWT auth i perfil en el primer accés', () => {
     const res = await postPerfil(jwtApp, token).send({ nom: '' });
     expect(res.status).toBe(400);
     expect(res.body.error.code).toBe('validation_error');
+  });
+
+  describe('GET i PATCH /perfil (HU36)', () => {
+    const getPerfil = async () =>
+      request(jwtApp)
+        .get('/api/v1/perfil')
+        .set('Authorization', `Bearer ${await signToken()}`);
+    const patchPerfil = async (body: unknown) =>
+      request(jwtApp)
+        .patch('/api/v1/perfil')
+        .set('Authorization', `Bearer ${await signToken()}`)
+        .send(body as object);
+
+    it("torna el perfil de l'usuari del JWT, sense memòria cau", async () => {
+      profileExists = true;
+      const res = await getPerfil();
+      expect(res.status).toBe(200);
+      expect(res.headers['cache-control']).toBe('no-store');
+      expect(res.body).toEqual({
+        id: 'profile-1',
+        authUserId: 'user-123',
+        email: 'maria@example.com',
+        nom: 'maria',
+        avatarUrl: null,
+        dataCreacio: '2026-10-14T12:00:00.000Z',
+        dataActualitzacio: '2026-10-14T12:00:00.000Z',
+      });
+      expect(profileStore.getProfile).toHaveBeenCalledWith('user-123');
+    });
+
+    it('canvia el nom (sense els espais dels extrems) i torna el perfil', async () => {
+      profileExists = true;
+      const res = await patchPerfil({ nom: '  Martina  ' });
+      expect(res.status).toBe(200);
+      expect(res.headers['cache-control']).toBe('no-store');
+      expect(res.body.nom).toBe('Martina');
+      expect(profileStore.updateProfile).toHaveBeenCalledWith('user-123', { nom: 'Martina' });
+    });
+
+    it('respon 404 profile_not_found si encara no hi ha perfil', async () => {
+      for (const res of [await getPerfil(), await patchPerfil({ nom: 'Martina' })]) {
+        expect(res.status).toBe(404);
+        expect(res.body.error.code).toBe('profile_not_found');
+      }
+    });
+
+    it.each<[string, unknown]>([
+      ['sense cos', undefined],
+      ['amb el nom buit', { nom: '   ' }],
+      ['amb un nom de més de 100 caràcters', { nom: 'x'.repeat(101) }],
+      ['amb un camp que no es pot editar', { nom: 'Martina', email: 'altre@example.com' }],
+    ])('respon 400 a un PATCH %s', async (_cas, body) => {
+      profileExists = true;
+      const res = await patchPerfil(body);
+      expect(res.status).toBe(400);
+      expect(res.body.error.code).toBe('validation_error');
+      expect(profileStore.updateProfile).not.toHaveBeenCalled();
+    });
+
+    it('sense JWT respon 401 i no toca la base de dades', async () => {
+      const responses = await Promise.all([
+        request(jwtApp).get('/api/v1/perfil'),
+        request(jwtApp).patch('/api/v1/perfil').send({ nom: 'Martina' }),
+      ]);
+      for (const res of responses) expect(res.status).toBe(401);
+      expect(profileStore.getProfile).not.toHaveBeenCalled();
+      expect(profileStore.updateProfile).not.toHaveBeenCalled();
+    });
   });
 
   it.each<[string, () => Promise<string>]>([

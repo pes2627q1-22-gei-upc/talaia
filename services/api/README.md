@@ -127,6 +127,16 @@ El rànquing de punts per a la consulta de «Què vols veure?» (`ConsultaRecoma
 
 Errors: paràmetres invàlids → 400 `validation_error`; franja passada → 400 `franja_passada`; sense base de dades → 503. `Cache-Control` fins a la propera hora.
 
+## `/perfil` (TG-84, HU36 · TG-165)
+
+El perfil de l'usuari autenticat (tipus `Perfil` a `@talaia/shared`, taula `perfils`). Les tres rutes demanen el JWT de Supabase (`requireAuth`, ADR-0023) i responen amb `Cache-Control: no-store`, perquè són dades personals.
+
+- `POST /perfil`: el crea en el primer accés (201) o torna el que ja hi ha (200). L'app la crida després de cada login, amb `{ nom }` opcional (Apple no posa el nom al token).
+- `GET /perfil`: el perfil, o 404 `profile_not_found` si encara no s'ha fet el `POST`.
+- `PATCH /perfil`: de moment només es pot editar el nom: `{ "nom": "Martina" }` (1–100 caràcters, sense els espais dels extrems). Un camp que no es pot editar és un 400, no s'ignora. Torna el perfil amb el canvi; `data_actualitzacio` la posa el trigger de la taula.
+
+Errors: JWT absent o invàlid → 401 `unauthorized`; cos invàlid → 400 `validation_error`; sense `DATABASE_URL` o sense poder validar el JWT → 503.
+
 ## Afegir una ruta
 
 1. Crea `src/routes/<recurs>.ts` amb el seu `Router`, els esquemes zod (`.meta({ id })` per als que han de sortir a l'OpenAPI) i `registry.registerPath(...)` per a cada ruta.
