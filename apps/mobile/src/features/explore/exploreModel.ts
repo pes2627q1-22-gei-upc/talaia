@@ -10,6 +10,9 @@ export const GRID_GOALS = [
   'cel_estrellat',
 ] as const satisfies readonly ObjectiuObservacio[];
 
+/** Encara «Aviat»: l'índex v1 no hi val (a la posta i a l'eclipsi solar dona 0) fins a l'ADR-0027. */
+export const SOON_GOALS: readonly ObjectiuObservacio[] = ['eclipsi', 'posta_sol', 'sortida_sol'];
+
 /** Temps màxim en cotxe, en minuts: de 30 min a 4 h, de 15 en 15. Per defecte, 2 h 30 min. */
 export const TRAVEL = { min: 30, max: 240, step: 15, initial: 150 } as const;
 
