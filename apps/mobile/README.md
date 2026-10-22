@@ -117,15 +117,11 @@ tanca la sessió i la vista ho diu, perquè no quedi cap compte a mitges.
 
 - El mòbil ha d'estar a la mateixa wifi que l'ordinador (no amb dades mòbils).
 - Supabase **rebutja qualsevol adreça de tornada amb una IP com a host** (`exp://192.168.…`)
-  i envia el navegador a la *Site URL*. Per a Google i per a l'enllaç del correu, arrenca
-  Expo amb un nom de [nip.io](https://nip.io) que resol a la teva IP:
-
-  ```bash
-  REACT_NATIVE_PACKAGER_HOSTNAME=192-168-1-50.nip.io npx expo start --go
-  ```
-
-  `Linking.createURL` torna llavors `exp://192-168-1-50.nip.io:8081/--/…`, que
-  `exp://**` ja permet. `EXPO_PUBLIC_API_URL` pot continuar amb la IP.
+  i envia el navegador a la *Site URL* (`talaia://`). Per això `npm run mobile`
+  (`scripts/start.mjs`) arrenca Expo amb un nom de [nip.io](https://nip.io) que resol a la
+  IP de la wifi, p. ex. `exp://192-168-1-50.nip.io:8081`, que `exp://**` ja permet. No cal
+  fer res més; per forçar-ne un altre, `REACT_NATIVE_PACKAGER_HOSTNAME=… npm run mobile`.
+- `EXPO_PUBLIC_API_URL` pot continuar amb la IP.
 
 ### Abans de publicar l'app
 
