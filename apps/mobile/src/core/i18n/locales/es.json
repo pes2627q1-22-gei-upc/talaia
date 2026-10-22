@@ -59,14 +59,10 @@
       "veryPoor": "Cielo muy iluminado · calidad muy deficiente"
     },
     "sqmHint": "Oscuridad de referencia del lugar",
-    "darknessHint": "Cuanto más alto, menos contaminación lumínica.",
     "darknessEstimated": "Valor estimado; pendiente de datos de contaminación lumínica.",
     "clouds": "Nubes",
-    "cloudsHint": "Previsión de cielo despejado",
     "sun": "Sol",
-    "sunHint": "Ausencia de luz solar",
     "moon": "Luna",
-    "moonHint": "Influencia de la luz lunar",
     "info": "Información del punto",
     "openHorizon": "Vistas despejadas",
     "openHorizonValue": "Hacia {{directions}}",
@@ -87,9 +83,8 @@
     "mapsErrorMessage": "Vuelve a intentarlo dentro de un momento.",
     "planSoonTitle": "Planes, próximamente",
     "planSoonMessage": "La creación de planes aún no está disponible.",
-    "nextHours": "Próximas horas",
     "timezone": "Hora local de Cataluña · Europe/Madrid",
-    "noHours": "Aún no hay previsión para las próximas horas.",
+    "noHours": "Todavía no hay previsión para esta noche.",
     "hourA11y": "{{time}}: índice {{value}} de 100, {{level}}",
     "bestHourWithStatusA11y": "{{label}}. Dentro del mejor momento",
     "notFoundTitle": "No hemos encontrado este punto",
@@ -101,7 +96,29 @@
     "mapA11y": "Ubicación de {{name}}",
     "mapCredits": "Créditos del mapa",
     "mapUnavailable": "No se ha podido cargar el mapa.",
-    "indexAt": "Índice del {{time}}"
+    "indexAt": "Índice del {{time}}",
+    "tonight": "Esta noche",
+    "hoursError": "No hemos podido cargar la previsión de esta noche.",
+    "factorHints": {
+      "nuvols": {
+        "ras": "Cielo despejado",
+        "jus": "Algunas nubes",
+        "tap": "Muy nublado"
+      },
+      "foscor": {
+        "ras": "Lejos de la contaminación lumínica",
+        "jus": "Algo de contaminación lumínica",
+        "tap": "Mucha contaminación lumínica"
+      },
+      "lluna": {
+        "none": "La Luna no molesta",
+        "ras": "La Luna molesta poco",
+        "jus": "La Luna aclara el cielo",
+        "tap": "La Luna ilumina mucho el cielo"
+      },
+      "sol": "Aún queda luz del crepúsculo"
+    },
+    "factorsAt": "Factores a las {{time}}"
   },
   "index": {
     "level": {

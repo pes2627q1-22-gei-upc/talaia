@@ -59,14 +59,10 @@
       "veryPoor": "Cel molt il·luminat · qualitat molt deficient"
     },
     "sqmHint": "Foscor de referència del lloc",
-    "darknessHint": "Com més alt, menys contaminació lumínica.",
     "darknessEstimated": "Valor estimat; pendent de dades de contaminació lumínica.",
     "clouds": "Núvols",
-    "cloudsHint": "Previsió de cel ras",
     "sun": "Sol",
-    "sunHint": "Absència de llum solar",
     "moon": "Lluna",
-    "moonHint": "Influència de la llum lunar",
     "info": "Informació del punt",
     "openHorizon": "Vistes obertes",
     "openHorizonValue": "Cap {{directions}}",
@@ -87,9 +83,8 @@
     "mapsErrorMessage": "Torna-ho a provar d’aquí a un moment.",
     "planSoonTitle": "Plans, aviat",
     "planSoonMessage": "La creació de plans encara no està disponible.",
-    "nextHours": "Properes hores",
     "timezone": "Hora local de Catalunya · Europe/Madrid",
-    "noHours": "Encara no hi ha previsió per a les properes hores.",
+    "noHours": "Encara no hi ha previsió per a aquesta nit.",
     "hourA11y": "{{time}}: índex {{value}} de 100, {{level}}",
     "bestHourWithStatusA11y": "{{label}}. Dins del millor moment",
     "notFoundTitle": "No hem trobat aquest punt",
@@ -101,7 +96,29 @@
     "mapA11y": "Ubicació de {{name}}",
     "mapCredits": "Crèdits del mapa",
     "mapUnavailable": "No s’ha pogut carregar el mapa.",
-    "indexAt": "Índex del {{time}}"
+    "indexAt": "Índex del {{time}}",
+    "tonight": "Aquesta nit",
+    "hoursError": "No hem pogut carregar la previsió d'aquesta nit.",
+    "factorHints": {
+      "nuvols": {
+        "ras": "Cel ras",
+        "jus": "Alguns núvols",
+        "tap": "Molt ennuvolat"
+      },
+      "foscor": {
+        "ras": "Lluny de la contaminació lumínica",
+        "jus": "Una mica de contaminació lumínica",
+        "tap": "Molta contaminació lumínica"
+      },
+      "lluna": {
+        "none": "La Lluna no molesta",
+        "ras": "La Lluna molesta poc",
+        "jus": "La Lluna aclareix el cel",
+        "tap": "La Lluna il·lumina molt el cel"
+      },
+      "sol": "Encara queda llum del crepuscle"
+    },
+    "factorsAt": "Factors a les {{time}}"
   },
   "index": {
     "level": {

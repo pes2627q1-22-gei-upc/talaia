@@ -23,7 +23,7 @@ import { IndexIndicator } from '@/shared/ui/IndexIndicator';
 import { Skeleton } from '@/shared/ui/Skeleton';
 import { StateMessage } from '@/shared/ui/StateMessage';
 
-import { HourlyChart } from './HourlyChart';
+import { IndexBreakdown } from './IndexBreakdown';
 import PointLocationMap from './PointLocationMap';
 import { usePointDetailViewModel } from './usePointDetailViewModel';
 
@@ -45,14 +45,8 @@ const mapMetrics = {
 };
 const directionsIcon = require('@/assets/images/point/directions.svg');
 const planIcon = require('@/assets/images/point/plan.svg');
-const factorIcons = {
-  cloud: require('@/assets/images/point/cloud.svg'),
-  sun: require('@/assets/images/point/sun.svg'),
-  sparkle: require('@/assets/images/point/sparkle.svg'),
-  moon: require('@/assets/images/point/moon.svg'),
-} as const;
 
-/** TG-93 / mockup 05. Els factors detallats són TG-105; rutes i plans, altres històries. */
+/** TG-93 / mockup 05, amb el desglossament d'aquesta nit (TG-105). Rutes i plans, altres històries. */
 export function PointDetailScreen({ pointId }: { pointId: string }) {
   const vm = usePointDetailViewModel(pointId);
   return (
@@ -159,44 +153,17 @@ export function PointDetailScreen({ pointId }: { pointId: string }) {
                 ) : null}
               </View>
             </Card>
-            <HourlyChart
+            <IndexBreakdown
               hours={vm.hours}
+              defaultHourId={vm.defaultHourId}
               hoursLabel={vm.hoursLabel}
               timezoneLabel={vm.timezoneLabel}
               noHours={vm.noHours}
+              hoursLoading={vm.hoursLoading}
+              hoursError={vm.hoursError}
+              retryLabel={vm.retryLabel}
+              retry={vm.retry}
             />
-            <View style={styles.factors}>
-              {vm.factorRows.map((factor) => (
-                <View key={factor.key} style={styles.factorRow}>
-                  <Image source={factorIcons[factor.icon]} style={styles.factorIcon} />
-                  <View style={styles.factorContent}>
-                    <View style={styles.factorHeading}>
-                      <View style={styles.factorCopy}>
-                        <AppText variant="heading">{factor.label}</AppText>
-                        <AppText variant="small" color="boira">
-                          {factor.hint}
-                        </AppText>
-                      </View>
-                      <AppText variant="heading" color={factor.level}>
-                        {factor.value}
-                      </AppText>
-                    </View>
-                    <View
-                      accessibilityRole="progressbar"
-                      accessibilityValue={{ min: 0, max: 100, now: factor.value }}
-                      style={styles.factorTrack}
-                    >
-                      <View
-                        style={[
-                          styles.factorProgress,
-                          { width: `${factor.value}%`, backgroundColor: colors[factor.level] },
-                        ]}
-                      />
-                    </View>
-                  </View>
-                </View>
-              ))}
-            </View>
             {vm.description || vm.accessibility || vm.horizon || vm.skyDarkness ? (
               <View style={styles.pointInfo}>
                 <AppText variant="heading" accessibilityRole="header">
@@ -321,7 +288,6 @@ const styles = StyleSheet.create({
   },
   indexCopy: { flex: 1, flexBasis: sizes.hourlyColumn * 3, gap: spacing.xs },
   bestHourStrong: { fontFamily: fonts.bold },
-  factors: { gap: spacing.md },
   pointInfo: { gap: spacing.md },
   infoField: { gap: spacing.xs },
   sqmField: {
@@ -337,16 +303,4 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.ms,
     paddingVertical: spacing.xs,
   },
-  factorRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-  factorIcon: { width: sizes.icon, height: sizes.icon },
-  factorContent: { flex: 1, gap: spacing.xs },
-  factorHeading: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  factorCopy: { flex: 1, gap: spacing.xs / 2 },
-  factorTrack: {
-    height: spacing.xs,
-    borderRadius: spacing.xs,
-    backgroundColor: colors.crep,
-    overflow: 'hidden',
-  },
-  factorProgress: { height: '100%', borderRadius: spacing.xs },
 });

@@ -1,4 +1,4 @@
-import type { PuntFitxa } from '@talaia/shared';
+import type { DesglossamentIndex, PuntFitxa } from '@talaia/shared';
 import { useQuery } from '@tanstack/react-query';
 
 import { apiGet } from '@/core/api/httpClient';
@@ -7,6 +7,7 @@ import type { PointDetailModel } from './pointModel';
 
 export const pointKeys = {
   detail: (pointId: string) => ['punts', 'detail', pointId] as const,
+  breakdown: (pointId: string) => ['punts', 'breakdown', pointId] as const,
 };
 
 /** El worker publica l'índex cada hora al minut 5; deixem 30 s de marge. */
@@ -44,6 +45,23 @@ export function usePointDetailQuery(pointId: string) {
   return useQuery({
     queryKey: pointKeys.detail(pointId),
     queryFn: ({ signal }) => fetchPointDetail(pointId, signal),
+    enabled: pointId.trim().length > 0,
+    staleTime: 60_000,
+    refetchInterval: (query) => (query.state.data ? millisecondsUntilNextPointRefresh() : false),
+  });
+}
+
+/** `GET /punts/{id}/index` (TG-104): l'índex d'aquesta nit hora a hora, amb els factors. */
+export function fetchPointBreakdown(pointId: string, signal?: AbortSignal) {
+  return apiGet<DesglossamentIndex>(`/punts/${encodeURIComponent(pointId)}/index`, undefined, {
+    signal,
+  });
+}
+
+export function usePointBreakdownQuery(pointId: string) {
+  return useQuery({
+    queryKey: pointKeys.breakdown(pointId),
+    queryFn: ({ signal }) => fetchPointBreakdown(pointId, signal),
     enabled: pointId.trim().length > 0,
     staleTime: 60_000,
     refetchInterval: (query) => (query.state.data ? millisecondsUntilNextPointRefresh() : false),

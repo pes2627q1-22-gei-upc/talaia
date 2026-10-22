@@ -59,14 +59,10 @@
       "veryPoor": "Very bright sky · very poor quality"
     },
     "sqmHint": "Reference darkness for this location",
-    "darknessHint": "Higher values mean less light pollution.",
     "darknessEstimated": "Estimated value; light pollution data is not available yet.",
     "clouds": "Clouds",
-    "cloudsHint": "Clear sky forecast",
     "sun": "Sun",
-    "sunHint": "Absence of sunlight",
     "moon": "Moon",
-    "moonHint": "Influence of moonlight",
     "info": "About this spot",
     "openHorizon": "Open views",
     "openHorizonValue": "Toward {{directions}}",
@@ -87,9 +83,8 @@
     "mapsErrorMessage": "Please try again in a moment.",
     "planSoonTitle": "Plans coming soon",
     "planSoonMessage": "Plan creation is not available yet.",
-    "nextHours": "Next hours",
     "timezone": "Local time in Catalonia · Europe/Madrid",
-    "noHours": "There is no forecast for the next hours yet.",
+    "noHours": "There's no forecast for tonight yet.",
     "hourA11y": "{{time}}: index {{value}} out of 100, {{level}}",
     "bestHourWithStatusA11y": "{{label}}. Within the best time window",
     "notFoundTitle": "Observation spot not found",
@@ -101,7 +96,29 @@
     "mapA11y": "Location of {{name}}",
     "mapCredits": "Map credits",
     "mapUnavailable": "Could not load the map.",
-    "indexAt": "Index for {{time}}"
+    "indexAt": "Index for {{time}}",
+    "tonight": "Tonight",
+    "hoursError": "We couldn't load tonight's forecast.",
+    "factorHints": {
+      "nuvols": {
+        "ras": "Clear sky",
+        "jus": "Some clouds",
+        "tap": "Very cloudy"
+      },
+      "foscor": {
+        "ras": "Far from light pollution",
+        "jus": "Some light pollution",
+        "tap": "Heavy light pollution"
+      },
+      "lluna": {
+        "none": "The Moon doesn't interfere",
+        "ras": "The Moon barely interferes",
+        "jus": "The Moon brightens the sky",
+        "tap": "The Moon lights up the sky a lot"
+      },
+      "sol": "There's still twilight"
+    },
+    "factorsAt": "Factors at {{time}}"
   },
   "index": {
     "level": {
