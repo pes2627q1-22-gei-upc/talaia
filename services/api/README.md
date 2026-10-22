@@ -12,6 +12,7 @@ npm run api                   # = npm run dev -w services/api, amb recàrrega
 - Salut: <http://localhost:3000/api/v1/health>
 - Punts del mapa: <http://localhost:3000/api/v1/punts> (cal `DATABASE_URL`)
 - Fitxa d'un punt: `http://localhost:3000/api/v1/punts/<id>?hores=24`
+- Calendari: `GET /api/v1/esdeveniments?des_de=2026-10-01&fins_a=2026-10-31` (JWT de Talaia o `X-API-Key` d'Aprop)
 - Desglossament de l'índex d'un punt: `http://localhost:3000/api/v1/punts/{id}/index?nit=2026-10-19` (cal `DATABASE_URL`)
 - Documentació (Swagger UI): <http://localhost:3000/api/v1/docs>
 - OpenAPI: <http://localhost:3000/api/v1/openapi.json>
@@ -34,6 +35,7 @@ Es llegeixen del `.env` de l'**arrel** del repo (`dev` i `start` el carreguen am
 | `API_PORT` | `3000` | Port on escolta l'API |
 | `DATABASE_URL` | — | Postgres (`postgresql://…`). **Opcional:** sense ella l'API arrenca amb un avís, `/health` funciona i `/punts`, `/punts/{id}`, `/punts/{id}/index` i `/perfil` responen 503 `database_unavailable`. Amb Supabase local: `postgresql://postgres:postgres@127.0.0.1:54322/postgres` |
 | `SUPABASE_URL` | `http://127.0.0.1:54321` | URL del projecte de Supabase. `requireAuth` hi valida els JWT amb el JWKS (`/auth/v1/.well-known/jwks.json`, ADR-0023): 401 si el token és dolent, 503 si Supabase no respon |
+| `APROP_API_KEY` | — | Secret de l'API assignat a Aprop. No s'inclou al repositori ni a l'app; sense configurar-lo, l'accés amb API key retorna 503, però l'accés JWT continua disponible. |
 
 Una variable nova s'afegeix a l'esquema de `src/config/env.ts` i a `.env.example`. Cap secret al repo.
 
@@ -49,12 +51,17 @@ src/
     index.ts            Router de /api/v1: munta un router per recurs, /openapi.json i /docs
     health.ts           GET /health
     punts.ts            GET /punts (bbox, ETag, Cache-Control i 304) i GET /punts/{id}
+    esdeveniments.ts    GET /esdeveniments, autenticació API key o JWT
     puntIndex.ts        GET /punts/{id}/index: desglossament de l'índex per hores i factors (HU04)
   punts/
     puntsRepository.ts  Consultes dels punts publicats i del seu índex amb @talaia/db (ADR-0013)
     mapDocument.ts      GeoJSON del mapa i retall per bbox
     documentCache.ts    Document en memòria amb ETag del contingut (MapDocumentCache)
     puntsService.ts     Memòria cau i bbox del mapa, i fitxa amb l'índex per hores; errors de la base de dades → 503
+  esdeveniments/
+    dates.ts            Límits del dia civil de Catalunya convertits a UTC
+    esdevenimentsRepository.ts  Consulta Kysely del calendari i el punt oficial
+    esdevenimentsService.ts     Mapatge a la resposta pública i errors de la BD
   index/
     night.ts            Què és «una nit» (12:00 → 12:00, hora de Catalunya) i la nit per defecte
     indexSchemas.ts     Esquemes zod/OpenAPI de l'índex per hora (IndexHora), compartits per /punts/{id} i /punts/{id}/index
