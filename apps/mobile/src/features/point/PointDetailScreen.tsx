@@ -1,11 +1,11 @@
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Trans } from 'react-i18next';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import Animated, { FadeIn, ReduceMotion, useReducedMotion } from 'react-native-reanimated';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import {
   colors,
@@ -44,7 +44,7 @@ const mapMetrics = {
   core: sizes.pointMarkerCore,
   stem: sizes.pointMarkerStem,
   halo: sizes.pointMarkerHalo,
-};
+} as const;
 const directionsIcon = require('@/assets/images/point/directions.svg');
 const planIcon = require('@/assets/images/point/plan.svg');
 const factorIcons = {
@@ -57,6 +57,14 @@ const factorIcons = {
 /** TG-93 / mockup 05. Els factors detallats són TG-105; rutes i plans, altres històries. */
 export function PointDetailScreen({ pointId }: { pointId: string }) {
   const vm = usePointDetailViewModel(pointId);
+  const insets = useSafeAreaInsets();
+  // El mapa passa per sota de la barra d'estat i del botó enrere: hi sumem la zona segura perquè
+  // la part que es veu sota la capçalera continuï sent la del mockup.
+  const mapStyle = useMemo(
+    () => [styles.map, { height: sizes.pointMap + insets.top }],
+    [insets.top],
+  );
+  const metrics = useMemo(() => ({ ...mapMetrics, top: insets.top }), [insets.top]);
   const reduceMotion = useReducedMotion();
   // El mapa gira només mentre la fitxa es veu: amb una altra pantalla a sobre, s'atura.
   const [focused, setFocused] = useState(false);
@@ -84,24 +92,21 @@ export function PointDetailScreen({ pointId }: { pointId: string }) {
           action={vm.status === 'error' ? { label: vm.retryLabel, onPress: vm.retry } : undefined}
         />
       ) : (
-        <ScrollView
-          contentInsetAdjustmentBehavior="automatic"
-          contentContainerStyle={styles.scroll}
-        >
+        <ScrollView contentInsetAdjustmentBehavior="never" contentContainerStyle={styles.scroll}>
           {vm.coordinates ? (
-            <View style={styles.map}>
+            <View style={mapStyle}>
               <PointLocationMap
                 mapStyle={vm.mapStyle}
                 key={pointId}
                 coordinates={vm.coordinates}
                 palette={mapPalette}
-                metrics={mapMetrics}
+                metrics={metrics}
                 label={vm.mapLabel}
                 attributionLabel={vm.mapCreditsLabel}
                 unavailableLabel={vm.mapUnavailable}
                 orbit={focused && !reduceMotion}
                 dom={{
-                  style: styles.map,
+                  style: mapStyle,
                   scrollEnabled: false,
                   bounces: false,
                   contentInsetAdjustmentBehavior: 'never',

@@ -25,6 +25,8 @@ type Props = {
     core: number;
     stem: number;
     halo: number;
+    /** Alçada de la zona segura de dalt: els crèdits van a l'altura del botó enrere, a la dreta. */
+    top: number;
   };
   label: string;
   attributionLabel: string;
@@ -77,6 +79,8 @@ export default function PointLocationMapContent({
       });
       const current = map;
       mapRef.current = current;
+      // El punt, al centre de la part que es veu sota la capçalera (no de tot el mapa).
+      current.setPadding({ top: metrics.top + metrics.touch, bottom: 0, left: 0, right: 0 });
       current.on('load', () => setLoaded(true));
       creditControl = document.createElement('div');
       creditControl.className = 'talaia-map-credits';
@@ -121,6 +125,7 @@ export default function PointLocationMapContent({
       setLoaded(false);
       map?.remove();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- la zona segura només canvia si gira la pantalla, i no cal tornar a crear el mapa
   }, [coordinates.lat, coordinates.lon, label, attributionLabel]);
 
   // La càmera gira al voltant del centre, que és el punt. Cada fotograma avança segons el temps
@@ -158,8 +163,9 @@ export default function PointLocationMapContent({
           --talaia-marker-halo: ${metrics.halo}px;
         }
         .talaia-map-credits {
-          position: absolute; z-index: 4; top: 8px; left: 8px;
-          display: flex; align-items: flex-start; gap: 8px; pointer-events: none;
+          position: absolute; z-index: 4; top: ${metrics.top}px; right: 8px;
+          display: flex; flex-direction: row-reverse; align-items: flex-start; gap: 8px;
+          pointer-events: none;
         }
         .talaia-map-credits__button {
           display: grid; place-items: center; flex: 0 0 ${metrics.touch}px;

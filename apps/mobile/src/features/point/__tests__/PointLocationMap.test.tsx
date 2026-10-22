@@ -28,7 +28,7 @@ const props: ComponentProps<typeof PointLocationMapContent> = {
     markerGlow: '#5FD4C4B3',
     markerHalo: '#5FD4C42E',
   },
-  metrics: { touch: 44, icon: 22, marker: 66, core: 43, stem: 18, halo: 10 },
+  metrics: { touch: 44, icon: 22, marker: 66, core: 43, stem: 18, halo: 10, top: 59 },
   label: 'Serra del Montsec',
   attributionLabel: 'Crèdits del mapa',
   unavailableLabel: 'Mapa no disponible',
@@ -47,6 +47,7 @@ let map: {
   remove: jest.Mock;
   getBearing: jest.Mock;
   setBearing: jest.Mock;
+  setPadding: jest.Mock;
 };
 let marker: { setLngLat: jest.Mock; addTo: jest.Mock };
 
@@ -69,6 +70,7 @@ beforeEach(() => {
     setBearing: jest.fn((value: number) => {
       bearing = value;
     }),
+    setPadding: jest.fn(),
   };
   bearing = POINT_VIEW.bearing;
   marker = { setLngLat: jest.fn().mockReturnThis(), addTo: jest.fn().mockReturnThis() };
@@ -93,6 +95,8 @@ it('centra el mapa inclinat sobre el relleu, situa la talaia i permet obrir i ta
     }),
   );
   expect(marker.setLngLat).toHaveBeenCalledWith([0.8, 41.9]);
+  // El punt, al centre de la part visible: sota la zona segura i el botó enrere.
+  expect(map.setPadding).toHaveBeenCalledWith({ top: 59 + 44, bottom: 0, left: 0, right: 0 });
   expect(marker.addTo).toHaveBeenCalledWith(map);
   expect(
     jest.mocked(maplibregl.Marker).mock.calls[0]?.[0]?.element?.getAttribute('aria-label'),
@@ -102,6 +106,8 @@ it('centra el mapa inclinat sobre el relleu, situa la talaia i permet obrir i ta
   const panel = mapContainer.querySelector<HTMLElement>('[role="region"]');
   expect(button?.getAttribute('aria-label')).toBe(props.attributionLabel);
   expect(host.querySelector('style')?.textContent).toContain('width: 44px; height: 44px');
+  // Els crèdits van a dalt a la dreta, sota la barra d'estat, on no toquen el botó enrere.
+  expect(host.querySelector('style')?.textContent).toContain('top: 59px; right: 8px');
   expect(host.querySelector('style')?.textContent).not.toContain('color-mix');
   expect(button?.getAttribute('aria-expanded')).toBe('false');
   expect(panel?.hidden).toBe(true);
