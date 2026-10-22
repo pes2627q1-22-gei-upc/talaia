@@ -64,13 +64,20 @@ describe('Google', () => {
       .mocked(WebBrowser.openAuthSessionAsync)
       .mockResolvedValue({ type: 'success', url: `${REDIRECT}?code=abc` });
     await authRepository.signInWithGoogle();
+    // Sempre deixa triar el compte (després d'un logout no reprèn l'anterior).
     expect(auth.signInWithOAuth).toHaveBeenCalledWith({
       provider: 'google',
-      options: { redirectTo: REDIRECT, skipBrowserRedirect: true },
+      options: {
+        redirectTo: REDIRECT,
+        skipBrowserRedirect: true,
+        queryParams: { prompt: 'select_account' },
+      },
     });
+    // A Android, la pestanya dins la tasca de l'app: es tanca en tornar i no es reprèn després.
     expect(WebBrowser.openAuthSessionAsync).toHaveBeenCalledWith(
       'https://supabase.test/authorize',
       REDIRECT,
+      { createTask: false },
     );
     expect(auth.exchangeCodeForSession).toHaveBeenCalledWith('abc');
   });

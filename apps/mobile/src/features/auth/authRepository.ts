@@ -109,11 +109,19 @@ async function signInWithBrowser(provider: 'google' | 'apple'): Promise<void> {
   const { data } = await guard(() =>
     client.auth.signInWithOAuth({
       provider,
-      options: { redirectTo, skipBrowserRedirect: true },
+      options: {
+        redirectTo,
+        skipBrowserRedirect: true,
+        // Després d'un logout, Google ha de deixar triar el compte i no reprendre l'anterior.
+        ...(provider === 'google' && { queryParams: { prompt: 'select_account' } }),
+      },
     }),
   );
   if (!data.url) throw new SignInFailure('unknown');
-  const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
+  // A Android, la pestanya del navegador en una tasca pròpia no es tanca en tornar a l'app, i el
+  // login següent hi reprenia la pàgina de l'anterior (`bad_oauth_state`). Dins la tasca de l'app,
+  // es tanca sola.
+  const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo, { createTask: false });
   if (result.type !== 'success') throw new SignInFailure('cancelled');
   const params = new URL(result.url).searchParams;
   const code = params.get('code');
