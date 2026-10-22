@@ -81,11 +81,7 @@ export function GoalCard({ label, icon, selected, onPress, hint, badge, disabled
             />
             {badge ? <Badge text={badge} /> : null}
           </View>
-          <AppText
-            variant="link"
-            color={selected ? 'nit' : disabled ? 'boira' : 'lluna'}
-            style={disabled && styles.off}
-          >
+          <AppText variant="link" color={selected ? 'nit' : 'lluna'} style={disabled && styles.off}>
             {label}
           </AppText>
         </>

@@ -158,7 +158,9 @@ export function useExploreViewModel() {
         badge: soon ? t('explore.soon') : undefined,
         disabled: soon,
         selected: goal === id,
-        onPress: () => setGoal(id),
+        onPress: () => {
+          if (!soon) setGoal(id);
+        },
       };
     }),
     constellations: {

@@ -165,6 +165,10 @@ describe('useExploreViewModel', () => {
     expect(soon.map((goal) => goal.id)).toEqual(['eclipsi', 'posta_sol', 'sortida_sol']);
     expect(soon.every((goal) => goal.badge === 'Aviat')).toBe(true);
     expect(result.current.goals.find((goal) => goal.id === 'via_lactia')?.badge).toBeUndefined();
+
+    // També al ViewModel, no només a la vista (`disabled`): l'objectiu triat no canvia.
+    await act(() => soon[1]?.onPress());
+    expect(result.current.goals.find((goal) => goal.selected)?.id).toBe('cel_estrellat');
   });
 
   it('«Tria el dia» obre el calendari i, en triar un dia, el segment el mostra', async () => {
