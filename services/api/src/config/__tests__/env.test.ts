@@ -28,4 +28,14 @@ describe('loadEnv', () => {
     expect(loadEnv({ DATABASE_URL: url }).DATABASE_URL).toBe(url);
     expect(() => loadEnv({ DATABASE_URL: 'https://exemple.cat' })).toThrow('DATABASE_URL');
   });
+
+  it('només accepta una clau d’Aprop prou llarga i no interpreta comentaris com a secret', () => {
+    const key = '0123456789abcdef0123456789abcdef';
+    expect(loadEnv({ APROP_API_KEY: '' }).APROP_API_KEY).toBeUndefined();
+    expect(loadEnv({ APROP_API_KEY: key }).APROP_API_KEY).toBe(key);
+    expect(() => loadEnv({ APROP_API_KEY: 'clau-curta' })).toThrow('APROP_API_KEY');
+    expect(() =>
+      loadEnv({ APROP_API_KEY: '# comentari que no es pot fer servir com a clau API' }),
+    ).toThrow('APROP_API_KEY');
+  });
 });
