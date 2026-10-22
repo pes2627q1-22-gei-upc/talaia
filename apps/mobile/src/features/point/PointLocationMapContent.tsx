@@ -163,7 +163,8 @@ export default function PointLocationMapContent({
           --talaia-marker-halo: ${metrics.halo}px;
         }
         .talaia-map-credits {
-          position: absolute; z-index: 4; top: ${metrics.top}px; right: 8px;
+          position: absolute; z-index: 4;
+          top: ${metrics.top + metrics.touch - 6}px; right: 8px;
           display: flex; flex-direction: row-reverse; align-items: flex-start; gap: 8px;
           pointer-events: none;
         }
@@ -240,11 +241,19 @@ export default function PointLocationMapContent({
           role="status"
           style={{
             position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
+            zIndex: 4,
+            top: metrics.top + metrics.touch * 2 + 16,
+            left: 16,
+            right: 16,
+            boxSizing: 'border-box',
+            padding: '12px 16px',
+            border: `1px solid ${palette.text}`,
+            borderRadius: 12,
             color: palette.text,
             background: palette.background,
+            font: '14px/20px system-ui, sans-serif',
+            textAlign: 'center',
+            pointerEvents: 'none',
           }}
         >
           {unavailableLabel}

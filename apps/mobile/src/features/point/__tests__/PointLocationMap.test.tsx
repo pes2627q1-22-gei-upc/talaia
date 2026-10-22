@@ -107,7 +107,7 @@ it('centra el mapa inclinat sobre el relleu, situa la talaia i permet obrir i ta
   expect(button?.getAttribute('aria-label')).toBe(props.attributionLabel);
   expect(host.querySelector('style')?.textContent).toContain('width: 44px; height: 44px');
   // Els crèdits van a dalt a la dreta, sota la barra d'estat, on no toquen el botó enrere.
-  expect(host.querySelector('style')?.textContent).toContain('top: 59px; right: 8px');
+  expect(host.querySelector('style')?.textContent).toContain('top: 97px; right: 8px');
   expect(host.querySelector('style')?.textContent).not.toContain('color-mix');
   expect(button?.getAttribute('aria-expanded')).toBe('false');
   expect(panel?.hidden).toBe(true);
@@ -127,6 +127,7 @@ it('mostra un avís si fallen les tessel·les i l’amaga quan es recuperen', as
   await act(async () => root.render(<PointLocationMapContent {...props} />));
   const status = host.querySelector<HTMLElement>('[role="status"]');
   expect(status?.hidden).toBe(true);
+  expect(status?.style.top).toBe('163px');
   handlers.error?.();
   expect(status?.hidden).toBe(false);
   map.areTilesLoaded.mockReturnValueOnce(false);

@@ -21,6 +21,10 @@ export const colors = {
   jus: '#E3C58F',
   tap: '#E0708A',
   pedra: '#D9C4A0',
+  fenomenEstels: '#DDD0B8',
+  fenomenLluna: '#AEBDEB',
+  fenomenSol: '#F6C56B',
+  fenomenConjuncio: '#CCA6E6',
 } as const;
 
 /**
@@ -83,6 +87,10 @@ export const sizes = {
   pointMarkerCore: 43,
   pointMarkerStem: 18,
   pointMarkerHalo: 10,
+  /** Calendari: alçada de la fila i caixa de la data dels fenòmens. */
+  calendarEvent: 82,
+  calendarDateWidth: 46,
+  calendarDateHeight: 54,
 } as const;
 
 /** Noms amb què `_layout.tsx` registra les fonts (`useFonts`). Cada pes és una família. */
