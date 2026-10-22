@@ -26,10 +26,13 @@ type Db = ReturnType<typeof createDb>;
 export function createDatabaseProfileStore(db: Db): ProfileStore {
   return {
     async ensureProfile(user, hints) {
-      const avatarUrl =
-        typeof user.userMetadata?.avatar_url === 'string' ? user.userMetadata.avatar_url : null;
+      // `user_metadata` el pot escriure l'usuari mateix (`auth.updateUser`): només un avatar
+      // https i un nom de com a molt 100 caràcters, com el que valida `POST /perfil`.
+      const avatarUrl = httpsUrl(user.userMetadata?.avatar_url);
       const nomComplet =
-        typeof user.userMetadata?.full_name === 'string' ? user.userMetadata.full_name : null;
+        typeof user.userMetadata?.full_name === 'string'
+          ? user.userMetadata.full_name.trim().slice(0, NOM_MAXIM) || null
+          : null;
       const nomDefault = user.email ? user.email.split('@')[0] : null;
 
       const inserted = await db
@@ -57,6 +60,17 @@ export function createDatabaseProfileStore(db: Db): ProfileStore {
       return { created: false, profile: deserializeProfile(existing) };
     },
   };
+}
+
+const NOM_MAXIM = 100;
+
+function httpsUrl(value: unknown): string | null {
+  if (typeof value !== 'string' || value.length > 2048) return null;
+  try {
+    return new URL(value).protocol === 'https:' ? value : null;
+  } catch {
+    return null;
+  }
 }
 
 function deserializeProfile(row: Record<string, unknown>): ProfileRecord {

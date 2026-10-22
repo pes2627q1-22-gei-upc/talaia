@@ -44,7 +44,7 @@ Demana'ls a l'sprint master si et falta algun:
 
 - **GitHub**: membre de l'organització `pes2627q1-22-gei-upc` amb permís d'escriptura al repo `talaia`.
 - **Taiga**: membre del projecte.
-- **Supabase** (només si fas backend): membre de l'organització de Talaia (el propietari és `talaia.pes@gmail.com`).
+- **Supabase** (només si fas backend): membre de l'organització de Talaia (el propietari és el compte de Gmail de l'equip, P20).
 - **Expo**: membre de l'organització de l'equip (per als builds d'EAS quan es publiqui l'app).
 - **Figma**: els mockups, per a qui faci pantalles.
 

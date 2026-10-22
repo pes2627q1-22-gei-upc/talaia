@@ -173,12 +173,12 @@ registry.registerPath({
     "Ordena els punts publicats dins del radi per l'índex de visibilitat v1 de la franja horària (ADR-0018). " +
     "L'índex és el mateix per a tots els objectius fins que s'adapti per fenomen. " +
     'El radi surt de `tempsMaxim` amb una estimació en línia recta fins que hi hagi el servei de rutes de Mobilicat. ' +
-    '`Cache-Control` fins a la propera hora.',
+    '`Cache-Control` privat fins a la propera hora: la consulta porta la ubicació de qui la fa.',
   request: { query: QueryDoc },
   responses: {
     200: {
       description: 'El rànquing de punts',
-      headers: z.object({ 'Cache-Control': z.string().meta({ example: 'public, max-age=1800' }) }),
+      headers: z.object({ 'Cache-Control': z.string().meta({ example: 'private, max-age=1800' }) }),
       content: { 'application/json': { schema: RecomanacionsSchema } },
     },
     400: {
@@ -207,7 +207,8 @@ export function createRecomanacionsRouter(service: RecomanacionsService | undefi
       );
     }
     const resposta = await service.getRecomanacions(consulta);
-    res.set('Cache-Control', `public, max-age=${secondsToNextHour()}`);
+    // `private`: la URL porta la ubicació de l'usuari, i cap memòria cau compartida no l'ha de desar.
+    res.set('Cache-Control', `private, max-age=${secondsToNextHour()}`);
     res.json(resposta);
   });
 

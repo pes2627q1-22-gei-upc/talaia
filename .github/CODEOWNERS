@@ -5,3 +5,8 @@
 /apps/mobile/           @vinyetam @Jsolee
 /packages/shared/       @Jsolee @mohamed-dari
 /docs/                  @Jsolee
+# El que s'executa a la VM o a la CI, i els permisos de la BD: sempre ho revisa algú d'aquí
+# (el ruleset ha de tenir activat «Require review from Code Owners»).
+/deploy/                @mohamed-dari @Jsolee
+/.github/               @Jsolee @mohamed-dari
+/supabase/              @Jsolee @mohamed-dari

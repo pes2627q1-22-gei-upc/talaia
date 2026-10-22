@@ -90,6 +90,8 @@ export function createAuthRouter({ supabaseUrl, profileStore, jwks }: AuthRouter
       // Sense cos (o sense Content-Type), Express deixa `req.body` buit.
       const { nom } = ProfileEnsureBodySchema.parse(req.body ?? {});
       const result = await profileStore.ensureProfile(authReq.user, { nom });
+      // Dades personals: cap memòria cau (ni del mòbil ni d'un proxy) no les ha de desar.
+      res.set('Cache-Control', 'no-store');
       res.status(result.created ? 201 : 200).json({
         created: result.created,
         profile: {

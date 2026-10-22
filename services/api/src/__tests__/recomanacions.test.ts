@@ -105,8 +105,9 @@ describe('GET /api/v1/recomanacions', () => {
     expect(res.body.error.message).toBe(missatge);
   });
 
-  it('porta Cache-Control fins a la propera hora', async () => {
+  it('porta Cache-Control privat fins a la propera hora (la query té la ubicació)', async () => {
     const res = await request(appWith()).get('/api/v1/recomanacions').query(QUERY);
+    expect(res.headers['cache-control']).toMatch(/^private, /);
     const maxAge = Number(/max-age=(\d+)/.exec(res.headers['cache-control'] ?? '')?.[1]);
     expect(maxAge).toBeGreaterThan(0);
     expect(maxAge).toBeLessThanOrEqual(3600);
