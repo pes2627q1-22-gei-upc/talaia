@@ -250,18 +250,20 @@
       "rateLimited": "Massa intents seguits. Espera un moment i torna-ho a provar.",
       "unavailable": "L'inici de sessió no està configurat en aquesta versió de l'app.",
       "profile": "Has entrat, però no hem pogut preparar el teu perfil. Torna-ho a provar.",
-      "unknown": "No s'ha pogut iniciar la sessió. Torna-ho a provar."
+      "unknown": "No s'ha pogut iniciar la sessió. Torna-ho a provar.",
+      "invalidLink": "L'enllaç no és vàlid o ja s'ha fet servir. Obre'l al mateix mòbil on l'has demanat, o demana'n un altre.",
+      "emailNotAllowed": "Ara mateix no podem enviar correus a aquesta adreça. Prova d'entrar amb Google."
     }
   },
   "emailLogin": {
     "title": "Entra amb el correu",
-    "emailSubtitle": "T'enviarem un codi de 6 xifres. Si no tens compte, en crearem un.",
+    "emailSubtitle": "T'enviarem un correu per entrar. Si no tens compte, en crearem un.",
     "emailLabel": "Correu electrònic",
     "emailPlaceholder": "nom@exemple.cat",
     "send": "Envia el codi",
     "sending": "Enviant…",
     "codeTitle": "Escriu el codi",
-    "codeSubtitle": "L'hem enviat a {{email}}. Mira també el correu brossa.",
+    "codeSubtitle": "L'hem enviat a {{email}}. Escriu el codi o obre l'enllaç del correu en aquest mòbil. Mira també el correu brossa.",
     "codeLabel": "Codi de 6 xifres",
     "verify": "Entra",
     "verifying": "Comprovant…",
@@ -270,5 +272,11 @@
     "resent": "T'hem enviat un codi nou.",
     "changeEmail": "Canvia l'adreça",
     "back": "Enrere"
+  },
+  "emailLink": {
+    "title": "Entrant…",
+    "subtitle": "Un moment: estem comprovant l'enllaç del correu.",
+    "errorTitle": "No hem pogut entrar",
+    "back": "Torna a l'inici"
   }
 }

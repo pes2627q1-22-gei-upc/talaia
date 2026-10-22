@@ -1,4 +1,4 @@
-import { createClient, processLock } from '@supabase/supabase-js';
+import { createClient } from '@supabase/supabase-js';
 
 import { env } from '@/core/config/env';
 
@@ -7,7 +7,6 @@ import { installWebCrypto } from '../webCrypto';
 jest.mock('react-native-url-polyfill/auto', () => ({}));
 jest.mock('@supabase/supabase-js', () => ({
   createClient: jest.fn(() => ({ auth: {} })),
-  processLock: jest.fn(),
 }));
 jest.mock('../webCrypto', () => ({ installWebCrypto: jest.fn() }));
 jest.mock('@/core/config/env', () => ({
@@ -62,7 +61,6 @@ it('crea el client un sol cop, amb la sessió al magatzem segur i el PKCE (TG-24
       // Google torna un `code` a la redirecció: no hi ha res a llegir de la URL.
       detectSessionInUrl: false,
       flowType: 'pkce',
-      lock: processLock,
     },
   });
 });
