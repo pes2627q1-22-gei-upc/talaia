@@ -9,6 +9,11 @@
 limit_req_zone $binary_remote_addr zone=api:10m rate=20r/s;
 limit_req_status 429;
 
+# Registre d'accés sense la query string: GET /recomanacions hi porta la ubicació de qui consulta
+# (lat i lon), i la política de privacitat (web/privacitat.html) diu que no queda al registre.
+log_format sense_query '$remote_addr [$time_local] "$request_method $uri $server_protocol" '
+                       '$status $body_bytes_sent $request_time "$http_user_agent"';
+
 server {
     listen 8080 ssl;
     http2 on;
@@ -25,6 +30,7 @@ server {
     error_page 497 =301 https://${PUBLIC_HOST}:${PUBLIC_PORT}$request_uri;
 
     server_tokens off;
+    access_log /var/log/nginx/access.log sense_query;
     add_header Strict-Transport-Security "max-age=31536000" always;
     add_header X-Content-Type-Options "nosniff" always;
     add_header Referrer-Policy "no-referrer" always;
