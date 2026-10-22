@@ -17,6 +17,11 @@ jest.mock('../../explore/locationRepository', () => ({
   useCurrentPlaceQuery: () => mockLocation,
 }));
 
+// Sense cerca a la ruta («Veure el mapa»): el rànquing es prova a MapScreen i al seu ViewModel.
+jest.mock('../../recommendations/useRecommendationsViewModel', () => ({
+  useRecommendationsViewModel: () => null,
+}));
+
 jest.mock('../mapRepository', () => ({
   useMapPointsQuery: () => ({
     data: { type: 'FeatureCollection', features: [] },

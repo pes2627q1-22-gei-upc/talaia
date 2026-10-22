@@ -260,6 +260,7 @@ describe('useExploreViewModel', () => {
         desDe: '22',
         finsA: '6',
         tempsMaxim: '90',
+        lloc: 'Barcelona',
       },
     });
   });

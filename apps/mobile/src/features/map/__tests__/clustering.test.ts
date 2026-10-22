@@ -41,6 +41,34 @@ function setup() {
 }
 
 describe('clustering', () => {
+  it('amb un rànquing, la font no agrupa els punts', () => {
+    const map = {
+      getSource: jest.fn(),
+      hasImage: jest.fn(() => true),
+      addSource: jest.fn(),
+      addLayer: jest.fn(),
+    };
+    syncMapPoints(
+      map as unknown as MapLibreMap,
+      EMPTY_MAP_POINTS,
+      {
+        background: colors.nit,
+        clusterBackground: colors.crep,
+        clusterBorder: colors.vora,
+        text: colors.lluna,
+        unknown: colors.boira,
+        ras: colors.ras,
+        jus: colors.jus,
+        tap: colors.tap,
+      },
+      false,
+    );
+    expect(map.addSource).toHaveBeenCalledWith(POINTS_SOURCE, {
+      type: 'geojson',
+      data: EMPTY_MAP_POINTS,
+    });
+  });
+
   it('crea una font amb clustering local i capes diferents per a grups i punts', () => {
     const map = {
       getSource: jest.fn(),

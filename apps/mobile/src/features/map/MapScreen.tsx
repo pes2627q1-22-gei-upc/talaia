@@ -1,4 +1,5 @@
 import { Image } from 'expo-image';
+import { useMemo } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -6,10 +7,22 @@ import { colors, radii, sizes, spacing } from '@/core/theme/tokens';
 import { AppText } from '@/shared/ui/AppText';
 import { PressableScale } from '@/shared/ui/PressableScale';
 
+import { IndexLegend, RecommendationsSummary } from '../recommendations/RecommendationsHeader';
+import { RecommendationsSheet } from '../recommendations/RecommendationsSheet';
+
 import NightMap from './NightMap';
 import { useMapViewModel } from './useMapViewModel';
 
 const chrome = { background: colors.nit, text: colors.boira, link: colors.lluna };
+
+/**
+ * Marges de l'enquadrament (mockup 03): la capçalera i la llegenda a dalt, i el full a baix (obert
+ * o plegat). A dalt i als costats, també l'espai del marcador, que es dibuixa per sobre del punt.
+ */
+const FIT_TOP = 210;
+const FIT_BOTTOM = 390;
+const FIT_BOTTOM_COLLAPSED = 170;
+const FIT_SIDE = 44;
 
 const markerPalette = {
   background: colors.nit,
@@ -33,11 +46,44 @@ const retryIcon = {
   `)}`,
 };
 
-/** Mapa nocturn amb relleu 3D i punts d'observació segons el seu índex. */
+const backIcon = {
+  uri: `data:image/svg+xml;utf8,${encodeURIComponent(`
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+      fill="none" stroke="${colors.lluna}" stroke-width="2"
+      stroke-linecap="round" stroke-linejoin="round">
+      <path d="M14.5 6L8.5 12L14.5 18"/>
+    </svg>
+  `)}`,
+};
+
+/**
+ * Mapa nocturn amb relleu 3D i punts d'observació segons el seu índex. Amb una cerca de «Què vols
+ * veure?», només els punts del rànquing, amb la cerca a dalt i els millors punts a baix (mockup 03).
+ */
 export function MapScreen() {
   const vm = useMapViewModel();
   const insets = useSafeAreaInsets();
   const canRetry = vm.notice?.kind === 'error' || vm.notice?.kind === 'empty';
+  const recommendations = vm.recommendations;
+  const bounds = recommendations?.bounds ?? null;
+  const collapsed = recommendations?.sheet.collapsed ?? false;
+  // Amb un rànquing, la càmera s'enquadra als punts i a l'origen, sense que els tapin la capçalera
+  // ni el full dels millors punts.
+  const fit = useMemo(
+    () =>
+      bounds
+        ? {
+            bounds,
+            padding: {
+              top: insets.top + FIT_TOP,
+              bottom: collapsed ? FIT_BOTTOM_COLLAPSED : FIT_BOTTOM,
+              left: FIT_SIDE,
+              right: FIT_SIDE,
+            },
+          }
+        : null,
+    [bounds, insets.top, collapsed],
+  );
 
   return (
     <View style={styles.container}>
@@ -54,6 +100,8 @@ export function MapScreen() {
         points={vm.points}
         markerPalette={markerPalette}
         onPointPress={vm.openPoint}
+        cluster={!recommendations}
+        fit={fit}
         dom={{
           style: { flex: 1, backgroundColor: colors.nit },
           scrollEnabled: false,
@@ -63,6 +111,20 @@ export function MapScreen() {
           automaticallyAdjustContentInsets: false,
         }}
       />
+      <View style={[styles.top, { top: insets.top + spacing.sm }]} pointerEvents="box-none">
+        <View style={styles.topRow}>
+          <PressableScale
+            onPress={vm.back.onPress}
+            accessibilityLabel={vm.back.label}
+            style={styles.back}
+          >
+            <Image source={backIcon} style={styles.backIcon} accessible={false} />
+          </PressableScale>
+          {recommendations && <RecommendationsSummary header={recommendations.header} />}
+        </View>
+        {recommendations && <IndexLegend items={recommendations.header.legend} />}
+      </View>
+      {recommendations && <RecommendationsSheet sheet={recommendations.sheet} />}
       {vm.notice && (
         <View
           style={[styles.notice, { top: insets.top + sizes.button + spacing.sm }]}
@@ -122,6 +184,19 @@ export function MapScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.nit },
+  top: { position: 'absolute', left: spacing.md, right: spacing.md, gap: spacing.ms },
+  topRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  back: {
+    width: sizes.touch,
+    height: sizes.touch,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: colors.vora,
+    backgroundColor: colors.sheet,
+  },
+  backIcon: { width: sizes.icon, height: sizes.icon },
   noticeRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.ms },
   noticeText: { flex: 1, gap: spacing.xs },
   retryContainer: {

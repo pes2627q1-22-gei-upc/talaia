@@ -16,7 +16,8 @@
     "pointsError": "We couldn’t load the locations",
     "pointsEmptyHint": "Please try again later.",
     "pointsEmpty": "No locations are available yet",
-    "retry": "Try again"
+    "retry": "Try again",
+    "back": "Back"
   },
   "calendar": {
     "title": "Calendar",
@@ -279,5 +280,31 @@
     "subtitle": "One moment: we're checking the link from your email.",
     "errorTitle": "We couldn't sign you in",
     "back": "Back to start"
+  },
+  "recommendations": {
+    "title": "{{goal}}, {{when}}",
+    "when": {
+      "tonight": "tonight",
+      "tomorrow": "tomorrow night"
+    },
+    "from": "From {{place}}, up to {{travel}}",
+    "fromHere": "From where you are, up to {{travel}}",
+    "duration": {
+      "minutes": "{{minutes}} min",
+      "hours": "{{hours}} h",
+      "hoursMinutes": "{{hours}} h {{minutes}} min"
+    },
+    "best": "Best spots for {{when}}",
+    "showAll": "See all",
+    "showLess": "See fewer",
+    "loading": "Finding the best spots…",
+    "error": "We couldn't load the recommendations",
+    "empty": "No spots within {{travel}}",
+    "emptyHint": "Try a longer distance or another night.",
+    "noIndex": "No forecast yet",
+    "bestHour": "Best time: {{hour}}",
+    "byCar": "{{travel}} by car",
+    "collapseSheet": "Collapse the list",
+    "expandSheet": "Expand the list"
   }
 }

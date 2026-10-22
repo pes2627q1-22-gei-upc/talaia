@@ -16,7 +16,8 @@
     "pointsError": "No hem pogut carregar els llocs",
     "pointsEmptyHint": "Torna-ho a provar més endavant.",
     "pointsEmpty": "Encara no hi ha llocs disponibles",
-    "retry": "Torna-ho a provar"
+    "retry": "Torna-ho a provar",
+    "back": "Enrere"
   },
   "calendar": {
     "title": "Calendari",
@@ -279,5 +280,31 @@
     "subtitle": "Un moment: estem comprovant l'enllaç del correu.",
     "errorTitle": "No hem pogut entrar",
     "back": "Torna a l'inici"
+  },
+  "recommendations": {
+    "title": "{{goal}}, {{when}}",
+    "when": {
+      "tonight": "aquesta nit",
+      "tomorrow": "demà a la nit"
+    },
+    "from": "Des de {{place}}, fins a {{travel}}",
+    "fromHere": "Des d'on ets, fins a {{travel}}",
+    "duration": {
+      "minutes": "{{minutes}} min",
+      "hours": "{{hours}} h",
+      "hoursMinutes": "{{hours}} h {{minutes}} min"
+    },
+    "best": "Millors punts per a {{when}}",
+    "showAll": "Veure'ls tots",
+    "showLess": "Veure'n menys",
+    "loading": "Buscant els millors punts…",
+    "error": "No hem pogut carregar les recomanacions",
+    "empty": "No hi ha cap punt a menys de {{travel}}",
+    "emptyHint": "Amplia la distància o tria una altra nit.",
+    "noIndex": "Encara sense previsió",
+    "bestHour": "Millor hora: {{hour}}",
+    "byCar": "{{travel}} en cotxe",
+    "collapseSheet": "Plega la llista",
+    "expandSheet": "Desplega la llista"
   }
 }
