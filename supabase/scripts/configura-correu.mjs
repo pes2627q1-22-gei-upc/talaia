@@ -10,7 +10,7 @@
  *                                                     # 6 xifres i redirects (les plantilles i el
  *                                                     # límit, Supabase no els deixa tocar sense ell)
  *
- * Variables (al .env de l'arrel o a l'entorn):
+ * Variables (a .env.supabase de l'arrel, que només llegeix aquest script, o a l'entorn):
  *   SUPABASE_ACCESS_TOKEN  token personal de https://supabase.com/dashboard/account/tokens
  *   SUPABASE_SMTP_PASS     contrasenya d'aplicació «Supabase» de talaia.pes@gmail.com
  *   SUPABASE_PROJECT_REF   opcional; per defecte el de supabase/.temp/project-ref o el de Talaia
@@ -33,8 +33,12 @@ const SMTP = {
   smtp_admin_email: 'talaia.pes@gmail.com',
   smtp_sender_name: 'Talaia',
 };
-/** Correus per hora a tot el projecte (el del correu integrat de Supabase és 2). */
-const EMAILS_PER_HOUR = 30;
+/**
+ * Correus per hora a tot el projecte (el del correu integrat de Supabase és 2). Gmail en deixa
+ * enviar uns 500 al dia: 20 per hora són 480, i així un atac de correu brossa (qualsevol pot fer
+ * que Talaia enviï un codi a qualsevol adreça) no fa que Google bloquegi el compte.
+ */
+const EMAILS_PER_HOUR = 20;
 /** El codi que espera la pantalla de l'app (CODE_LENGTH) i el que diu la plantilla (una hora). */
 const OTP = { mailer_otp_length: 6, mailer_otp_exp: 3600 };
 

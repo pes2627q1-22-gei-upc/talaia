@@ -212,7 +212,9 @@ Al pla gratuït, Supabase no deixa canviar les plantilles ni el límit de correu
 respon `535 BadCredentials` i no sortiria cap correu). L'script no la comprova: prova-la abans amb
 l'app.
 
-Necessita dues variables al `.env` de l'arrel (secrets, mai al repo):
+Necessita dues variables a **`.env.supabase`** de l'arrel (copia `.env.supabase.example`; és un fitxer a
+part perquè el token pot gestionar tots els projectes de Supabase de qui el genera, i així no el
+carreguen l'API ni el worker):
 
 | Variable | On és |
 |---|---|
@@ -222,7 +224,7 @@ Necessita dues variables al `.env` de l'arrel (secrets, mai al repo):
 Què aplica (`supabase/scripts/configura-correu.mjs`): l'SMTP de Gmail (`smtp.gmail.com:587`, remitent
 «Talaia»), les plantilles de *Magic link* i *Confirm signup* amb l'assumpte de `supabase/config.toml` i
 el cos de `supabase/templates/codi-acces.html` (les mateixes del Supabase local, amb `{{ .Token }}`),
-el codi de 6 xifres amb una hora de validesa, 30 correus per hora, i treu de les adreces de redirecció
+el codi de 6 xifres amb una hora de validesa, 20 correus per hora (Gmail en deixa uns 500 al dia, i qualsevol pot fer que Talaia enviï codis a qualsevol adreça), i treu de les adreces de redirecció
 les que tenen una IP com a host (Supabase les rebutja; a Expo Go es fa servir `nip.io`, vegeu
 `apps/mobile/README.md`).
 

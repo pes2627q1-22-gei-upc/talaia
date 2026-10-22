@@ -24,7 +24,8 @@
     "api": "npm run dev --workspace services/api",
     "db:types": "kysely-codegen --url postgresql://postgres:postgres@127.0.0.1:54322/postgres",
     "db:types:verify": "kysely-codegen --verify",
-    "supabase:correu": "node --env-file-if-exists=.env supabase/scripts/configura-correu.mjs"
+    "supabase:correu": "node --env-file-if-exists=.env.supabase supabase/scripts/configura-correu.mjs",
+    "test:supabase": "node --test \"supabase/scripts/**/*.test.mjs\""
   },
   "devDependencies": {
     "@commitlint/cli": "^21.2.3",
