@@ -1,4 +1,4 @@
-import { memo, useState } from 'react';
+import { memo } from 'react';
 import { FlatList, StyleSheet, View } from 'react-native';
 
 import { colors, sizes, spacing, typography } from '@/core/theme/tokens';
@@ -10,17 +10,24 @@ import type { usePointDetailViewModel } from './usePointDetailViewModel';
 type Props = Pick<
   ReturnType<typeof usePointDetailViewModel>,
   'hours' | 'hoursLabel' | 'timezoneLabel' | 'noHours'
->;
+> & {
+  /** L'hora triada la porta `IndexBreakdown`, que en pinta els factors. */
+  selectedHourId: string | null;
+  onSelect: (hourId: string) => void;
+};
 
-/** L'estat de selecció viu aquí: tocar una hora no torna a pintar la fitxa ni el mapa DOM. */
 export const HourlyChart = memo(function HourlyChart({
   hours,
   hoursLabel,
   timezoneLabel,
   noHours,
+  selectedHourId,
+  onSelect,
 }: Props) {
-  const [selectedHourId, setSelectedHourId] = useState<string | null>(null);
   const hasBestWindow = hours.some((hour) => hour.isBest);
+  // S'obre amb l'hora triada a la vista (la millor de la nit pot ser a la matinada, fora de la
+  // pantalla), amb un parell de columnes abans perquè es vegi d'on ve.
+  const initialScrollIndex = Math.max(0, hours.findIndex((hour) => hour.id === selectedHourId) - 2);
 
   return (
     <View style={styles.section}>
@@ -37,6 +44,12 @@ export const HourlyChart = memo(function HourlyChart({
           extraData={selectedHourId}
           keyExtractor={(hour) => hour.id}
           showsHorizontalScrollIndicator
+          initialScrollIndex={initialScrollIndex}
+          getItemLayout={(_, index) => ({
+            length: sizes.hourlyColumn,
+            offset: (sizes.hourlyColumn + spacing.xs) * index,
+            index,
+          })}
           style={styles.chartList}
           contentContainerStyle={styles.chart}
           renderItem={({ item }) => (
@@ -44,9 +57,7 @@ export const HourlyChart = memo(function HourlyChart({
               accessibilityLabel={item.accessibilityLabel}
               accessibilityState={{ selected: item.id === selectedHourId }}
               haptic
-              onPress={() =>
-                setSelectedHourId((selected) => (selected === item.id ? null : item.id))
-              }
+              onPress={() => onSelect(item.id)}
               style={styles.hour}
             >
               <View

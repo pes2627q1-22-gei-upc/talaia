@@ -1,4 +1,4 @@
-import type { IndexHora, PuntFitxa } from '@talaia/shared';
+import type { DesglossamentIndex, IndexHora, PuntFitxa } from '@talaia/shared';
 
 import type { PointDetailModel } from '../pointModel';
 
@@ -44,4 +44,22 @@ export function asPointResponse(detail: PointDetailModel = point): PuntFitxa {
     sqm: detail.sqm,
     index: { actual: detail.indexActual, properesHores: detail.properesHores },
   };
+}
+
+/** `GET /punts/{id}/index` (TG-104) d'aquesta nit; per defecte, les mateixes hores de la fitxa. */
+export function asBreakdown(
+  detail: PointDetailModel = point,
+  hores: IndexHora[] = detail.properesHores,
+): DesglossamentIndex {
+  return {
+    punt: { id: detail.id, nom: detail.nom, municipi: detail.municipi },
+    nit: '2026-10-18',
+    hores,
+  };
+}
+
+/** Respon com l'API: la fitxa o el desglossament segons la ruta. Per a `apiGet.mockImplementation`. */
+export function respond(detail: PointDetailModel = point, hores?: IndexHora[]) {
+  return async (path: string) =>
+    path.endsWith('/index') ? asBreakdown(detail, hores) : asPointResponse(detail);
 }
