@@ -26,15 +26,21 @@ export function ProfileScreen() {
           />
         ))}
       </View>
-      <ApiStatusCard />
       {vm.auth.isAuthenticated ? (
-        <Button
-          label={vm.auth.logoutLabel}
-          variant="secondary"
-          disabled={vm.auth.signingOut || vm.auth.loading}
-          onPress={() => void vm.auth.signOut()}
-        />
+        <View style={styles.account}>
+          <AppText variant="small" color="boira">
+            {vm.accountLabel}
+          </AppText>
+          {vm.email ? <AppText variant="body">{vm.email}</AppText> : null}
+          <Button
+            label={vm.auth.logoutLabel}
+            variant="secondary"
+            disabled={vm.auth.signingOut || vm.auth.loading}
+            onPress={() => void vm.auth.signOut()}
+          />
+        </View>
       ) : null}
+      {vm.showApiStatus ? <ApiStatusCard /> : null}
       {vm.auth.errorMessage ? (
         <View style={{ gap: spacing.sm }}>
           <AppText accessibilityRole="alert">{vm.auth.errorMessage}</AppText>
@@ -49,4 +55,5 @@ export function ProfileScreen() {
 
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap' },
+  account: { gap: spacing.sm, marginTop: spacing.sm },
 });

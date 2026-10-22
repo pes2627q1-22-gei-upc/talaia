@@ -29,7 +29,8 @@
       "ca": "Catalán",
       "es": "Castellano",
       "en": "Inglés"
-    }
+    },
+    "account": "Cuenta"
   },
   "apiStatus": {
     "title": "Estado del servidor",
