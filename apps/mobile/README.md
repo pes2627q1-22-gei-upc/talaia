@@ -101,8 +101,9 @@ tanca la sessió i la vista ho diu, perquè no quedi cap compte a mitges.
   nonce (Apple en rep el hash) i `signInWithIdToken`. Apple només dona el nom el primer cop
   i no el posa al token: va al cos de `POST /perfil` (`{ nom }`). **Expo Go no porta el
   mòdul natiu**: allà va pel navegador, com Google (Services ID `cat.talaia.web`). El
-  secret d'aquest flux caduca cada 6 mesos: `supabase/scripts/apple-secret.mjs`. Botó
-  propi, amb el logotip i el text de les pautes d'Apple.
+  secret d'aquest flux caduca cada 6 mesos: `supabase/scripts/apple-secret.mjs`. Als
+  builds natius, el botó oficial (`AppleAuthenticationButton`, el que revisa l'App Store);
+  a Expo Go, un de propi amb el logotip i el text de les pautes d'Apple.
 - **Correu:** `/benvinguda-correu` (`signInWithOtp`). El correu pot portar un codi de 6
   xifres (`verifyOtp`) o un enllaç, i l'app accepta tots dos:
   - **Codi:** cal una plantilla amb `{{ .Token }}`. En local ja la té

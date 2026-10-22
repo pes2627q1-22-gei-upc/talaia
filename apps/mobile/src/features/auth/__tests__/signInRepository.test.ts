@@ -111,6 +111,21 @@ describe('Apple', () => {
     expect(AppleAuthentication.signInAsync).not.toHaveBeenCalled();
   });
 
+  it("tancar el full web d'Apple és una cancel·lació, no un error", async () => {
+    jest.mocked(AppleAuthentication.isAvailableAsync).mockResolvedValueOnce(false);
+    jest.mocked(WebBrowser.openAuthSessionAsync).mockResolvedValue({
+      type: 'success',
+      url: `${REDIRECT}?error=user_cancelled_authorize`,
+    });
+    expect(await reason(authRepository.signInWithApple())).toBe('cancelled');
+  });
+
+  it('diu si hi ha el full natiu, perquè la benvinguda hi posi el botó oficial', async () => {
+    expect(await authRepository.isAppleNativeAvailable()).toBe(true);
+    jest.mocked(AppleAuthentication.isAvailableAsync).mockResolvedValueOnce(false);
+    expect(await authRepository.isAppleNativeAvailable()).toBe(false);
+  });
+
   it('també pel navegador si no es pot saber si hi és, i fora d’iOS', async () => {
     jest
       .mocked(WebBrowser.openAuthSessionAsync)

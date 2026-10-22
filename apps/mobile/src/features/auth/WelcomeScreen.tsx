@@ -1,4 +1,5 @@
 import * as Haptics from 'expo-haptics';
+import * as AppleAuthentication from 'expo-apple-authentication';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams } from 'expo-router';
@@ -13,7 +14,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { gradients, motion, sizes, spacing } from '@/core/theme/tokens';
+import { gradients, motion, radii, sizes, spacing } from '@/core/theme/tokens';
 import { AppText } from '@/shared/ui/AppText';
 import { Button } from '@/shared/ui/Button';
 
@@ -204,19 +205,30 @@ export function WelcomeScreen() {
           </Appear>
           {vm.showApple ? (
             <Appear index={4} t={t}>
-              {/* Botó propi (pautes d'Apple): el component oficial no existeix a Expo Go. */}
-              <Button
-                variant="secondary"
-                label={vm.appleLabel}
-                onPress={() => void vm.continueWithApple()}
-                disabled={vm.busy}
-                haptic
-                icon={
-                  <View style={styles.icon}>
-                    <Image source={appleIcon} style={styles.appleIcon} />
-                  </View>
-                }
-              />
+              {vm.appleNative ? (
+                // Als builds natius, l'oficial: el sistema hi posa el logotip, el text i la traducció.
+                <AppleAuthentication.AppleAuthenticationButton
+                  buttonType={AppleAuthentication.AppleAuthenticationButtonType.CONTINUE}
+                  buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
+                  cornerRadius={radii.md}
+                  style={styles.apple}
+                  onPress={() => void vm.continueWithApple()}
+                />
+              ) : (
+                // Botó propi (pautes d'Apple): a Expo Go el component oficial no existeix.
+                <Button
+                  variant="secondary"
+                  label={vm.appleLabel}
+                  onPress={() => void vm.continueWithApple()}
+                  disabled={vm.busy}
+                  haptic
+                  icon={
+                    <View style={styles.icon}>
+                      <Image source={appleIcon} style={styles.appleIcon} />
+                    </View>
+                  }
+                />
+              )}
             </Appear>
           ) : null}
           <Appear index={5} t={t}>
@@ -268,6 +280,7 @@ const styles = StyleSheet.create({
   mailIcon: { width: 19.25, height: 15.58 },
   googleIcon: { width: 18, height: 18 },
   appleIcon: { width: 18, height: 18 },
+  apple: { height: sizes.button },
   error: { marginTop: spacing.ms, textAlign: 'center' },
   tagline: { marginTop: spacing.ms },
   description: { marginTop: spacing.xs },

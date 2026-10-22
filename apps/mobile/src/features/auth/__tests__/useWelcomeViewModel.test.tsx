@@ -14,6 +14,7 @@ jest.mock('../authRepository', () => ({
   authRepository: {
     signInWithGoogle: jest.fn(),
     signInWithApple: jest.fn(),
+    isAppleNativeAvailable: jest.fn(async () => false),
   },
 }));
 const replace = jest.fn();
@@ -47,6 +48,12 @@ describe('useWelcomeViewModel', () => {
     const ios = await renderHook(() => useWelcomeViewModel());
     expect(ios.result.current.showApple).toBe(true);
     expect(ios.result.current.appleLabel).toBe('Continua amb Apple');
+    expect(ios.result.current.appleNative).toBe(false);
+
+    jest.mocked(authRepository.isAppleNativeAvailable).mockResolvedValueOnce(true);
+    const native = await renderHook(() => useWelcomeViewModel());
+    await act(async () => {});
+    expect(native.result.current.appleNative).toBe(true);
 
     const restore = jest.replaceProperty(Platform, 'OS', 'android');
     const android = await renderHook(() => useWelcomeViewModel());

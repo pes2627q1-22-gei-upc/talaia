@@ -331,7 +331,7 @@
     "send": "Envía el código",
     "sending": "Enviando…",
     "codeTitle": "Escribe el código",
-    "codeSubtitle": "Lo hemos enviado a {{email}}. Escribe el código o abre el enlace del correo en este móvil. Mira también el correo no deseado.",
+    "codeSubtitle": "Lo hemos enviado a {{email}}. Mira también el correo no deseado.",
     "codeLabel": "Código de 6 cifras",
     "verify": "Entra",
     "verifying": "Comprobando…",

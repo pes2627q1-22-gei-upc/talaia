@@ -331,7 +331,7 @@
     "send": "Send code",
     "sending": "Sending…",
     "codeTitle": "Enter the code",
-    "codeSubtitle": "We sent it to {{email}}. Enter the code or open the link in the email on this phone. Check your spam folder too.",
+    "codeSubtitle": "We sent it to {{email}}. Check your spam folder too.",
     "codeLabel": "6-digit code",
     "verify": "Sign in",
     "verifying": "Checking…",

@@ -40,6 +40,8 @@ export const OAUTH_CALLBACK_PATH = 'auth/callback';
 /** On torna l'enllaç del correu: la ruta `app/auth/correu.tsx` hi completa l'inici de sessió. */
 export const EMAIL_LINK_PATH = 'auth/correu';
 
+/** Si l'usuari no dona permís: Google torna `access_denied`; Apple, `user_cancelled_authorize`. */
+const CANCELLED_OAUTH_ERRORS = new Set(['access_denied', 'user_cancelled_authorize']);
 const RATE_LIMIT_CODES = new Set(['over_email_send_rate_limit', 'over_request_rate_limit']);
 const INVALID_EMAIL_CODES = new Set(['email_address_invalid', 'validation_failed']);
 /** L'enllaç ja s'ha fet servir, ha caducat o s'obre en un altre mòbil (sense el verificador PKCE). */
@@ -116,8 +118,9 @@ async function signInWithBrowser(provider: 'google' | 'apple'): Promise<void> {
   const params = new URL(result.url).searchParams;
   const code = params.get('code');
   if (!code) {
-    // Google torna `access_denied` si l'usuari no dona permís.
-    throw new SignInFailure(params.get('error') === 'access_denied' ? 'cancelled' : 'unknown');
+    throw new SignInFailure(
+      CANCELLED_OAUTH_ERRORS.has(params.get('error') ?? '') ? 'cancelled' : 'unknown',
+    );
   }
   await guard(() => client.auth.exchangeCodeForSession(code));
 }
@@ -156,6 +159,10 @@ export const authRepository = {
   },
   signInWithGoogle(): Promise<void> {
     return signInWithBrowser('google');
+  },
+  /** Si hi ha el full natiu d'Apple: llavors la benvinguda hi posa el botó oficial. */
+  isAppleNativeAvailable(): Promise<boolean> {
+    return appleNativeAvailable();
   },
   /**
    * Apple (ADR-0016): amb el full natiu d'iOS si hi és, i el token va directe a Supabase. Sense el

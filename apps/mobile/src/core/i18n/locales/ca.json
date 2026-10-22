@@ -331,7 +331,7 @@
     "send": "Envia el codi",
     "sending": "Enviant…",
     "codeTitle": "Escriu el codi",
-    "codeSubtitle": "L'hem enviat a {{email}}. Escriu el codi o obre l'enllaç del correu en aquest mòbil. Mira també el correu brossa.",
+    "codeSubtitle": "L'hem enviat a {{email}}. Mira també el correu brossa.",
     "codeLabel": "Codi de 6 xifres",
     "verify": "Entra",
     "verifying": "Comprovant…",
