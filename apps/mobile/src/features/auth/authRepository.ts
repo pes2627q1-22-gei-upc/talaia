@@ -100,6 +100,37 @@ function toUser(user: AuthUser | null | undefined): AuthUser | null {
   return user ? { id: user.id, email: user.email } : null;
 }
 
+/** OAuth pel navegador del sistema (PKCE). A Expo Go la redirecció és `exp://…`. */
+async function signInWithBrowser(provider: 'google' | 'apple'): Promise<void> {
+  const client = requireClient();
+  const redirectTo = Linking.createURL(OAUTH_CALLBACK_PATH);
+  const { data } = await guard(() =>
+    client.auth.signInWithOAuth({
+      provider,
+      options: { redirectTo, skipBrowserRedirect: true },
+    }),
+  );
+  if (!data.url) throw new SignInFailure('unknown');
+  const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
+  if (result.type !== 'success') throw new SignInFailure('cancelled');
+  const params = new URL(result.url).searchParams;
+  const code = params.get('code');
+  if (!code) {
+    // Google torna `access_denied` si l'usuari no dona permís.
+    throw new SignInFailure(params.get('error') === 'access_denied' ? 'cancelled' : 'unknown');
+  }
+  await guard(() => client.auth.exchangeCodeForSession(code));
+}
+
+/**
+ * Si es pot fer servir el full natiu de Sign in with Apple: només a iOS i amb el mòdul natiu, que
+ * Expo Go (SDK 57) no porta, ni al simulador ni al mòbil.
+ */
+async function appleNativeAvailable(): Promise<boolean> {
+  if (Platform.OS !== 'ios') return false;
+  return AppleAuthentication.isAvailableAsync().catch(() => false);
+}
+
 export const authRepository = {
   async getUser(): Promise<AuthUser | null> {
     const client = getAuthClient();
@@ -123,37 +154,18 @@ export const authRepository = {
   isConfigured(): boolean {
     return getAuthClient() !== null;
   },
-  /** Google pel navegador del sistema (PKCE). A Expo Go la redirecció és `exp://…`. */
-  async signInWithGoogle(): Promise<void> {
-    const client = requireClient();
-    const redirectTo = Linking.createURL(OAUTH_CALLBACK_PATH);
-    const { data } = await guard(() =>
-      client.auth.signInWithOAuth({
-        provider: 'google',
-        options: { redirectTo, skipBrowserRedirect: true },
-      }),
-    );
-    if (!data.url) throw new SignInFailure('unknown');
-    const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
-    if (result.type !== 'success') throw new SignInFailure('cancelled');
-    const params = new URL(result.url).searchParams;
-    const code = params.get('code');
-    if (!code) {
-      // Google torna `access_denied` si l'usuari no dona permís.
-      throw new SignInFailure(params.get('error') === 'access_denied' ? 'cancelled' : 'unknown');
-    }
-    await guard(() => client.auth.exchangeCodeForSession(code));
+  signInWithGoogle(): Promise<void> {
+    return signInWithBrowser('google');
   },
   /**
-   * Si es pot fer servir Sign in with Apple: només a iOS i amb el mòdul natiu, que Expo Go (SDK 57)
-   * no porta, ni al simulador ni al mòbil. Sense el mòdul, el botó oficial sortiria com un error.
+   * Apple (ADR-0016): amb el full natiu d'iOS si hi és, i el token va directe a Supabase. Sense el
+   * mòdul natiu (Expo Go), pel navegador, com Google.
    */
-  async isAppleAvailable(): Promise<boolean> {
-    if (Platform.OS !== 'ios') return false;
-    return AppleAuthentication.isAvailableAsync().catch(() => false);
-  },
-  /** Apple amb el full natiu d'iOS (ADR-0016): el token va directe a Supabase. */
   async signInWithApple(): Promise<ProfileHints> {
+    if (!(await appleNativeAvailable())) {
+      await signInWithBrowser('apple');
+      return {};
+    }
     const client = requireClient();
     // Apple rep el hash del nonce i Supabase el nonce: així el token no es pot reutilitzar.
     const nonce = Crypto.randomUUID();

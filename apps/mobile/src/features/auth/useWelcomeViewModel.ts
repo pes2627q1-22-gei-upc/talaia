@@ -1,6 +1,7 @@
 import { useRouter } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Platform } from 'react-native';
 
 import { authRepository, type SignInFailureReason } from './authRepository';
 import { signInAndEnsureProfile } from './signIn';
@@ -25,18 +26,7 @@ export function useWelcomeViewModel(onSignedIn: (enterApp: () => void) => void =
   const errorMessage = useSignInErrorMessage();
   const [pending, setPending] = useState<AuthMethod | null>(null);
   const [failure, setFailure] = useState<SignInFailureReason | null>(null);
-  const [appleAvailable, setAppleAvailable] = useState(false);
   const busy = useRef(false);
-
-  useEffect(() => {
-    let active = true;
-    void authRepository.isAppleAvailable().then((available) => {
-      if (active) setAppleAvailable(available);
-    });
-    return () => {
-      active = false;
-    };
-  }, []);
 
   const signIn = async (method: AuthMethod) => {
     if (busy.current) return;
@@ -58,9 +48,10 @@ export function useWelcomeViewModel(onSignedIn: (enterApp: () => void) => void =
     description: t('welcome.description'),
     legal: t('welcome.legal'),
     googleLabel: t(pending === 'google' ? 'welcome.signingIn' : 'welcome.continueGoogle'),
+    appleLabel: t(pending === 'apple' ? 'welcome.signingIn' : 'welcome.continueApple'),
     emailLabel: t('welcome.continueEmail'),
-    /** Sign in with Apple només a iOS (ADR-0016) i si el dispositiu el pot fer servir. */
-    showApple: appleAvailable,
+    /** Sign in with Apple només a iOS (ADR-0016): natiu si es pot, i si no, pel navegador. */
+    showApple: Platform.OS === 'ios',
     busy: pending !== null,
     errorMessage: errorMessage(failure),
     continueWithGoogle: () => signIn('google'),

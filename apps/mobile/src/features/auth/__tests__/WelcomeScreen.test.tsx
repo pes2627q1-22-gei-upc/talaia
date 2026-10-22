@@ -10,7 +10,6 @@ import { motion } from '@/core/theme/tokens';
 
 import { TL } from '../intro/timeline';
 import { INTRO_LEAD, INTRO_SEEN_KEY, SKIP_DURATION } from '../intro/useIntro';
-import { authRepository } from '../authRepository';
 import { signInAndEnsureProfile } from '../signIn';
 import { WelcomeScreen } from '../WelcomeScreen';
 
@@ -28,27 +27,11 @@ jest.mock('react-native-reanimated', () => {
     useReducedMotion: jest.fn(() => false),
   };
 });
-// El botó natiu d'Apple: a Jest, un botó amb el nom que hi posa el sistema.
-jest.mock('expo-apple-authentication', () => {
-  const { Pressable } = jest.requireActual('react-native');
-  return {
-    AppleAuthenticationButton: ({ onPress }: { onPress: () => void }) => (
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="Continua amb Apple"
-        onPress={onPress}
-      />
-    ),
-    AppleAuthenticationButtonType: { CONTINUE: 1 },
-    AppleAuthenticationButtonStyle: { BLACK: 2 },
-  };
-});
 jest.mock('../signIn', () => ({ signInAndEnsureProfile: jest.fn() }));
 jest.mock('../authRepository', () => ({
   authRepository: {
     signInWithGoogle: jest.fn(),
     signInWithApple: jest.fn(),
-    isAppleAvailable: jest.fn(async () => true),
   },
 }));
 const replace = jest.fn();
@@ -95,9 +78,8 @@ describe('WelcomeScreen', () => {
     }
   });
 
-  it('a Android, o sense el mòdul natiu, no ofereix Apple (ADR-0016)', async () => {
+  it('a Android no ofereix Apple (ADR-0016)', async () => {
     const restore = jest.replaceProperty(Platform, 'OS', 'android');
-    jest.mocked(authRepository.isAppleAvailable).mockResolvedValueOnce(false);
     await renderWelcome();
     expect(screen.queryByRole('button', { name: 'Continua amb Apple' })).toBeNull();
     restore.restore();

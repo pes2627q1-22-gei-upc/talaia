@@ -1,5 +1,4 @@
 import type { AuthChangeEvent, Session } from '@supabase/supabase-js';
-import * as AppleAuthentication from 'expo-apple-authentication';
 import { AppState, type AppStateStatus, Platform } from 'react-native';
 
 import { getAuthClient } from '@/core/auth/supabase';
@@ -7,7 +6,6 @@ import { getAuthClient } from '@/core/auth/supabase';
 import { authRepository } from '../authRepository';
 
 jest.mock('@/core/auth/supabase', () => ({ getAuthClient: jest.fn() }));
-jest.mock('expo-apple-authentication', () => ({ isAvailableAsync: jest.fn() }));
 const getSession = jest.fn();
 const signOut = jest.fn();
 const mockClient = { auth: { getSession, signOut } };
@@ -106,20 +104,4 @@ it('no oculta errors de restauració amb INITIAL_SESSION i escolta els canvis po
   expect(change).toHaveBeenLastCalledWith(null);
   stop();
   expect(unsubscribe).toHaveBeenCalledTimes(1);
-});
-
-it('Apple només a iOS i amb el mòdul natiu; si no es pot saber, no hi és', async () => {
-  const originalOS = Platform.OS;
-  Platform.OS = 'android';
-  expect(await authRepository.isAppleAvailable()).toBe(false);
-  expect(AppleAuthentication.isAvailableAsync).not.toHaveBeenCalled();
-
-  Platform.OS = 'ios';
-  jest.mocked(AppleAuthentication.isAvailableAsync).mockResolvedValueOnce(true);
-  expect(await authRepository.isAppleAvailable()).toBe(true);
-  jest.mocked(AppleAuthentication.isAvailableAsync).mockResolvedValueOnce(false);
-  expect(await authRepository.isAppleAvailable()).toBe(false);
-  jest.mocked(AppleAuthentication.isAvailableAsync).mockRejectedValueOnce(new Error('sense mòdul'));
-  expect(await authRepository.isAppleAvailable()).toBe(false);
-  Platform.OS = originalOS;
 });

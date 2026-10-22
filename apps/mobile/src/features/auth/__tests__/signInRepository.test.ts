@@ -1,6 +1,7 @@
 import { AuthApiError, AuthRetryableFetchError } from '@supabase/supabase-js';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import * as WebBrowser from 'expo-web-browser';
+import { Platform } from 'react-native';
 
 import { getAuthClient } from '@/core/auth/supabase';
 
@@ -17,6 +18,7 @@ jest.mock('expo-crypto', () => ({
   CryptoDigestAlgorithm: { SHA256: 'SHA-256' },
 }));
 jest.mock('expo-apple-authentication', () => ({
+  isAvailableAsync: jest.fn(async () => true),
   signInAsync: jest.fn(),
   AppleAuthenticationScope: { FULL_NAME: 0, EMAIL: 1 },
 }));
@@ -95,6 +97,35 @@ describe('Google', () => {
 });
 
 describe('Apple', () => {
+  it('sense el mòdul natiu (Expo Go) va pel navegador, com Google', async () => {
+    jest.mocked(AppleAuthentication.isAvailableAsync).mockResolvedValueOnce(false);
+    jest
+      .mocked(WebBrowser.openAuthSessionAsync)
+      .mockResolvedValue({ type: 'success', url: `${REDIRECT}?code=abc` });
+    expect(await authRepository.signInWithApple()).toEqual({});
+    expect(auth.signInWithOAuth).toHaveBeenCalledWith({
+      provider: 'apple',
+      options: { redirectTo: REDIRECT, skipBrowserRedirect: true },
+    });
+    expect(auth.exchangeCodeForSession).toHaveBeenCalledWith('abc');
+    expect(AppleAuthentication.signInAsync).not.toHaveBeenCalled();
+  });
+
+  it('també pel navegador si no es pot saber si hi és, i fora d’iOS', async () => {
+    jest
+      .mocked(WebBrowser.openAuthSessionAsync)
+      .mockResolvedValue({ type: 'success', url: `${REDIRECT}?code=abc` });
+    jest
+      .mocked(AppleAuthentication.isAvailableAsync)
+      .mockRejectedValueOnce(new Error('sense mòdul'));
+    await authRepository.signInWithApple();
+    const restore = jest.replaceProperty(Platform, 'OS', 'android');
+    await authRepository.signInWithApple();
+    restore.restore();
+    expect(auth.signInWithOAuth).toHaveBeenCalledTimes(2);
+    expect(AppleAuthentication.signInAsync).not.toHaveBeenCalled();
+  });
+
   const credential = { identityToken: 'id-token', fullName: null };
 
   it('envia el hash del nonce a Apple i el nonce i el token a Supabase', async () => {
