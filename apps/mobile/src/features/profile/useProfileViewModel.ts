@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 
-import { isSupportedLanguage, SUPPORTED_LANGUAGES, type Language } from '@/core/i18n';
+import { isSupportedLanguage, saveLanguage, SUPPORTED_LANGUAGES, type Language } from '@/core/i18n';
 import { useAuthViewModel } from '@/features/auth/useAuthViewModel';
 
 /**
@@ -21,6 +21,10 @@ export function useProfileViewModel() {
       label: t(`profile.languages.${code}`),
       selected: code === current,
     })),
-    selectLanguage: (code: Language) => i18n.changeLanguage(code),
+    selectLanguage: (code: Language) => saveLanguage(code),
+    accountLabel: t('profile.account'),
+    email: auth.isAuthenticated ? (auth.user?.email ?? null) : null,
+    /** L'estat del servidor és per a l'equip: a la build publicada no surt. */
+    showApiStatus: __DEV__,
   };
 }

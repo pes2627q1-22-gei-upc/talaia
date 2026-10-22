@@ -1,5 +1,6 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getLocales } from 'expo-localization';
-import i18n from 'i18next';
+import i18n, { changeLanguage } from 'i18next';
 import { initReactI18next } from 'react-i18next';
 
 import ca from './locales/ca.json';
@@ -26,12 +27,28 @@ export function detectLanguage(): Language {
   return isSupportedLanguage(deviceLanguage) ? deviceLanguage : DEFAULT_LANGUAGE;
 }
 
-void i18n.use(initReactI18next).init({
-  resources,
-  lng: detectLanguage(),
-  fallbackLng: DEFAULT_LANGUAGE,
-  interpolation: { escapeValue: false },
-  returnNull: false,
-});
+/** L'idioma triat al perfil: mana sobre el del dispositiu en les arrencades següents. */
+export const LANGUAGE_KEY = 'talaia:idioma';
+
+export async function saveLanguage(code: Language): Promise<void> {
+  await changeLanguage(code);
+  await AsyncStorage.setItem(LANGUAGE_KEY, code).catch(() => {});
+}
+
+export async function restoreLanguage(): Promise<void> {
+  const saved = await AsyncStorage.getItem(LANGUAGE_KEY).catch(() => null);
+  if (isSupportedLanguage(saved) && saved !== i18n.language) await changeLanguage(saved);
+}
+
+void i18n
+  .use(initReactI18next)
+  .init({
+    resources,
+    lng: detectLanguage(),
+    fallbackLng: DEFAULT_LANGUAGE,
+    interpolation: { escapeValue: false },
+    returnNull: false,
+  })
+  .then(restoreLanguage);
 
 export default i18n;

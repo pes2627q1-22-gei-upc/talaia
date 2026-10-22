@@ -1,11 +1,16 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { act, renderHook } from '@testing-library/react-native';
 
-import i18n from '@/core/i18n';
+import i18n, { LANGUAGE_KEY, restoreLanguage } from '@/core/i18n';
 
 import { useProfileViewModel } from '../useProfileViewModel';
 
 jest.mock('@/features/auth/useAuthViewModel', () => ({
-  useAuthViewModel: () => ({ isAuthenticated: true, logoutLabel: 'Tanca la sessió' }),
+  useAuthViewModel: () => ({
+    isAuthenticated: true,
+    logoutLabel: 'Tanca la sessió',
+    user: { id: 'u', email: 'maria@example.com' },
+  }),
 }));
 
 describe('useProfileViewModel', () => {
@@ -28,13 +33,29 @@ describe('useProfileViewModel', () => {
 
   it('exposa la sessió tal com la dona useAuthViewModel (el logout és a la pantalla)', async () => {
     const { result } = await renderHook(() => useProfileViewModel());
-    expect(result.current.auth).toEqual({ isAuthenticated: true, logoutLabel: 'Tanca la sessió' });
+    expect(result.current.auth).toMatchObject({ isAuthenticated: true });
+    expect(result.current.accountLabel).toBe('Compte');
+    expect(result.current.email).toBe('maria@example.com');
+    // L'estat del servidor és per a l'equip: als tests (__DEV__) surt; a la build publicada, no.
+    expect(result.current.showApiStatus).toBe(true);
   });
 
-  it("canvia l'idioma de l'app", async () => {
+  it("canvia l'idioma de l'app i el desa per a la propera vegada", async () => {
     const { result } = await renderHook(() => useProfileViewModel());
     await act(() => result.current.selectLanguage('en'));
     expect(result.current.currentLanguage).toBe('en');
     expect(result.current.languageLabel).toBe('Language');
+    expect(await AsyncStorage.getItem(LANGUAGE_KEY)).toBe('en');
+  });
+
+  it("en arrencar, l'idioma desat mana sobre el del dispositiu", async () => {
+    await AsyncStorage.setItem(LANGUAGE_KEY, 'es');
+    await restoreLanguage();
+    expect(i18n.language).toBe('es');
+    // Un valor que no és dels tres no canvia res.
+    await AsyncStorage.setItem(LANGUAGE_KEY, 'fr');
+    await i18n.changeLanguage('ca');
+    await restoreLanguage();
+    expect(i18n.language).toBe('ca');
   });
 });

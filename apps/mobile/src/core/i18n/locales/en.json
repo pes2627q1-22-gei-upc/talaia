@@ -30,7 +30,8 @@
       "ca": "Catalan",
       "es": "Spanish",
       "en": "English"
-    }
+    },
+    "account": "Account"
   },
   "apiStatus": {
     "title": "Server status",
