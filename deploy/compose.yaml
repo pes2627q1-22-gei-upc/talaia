@@ -19,7 +19,8 @@ services:
     environment:
       API_PORT: 3000
       DATABASE_URL: ${DATABASE_URL:-}
-      SUPABASE_URL: ${SUPABASE_URL:-}
+      # Valida els JWT de /perfil. Sense, l'API faria servir el Supabase local (127.0.0.1:54321).
+      SUPABASE_URL: ${SUPABASE_URL:?Falta SUPABASE_URL (https://<ref>.supabase.co)}
       APROP_API_KEY: ${APROP_API_KEY:-}
     volumes:
       # Certificat arrel de Supabase per validar la connexió a la BD (sslmode=verify-full,
