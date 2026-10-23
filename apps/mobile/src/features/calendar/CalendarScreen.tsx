@@ -11,8 +11,7 @@ import { Sheet } from '@/shared/ui/Sheet';
 import { Skeleton } from '@/shared/ui/Skeleton';
 import { StateMessage } from '@/shared/ui/StateMessage';
 
-import { eventDate } from './calendarModel';
-import { eventAppearance, filterColors, filterIcons } from './phenomenonAppearance';
+import { filterColors, filterIcons } from './phenomenonAppearance';
 import { useCalendarViewModel } from './useCalendarViewModel';
 
 /** Calendari mensual de fenòmens (HU09, mockup 08). */
@@ -40,8 +39,8 @@ export function CalendarScreen() {
             weekdayNames={vm.weekdayNames}
             formatTitle={vm.formatMonth}
             dayLabel={vm.dayLabel}
-            previousLabel={`${vm.t('calendar.previous')}: ${vm.previousMonthLabel}`}
-            nextLabel={`${vm.t('calendar.next')}: ${vm.nextMonthLabel}`}
+            previousLabel={vm.labels.previous}
+            nextLabel={vm.labels.next}
             markersByDay={vm.markersByDay}
             dimPastDays
             outlineToday
@@ -51,10 +50,10 @@ export function CalendarScreen() {
                   haptic="selection"
                   onPress={vm.goToday}
                   style={styles.todayButton}
-                  accessibilityLabel={vm.t('calendar.goToday')}
+                  accessibilityLabel={vm.labels.goToday}
                 >
                   <AppText variant="chip" color="far">
-                    {vm.t('calendar.relative.today')}
+                    {vm.labels.today}
                   </AppText>
                 </PressableScale>
               ) : null
@@ -70,10 +69,10 @@ export function CalendarScreen() {
                     onPress={vm.clearSelectedDay}
                     style={styles.allMonthButton}
                     accessibilityRole="button"
-                    accessibilityLabel={vm.t('calendar.allMonth')}
+                    accessibilityLabel={vm.labels.allMonth}
                   >
                     <AppText variant="chip" color="far">
-                      {vm.t('calendar.allMonth')}
+                      {vm.labels.allMonth}
                     </AppText>
                   </PressableScale>
                 ) : null}
@@ -81,9 +80,7 @@ export function CalendarScreen() {
                   onPress={vm.toggleFilterMenu}
                   style={[styles.controlButton, vm.showPast && styles.controlButtonActive]}
                   accessibilityRole="button"
-                  accessibilityLabel={`${vm.t('calendar.filterLabel', {
-                    filter: vm.activeFilterLabel,
-                  })}${vm.showPast ? `, ${vm.t('calendar.showPast')}` : ''}`}
+                  accessibilityLabel={vm.labels.filterButton}
                   accessibilityState={{ expanded: vm.filterMenuOpen }}
                 >
                   {vm.filter === 'all' ? (
@@ -117,80 +114,69 @@ export function CalendarScreen() {
               </>
             ) : vm.isError ? (
               <StateMessage
-                title={vm.t('calendar.error')}
-                action={{ label: vm.t('calendar.retry'), onPress: vm.retry }}
+                title={vm.labels.error}
+                action={{ label: vm.labels.retry, onPress: vm.retry }}
               />
             ) : vm.events.length === 0 ? (
               <StateMessage title={vm.emptyMessage} />
             ) : (
-              vm.events.map((event) => {
-                const date = eventDate(event);
-                const past = date < vm.today;
-                const relativeDay =
-                  date === vm.today ? 'today' : date === vm.tomorrow ? 'tomorrow' : null;
-                const day = Number(date.slice(-2));
-                const month = new Intl.DateTimeFormat(vm.locale, { month: 'short' }).format(
-                  new Date(`${date}T12:00:00`),
-                );
-                const appearance = eventAppearance(event);
-                return (
-                  <View
-                    key={event.id}
-                    style={[
-                      styles.event,
-                      past && styles.pastEvent,
-                      date === vm.selectedDay && styles.activeEvent,
-                    ]}
-                  >
-                    <View style={[styles.dateBadge, past && styles.pastDateBadge]}>
-                      <AppText variant="heading" color={past ? 'boira' : 'lluna'}>
-                        {day}
-                      </AppText>
-                      <AppText variant="tag" color="boira">
-                        {month}
-                      </AppText>
-                    </View>
-                    <View style={styles.eventCopy}>
-                      <View style={styles.eventTitleRow}>
-                        <AppText
-                          variant="label"
-                          color={past ? 'boira' : 'lluna'}
-                          style={styles.eventName}
-                        >
-                          {event.nom}
-                        </AppText>
-                      </View>
-                      <AppText variant="small" color="boira" numberOfLines={2}>
-                        {event.descripcio}
-                      </AppText>
-                    </View>
-                    {past ? (
-                      <Image
-                        source={require('@/assets/images/calendar/history.svg')}
-                        style={styles.eventIcon}
-                        accessible
-                        accessibilityLabel={vm.t('calendar.relative.past')}
-                      />
-                    ) : relativeDay ? (
-                      <View style={styles.relativeBadge}>
-                        <AppText variant="tag" color={relativeDay === 'today' ? 'lluna' : 'boira'}>
-                          {vm.t(`calendar.relative.${relativeDay}`)}
-                        </AppText>
-                      </View>
-                    ) : (
-                      <Image source={appearance.icon} style={styles.eventIcon} accessible={false} />
-                    )}
+              vm.events.map((event) => (
+                <View
+                  key={event.id}
+                  style={[
+                    styles.event,
+                    event.past && styles.pastEvent,
+                    event.selected && styles.activeEvent,
+                  ]}
+                >
+                  <View style={[styles.dateBadge, event.past && styles.pastDateBadge]}>
+                    <AppText variant="heading" color={event.past ? 'boira' : 'lluna'}>
+                      {event.day}
+                    </AppText>
+                    <AppText variant="tag" color="boira">
+                      {event.month}
+                    </AppText>
                   </View>
-                );
-              })
+                  <View style={styles.eventCopy}>
+                    <View style={styles.eventTitleRow}>
+                      <AppText
+                        variant="label"
+                        color={event.past ? 'boira' : 'lluna'}
+                        style={styles.eventName}
+                      >
+                        {event.name}
+                      </AppText>
+                    </View>
+                    <AppText variant="small" color="boira" numberOfLines={2}>
+                      {event.description}
+                    </AppText>
+                  </View>
+                  {event.past ? (
+                    <Image
+                      source={require('@/assets/images/calendar/history.svg')}
+                      style={styles.eventIcon}
+                      accessible
+                      accessibilityLabel={vm.labels.past}
+                    />
+                  ) : event.relativeLabel ? (
+                    <View style={styles.relativeBadge}>
+                      <AppText variant="tag" color={event.isToday ? 'lluna' : 'boira'}>
+                        {event.relativeLabel}
+                      </AppText>
+                    </View>
+                  ) : (
+                    <Image source={event.icon} style={styles.eventIcon} accessible={false} />
+                  )}
+                </View>
+              ))
             )}
           </View>
         </ScrollView>
         <Sheet
           visible={vm.filterMenuOpen}
           onClose={vm.closeFilterMenu}
-          title={vm.t('calendar.filterTitle')}
-          closeLabel={vm.t('calendar.closeFilter')}
+          title={vm.labels.filterTitle}
+          closeLabel={vm.labels.closeFilter}
         >
           <View style={styles.filterOptions}>
             {vm.filters.map(({ value, label }) => (
@@ -220,10 +206,10 @@ export function CalendarScreen() {
               style={styles.showPastOption}
               accessibilityRole="switch"
               accessibilityState={{ checked: vm.showPast }}
-              accessibilityLabel={vm.t('calendar.showPast')}
+              accessibilityLabel={vm.labels.showPast}
             >
               <AppText variant="label" style={styles.filterOptionLabel}>
-                {vm.t('calendar.showPast')}
+                {vm.labels.showPast}
               </AppText>
               <View
                 style={[styles.switchTrack, vm.showPast && styles.switchTrackActive]}
