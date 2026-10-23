@@ -57,7 +57,7 @@ Es carreguen amb `@expo-google-fonts` al layout arrel. Cada pes és una família
 | `tag` | Atkinson 700 | 12 / 16 | Etiquetes |
 | `overline` | Atkinson 800 | 10,5 / 14, majúscules | Franja sota la xifra («CEL RAS») |
 
-Espaiats (`spacing`): 4 · 8 · 12 · 16 · 20 · 24 · 32. Radis (`radii`): 10 (etiquetes) · 14 (camps i controls de formulari) · 16 (botons, targetes) · 20 (targeta de l'índex) · píndola. Mides fixes (`sizes`): botó 54, xip 34, tacte mínim 44, icona 22. La fitxa del punt fa servir mapa de 300, gràfic horari de 64, columna horària de 44, amplada de l'índex de 96 i marcador de 66 (nucli 43, tija 18, halo 10). El calendari fa servir files de fenomen de 82 i una caixa de data de 46 × 54.
+Espaiats (`spacing`): 2 (entre un títol i el seu subtítol) · 4 · 8 · 12 · 16 · 20 · 24 · 32, sense sumar-hi ni restar-hi píxels. Radis (`radii`): 10 (etiquetes) · 14 (camps i controls de formulari) · 16 (botons, targetes) · 20 (targeta de l'índex) · píndola. Mides fixes (`sizes`): botó 54, xip 34, tacte mínim 44, icona 22 (petita, 16). «Què vols veure?» fa servir targetes de 81 amb icona de 26 i files de formulari de 46. El rànquing fa servir una columna d'índex de 72, una nansa de 36 × 4 i punts de llegenda de 8. La fitxa del punt fa servir mapa de 300, gràfic horari de 64, columna horària de 44, amplada de l'índex de 96 i marcador de 66 (nucli 43, tija 18, halo 10). El calendari fa servir files de fenomen de 82 i una caixa de data de 46 × 54.
 
 ## Components base (TG-113)
 

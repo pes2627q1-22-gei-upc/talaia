@@ -1,7 +1,7 @@
 import { Image } from 'expo-image';
 import { StyleSheet, View } from 'react-native';
 
-import { colors, radii, spacing } from '@/core/theme/tokens';
+import { colors, radii, sizes, spacing } from '@/core/theme/tokens';
 import { AppText } from '@/shared/ui/AppText';
 import { PressableScale } from '@/shared/ui/PressableScale';
 import { Skeleton } from '@/shared/ui/Skeleton';
@@ -15,10 +15,6 @@ type FieldRowProps = {
   /** Mentre es carrega el valor, un esquelet en lloc del text. */
   loading?: boolean;
 };
-
-/** Mides del Figma (mockup 02): fila de 46 amb una icona de 22. */
-const HEIGHT = 46;
-const ICON = 22;
 
 /** Fila d'un camp del formulari: icona, valor i, a la dreta, què és o què fer-hi. */
 export function FieldRow({ icon, label, hint, onPress, loading = false }: FieldRowProps) {
@@ -67,16 +63,16 @@ export function FieldRow({ icon, label, hint, onPress, loading = false }: FieldR
 
 const styles = StyleSheet.create({
   row: {
-    height: HEIGHT,
+    height: sizes.field,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm + 2,
-    paddingHorizontal: spacing.ms + 2,
+    gap: spacing.ms,
+    paddingHorizontal: spacing.ms,
     borderRadius: radii.field,
     borderWidth: 1,
     borderColor: colors.linia,
     backgroundColor: colors.card,
   },
-  icon: { width: ICON, height: ICON },
+  icon: { width: sizes.icon, height: sizes.icon },
   value: { flex: 1 },
 });
