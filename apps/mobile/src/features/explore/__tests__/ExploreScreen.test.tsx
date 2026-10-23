@@ -59,8 +59,10 @@ describe('ExploreScreen', () => {
     expect(screen.getByRole('header', { name: 'Què vols veure?' })).toBeOnTheScreen();
     expect(screen.getByRole('button', { name: 'Cel estrellat' })).toBeSelected();
     expect(
-      screen.getByRole('button', { name: 'Constel·lacions. Amb el mite que hi ha al darrere' }),
-    ).toBeOnTheScreen();
+      screen.getByRole('button', {
+        name: 'Constel·lacions. Amb el mite que hi ha al darrere. Aviat',
+      }),
+    ).toBeDisabled();
     expect(await screen.findByLabelText('Girona, Ubicació actual')).toBeOnTheScreen();
     expect(screen.getByRole('tab', { name: 'Aquesta nit' })).toBeSelected();
     expect(screen.getByText('2 h 30 min en cotxe')).toBeOnTheScreen();
