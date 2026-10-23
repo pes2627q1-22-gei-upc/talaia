@@ -41,6 +41,11 @@ export const gradients = {
     colors: ['transparent', 'transparent', '#0E143333', colors.nit],
     locations: [0, 0.35, 0.7, 1],
   },
+  /** Sota la barra d'estat: el contingut que puja no es barreja amb el rellotge. */
+  statusScrim: {
+    colors: [colors.nit, 'transparent'],
+    locations: [0.55, 1],
+  },
 } as const;
 
 /** Colors amb transparència del marcador i de l'atribució del mapa DOM. */
