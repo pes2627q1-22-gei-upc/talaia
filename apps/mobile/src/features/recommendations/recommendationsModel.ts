@@ -2,6 +2,7 @@ import type { ConsultaRecomanacions, ObjectiuObservacio, Recomanacio } from '@ta
 
 import { GRID_GOALS } from '../explore/exploreModel';
 import type { MapPoints } from '../map/pointMarkers';
+import { twoDigitHours } from '../point/pointModel';
 
 /** Paràmetres de `/recomanacions` tal com els deixa «Què vols veure?»: tot és text a la ruta. */
 export type RecommendationParams = Partial<
@@ -62,7 +63,7 @@ const catalanTime = new Intl.DateTimeFormat('ca', {
 
 /** Hora de Catalunya d'un instant ISO, com la fitxa del punt, sigui on sigui el mòbil. */
 export function localTime(iso: string): string {
-  return catalanTime.format(new Date(iso));
+  return twoDigitHours(catalanTime.format(new Date(iso)));
 }
 
 /** Posició del rànquing en cada idioma: 1r, 2n, 3r, 4t, 5è · 1.º · 1st, 2nd, 3rd, 4th. */
