@@ -20,7 +20,7 @@ const PUNTS: PuntMapa[] = [
     municipi: 'Roquetes',
     lon: 0.3509,
     lat: 40.8035,
-    index: { valor: 82, franja: 'ras' },
+    index: { valor: 82, franja: 'ras', deDia: false },
   },
   {
     id: 'c',
@@ -67,7 +67,11 @@ describe('GET /api/v1/punts', () => {
       geometry: { type: 'Point', coordinates: [3.315867, 42.318913] },
       properties: { id: 'a', nom: 'Cap de Creus', municipi: 'Cadaqués', index: null },
     });
-    expect(res.body.features[1].properties.index).toEqual({ valor: 82, franja: 'ras' });
+    expect(res.body.features[1].properties.index).toEqual({
+      valor: 82,
+      franja: 'ras',
+      deDia: false,
+    });
   });
 
   it('porta ETag entre cometes i Cache-Control fins a la propera hora', async () => {
@@ -240,13 +244,17 @@ describe('ETag i 304 entre execucions del worker (TG-91)', () => {
     estat.t += 61_000;
     repository.version = '2026-10-19T11:05:00.000Z';
     estat.punts = PUNTS.map((p) =>
-      p.id === 'a' ? { ...p, index: { valor: 35, franja: 'tap' } } : p,
+      p.id === 'a' ? { ...p, index: { valor: 35, franja: 'tap', deDia: false } } : p,
     );
 
     const res = await request(app).get('/api/v1/punts').set('If-None-Match', vell);
     expect(res.status).toBe(200);
     expect(res.headers.etag).not.toBe(vell);
-    expect(res.body.features[0].properties.index).toEqual({ valor: 35, franja: 'tap' });
+    expect(res.body.features[0].properties.index).toEqual({
+      valor: 35,
+      franja: 'tap',
+      deDia: false,
+    });
     expect(repository.calls).toBe(2);
   });
 

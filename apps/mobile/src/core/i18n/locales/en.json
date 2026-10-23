@@ -17,7 +17,9 @@
     "pointsEmptyHint": "Please try again later.",
     "pointsEmpty": "No locations are available yet",
     "retry": "Try again",
-    "back": "Back"
+    "back": "Back",
+    "daytime": "It's daytime",
+    "daytimeHint": "The index counts from dusk onwards. Until then, points show in grey."
   },
   "calendar": {
     "title": "Calendar",
@@ -207,7 +209,6 @@
       "constellacions": "Constellations"
     },
     "constellationsHint": "With the myth behind them",
-    "new": "New",
     "soon": "Soon",
     "origin": {
       "title": "Where you start from",

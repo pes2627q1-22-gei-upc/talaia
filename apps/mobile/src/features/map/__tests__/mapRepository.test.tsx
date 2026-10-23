@@ -23,7 +23,7 @@ const points: PuntsMapaGeoJson = {
         id: 'montsec',
         nom: 'Montsec',
         municipi: 'Àger',
-        index: { valor: 85, franja: 'ras' },
+        index: { valor: 85, franja: 'ras', deDia: false },
       },
     },
   ],

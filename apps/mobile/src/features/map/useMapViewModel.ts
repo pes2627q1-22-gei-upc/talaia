@@ -54,7 +54,13 @@ export function useMapViewModel() {
               title: t('map.pointsEmpty'),
               description: t('map.pointsEmptyHint'),
             }
-          : null;
+          : points.features.some((f) => f.properties.index?.deDia)
+            ? {
+                kind: 'daytime' as const,
+                title: t('map.daytime'),
+                description: t('map.daytimeHint'),
+              }
+            : null;
   return {
     userLocation,
     userHeading: heading,

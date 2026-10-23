@@ -1,5 +1,11 @@
 import type { IndexHora, IndexVisibilitat } from './indexVisibilitat';
 
+/** L'índex de l'hora en curs al mapa. */
+export type IndexMapa = IndexVisibilitat & {
+  /** El Sol encara no s'ha post (factor `sol` 0): l'índex val 0 per definició, no pel temps. */
+  deDia: boolean;
+};
+
 /**
  * Punt d'observació del catàleg.
  * Mínim provisional: la resta de metadades (accés, foscor, horitzó…) depenen de P13 (TG-87)
@@ -20,7 +26,7 @@ export type PuntMapaPropietats = Pick<PuntObservacio, 'id' | 'nom' | 'municipi'>
    * Índex de l'hora en curs, de l'última execució del worker (TG-99). `null` = encara no s'ha
    * calculat. L'app pinta el marcador en gris.
    */
-  index: IndexVisibilitat | null;
+  index: IndexMapa | null;
 };
 
 export type PuntMapaFeature = {

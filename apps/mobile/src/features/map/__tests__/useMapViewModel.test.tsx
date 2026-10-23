@@ -22,9 +22,10 @@ jest.mock('../../recommendations/useRecommendationsViewModel', () => ({
   useRecommendationsViewModel: () => null,
 }));
 
+let mockPoints: import('../pointMarkers').MapPoints['features'];
 jest.mock('../mapRepository', () => ({
   useMapPointsQuery: () => ({
-    data: { type: 'FeatureCollection', features: [] },
+    data: { type: 'FeatureCollection', features: mockPoints },
     isPending: false,
     isError: false,
     isFetching: false,
@@ -35,6 +36,7 @@ jest.mock('../mapRepository', () => ({
 describe('useMapViewModel', () => {
   beforeEach(async () => {
     mockLocation = { data: undefined, isError: false };
+    mockPoints = [];
     await i18n.changeLanguage('ca');
   });
 
@@ -79,5 +81,22 @@ describe('useMapViewModel', () => {
     expect(zoom).toBeLessThanOrEqual(maxZoom);
     expect(result.current.accessibilityLabel).toBe('Mapa nocturn de Catalunya amb el relleu');
     expect(result.current.notice?.title).toBe('Encara no hi ha llocs disponibles');
+  });
+
+  it('de dia avisa que l’índex comença a la posta', async () => {
+    mockPoints = [
+      {
+        type: 'Feature',
+        geometry: { type: 'Point', coordinates: [0.75, 42.05] },
+        properties: {
+          id: 'montsec',
+          nom: 'Serra del Montsec',
+          municipi: 'Àger',
+          index: { valor: 0, franja: 'tap', deDia: true },
+        },
+      },
+    ];
+    const { result } = await renderHook(() => useMapViewModel());
+    expect(result.current.notice).toMatchObject({ kind: 'daytime', title: 'És de dia' });
   });
 });

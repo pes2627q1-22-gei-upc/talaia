@@ -17,7 +17,9 @@
     "pointsEmptyHint": "Torna-ho a provar més endavant.",
     "pointsEmpty": "Encara no hi ha llocs disponibles",
     "retry": "Torna-ho a provar",
-    "back": "Enrere"
+    "back": "Enrere",
+    "daytime": "És de dia",
+    "daytimeHint": "L'índex compta a partir del vespre. Fins aleshores, els punts surten en gris."
   },
   "calendar": {
     "title": "Calendari",
@@ -207,7 +209,6 @@
       "constellacions": "Constel·lacions"
     },
     "constellationsHint": "Amb el mite que hi ha al darrere",
-    "new": "Nou",
     "soon": "Aviat",
     "origin": {
       "title": "Des d'on surts",
