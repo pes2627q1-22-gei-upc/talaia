@@ -13,16 +13,19 @@ export type AppOptions = ApiDeps & {
 export function createApp({ profileStore, ...apiDeps }: AppOptions = {}) {
   const env = loadEnv();
   const resolvedSupabaseUrl = apiDeps.supabaseUrl ?? env.SUPABASE_URL;
+  const unavailable = async (): Promise<never> => {
+    throw new ApiError(
+      503,
+      'database_unavailable',
+      "L'API no té DATABASE_URL: el perfil d'usuari no està disponible",
+    );
+  };
   const resolvedProfileStore =
     profileStore ??
     ({
-      async ensureProfile() {
-        throw new ApiError(
-          503,
-          'database_unavailable',
-          "L'API no té DATABASE_URL: el perfil d'usuari no està disponible",
-        );
-      },
+      ensureProfile: unavailable,
+      getProfile: unavailable,
+      updateProfile: unavailable,
     } satisfies ProfileStore);
 
   const app = express();
