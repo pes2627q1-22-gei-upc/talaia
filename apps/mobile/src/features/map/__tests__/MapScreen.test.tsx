@@ -113,7 +113,7 @@ describe('MapScreen', () => {
 
   it('mostra que està carregant els punts', async () => {
     await render(<MapScreen />);
-    expect(screen.getByText('Carregant llocs d’observació…')).toBeOnTheScreen();
+    expect(screen.getByText("S'estan carregant els llocs d'observació…")).toBeOnTheScreen();
   });
 
   it('mostra l’estat buit sense controls de prova', async () => {
@@ -144,14 +144,14 @@ describe('MapScreen', () => {
     mockQuery = { ...mockQuery, data: points, isPending: false, isFetching: false };
     const { rerender } = await render(<MapScreen />);
     expect(screen.queryByText('Encara no hi ha llocs disponibles')).toBeNull();
-    expect(screen.queryByText('Carregant llocs d’observació…')).toBeNull();
+    expect(screen.queryByText("S'estan carregant els llocs d'observació…")).toBeNull();
     mockQuery = { ...mockQuery, isError: true };
     await rerender(<MapScreen />);
     expect(screen.getByText('No hem pogut carregar els llocs')).toBeOnTheScreen();
     expect(mockNightMap).toHaveBeenLastCalledWith(expect.objectContaining({ points }));
     mockQuery = { ...mockQuery, isFetching: true };
     await rerender(<MapScreen />);
-    expect(screen.getByText('Carregant llocs d’observació…')).toBeOnTheScreen();
+    expect(screen.getByText("S'estan carregant els llocs d'observació…")).toBeOnTheScreen();
     expect(
       screen.getByTestId('map-loading-indicator', { includeHiddenElements: true }),
     ).toBeOnTheScreen();
@@ -253,7 +253,7 @@ describe('MapScreen amb una cerca (TG-102, mockup 03)', () => {
       screen.getByRole('header', { name: 'Millors punts per a aquesta nit' }),
     ).toBeOnTheScreen();
     // Sense cerca no hi ha l'avís del catàleg, encara que `/punts` no hagi carregat.
-    expect(screen.queryByText('Carregant llocs d’observació…')).toBeNull();
+    expect(screen.queryByText("S'estan carregant els llocs d'observació…")).toBeNull();
 
     const montsec = screen.getByRole('button', { name: /^1r: Serra del Montsec/ });
     expect(montsec).toHaveAccessibleName(
@@ -293,7 +293,7 @@ describe('MapScreen amb una cerca (TG-102, mockup 03)', () => {
       }),
     );
 
-    await fireEvent.press(screen.getByRole('button', { name: "Veure'ls tots" }));
+    await fireEvent.press(screen.getByRole('button', { name: "Mostra'ls tots" }));
     expect(
       screen.getByRole('button', { name: /^4t: Serra del Cadí. Encara sense previsió/ }),
     ).toBeOnTheScreen();
@@ -352,6 +352,6 @@ describe('MapScreen amb una cerca (TG-102, mockup 03)', () => {
     await render(<MapScreen />);
     expect(screen.getByText('No hi ha cap punt a menys de 2 h 30 min')).toBeOnTheScreen();
     expect(screen.getByText('Amplia la distància o tria una altra nit.')).toBeOnTheScreen();
-    expect(screen.queryByRole('button', { name: "Veure'ls tots" })).toBeNull();
+    expect(screen.queryByRole('button', { name: "Mostra'ls tots" })).toBeNull();
   });
 });

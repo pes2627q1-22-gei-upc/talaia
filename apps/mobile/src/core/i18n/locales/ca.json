@@ -12,7 +12,7 @@
   "map": {
     "userLocation": "La teva ubicació",
     "a11y": "Mapa nocturn de Catalunya amb el relleu",
-    "pointsLoading": "Carregant llocs d’observació…",
+    "pointsLoading": "S'estan carregant els llocs d'observació…",
     "pointsError": "No hem pogut carregar els llocs",
     "pointsEmptyHint": "Torna-ho a provar més endavant.",
     "pointsEmpty": "Encara no hi ha llocs disponibles",
@@ -28,7 +28,7 @@
     "next": "Mes següent",
     "goToday": "Torna a avui",
     "events": "Fenòmens",
-    "allMonth": "Veure tot el mes",
+    "allMonth": "Mostra tot el mes",
     "relative": { "today": "Avui", "tomorrow": "Demà", "past": "Passat" },
     "filterLabel": "Filtra fenòmens: {{filter}}",
     "filterTitle": "Filtra fenòmens",
@@ -128,7 +128,7 @@
     "directions": "Com arribar",
     "createPlan": "Crea un pla",
     "mapsErrorTitle": "No hem pogut obrir el mapa",
-    "mapsErrorMessage": "Torna-ho a provar d’aquí a un moment.",
+    "mapsErrorMessage": "Torna-ho a provar d'aquí a un moment.",
     "planSoonTitle": "Plans, aviat",
     "planSoonMessage": "La creació de plans encara no està disponible.",
     "timezone": "Hora local de Catalunya · Europe/Madrid",
@@ -136,14 +136,14 @@
     "hourA11y": "{{time}}: índex {{value}} de 100, {{level}}",
     "bestHourWithStatusA11y": "{{label}}. Dins del millor moment",
     "notFoundTitle": "No hem trobat aquest punt",
-    "notFoundMessage": "Pot haver deixat d’estar disponible. Torna al mapa i tria un altre punt.",
+    "notFoundMessage": "Pot haver deixat d'estar disponible. Torna al mapa i tria un altre punt.",
     "errorTitle": "No hem pogut carregar la fitxa",
     "errorMessage": "Comprova la connexió i torna-ho a provar.",
-    "refreshError": "No s’han pogut actualitzar les dades. Es mostra l’última informació disponible.",
+    "refreshError": "No s'han pogut actualitzar les dades. Es mostra l'última informació disponible.",
     "retry": "Torna-ho a provar",
     "mapA11y": "Ubicació de {{name}}",
     "mapCredits": "Crèdits del mapa",
-    "mapUnavailable": "No s’ha pogut carregar el mapa.",
+    "mapUnavailable": "No s'ha pogut carregar el mapa.",
     "indexAt": "Índex del {{time}}",
     "tonight": "Aquesta nit",
     "hoursError": "No hem pogut carregar la previsió d'aquesta nit.",
@@ -298,7 +298,7 @@
       "max": "4 h"
     },
     "cta": "Troba el millor lloc",
-    "browse": "Veure el mapa"
+    "browse": "Mostra el mapa"
   },
   "alerts": {
     "title": "Alertes",
@@ -308,8 +308,8 @@
   "auth": {
     "signOut": "Tanca la sessió",
     "signingOut": "Tancant la sessió…",
-    "restoreError": "No s’ha pogut recuperar la sessió. Torna-ho a provar.",
-    "logoutError": "No s’ha pogut tancar la sessió. Torna-ho a provar.",
+    "restoreError": "No s'ha pogut recuperar la sessió. Torna-ho a provar.",
+    "logoutError": "No s'ha pogut tancar la sessió. Torna-ho a provar.",
     "retry": "Torna-ho a provar",
     "errors": {
       "network": "No hi ha connexió. Revisa-la i torna-ho a provar.",
@@ -362,8 +362,8 @@
       "hoursMinutes": "{{hours}} h {{minutes}} min"
     },
     "best": "Millors punts per a {{when}}",
-    "showAll": "Veure'ls tots",
-    "showLess": "Veure'n menys",
+    "showAll": "Mostra'ls tots",
+    "showLess": "Mostra'n menys",
     "loading": "Buscant els millors punts…",
     "error": "No hem pogut carregar les recomanacions",
     "empty": "No hi ha cap punt a menys de {{travel}}",

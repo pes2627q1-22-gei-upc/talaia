@@ -13,7 +13,7 @@
     "userLocation": "Your location",
     "a11y": "Night map of Catalonia with its terrain",
     "pointsLoading": "Loading observing locations…",
-    "pointsError": "We couldn’t load the locations",
+    "pointsError": "We couldn't load the locations",
     "pointsEmptyHint": "Please try again later.",
     "pointsEmpty": "No locations are available yet",
     "retry": "Try again",
