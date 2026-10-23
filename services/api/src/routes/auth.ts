@@ -6,7 +6,7 @@ import type { JwksSource } from '../middleware/auth';
 import { requireAuth, type AuthenticatedRequest } from '../middleware/auth';
 import { ApiError } from '../middleware/errors';
 import { registry } from '../openapi';
-import type { ProfileRecord, ProfileStore } from '../services/profileService';
+import { NOM_MAXIM, type ProfileRecord, type ProfileStore } from '../services/profileService';
 
 export type AuthRouterOptions = {
   supabaseUrl?: string;
@@ -15,12 +15,15 @@ export type AuthRouterOptions = {
   jwks?: JwksSource;
 };
 
+/** El nom, igual al `POST` i al `PATCH`: sense els espais dels extrems, d'1 a `NOM_MAXIM`. */
+const NomSchema = z.string().trim().min(1).max(NOM_MAXIM);
+
 /**
  * Dades que només té l'app. Apple només dona el nom el primer cop i no el posa al token: l'app
  * l'envia aquí (TG-249). Només s'aplica en crear el perfil.
  */
 const ProfileEnsureBodySchema = z
-  .object({ nom: z.string().trim().min(1).max(100).optional() })
+  .object({ nom: NomSchema.optional() })
   .meta({ id: 'ProfileEnsureBody' });
 
 const PerfilSchema: z.ZodType<Perfil> = z
@@ -41,7 +44,7 @@ const ProfileEnsureResponseSchema = z
 
 /** HU36: de moment només es pot editar el nom. Un camp desconegut és un 400, no s'ignora. */
 const PerfilCanvisSchema: z.ZodType<PerfilCanvis> = z
-  .strictObject({ nom: z.string().trim().min(1).max(100) })
+  .strictObject({ nom: NomSchema })
   .meta({ id: 'PerfilCanvis' });
 
 const ErrorSchema = z.object({ error: z.object({ code: z.string(), message: z.string() }) });

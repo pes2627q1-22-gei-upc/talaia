@@ -86,7 +86,8 @@ export function createDatabaseProfileStore(db: Db): ProfileStore {
   };
 }
 
-const NOM_MAXIM = 100;
+/** Llargada màxima del nom, la mateixa en crear el perfil (`POST`) i en editar-lo (`PATCH`). */
+export const NOM_MAXIM = 100;
 
 function httpsUrl(value: unknown): string | null {
   if (typeof value !== 'string' || value.length > 2048) return null;
