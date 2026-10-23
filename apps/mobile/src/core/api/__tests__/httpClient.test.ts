@@ -1,6 +1,6 @@
 import { getAccessToken } from '@/core/auth/accessToken';
 
-import { ApiError, apiGet, apiPost, buildUrl } from '../httpClient';
+import { ApiError, apiGet, apiPost, buildUrl, REQUEST_TIMEOUT_MS } from '../httpClient';
 
 jest.mock('@/core/auth/accessToken', () => ({ getAccessToken: jest.fn() }));
 
@@ -55,7 +55,35 @@ describe('apiGet', () => {
     const headers = new Headers(init.headers);
     expect(headers.get('Authorization')).toBe('Bearer current-token');
     expect(headers.get('X-Request-Id')).toBe('test');
-    expect(init.signal).toBe(controller.signal);
+  });
+
+  it('una cancel·lació de fora atura la petició en curs', async () => {
+    globalThis.fetch = jest.fn(
+      (_url: string, init: RequestInit) =>
+        new Promise((_resolve, reject) => {
+          init.signal?.addEventListener('abort', () => reject(new Error('aborted')));
+        }),
+    ) as unknown as typeof fetch;
+    const controller = new AbortController();
+    const request = apiGet('/punts', undefined, { signal: controller.signal });
+    await Promise.resolve();
+    controller.abort();
+    await expect(request).rejects.toThrow('aborted');
+  });
+
+  it('talla la petició si l’API no respon a temps', async () => {
+    jest.useFakeTimers();
+    globalThis.fetch = jest.fn(
+      (_url: string, init: RequestInit) =>
+        new Promise((_resolve, reject) => {
+          init.signal?.addEventListener('abort', () => reject(new Error('aborted')));
+        }),
+    ) as unknown as typeof fetch;
+    const request = apiGet('/punts');
+    const outcome = expect(request).rejects.toThrow('aborted');
+    await jest.advanceTimersByTimeAsync(REQUEST_TIMEOUT_MS);
+    await outcome;
+    jest.useRealTimers();
   });
 
   it('rellegeix el token a cada petició i deixa d’enviar-lo després del logout', async () => {

@@ -43,6 +43,8 @@ export function RecommendationsSheet({ sheet }: { sheet: Sheet }) {
         onPress={sheet.onToggleCollapsed}
         accessibilityLabel={sheet.collapseLabel}
         accessibilityState={{ expanded: !sheet.collapsed }}
+        // La nansa fa 12 pt d'alt: la zona tàctil arriba als 44.
+        hitSlop={{ top: spacing.md, bottom: spacing.md }}
         style={styles.header}
       >
         <View style={styles.handle} />
@@ -57,7 +59,7 @@ export function RecommendationsSheet({ sheet }: { sheet: Sheet }) {
           {sheet.title}
         </AppText>
         {sheet.toggle && (
-          <PressableScale onPress={sheet.toggle.onPress} hitSlop={spacing.sm}>
+          <PressableScale onPress={sheet.toggle.onPress} hitSlop={spacing.ms}>
             <AppText variant="link" color="far">
               {sheet.toggle.label}
             </AppText>
@@ -81,7 +83,7 @@ export function RecommendationsSheet({ sheet }: { sheet: Sheet }) {
       {!sheet.collapsed && sheet.state === 'error' && (
         <View style={styles.message} accessibilityLiveRegion="polite">
           <AppText variant="label">{sheet.errorLabel}</AppText>
-          <PressableScale onPress={sheet.onRetry} hitSlop={spacing.sm}>
+          <PressableScale onPress={sheet.onRetry} hitSlop={spacing.ms}>
             <AppText variant="link" color="far">
               {sheet.retryLabel}
             </AppText>
