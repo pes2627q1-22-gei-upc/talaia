@@ -12,7 +12,7 @@ npm run mobile               # = expo start, des de l'arrel
 
 Variables: copia `apps/mobile/.env.example` a `apps/mobile/.env` (Expo no llegeix el `.env` de l'arrel). Al mòbil, l'adreça de l'API ha de ser la IP de l'ordinador: [docs/onboarding.md](../../docs/onboarding.md#4-engega-lapi-i-lapp).
 
-Tota l'app es prova amb **Expo Go**, mapa inclòs. El mapa és MapLibre GL JS en una DOM component (`src/features/map/NightMap.tsx`, ADR-0015) i el seu estil nocturn és a `src/features/map/style/nightStyle.ts`. `metro.transformer.js` evita que Babel transformi `maplibre-gl`: no el treguis.
+Tota l'app es prova amb **Expo Go**, mapa inclòs. El mapa és MapLibre GL JS en una DOM component (`src/features/map/NightMap.tsx`, ADR-0015) i el seu estil nocturn és a `src/features/map/style/nightStyle.ts`. `metro.transformer.js` dona el *worker* de MapLibre 6 com a text, i `src/core/map/maplibreWorker.ts` el carrega: no els treguis.
 
 | Ordre | Què fa |
 |---|---|

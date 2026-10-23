@@ -1,16 +1,15 @@
 /** @jest-environment jsdom */
 import { act, type ComponentProps } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
-import maplibregl from 'maplibre-gl';
+import * as maplibregl from 'maplibre-gl';
 
 import NightMap from '../NightMap';
 import { bindClusterInteraction, syncMapPoints } from '../pointMarkers';
 
 jest.mock('maplibre-gl/dist/maplibre-gl.css', () => ({}));
-jest.mock('maplibre-gl', () => ({
-  __esModule: true,
-  default: { Map: jest.fn(), Marker: jest.fn() },
-}));
+// MapLibre 6 només s'exporta com a ESM (`import`): Jest no el resol, i aquí sempre és un mock.
+jest.mock('maplibre-gl', () => ({ Map: jest.fn(), Marker: jest.fn() }), { virtual: true });
+jest.mock('@/core/map/maplibreWorker', () => ({}));
 jest.mock('../pointMarkers', () => ({
   bindClusterInteraction: jest.fn(),
   MARKERS_LAYER: 'talaia-point-markers',
