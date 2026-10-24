@@ -18,6 +18,7 @@ MapLibre **GL JS** (web) sí que té terreny 3D, cel i boira, i Expo permet incr
 - **MVVM:** el ViewModel prepara l'estil i la càmera (constants de mòdul) i la pantalla els passa com a props. Dins del WebView no hi ha tokens: els colors dels controls arriben com a props.
 - **El mapa es crea un sol cop.** El pont de les DOM components és asíncron i torna a enviar les props a cada render natiu.
 - **Babel no toca `maplibre-gl/dist`** (`apps/mobile/metro.transformer.js`): MapLibre converteix en text el codi del seu *worker*, i els helpers que hi afegeix Babel no existeixen dins del *worker*. Sense això, el mapa no pinta res.
+- **Actualització 2026-10-23 (TG-89):** passem a **`maplibre-gl` 6.x** per l'avís crític [GHSA-jrc7-96c5-q579](https://github.com/advisories/GHSA-jrc7-96c5-q579) (XSS a `DOM.sanitize()`, tota la 5.x afectada). El *worker* de la 6 és un sol fitxer sense imports: `metro.transformer.js` el converteix en text i `src/core/map/maplibreWorker.ts` el carrega d'un Blob amb `setWorkerUrl`, abans de crear el mapa. La resta del paquet ja passa per Babel. Les DOM components l'importen per nom (`import * as maplibregl`), i els tests en fan un mock virtual perquè Jest no resol un paquet només ESM. Provat a Expo Go (mapa, rànquing i fitxa) i amb `expo export`.
 
 Descartats:
 
