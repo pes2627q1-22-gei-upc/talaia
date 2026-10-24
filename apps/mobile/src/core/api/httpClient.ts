@@ -61,7 +61,11 @@ async function apiRequest<T>(url: string, init: RequestInit): Promise<T> {
   if (token) headers.set('Authorization', `Bearer ${token}`);
   // ponytail: AbortController a mà; React Native no té AbortSignal.timeout ni AbortSignal.any.
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  let timedOut = false;
+  const timer = setTimeout(() => {
+    timedOut = true;
+    controller.abort();
+  }, REQUEST_TIMEOUT_MS);
   const cancel = () => controller.abort();
   if (init.signal?.aborted) cancel();
   init.signal?.addEventListener('abort', cancel);
@@ -69,6 +73,11 @@ async function apiRequest<T>(url: string, init: RequestInit): Promise<T> {
     const response = await fetch(url, { ...init, headers, signal: controller.signal });
     if (!response.ok) throw await toApiError(response);
     return (await response.json()) as T;
+  } catch (error) {
+    // Un ApiError < 500, perquè TanStack Query no hi torni (3 × 15 s d'esquelet) i es pugui
+    // distingir d'una cancel·lació.
+    if (timedOut) throw new ApiError(408, 'timeout', "L'API no ha respost a temps");
+    throw error;
   } finally {
     clearTimeout(timer);
     init.signal?.removeEventListener('abort', cancel);

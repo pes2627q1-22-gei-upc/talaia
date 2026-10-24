@@ -80,7 +80,7 @@ describe('apiGet', () => {
         }),
     ) as unknown as typeof fetch;
     const request = apiGet('/punts');
-    const outcome = expect(request).rejects.toThrow('aborted');
+    const outcome = expect(request).rejects.toMatchObject({ status: 408, code: 'timeout' });
     await jest.advanceTimersByTimeAsync(REQUEST_TIMEOUT_MS);
     await outcome;
     jest.useRealTimers();
