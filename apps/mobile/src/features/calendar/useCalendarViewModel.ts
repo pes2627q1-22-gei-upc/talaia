@@ -25,7 +25,7 @@ import {
   type CalendarFilter,
 } from './calendarModel';
 import { useCalendarEventsQuery } from './calendarRepository';
-import { eventTypeLabelKey, filterColors } from './phenomenonAppearance';
+import { eventAppearance, eventTypeLabelKey, filterColors } from './phenomenonAppearance';
 
 export function useCalendarViewModel() {
   const { t, i18n } = useTranslation();
@@ -107,6 +107,26 @@ export function useCalendarViewModel() {
       new Date(`${day}T12:00:00`),
     );
   const periodLabel = selectedDay ? formatDay(selectedDay) : t('calendar.events');
+  const shortMonth = new Intl.DateTimeFormat(locale, { month: 'short' });
+  const tomorrow = nextDay(today);
+  const activeFilterLabel = t(`calendar.filters.${filter}`);
+  // Files ja preparades: la vista no tradueix ni formata (MVVM).
+  const rows = visibleEvents.map((event) => {
+    const date = eventDate(event);
+    const relative = date === today ? 'today' : date === tomorrow ? 'tomorrow' : null;
+    return {
+      id: event.id,
+      name: event.nom,
+      description: event.descripcio,
+      day: Number(date.slice(-2)),
+      month: shortMonth.format(new Date(`${date}T12:00:00`)),
+      past: date < today,
+      selected: date === selectedDay,
+      relativeLabel: relative ? t(`calendar.relative.${relative}`) : null,
+      isToday: relative === 'today',
+      icon: eventAppearance(event).icon,
+    };
+  });
 
   const changeMonth = (delta: number) => {
     const next = shiftMonth(month, delta);
@@ -137,8 +157,23 @@ export function useCalendarViewModel() {
     firstDay: (i18n.resolvedLanguage === 'en' ? 0 : 1) as 0 | 1,
     previousMonthLabel: adjacentMonthLabel(previousMonth),
     nextMonthLabel: adjacentMonthLabel(nextMonth),
+    labels: {
+      previous: `${t('calendar.previous')}: ${adjacentMonthLabel(previousMonth)}`,
+      next: `${t('calendar.next')}: ${adjacentMonthLabel(nextMonth)}`,
+      goToday: t('calendar.goToday'),
+      today: t('calendar.relative.today'),
+      allMonth: t('calendar.allMonth'),
+      filterButton: `${t('calendar.filterLabel', { filter: activeFilterLabel })}${
+        showPast ? `, ${t('calendar.showPast')}` : ''
+      }`,
+      error: t('calendar.error'),
+      retry: t('calendar.retry'),
+      past: t('calendar.relative.past'),
+      filterTitle: t('calendar.filterTitle'),
+      closeFilter: t('calendar.closeFilter'),
+      showPast: t('calendar.showPast'),
+    },
     today,
-    tomorrow: nextDay(today),
     selectedDay,
     showGoToday,
     goToday: () => {
@@ -176,7 +211,7 @@ export function useCalendarViewModel() {
       setShowPast((current) => !current);
     },
     filterMenuOpen,
-    activeFilterLabel: t(`calendar.filters.${filter}`),
+    activeFilterLabel,
     activeFilterShortLabel: t(`calendar.filterShort.${filter}`),
     filters: CALENDAR_FILTERS.map((value) => ({ value, label: t(`calendar.filters.${value}`) })),
     toggleFilterMenu: () => setFilterMenuOpen((open) => !open),
@@ -185,7 +220,7 @@ export function useCalendarViewModel() {
       setFilter(value);
       setFilterMenuOpen(false);
     },
-    events: visibleEvents,
+    events: rows,
     eventsByDay,
     markersByDay,
     emptyMessage: t(
@@ -196,7 +231,5 @@ export function useCalendarViewModel() {
     retry: () => {
       void query.refetch();
     },
-    t,
-    locale,
   };
 }

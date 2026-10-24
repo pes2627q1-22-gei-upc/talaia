@@ -8,7 +8,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-import { colors, motion, radii, spacing } from '@/core/theme/tokens';
+import { colors, motion, radii, sizes, spacing } from '@/core/theme/tokens';
 import { AppText } from '@/shared/ui/AppText';
 import { PressableScale } from '@/shared/ui/PressableScale';
 
@@ -24,10 +24,6 @@ type GoalCardProps = {
   /** Encara no es pot triar («Aviat»): s'apaga i no respon. */
   disabled?: boolean;
 };
-
-/** Mides del Figma (mockup 02). */
-const ICON = 26;
-const GRID_HEIGHT = 81;
 
 /** Un fenomen de «Què vols veure?». El triat s'omple de `far` amb una fosa curta. */
 export function GoalCard({ label, icon, selected, onPress, hint, badge, disabled }: GoalCardProps) {
@@ -110,7 +106,7 @@ const styles = StyleSheet.create({
   },
   grid: {
     flex: 1,
-    height: GRID_HEIGHT,
+    height: sizes.goalCard,
     padding: spacing.ms,
     justifyContent: 'space-between',
   },
@@ -119,7 +115,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.ms,
     paddingHorizontal: spacing.ms,
-    paddingVertical: spacing.ms - 2,
+    paddingVertical: spacing.ms,
   },
   selected: { borderColor: colors.far },
   fill: {
@@ -131,13 +127,13 @@ const styles = StyleSheet.create({
     backgroundColor: colors.far,
   },
   gridTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
-  icon: { width: ICON, height: ICON },
+  icon: { width: sizes.goalIcon, height: sizes.goalIcon },
   off: { opacity: 0.5 },
-  wideText: { flex: 1, gap: 2 },
+  wideText: { flex: 1, gap: spacing.xxs },
   badge: {
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
-    borderRadius: radii.sm - 2,
+    borderRadius: radii.sm,
     backgroundColor: `${colors.far}26`,
   },
 });

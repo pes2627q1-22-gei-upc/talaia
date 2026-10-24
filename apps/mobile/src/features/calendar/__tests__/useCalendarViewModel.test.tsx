@@ -147,6 +147,14 @@ describe('useCalendarViewModel', () => {
     const { result } = await renderHook(() => useCalendarViewModel());
     expect(result.current.showPast).toBe(false);
     expect(result.current.events.map((event) => event.id)).toEqual(['today', 'future']);
+    // La vista rep la fila ja preparada: dia, mes i etiqueta relativa traduïts.
+    expect(result.current.events[0]).toMatchObject({
+      day: 22,
+      past: false,
+      relativeLabel: 'Avui',
+      isToday: true,
+    });
+    expect(result.current.events[1]?.relativeLabel).toBeNull();
     expect(result.current.markersByDay.has('2026-10-21')).toBe(false);
     expect(result.current.markersByDay.has('2026-10-22')).toBe(true);
 

@@ -9,7 +9,7 @@ export type RecommendationParams = Partial<
   Record<'objectiu' | 'lat' | 'lon' | 'data' | 'desDe' | 'finsA' | 'tempsMaxim' | 'lloc', string>
 >;
 
-/** Files del full abans de «Veure'ls tots» (mockup 03). */
+/** Files del full abans de «Mostra'ls tots» (mockup 03). */
 export const VISIBLE_ROWS = 3;
 
 const GOALS: readonly ObjectiuObservacio[] = [...GRID_GOALS, 'constellacions'];
@@ -18,7 +18,7 @@ const isGoal = (value: string | undefined): value is ObjectiuObservacio =>
   GOALS.includes(value as ObjectiuObservacio);
 
 /**
- * La consulta de la ruta, o `null` si no n'hi ha cap («Veure el mapa») o li falta alguna cosa.
+ * La consulta de la ruta, o `null` si no n'hi ha cap («Mostra el mapa») o li falta alguna cosa.
  * Els rangs i la franja els valida l'API: aquí només es comprova que hi siguin.
  */
 export function parseQuery(params: RecommendationParams): ConsultaRecomanacions | null {

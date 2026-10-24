@@ -89,7 +89,7 @@ Si tens accés al projecte de Supabase, els valors també són al panell (vegeu 
 
 Sense `.env` tot arrenca igualment: l'API fa servir el port 3000 i l'app la busca al mateix ordinador d'on carrega (Metro). El que no funcionarà és res que parli amb Supabase.
 
-> **`EXPO_PUBLIC_API_URL` no cal.** A Expo Go, l'app treu l'adreça de l'API de l'ordinador d'on s'ha carregat (`http://<el mateix host>:3000/api/v1`). Posa-la només si l'API és en una altra màquina (p. ex. la VM).
+> **`EXPO_PUBLIC_API_URL` no cal.** A Expo Go, l'app treu l'adreça de l'API de l'ordinador d'on s'ha carregat (`http://<la IP de Metro>:3000/api/v1`; un nom de nip.io es converteix en la IP, perquè iOS només deixa fer HTTP a IP locals). Posa-la només si l'API és en una altra màquina (p. ex. la VM).
 
 ---
 
