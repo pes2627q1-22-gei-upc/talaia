@@ -17,7 +17,9 @@
     "pointsEmptyHint": "Vuelve a intentarlo más adelante.",
     "pointsEmpty": "Todavía no hay lugares disponibles",
     "retry": "Volver a intentar",
-    "back": "Atrás"
+    "back": "Atrás",
+    "daytime": "Es de día",
+    "daytimeHint": "El índice cuenta a partir del anochecer. Hasta entonces, los puntos salen en gris."
   },
   "calendar": {
     "title": "Calendario",
@@ -207,7 +209,6 @@
       "constellacions": "Constelaciones"
     },
     "constellationsHint": "Con el mito que hay detrás",
-    "new": "Nuevo",
     "soon": "Pronto",
     "origin": {
       "title": "Desde dónde sales",

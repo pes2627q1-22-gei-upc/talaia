@@ -62,6 +62,8 @@ export function SegmentedControl({
             accessibilityState={{ selected }}
             haptic="selection"
             onPress={() => (selected ? onReselect?.(index) : onChange(index))}
+            // 38 + el marge del contenidor: la zona tàctil arriba als 44 pt.
+            hitSlop={{ top: INSET, bottom: INSET }}
             style={styles.segment}
           >
             <AppText variant="chip" color={selected ? 'lluna' : 'boira'}>

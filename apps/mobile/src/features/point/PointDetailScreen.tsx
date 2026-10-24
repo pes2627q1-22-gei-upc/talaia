@@ -102,7 +102,8 @@ export function PointDetailScreen({ pointId }: { pointId: string }) {
                 unavailableLabel={vm.mapUnavailable}
                 orbit={focused && !reduceMotion}
                 dom={{
-                  style: mapStyle,
+                  // Transparent perquè no hi hagi el flaix blanc del WKWebView (vegeu MapScreen).
+                  style: styles.mapWebView,
                   scrollEnabled: false,
                   bounces: false,
                   contentInsetAdjustmentBehavior: 'never',
@@ -244,6 +245,12 @@ export function PointDetailScreen({ pointId }: { pointId: string }) {
           </Animated.View>
         </ScrollView>
       )}
+      <LinearGradient
+        pointerEvents="none"
+        colors={gradients.statusScrim.colors}
+        locations={gradients.statusScrim.locations}
+        style={[styles.statusScrim, { height: insets.top + spacing.sm }]}
+      />
       {vm.status === 'ok' ? (
         <View style={styles.actions}>
           <Button
@@ -290,6 +297,8 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   mapFade: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 },
+  mapWebView: { flex: 1, backgroundColor: 'transparent' },
+  statusScrim: { position: 'absolute', top: 0, left: 0, right: 0 },
   mapTitle: {
     position: 'absolute',
     left: spacing.ml,

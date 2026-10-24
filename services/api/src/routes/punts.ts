@@ -32,6 +32,9 @@ const QuerySchema = z.object({ bbox: BboxSchema.optional() });
 const IndexSchema = z.object({
   valor: z.number().int().min(0).max(100),
   franja: z.enum(['tap', 'jus', 'ras']),
+  deDia: z.boolean().meta({
+    description: "El Sol encara no s'ha post (factor `sol` 0): l'índex és 0 per l'hora, no pel cel",
+  }),
 });
 
 const PuntsMapaSchema: z.ZodType<PuntsMapaGeoJson> = z

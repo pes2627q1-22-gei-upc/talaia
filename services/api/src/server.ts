@@ -20,7 +20,12 @@ let profileStore;
 let esdeveniments;
 if (env.DATABASE_URL) {
   // Un sol pool per a tota l'API.
-  const db = createDb(env.DATABASE_URL, { max: 5 });
+  // Per sota del timeout de 15 s de l'app: la ruta respon un error abans que l'app talli.
+  const db = createDb(env.DATABASE_URL, {
+    max: 5,
+    connectionTimeoutMillis: 5_000,
+    queryTimeoutMillis: 8_000,
+  });
   const puntsRepository = createPuntsRepository(db);
   punts = createDefaultPuntsService(puntsRepository);
   breakdown = createBreakdownService(puntsRepository);

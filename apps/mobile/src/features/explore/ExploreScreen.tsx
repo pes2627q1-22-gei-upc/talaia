@@ -88,6 +88,7 @@ export function ExploreScreen() {
               badge={vm.constellations.badge}
               icon={GOAL_ICONS.constellacions}
               selected={vm.constellations.selected}
+              disabled={vm.constellations.disabled}
               onPress={vm.constellations.onPress}
             />
           </View>

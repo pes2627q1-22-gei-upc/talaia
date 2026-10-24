@@ -37,15 +37,17 @@ function points(index: MapPoints['features'][number]['properties']['index']): Ma
 }
 
 describe('marcadors del mapa', () => {
-  it.each([undefined, null, { valor: NaN, franja: 'ras' as const }])(
-    'mostra un guió neutre quan falta un índex vàlid (%s)',
-    (index) => {
-      expect(markerData(points(index)).features[0]?.properties).toMatchObject({
-        label: '—',
-        band: 'unknown',
-      });
-    },
-  );
+  it.each([
+    undefined,
+    null,
+    { valor: NaN, franja: 'ras' as const },
+    { valor: 0, franja: 'tap' as const, deDia: true },
+  ])('mostra un guió neutre quan falta un índex vàlid (%s)', (index) => {
+    expect(markerData(points(index)).features[0]?.properties).toMatchObject({
+      label: '—',
+      band: 'unknown',
+    });
+  });
 
   it.each([
     { valor: 0, franja: 'tap' as const },
@@ -57,15 +59,29 @@ describe('marcadors del mapa', () => {
     expect(feature?.geometry.coordinates).toEqual([0.75, 42.05]);
   });
 
-  it('genera capes vàlides segons l’especificació de MapLibre', () => {
-    expect(
-      validateStyleMin({
-        version: 8,
-        glyphs: 'https://example.org/{fontstack}/{range}.pbf',
-        sources: { [POINTS_SOURCE]: { type: 'geojson', data: EMPTY_MAP_POINTS } },
-        layers: markerLayers(palette),
-      }),
-    ).toEqual([]);
+  it.each([true, false])(
+    'genera capes vàlides segons l’especificació de MapLibre (grups: %s)',
+    (cluster) => {
+      expect(
+        validateStyleMin({
+          version: 8,
+          glyphs: 'https://example.org/{fontstack}/{range}.pbf',
+          sources: { [POINTS_SOURCE]: { type: 'geojson', data: EMPTY_MAP_POINTS } },
+          layers: markerLayers(palette, cluster),
+        }),
+      ).toEqual([]);
+    },
+  );
+
+  it('al rànquing els marcadors no es trepitgen i el de més índex té prioritat', () => {
+    const markers = markerLayers(palette, false).find(
+      (layer) => layer.id === 'talaia-point-markers',
+    );
+    expect(markers?.layout).toMatchObject({
+      'icon-allow-overlap': false,
+      'text-allow-overlap': false,
+      'symbol-sort-key': ['-', 0, ['get', 'rank']],
+    });
   });
 
   it('actualitza la font existent sense tornar a crear capes ni moure la càmera', () => {

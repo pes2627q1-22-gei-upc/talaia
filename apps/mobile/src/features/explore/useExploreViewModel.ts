@@ -168,9 +168,10 @@ export function useExploreViewModel() {
     constellations: {
       label: t('explore.goals.constellacions'),
       hint: t('explore.constellationsHint'),
-      badge: t('explore.new'),
-      selected: goal === 'constellacions',
-      onPress: () => setGoal('constellacions'),
+      badge: t('explore.soon'),
+      disabled: true,
+      selected: false,
+      onPress: () => {},
     },
     originTitle: t('explore.origin.title'),
     origin,

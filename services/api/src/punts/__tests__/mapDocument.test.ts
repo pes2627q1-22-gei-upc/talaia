@@ -22,7 +22,7 @@ describe('buildMapDocument', () => {
         municipi: 'Cadaqués',
         lon: 3.3158674321,
         lat: 42.3189126543,
-        index: { valor: 50, franja: 'jus' },
+        index: { valor: 50, franja: 'jus', deDia: false },
       },
     ]);
     expect(doc).toEqual({
@@ -35,7 +35,7 @@ describe('buildMapDocument', () => {
             id: 'a',
             nom: 'Cap de Creus',
             municipi: 'Cadaqués',
-            index: { valor: 50, franja: 'jus' },
+            index: { valor: 50, franja: 'jus', deDia: false },
           },
         },
       ],

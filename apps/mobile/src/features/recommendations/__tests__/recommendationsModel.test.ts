@@ -82,9 +82,10 @@ describe('toMapPoints', () => {
   });
 });
 
-it('localTime dona l’hora local amb els minuts', () => {
-  expect(localTime(new Date(2026, 9, 23, 2, 0).toISOString())).toBe('02:00');
-  expect(localTime(new Date(2026, 9, 22, 21, 30).toISOString())).toBe('21:30');
+it('localTime dona l’hora de Catalunya amb els minuts, a l’estiu i a l’hivern', () => {
+  expect(localTime('2026-10-23T00:00:00Z')).toBe('02:00');
+  expect(localTime('2026-10-22T19:30:00Z')).toBe('21:30');
+  expect(localTime('2026-12-01T21:00:00Z')).toBe('22:00');
 });
 
 it.each([

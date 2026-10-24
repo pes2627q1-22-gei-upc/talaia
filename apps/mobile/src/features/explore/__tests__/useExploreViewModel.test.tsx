@@ -147,15 +147,16 @@ describe('useExploreViewModel', () => {
     jest.useRealTimers();
   });
 
-  it('tria el que es vol veure, també les constel·lacions', async () => {
+  it('tria el que es vol veure; les constel·lacions encara surten «Aviat»', async () => {
     mockedPlace.mockResolvedValue(BARCELONA);
     const { result } = await renderViewModel();
     await act(() => result.current.goals[0]?.onPress());
     expect(result.current.goals[0]?.selected).toBe(true);
 
+    expect(result.current.constellations).toMatchObject({ badge: 'Aviat', disabled: true });
     await act(() => result.current.constellations.onPress());
-    expect(result.current.constellations.selected).toBe(true);
-    expect(result.current.goals.some((goal) => goal.selected)).toBe(false);
+    expect(result.current.constellations.selected).toBe(false);
+    expect(result.current.goals[0]?.selected).toBe(true);
   });
 
   it('la posta, la sortida i l’eclipsi surten «Aviat» i no es poden triar (ADR-0027)', async () => {

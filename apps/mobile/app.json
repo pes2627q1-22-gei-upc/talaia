@@ -9,7 +9,16 @@
     "userInterfaceStyle": "dark",
     "ios": {
       "bundleIdentifier": "cat.talaia.app",
-      "usesAppleSignIn": true
+      "usesAppleSignIn": true,
+      "infoPlist": {
+        "CFBundleAllowMixedLocalizations": true,
+        "CFBundleLocalizations": ["ca", "es", "en"]
+      }
+    },
+    "locales": {
+      "ca": "./locales/ca.json",
+      "es": "./locales/es.json",
+      "en": "./locales/en.json"
     },
     "android": {
       "package": "cat.talaia.app",

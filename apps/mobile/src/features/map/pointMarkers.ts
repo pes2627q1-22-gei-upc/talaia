@@ -7,7 +7,7 @@ export type MapPoints = {
   type: 'FeatureCollection';
   features: (Omit<PuntMapaFeature, 'properties'> & {
     properties: Omit<PuntMapaFeature['properties'], 'index'> & {
-      index?: IndexVisibilitat | null;
+      index?: (IndexVisibilitat & { deDia?: boolean }) | null;
     };
   })[];
 };
@@ -61,8 +61,10 @@ export function markerData(points: MapPoints): FeatureCollection<Point> {
     type: 'FeatureCollection',
     features: points.features.map(({ geometry, properties }) => {
       const index = properties.index;
+      // De dia l'índex és 0 per l'hora, no pel cel: es pinta com un punt sense índex.
       const hasIndex =
         index != null &&
+        !index.deDia &&
         Number.isInteger(index.valor) &&
         index.valor >= 0 &&
         index.valor <= 100 &&
@@ -111,7 +113,12 @@ export function drawMarkerPin(color: string, background: string, pixelRatio = 2)
   return ctx.getImageData(0, 0, canvas.width, canvas.height);
 }
 
-export function markerLayers(palette: MarkerPalette): LayerSpecification[] {
+/**
+ * Amb grups, els punts solts gairebé no es trepitgen i el de més índex es dibuixa al damunt. Sense
+ * grups (rànquing), dos punts a tocar es tapaven: ara no es trepitgen, el de més índex guanya el lloc
+ * i l'altre surt en apropar-s'hi.
+ */
+export function markerLayers(palette: MarkerPalette, cluster = true): LayerSpecification[] {
   return [
     {
       id: CLUSTERS_LAYER,
@@ -136,44 +143,8 @@ export function markerLayers(palette: MarkerPalette): LayerSpecification[] {
       },
       paint: { 'text-color': palette.text },
     },
-    {
-      id: MARKERS_LAYER,
-      type: 'symbol',
-      source: POINTS_SOURCE,
-      filter: ['!', ['has', 'point_count']],
-      layout: {
-        'icon-image': ['concat', 'talaia-pin-', ['get', 'band']],
-        'icon-anchor': 'bottom',
-        'icon-offset': [0, PIN_HEIGHT - PIN_FOOT],
-        'icon-pitch-alignment': 'viewport',
-        'icon-rotation-alignment': 'viewport',
-        'icon-allow-overlap': true,
-        'icon-ignore-placement': true,
-        'symbol-sort-key': ['get', 'rank'],
-        'text-field': ['get', 'label'],
-        // Font disponible als glyphs de l'ICGC que ja fa servir el mapa.
-        'text-font': ['FiraSans-Bold'],
-        'text-size': INDEX_SIZE,
-        'text-offset': [0, (PIN_CENTER - PIN_FOOT) / INDEX_SIZE],
-        'text-pitch-alignment': 'viewport',
-        'text-rotation-alignment': 'viewport',
-        'text-allow-overlap': true,
-        'text-ignore-placement': true,
-      },
-      paint: {
-        'text-color': [
-          'match',
-          ['get', 'band'],
-          'ras',
-          palette.ras,
-          'jus',
-          palette.jus,
-          'tap',
-          palette.tap,
-          palette.unknown,
-        ],
-      },
-    },
+    // Els noms van per sota: MapLibre col·loca primer la capa de dalt, i amb els noms a sobre
+    // amagaven els marcadors del rànquing.
     {
       id: NAMES_LAYER,
       type: 'symbol',
@@ -193,6 +164,45 @@ export function markerLayers(palette: MarkerPalette): LayerSpecification[] {
         'text-color': palette.text,
         'text-halo-color': palette.background,
         'text-halo-width': 1.5,
+      },
+    },
+    {
+      id: MARKERS_LAYER,
+      type: 'symbol',
+      source: POINTS_SOURCE,
+      filter: ['!', ['has', 'point_count']],
+      layout: {
+        'icon-image': ['concat', 'talaia-pin-', ['get', 'band']],
+        'icon-anchor': 'bottom',
+        'icon-offset': [0, PIN_HEIGHT - PIN_FOOT],
+        'icon-pitch-alignment': 'viewport',
+        'icon-rotation-alignment': 'viewport',
+        'icon-allow-overlap': cluster,
+        'icon-ignore-placement': cluster,
+        // Sense solapament, la clau més baixa té prioritat; amb solapament, es dibuixa a sota.
+        'symbol-sort-key': cluster ? ['get', 'rank'] : ['-', 0, ['get', 'rank']],
+        'text-field': ['get', 'label'],
+        // Font disponible als glyphs de l'ICGC que ja fa servir el mapa.
+        'text-font': ['FiraSans-Bold'],
+        'text-size': INDEX_SIZE,
+        'text-offset': [0, (PIN_CENTER - PIN_FOOT) / INDEX_SIZE],
+        'text-pitch-alignment': 'viewport',
+        'text-rotation-alignment': 'viewport',
+        'text-allow-overlap': cluster,
+        'text-ignore-placement': cluster,
+      },
+      paint: {
+        'text-color': [
+          'match',
+          ['get', 'band'],
+          'ras',
+          palette.ras,
+          'jus',
+          palette.jus,
+          'tap',
+          palette.tap,
+          palette.unknown,
+        ],
       },
     },
   ];
@@ -227,7 +237,7 @@ export function syncMapPoints(map: Map, points: MapPoints, palette: MarkerPalett
   map.addSource(POINTS_SOURCE, { type: 'geojson', data, ...(cluster ? CLUSTER_OPTIONS : {}) });
   const createdSource = map.getSource(POINTS_SOURCE) as GeoJSONSource | undefined;
   if (createdSource) sourceData.set(createdSource, serialized);
-  for (const layer of markerLayers(palette)) map.addLayer(layer);
+  for (const layer of markerLayers(palette, cluster)) map.addLayer(layer);
 }
 
 /** Cada toc amplia fins a la següent divisió del grup, que pot contenir altres grups. */

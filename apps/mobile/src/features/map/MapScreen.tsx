@@ -103,7 +103,9 @@ export function MapScreen() {
         cluster={!recommendations}
         fit={fit}
         dom={{
-          style: { flex: 1, backgroundColor: colors.nit },
+          // Transparent: un WKWebView opac pinta blanc fins que la pàgina fa el primer dibuix.
+          // Mentrestant es veu el fons nit del contenidor.
+          style: { flex: 1, backgroundColor: 'transparent' },
           scrollEnabled: false,
           bounces: false,
           overScrollMode: 'never',
@@ -147,7 +149,7 @@ export function MapScreen() {
                 accessibilityLabel={vm.retryLabel}
                 accessibilityRole="button"
                 style={styles.retryActionRow}
-                hitSlop={8}
+                hitSlop={spacing.ms}
               >
                 <AppText variant="label" style={styles.retryText}>
                   {vm.retryLabel}

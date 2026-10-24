@@ -17,6 +17,9 @@ export class ApiError extends Error {
 
 type Query = Record<string, string | number | boolean | undefined>;
 
+/** Una API que no respon no ha de deixar una pantalla carregant per sempre. */
+export const REQUEST_TIMEOUT_MS = 15_000;
+
 export function buildUrl(path: string, query?: Query, baseUrl: string = env.apiUrl): string {
   const url = new URL(path.replace(/^\//, ''), baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`);
   for (const [key, value] of Object.entries(query ?? {})) {
@@ -56,12 +59,29 @@ async function apiRequest<T>(url: string, init: RequestInit): Promise<T> {
   // La sessió actual és l'única font d'autorització, també després d'un logout.
   headers.delete('Authorization');
   if (token) headers.set('Authorization', `Bearer ${token}`);
-  const response = await fetch(url, {
-    ...init,
-    headers,
-  });
-  if (!response.ok) throw await toApiError(response);
-  return (await response.json()) as T;
+  // ponytail: AbortController a mà; React Native no té AbortSignal.timeout ni AbortSignal.any.
+  const controller = new AbortController();
+  let timedOut = false;
+  const timer = setTimeout(() => {
+    timedOut = true;
+    controller.abort();
+  }, REQUEST_TIMEOUT_MS);
+  const cancel = () => controller.abort();
+  if (init.signal?.aborted) cancel();
+  init.signal?.addEventListener('abort', cancel);
+  try {
+    const response = await fetch(url, { ...init, headers, signal: controller.signal });
+    if (!response.ok) throw await toApiError(response);
+    return (await response.json()) as T;
+  } catch (error) {
+    // Un ApiError < 500, perquè TanStack Query no hi torni (3 × 15 s d'esquelet) i es pugui
+    // distingir d'una cancel·lació.
+    if (timedOut) throw new ApiError(408, 'timeout', "L'API no ha respost a temps");
+    throw error;
+  } finally {
+    clearTimeout(timer);
+    init.signal?.removeEventListener('abort', cancel);
+  }
 }
 
 async function toApiError(response: Response): Promise<ApiError> {

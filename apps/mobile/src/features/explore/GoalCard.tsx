@@ -47,7 +47,7 @@ export function GoalCard({ label, icon, selected, onPress, hint, badge, disabled
       onPress={onPress}
       haptic="selection"
       disabled={disabled}
-      accessibilityLabel={hint ? `${label}. ${hint}` : badge ? `${label}. ${badge}` : label}
+      accessibilityLabel={[label, hint, badge].filter(Boolean).join('. ')}
       accessibilityState={{ selected, disabled }}
       style={[styles.card, wide ? styles.wide : styles.grid, selected && styles.selected]}
     >
@@ -57,10 +57,10 @@ export function GoalCard({ label, icon, selected, onPress, hint, badge, disabled
           <Image
             source={icon}
             tintColor={selected ? colors.nit : colors.pedra}
-            style={styles.icon}
+            style={[styles.icon, disabled && styles.off]}
             accessible={false}
           />
-          <View style={styles.wideText}>
+          <View style={[styles.wideText, disabled && styles.off]}>
             <AppText variant="link" color={selected ? 'nit' : 'lluna'}>
               {label}
             </AppText>

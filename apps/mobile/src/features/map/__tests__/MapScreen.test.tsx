@@ -175,7 +175,9 @@ describe('MapScreen', () => {
 
 describe('MapScreen amb una cerca (TG-102, mockup 03)', () => {
   /** Hora local fixa, sigui quina sigui la zona del sistema on corren els tests. */
-  const at = (hour: number) => new Date(2026, 9, 22, hour, 0).toISOString();
+  // Hora de Catalunya (+02:00 a l'octubre), sigui quina sigui la zona del qui passa els tests.
+  const at = (hour: number) =>
+    new Date(`2026-10-22T${String(hour).padStart(2, '0')}:00:00+02:00`).toISOString();
   const punt = (
     id: string,
     nom: string,

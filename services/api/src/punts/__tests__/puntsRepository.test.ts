@@ -25,7 +25,7 @@ describe('puntsRepository.listPublished', () => {
 
     expect(queries).toHaveLength(1);
     expect(queries[0]?.sql).toBe(
-      'select "p"."id", "p"."nom", "p"."municipi", st_x("p"."ubicacio"::geometry) as "lon", st_y("p"."ubicacio"::geometry) as "lat", "iv"."valor", "iv"."franja" from "punts_observacio" as "p" left join "index_visibilitat" as "iv" on "iv"."punt_id" = "p"."id" and "iv"."hora" = $1 where "p"."estat" = $2 order by "p"."slug"',
+      'select "p"."id", "p"."nom", "p"."municipi", st_x("p"."ubicacio"::geometry) as "lon", st_y("p"."ubicacio"::geometry) as "lat", "iv"."valor", "iv"."franja", "iv"."factors" from "punts_observacio" as "p" left join "index_visibilitat" as "iv" on "iv"."punt_id" = "p"."id" and "iv"."hora" = $1 where "p"."estat" = $2 order by "p"."slug"',
     );
     expect(queries[0]?.parameters).toEqual([HORA, 'PUBLICAT']);
   });
@@ -33,14 +33,26 @@ describe('puntsRepository.listPublished', () => {
   it("un punt sense fila d'índex (valor i franja nuls) surt amb index: null", async () => {
     const punt = { id: 'a', nom: 'Montsec', municipi: 'Àger', lon: 0.71, lat: 42.03 };
     const { db } = dummyDb([
-      { ...punt, valor: null, franja: null },
-      { ...punt, id: 'b', valor: 82, franja: 'ras' },
+      { ...punt, valor: null, franja: null, factors: null },
+      { ...punt, id: 'b', valor: 82, franja: 'ras', factors: { sol: 1 } },
     ]);
 
     await expect(createPuntsRepository(db).listPublished(HORA)).resolves.toEqual([
       { ...punt, index: null },
-      { ...punt, id: 'b', index: { valor: 82, franja: 'ras' } },
+      { ...punt, id: 'b', index: { valor: 82, franja: 'ras', deDia: false } },
     ]);
+  });
+
+  it('amb el Sol amunt (factor sol 0) marca deDia', async () => {
+    const punt = { id: 'a', nom: 'Montsec', municipi: 'Àger', lon: 0.71, lat: 42.03 };
+    const { db } = dummyDb([
+      { ...punt, valor: 0, franja: 'tap', factors: { sol: 0 } },
+      { ...punt, id: 'b', valor: 20, franja: 'tap', factors: { sol: 0.5 } },
+    ]);
+
+    const [dia, crepuscle] = await createPuntsRepository(db).listPublished(HORA);
+    expect(dia?.index?.deDia).toBe(true);
+    expect(crepuscle?.index?.deDia).toBe(false);
   });
 });
 

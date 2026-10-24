@@ -75,7 +75,7 @@ sudo mkdir -p /opt/talaia && sudo chown "$USER": /opt/talaia && sudo chmod 700 /
 (umask 077 && cp ~/talaia/.env.example /opt/talaia/.env)
 ```
 
-Omple com a mínim `PUBLIC_HOST`, `PUBLIC_PORT` (`40000+XXX·10`), `ACME_EMAIL`, `DUCKDNS_TOKEN`, `DATABASE_URL` i `API_PUBLIC_URL`. Per activar l'accés d'Aprop al calendari, configura també `APROP_API_KEY` amb una clau aleatòria de 32 caràcters o més; sense aquesta variable, les peticions amb API key responen 503. Els valors reals són al gestor de contrasenyes de l'equip (P20), mai al repo ni al xat.
+Omple com a mínim `PUBLIC_HOST`, `PUBLIC_PORT` (`40000+XXX·10`), `ACME_EMAIL`, `DUCKDNS_TOKEN`, `DATABASE_URL`, `SUPABASE_URL` (`https://<ref>.supabase.co`, la mateixa de l'app; sense, el compose no arrenca) i `API_PUBLIC_URL`. Perquè el worker desi les observacions de les estacions XEMA, també `METEOCAT_API_KEY`. Per activar l'accés d'Aprop al calendari, configura també `APROP_API_KEY` amb una clau aleatòria de 32 caràcters o més; sense aquesta variable, les peticions amb API key responen 503. Els valors reals són al gestor de contrasenyes de l'equip (P20), mai al repo ni al xat.
 
 Compte: Docker Compose llegeix un comentari al final d'una línia buida (`VAR=   # …`) com si fos el valor. Posa els comentaris a la línia de sobre.
 

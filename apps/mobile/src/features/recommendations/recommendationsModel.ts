@@ -2,6 +2,7 @@ import type { ConsultaRecomanacions, ObjectiuObservacio, Recomanacio } from '@ta
 
 import { GRID_GOALS } from '../explore/exploreModel';
 import type { MapPoints } from '../map/pointMarkers';
+import { twoDigitHours } from '../point/pointModel';
 
 /** Paràmetres de `/recomanacions` tal com els deixa «Què vols veure?»: tot és text a la ruta. */
 export type RecommendationParams = Partial<
@@ -53,12 +54,16 @@ export function toMapPoints(punts: Recomanacio[]): MapPoints {
   };
 }
 
-const pad = (n: number) => String(n).padStart(2, '0');
+const catalanTime = new Intl.DateTimeFormat('ca', {
+  timeZone: 'Europe/Madrid',
+  hour: '2-digit',
+  minute: '2-digit',
+  hourCycle: 'h23',
+});
 
-/** Hora local d'un instant ISO (com `ConsultaRecomanacions`, el mòbil és a `Europe/Madrid`). */
+/** Hora de Catalunya d'un instant ISO, com la fitxa del punt, sigui on sigui el mòbil. */
 export function localTime(iso: string): string {
-  const date = new Date(iso);
-  return `${pad(date.getHours())}:${pad(date.getMinutes())}`;
+  return twoDigitHours(catalanTime.format(new Date(iso)));
 }
 
 /** Posició del rànquing en cada idioma: 1r, 2n, 3r, 4t, 5è · 1.º · 1st, 2nd, 3rd, 4th. */

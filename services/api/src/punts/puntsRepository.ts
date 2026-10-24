@@ -3,7 +3,7 @@ import type {
   DireccioHoritzo,
   FranjaIndex,
   IndexHora,
-  IndexVisibilitat,
+  IndexMapa,
   PuntFitxa,
   PuntObservacio,
 } from '@talaia/shared';
@@ -14,7 +14,7 @@ type Db = ReturnType<typeof createDb>;
 export type PuntDetall = Omit<PuntFitxa, 'index'>;
 
 /** Un punt del mapa amb l'índex de l'hora en curs (`null` si el worker encara no l'ha calculat). */
-export type PuntMapa = PuntObservacio & { index: IndexVisibilitat | null };
+export type PuntMapa = PuntObservacio & { index: IndexMapa | null };
 
 /** Accés als punts d'observació (ADR-0013): les consultes només s'escriuen aquí. */
 export type PuntsRepository = {
@@ -47,14 +47,22 @@ export function createPuntsRepository(db: Db): PuntsRepository {
           lat(eb.ref('p.ubicacio')).as('lat'),
           'iv.valor',
           'iv.franja',
+          'iv.factors',
         ])
         .where('p.estat', '=', 'PUBLICAT')
         .orderBy('p.slug')
         .execute();
-      return files.map(({ valor, franja, ...punt }) => ({
+      return files.map(({ valor, franja, factors, ...punt }) => ({
         ...punt,
-        // La taula ja limita `franja` a 'tap', 'jus' i 'ras' amb un check.
-        index: valor === null || franja === null ? null : { valor, franja: franja as FranjaIndex },
+        index:
+          valor === null || franja === null
+            ? null
+            : {
+                valor,
+                // La taula ja limita `franja` a 'tap', 'jus' i 'ras' amb un check.
+                franja: franja as FranjaIndex,
+                deDia: (factors as IndexHora['factors'] | null)?.sol === 0,
+              },
       }));
     },
     async indexVersion() {
