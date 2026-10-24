@@ -1,3 +1,5 @@
 {
-  "NSLocationWhenInUseUsageDescription": "Talaia uses your location to recommend the best places to watch the sky near you."
+  "ios": {
+    "NSLocationWhenInUseUsageDescription": "Talaia uses your location to recommend the best places to watch the sky near you."
+  }
 }
