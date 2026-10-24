@@ -51,7 +51,7 @@ Es carreguen amb `@expo-google-fonts` al layout arrel. Cada pes és una família
 | `label` | Atkinson 700 | 16 / 20 | Botons, nom d'un punt |
 | `small` | Atkinson 400 | 14 / 20 | Text secundari |
 | `chip` | Atkinson 600 | 14 / 18 | Xips de filtre |
-| `link` | Atkinson 700 | 13 / 17 | Enllaços («Veure'ls tots») |
+| `link` | Atkinson 700 | 13 / 17 | Enllaços («Mostra'ls tots») |
 | `caption` | Atkinson 400 | 12 / 17 | Notes petites |
 | `hourlyIndex` | Big Shoulders 800 | 27 / 30 | Valor de l'hora seleccionada a la fitxa del punt |
 | `tag` | Atkinson 700 | 12 / 16 | Etiquetes |
