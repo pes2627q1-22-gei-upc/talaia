@@ -1,23 +1,16 @@
 /* eslint-disable @typescript-eslint/no-require-imports -- transformador de Metro, en CommonJS */
-const { parseSync } = require('@babel/core');
 const upstream = require('@expo/metro-config/babel-transformer');
 
-// MapLibre GL JS converteix el codi del seu worker en text i l'executa en un Web Worker. Si Babel hi
-// passa, hi posa helpers (`_wrapNativeSuper`) que el worker no té i el mapa no pinta res. El bundle de
-// `maplibre-gl/dist` ja és ES2017: només se'n fa el parse.
-const UNTOUCHED = /node_modules[\\/]maplibre-gl[\\/]dist[\\/]/;
+// MapLibre GL JS 6 carrega el worker d'una URL al costat del seu bundle, que dins d'una DOM component
+// no existeix. El worker és un sol fitxer sense imports: l'app el rep com a text i el carrega d'un
+// Blob (`src/core/map/maplibreWorker.ts`).
+const WORKER = /node_modules[\\/]maplibre-gl[\\/]dist[\\/]maplibre-gl-worker\.mjs$/;
 
 module.exports = {
   ...upstream,
   transform(args) {
-    if (!UNTOUCHED.test(args.filename)) return upstream.transform(args);
-    const ast = parseSync(args.src, {
-      filename: args.filename,
-      sourceType: 'script',
-      babelrc: false,
-      configFile: false,
-    });
-    return { ast, metadata: {} };
+    if (!WORKER.test(args.filename)) return upstream.transform(args);
+    return upstream.transform({ ...args, src: `module.exports = ${JSON.stringify(args.src)};` });
   },
 };
 /* eslint-enable @typescript-eslint/no-require-imports -- fi del CommonJS */

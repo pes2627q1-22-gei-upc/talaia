@@ -1,8 +1,10 @@
 import 'maplibre-gl/dist/maplibre-gl.css';
 
-import maplibregl, { type StyleSpecification } from 'maplibre-gl';
+import * as maplibregl from 'maplibre-gl';
+import type { StyleSpecification } from 'maplibre-gl';
 import { useEffect, useRef, useState } from 'react';
 
+import '@/core/map/maplibreWorker';
 import { ATTRIBUTION } from '@/features/map/style/nightStyle';
 
 type Props = {

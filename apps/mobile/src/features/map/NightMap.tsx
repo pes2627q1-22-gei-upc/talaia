@@ -3,8 +3,11 @@
 import 'maplibre-gl/dist/maplibre-gl.css';
 
 import type { DOMProps } from 'expo/dom';
-import maplibregl, { type StyleSpecification } from 'maplibre-gl';
+import * as maplibregl from 'maplibre-gl';
+import type { StyleSpecification } from 'maplibre-gl';
 import { useEffect, useRef } from 'react';
+
+import '@/core/map/maplibreWorker';
 
 import {
   bindClusterInteraction,
