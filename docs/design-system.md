@@ -43,7 +43,7 @@ Es carreguen amb `@expo-google-fonts` al layout arrel. Cada pes és una família
 | Variant | Font | Mida / interlineat | Ús (Figma) |
 |---|---|---|---|
 | `indexLg` | Big Shoulders 800 | 66 / 76 | Xifra de l'índex al detall del punt |
-| `indexMd` | Big Shoulders 800 | 40 / 38 | Xifra de l'índex a les llistes |
+| `indexMd` | Big Shoulders 800 | 40 / 46 | Xifra de l'índex a les llistes |
 | `display` | Big Shoulders 800 | 38 / 40 | Títol de pantalla («Calendari») |
 | `title` | Atkinson 700 | 22 / 28 | «On i quan mirar el cel.» |
 | `heading` | Atkinson 700 | 17 / 22 | Capçalera de secció |
