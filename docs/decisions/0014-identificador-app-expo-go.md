@@ -16,3 +16,4 @@ Per generar qualsevol build natiu de l'app (EAS, `expo prebuild`) cal un identif
 
 - No hi ha `expo-dev-client` ni `eas.json`. Quan calgui un build per publicar (TestFlight, Play), s'afegeixen els perfils d'EAS en aquell moment.
 - Les carpetes `ios/` i `android/` no es versionen; si algú fa `expo prebuild` en local, es generen.
+- **Actualització 2026-10-25 (SDK 58):** l'Expo Go de les botigues només obre projectes del seu SDK. Quan va sortir el de l'SDK 58, ningú que l'hagués actualitzat podia obrir el projecte, que era de l'SDK 57. Cal pujar d'SDK quan surt el nou Expo Go. Mentrestant, a Android es pot instal·lar l'APK de l'SDK anterior (<https://expo.dev/go>) i, a iOS, només el simulador (l'Expo CLI hi instal·la la versió que toca) o un Expo Go de l'SDK anterior per TestFlight (`npx eas-cli go`, amb el compte d'Apple Developer).
