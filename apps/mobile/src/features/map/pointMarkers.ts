@@ -218,7 +218,7 @@ export function syncMapPoints(map: Map, points: MapPoints, palette: MarkerPalett
   const source = map.getSource(POINTS_SOURCE) as GeoJSONSource | undefined;
   if (source) {
     if (sourceData.get(source) === serialized) return;
-    source.setData(data);
+    void source.setData(data);
     sourceData.set(source, serialized);
     return;
   }
