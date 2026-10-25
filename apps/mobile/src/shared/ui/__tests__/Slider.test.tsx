@@ -1,5 +1,5 @@
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
-import { State } from 'react-native-gesture-handler';
+import { GestureHandlerRootView, State } from 'react-native-gesture-handler';
 import { fireGestureHandler, getByGestureTestId } from 'react-native-gesture-handler/jest-utils';
 
 import { Slider } from '../Slider';
@@ -18,6 +18,8 @@ async function renderSlider(value = 150, onChange = jest.fn()) {
       accessibilityLabel="Fins a quina distància"
       accessibilityValueText={`${value} min`}
     />,
+    // Gesture Handler 3: GestureDetector exigeix l'arrel, com a `AppProviders`.
+    { wrapper: GestureHandlerRootView },
   );
   await fireEvent(screen.getByTestId('slider'), 'layout', {
     nativeEvent: { layout: { width: WIDTH, height: 28 } },
