@@ -1,5 +1,6 @@
 import { AuthApiError, AuthRetryableFetchError } from '@supabase/supabase-js';
 import * as AppleAuthentication from 'expo-apple-authentication';
+import Constants, { ExecutionEnvironment } from 'expo-constants';
 import * as WebBrowser from 'expo-web-browser';
 import { Platform } from 'react-native';
 
@@ -131,6 +132,24 @@ describe('Apple', () => {
     expect(await authRepository.isAppleNativeAvailable()).toBe(true);
     jest.mocked(AppleAuthentication.isAvailableAsync).mockResolvedValueOnce(false);
     expect(await authRepository.isAppleNativeAvailable()).toBe(false);
+  });
+
+  it('a Expo Go va pel navegador encara que hi hagi el mòdul natiu (token de host.exp.Exponent)', async () => {
+    const restore = jest.replaceProperty(
+      Constants,
+      'executionEnvironment',
+      ExecutionEnvironment.StoreClient,
+    );
+    jest
+      .mocked(WebBrowser.openAuthSessionAsync)
+      .mockResolvedValue({ type: 'success', url: `${REDIRECT}?code=abc` });
+    expect(await authRepository.isAppleNativeAvailable()).toBe(false);
+    await authRepository.signInWithApple();
+    restore.restore();
+    expect(auth.signInWithOAuth).toHaveBeenCalledWith(
+      expect.objectContaining({ provider: 'apple' }),
+    );
+    expect(AppleAuthentication.signInAsync).not.toHaveBeenCalled();
   });
 
   it('també pel navegador si no es pot saber si hi és, i fora d’iOS', async () => {

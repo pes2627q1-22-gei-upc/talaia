@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { MonthCalendar } from '../MonthCalendar';
 
@@ -19,6 +20,8 @@ function renderCalendar(onChange = jest.fn(), firstDay: 0 | 1 = 1) {
       previousLabel="Mes anterior"
       nextLabel="Mes següent"
     />,
+    // Gesture Handler 3: GestureDetector exigeix l'arrel, com a `AppProviders`.
+    { wrapper: GestureHandlerRootView },
   );
 }
 
@@ -89,7 +92,7 @@ describe('MonthCalendar', () => {
       dimPastDays: true,
       outlineToday: true,
     };
-    const view = await render(<MonthCalendar {...props} />);
+    const view = await render(<MonthCalendar {...props} />, { wrapper: GestureHandlerRootView });
 
     expect(screen.getByRole('button', { name: 'dia 2026-10-22' })).not.toBeSelected();
     await fireEvent.press(screen.getByRole('button', { name: 'Mes següent' }));
