@@ -24,7 +24,7 @@ const isGoal = (value: string | undefined): value is ObjectiuObservacio =>
 export function parseQuery(params: RecommendationParams): ConsultaRecomanacions | null {
   const { objectiu, data } = params;
   if (!isGoal(objectiu) || !data || !/^\d{4}-\d{2}-\d{2}$/.test(data)) return null;
-  const number = (value?: string) => (value ? Number(value) : NaN);
+  const number = (value?: string) => (value ? Number(value) : Number.NaN);
   const query: ConsultaRecomanacions = {
     objectiu,
     origen: { lat: number(params.lat), lon: number(params.lon) },
