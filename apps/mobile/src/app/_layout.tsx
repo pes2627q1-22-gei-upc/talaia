@@ -11,6 +11,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { LogBox } from 'react-native';
 
 import { AppProviders } from '@/core/providers/AppProviders';
 import { stackOptions } from '@/core/navigation/transitions';
@@ -18,6 +19,12 @@ import { colors } from '@/core/theme/tokens';
 import { EmailLoginCloseButton } from '@/features/auth/EmailLoginCloseButton';
 
 void SplashScreen.preventAutoHideAsync();
+
+// Expo (SDK 58) no captura la promesa d'`injectJavaScript` quan reenvia les props a una DOM component
+// que ja s'està desmuntant (expo/expo#50679): surt en tancar la fitxa o canviar de pestanya amb el mapa
+// actualitzant-se. No es perd res, perquè cada enviament porta totes les props, i en producció React
+// Native no segueix les promeses. Treure-ho quan Expo la capturi a `webview-wrapper.tsx`.
+LogBox.ignoreLogs(["Unable to find the 'DomWebView' view"]);
 
 const navigationTheme = {
   ...DarkTheme,
