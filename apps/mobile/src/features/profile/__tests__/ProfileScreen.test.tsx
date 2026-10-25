@@ -81,11 +81,11 @@ describe('ProfileScreen · sessió (HU35)', () => {
     await renderProfile(
       auth({
         error: 'logout',
-        errorMessage: 'No s’ha pogut tancar la sessió. Torna-ho a provar.',
+        errorMessage: "No s'ha pogut tancar la sessió. Torna-ho a provar.",
       }),
     );
     expect(screen.getByRole('alert')).toHaveTextContent(
-      'No s’ha pogut tancar la sessió. Torna-ho a provar.',
+      "No s'ha pogut tancar la sessió. Torna-ho a provar.",
     );
     expect(screen.getByRole('button', { name: 'Tanca la sessió' })).toBeOnTheScreen();
     // Reintentar és tornar a prémer «Tanca la sessió», no un botó a part.
@@ -98,7 +98,7 @@ describe('ProfileScreen · sessió (HU35)', () => {
         user: null,
         isAuthenticated: false,
         error: 'restore',
-        errorMessage: 'No s’ha pogut recuperar la sessió. Torna-ho a provar.',
+        errorMessage: "No s'ha pogut recuperar la sessió. Torna-ho a provar.",
       }),
     );
     expect(screen.getByRole('alert')).toBeOnTheScreen();

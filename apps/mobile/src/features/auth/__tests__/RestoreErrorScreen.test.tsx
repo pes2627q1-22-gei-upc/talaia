@@ -11,7 +11,7 @@ const restore = jest.fn(async () => {});
 beforeEach(() => {
   jest.clearAllMocks();
   jest.mocked(useAuthViewModel).mockReturnValue({
-    errorMessage: 'No s’ha pogut recuperar la sessió. Torna-ho a provar.',
+    errorMessage: "No s'ha pogut recuperar la sessió. Torna-ho a provar.",
     retryLabel: 'Torna-ho a provar',
     restore,
   } as unknown as ReturnType<typeof useAuthViewModel>);
@@ -29,7 +29,7 @@ it('explica què ha passat i torna a provar de recuperar la sessió', async () =
     </SafeAreaProvider>,
   );
   expect(
-    screen.getByText('No s’ha pogut recuperar la sessió. Torna-ho a provar.'),
+    screen.getByText("No s'ha pogut recuperar la sessió. Torna-ho a provar."),
   ).toBeOnTheScreen();
   await fireEvent.press(screen.getByRole('button', { name: 'Torna-ho a provar' }));
   expect(restore).toHaveBeenCalledTimes(1);

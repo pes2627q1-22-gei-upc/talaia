@@ -25,7 +25,7 @@ describe('parseQuery', () => {
     });
   });
 
-  it('sense cerca («Veure el mapa») o amb un paràmetre que falta o no és vàlid, no hi ha consulta', () => {
+  it('sense cerca («Mostra el mapa») o amb un paràmetre que falta o no és vàlid, no hi ha consulta', () => {
     expect(parseQuery({})).toBeNull();
     expect(parseQuery({ ...PARAMS, objectiu: 'lluna' })).toBeNull();
     expect(parseQuery({ ...PARAMS, data: '22/10/2026' })).toBeNull();

@@ -21,7 +21,7 @@ const LEGEND: readonly FranjaIndex[] = ['ras', 'jus', 'tap'];
 
 /**
  * Rànquing de «Què vols veure?» sobre el mapa (HU01, mockup 03): capçalera amb la cerca, marcadors
- * i full amb els millors punts. `null` si la ruta no porta cap cerca («Veure el mapa»).
+ * i full amb els millors punts. `null` si la ruta no porta cap cerca («Mostra el mapa»).
  */
 export function useRecommendationsViewModel() {
   const { t, i18n } = useTranslation();

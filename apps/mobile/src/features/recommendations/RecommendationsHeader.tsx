@@ -1,6 +1,6 @@
 import { StyleSheet, View } from 'react-native';
 
-import { colors, radii, spacing } from '@/core/theme/tokens';
+import { colors, radii, sizes, spacing } from '@/core/theme/tokens';
 import { AppText } from '@/shared/ui/AppText';
 
 import type { RecommendationsViewModel } from './useRecommendationsViewModel';
@@ -38,7 +38,7 @@ export function IndexLegend({ items }: { items: Header['legend'] }) {
 const styles = StyleSheet.create({
   card: {
     flex: 1,
-    gap: 2,
+    gap: spacing.xxs,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderRadius: radii.md,
@@ -50,13 +50,14 @@ const styles = StyleSheet.create({
   chip: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.xs + 2,
+    gap: spacing.xs,
     paddingHorizontal: spacing.ms,
-    paddingVertical: spacing.xs + 2,
+    // Amb el text de l'etiqueta, fa l'alçada d'un xip (34).
+    paddingVertical: spacing.sm,
     borderRadius: radii.pill,
     borderWidth: 1,
     borderColor: colors.vora,
     backgroundColor: colors.sheet,
   },
-  dot: { width: 8, height: 8, borderRadius: radii.pill },
+  dot: { width: sizes.legendDot, height: sizes.legendDot, borderRadius: radii.pill },
 });

@@ -46,7 +46,7 @@ La imatge oficial del diagrama és a la incepció 2 (Drive).
 
 Raons clau:
 
-- **React Native vs Flutter:** un sol llenguatge (TypeScript) a app, API, worker i admin → tipus compartits (`packages/shared`); l'equip ja coneix JS; llibreries madures (MapLibre, supabase-js, Astronomy Engine, i18next); Expo resol compilació al núvol (iOS sense Mac), push i distribució; el mapa el dibuixa MapLibre en natiu, així que el rendiment de Flutter no aportaria res.
+- **React Native vs Flutter:** un sol llenguatge (TypeScript) a app, API, worker i admin → tipus compartits (`packages/shared`); l'equip ja coneix JS; llibreries madures (MapLibre, supabase-js, Astronomy Engine, i18next); Expo resol compilació al núvol (iOS sense Mac), push i distribució; el mapa el dibuixa MapLibre GL JS dins d'una DOM component d'Expo, amb WebGL i terreny 3D (ADR-0015), així que el rendiment de Flutter no aportaria res.
 - **Servidor propi i no només Supabase:** el càlcul horari és pesat i periòdic (Edge Functions tenen límits de temps/memòria), els ràsters GeoTIFF es processen millor en un servidor, l'assignatura demana API pròpia, i la lògica queda fora del proveïdor.
 - **Node i no Python:** Python seria millor per a ràsters, però afegeix un segon llenguatge; el ràster es preprocessa una vegada i el càlcul horari és aritmètica simple.
 - **Precalcular l'índex:** resposta immediata, quotes d'API externes independents del nombre d'usuaris, les alertes necessiten l'índex abans que l'usuari obri l'app, i coherència entre usuaris. Excepció: punt arbitrari del mapa → càlcul al moment + memòria cau.

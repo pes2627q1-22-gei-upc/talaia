@@ -57,6 +57,8 @@ export const pointMapColors = {
 } as const;
 
 export const spacing = {
+  /** Entre un títol i el seu subtítol. */
+  xxs: 2,
   xs: 4,
   sm: 8,
   ms: 12,
@@ -82,6 +84,16 @@ export const sizes = {
   touch: 44,
   /** Caixa de les icones (botons, files). */
   icon: 22,
+  iconSmall: 16,
+  /** «Què vols veure?» (mockup 02): targeta de la graella, la seva icona i les files del formulari. */
+  goalCard: 81,
+  goalIcon: 26,
+  field: 46,
+  /** Rànquing (mockup 03): columna de l'índex, nansa del full i punt de la llegenda. */
+  rankIndex: 72,
+  handleWidth: 36,
+  handleHeight: 4,
+  legendDot: 8,
   /** Fitxa del punt (mockup 05): mapa de capçalera i evolució horària. */
   pointMap: 300,
   hourlyChart: 64,

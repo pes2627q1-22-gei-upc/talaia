@@ -26,8 +26,6 @@ const carIcon = {
   `)}`,
 };
 
-/** Amplada de la xifra de l'índex a cada fila (Figma, mockup 03). */
-const INDEX_WIDTH = 72;
 /** Desplegat, el full no passa de la meitat de la pantalla: el mapa s'ha de continuar veient. */
 const MAX_HEIGHT = 0.5;
 
@@ -172,8 +170,8 @@ const styles = StyleSheet.create({
   header: { alignSelf: 'stretch', alignItems: 'center', paddingVertical: spacing.xs },
   handle: {
     alignSelf: 'center',
-    width: 36,
-    height: 4,
+    width: sizes.handleWidth,
+    height: sizes.handleHeight,
     borderRadius: radii.pill,
     backgroundColor: colors.vora,
   },
@@ -192,9 +190,9 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   highlighted: { borderColor: colors.vora, backgroundColor: colors.vel },
-  index: { width: INDEX_WIDTH, alignItems: 'center' },
+  index: { width: sizes.rankIndex, alignItems: 'center' },
   info: { flex: 1, gap: spacing.xs },
   meta: { flexDirection: 'row', flexWrap: 'wrap', columnGap: spacing.md, rowGap: spacing.xs },
   metaItem: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
-  metaIcon: { width: sizes.icon - 6, height: sizes.icon - 6 },
+  metaIcon: { width: sizes.iconSmall, height: sizes.iconSmall },
 });
