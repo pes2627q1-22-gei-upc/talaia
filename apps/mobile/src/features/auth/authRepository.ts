@@ -238,7 +238,8 @@ export const authRepository = {
   startAutoRefresh(): () => void {
     const client = getAuthClient();
     if (!client || Platform.OS === 'web') return () => {};
-    const update = (state: string) => {
+    // Amb els tipus estrictes de RN 0.88, `currentState` pot ser null (encara desconegut).
+    const update = (state: string | null | undefined) => {
       // AppState no espera promeses: deleguem el temporitzador al SDK.
       if (state === 'active') void client.auth.startAutoRefresh();
       else void client.auth.stopAutoRefresh();
