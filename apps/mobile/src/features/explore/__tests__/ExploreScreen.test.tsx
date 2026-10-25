@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react-native';
 import { useRouter } from 'expo-router';
 import type { PropsWithChildren } from 'react';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import i18n from '@/core/i18n';
@@ -34,9 +35,11 @@ function renderScreen() {
   const QueryWrapper = createQueryWrapper();
   function Wrapper({ children }: PropsWithChildren) {
     return (
-      <SafeAreaProvider initialMetrics={METRICS}>
-        <QueryWrapper>{children}</QueryWrapper>
-      </SafeAreaProvider>
+      <GestureHandlerRootView>
+        <SafeAreaProvider initialMetrics={METRICS}>
+          <QueryWrapper>{children}</QueryWrapper>
+        </SafeAreaProvider>
+      </GestureHandlerRootView>
     );
   }
   return render(<ExploreScreen />, { wrapper: Wrapper });
