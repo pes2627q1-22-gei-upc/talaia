@@ -1,5 +1,6 @@
 import { isAuthError, isAuthRetryableFetchError } from '@supabase/supabase-js';
 import * as AppleAuthentication from 'expo-apple-authentication';
+import Constants, { ExecutionEnvironment } from 'expo-constants';
 import * as Crypto from 'expo-crypto';
 import * as Linking from 'expo-linking';
 import * as WebBrowser from 'expo-web-browser';
@@ -134,11 +135,13 @@ async function signInWithBrowser(provider: 'google' | 'apple'): Promise<void> {
 }
 
 /**
- * Si es pot fer servir el full natiu de Sign in with Apple: només a iOS i amb el mòdul natiu, que
- * Expo Go (SDK 57) no porta, ni al simulador ni al mòbil.
+ * Si es pot fer servir el full natiu de Sign in with Apple: només a iOS, amb el mòdul natiu i fora
+ * d'Expo Go. Expo Go 58 ja porta el mòdul, però el token que hi dona és per a `host.exp.Exponent`,
+ * que Supabase no accepta (ADR-0016): a Expo Go, Apple va sempre pel navegador.
  */
 async function appleNativeAvailable(): Promise<boolean> {
   if (Platform.OS !== 'ios') return false;
+  if (Constants.executionEnvironment === ExecutionEnvironment.StoreClient) return false;
   return AppleAuthentication.isAvailableAsync().catch(() => false);
 }
 
