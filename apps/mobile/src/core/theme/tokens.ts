@@ -123,7 +123,8 @@ export const fonts = {
 export const typography = {
   // The font's glyphs extend past a 62px line box at this size on native platforms.
   indexLg: { fontFamily: fonts.display, fontSize: 66, lineHeight: 76 },
-  indexMd: { fontFamily: fonts.display, fontSize: 40, lineHeight: 38 },
+  // Leave room for the display font's ascenders, as with indexLg, to avoid clipping on iOS.
+  indexMd: { fontFamily: fonts.display, fontSize: 40, lineHeight: 46 },
   display: { fontFamily: fonts.display, fontSize: 38, lineHeight: 40 },
   title: { fontFamily: fonts.bold, fontSize: 22, lineHeight: 28 },
   heading: { fontFamily: fonts.bold, fontSize: 17, lineHeight: 22 },
