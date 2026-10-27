@@ -340,11 +340,13 @@ describe("format d'error { error: { code, message } }", () => {
     });
     probe.use(errorHandler);
 
-    it('error de validació de zod → 400 validation_error', async () => {
+    it('error de validació de zod → 400 validation_error, amb el missatge en català', async () => {
       const res = await request(probe).get('/zod');
       expect(res.status).toBe(400);
-      expect(res.body.error.code).toBe('validation_error');
-      expect(res.body.error.message).toContain('n');
+      expect(res.body.error).toEqual({
+        code: 'validation_error',
+        message: "n: Tipus invàlid: s'esperava number, s'ha rebut string",
+      });
     });
 
     it('error inesperat (també asíncron) → 500 sense filtrar el missatge intern', async () => {
