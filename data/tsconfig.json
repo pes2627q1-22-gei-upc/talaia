@@ -1,0 +1,11 @@
+{
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "module": "nodenext",
+    "target": "es2023",
+    "noEmit": true,
+    "allowImportingTsExtensions": true,
+    "types": ["node"]
+  },
+  "include": ["scripts"]
+}

@@ -1,6 +1,6 @@
 # ADR-0007: Branques snapshot / stable / prod amb PR obligatòria
 
-**Estat:** Acceptada · **Data:** 2026-09 (Incepció 2)
+**Estat:** Substituïda per ADR-0009 · **Data:** 2026-09 (Incepció 2)
 
 ## Context
 

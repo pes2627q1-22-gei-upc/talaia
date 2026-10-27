@@ -1,0 +1,75 @@
+{
+  "name": "talaia",
+  "private": true,
+  "description": "Talaia: on i quan observar el cel a Catalunya. Monorepo (PES FIB-UPC, grup 22, equip C).",
+  "engines": {
+    "node": ">=22 <23"
+  },
+  "workspaces": [
+    "apps/mobile",
+    "services/api",
+    "services/worker",
+    "packages/shared",
+    "packages/db",
+    "data"
+  ],
+  "scripts": {
+    "mobile": "npm run start --workspace apps/mobile",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "prepare": "husky",
+    "api": "npm run dev --workspace services/api",
+    "db:types": "kysely-codegen --url postgresql://postgres:postgres@127.0.0.1:54322/postgres",
+    "db:types:verify": "kysely-codegen --verify",
+    "supabase:correu": "node --env-file-if-exists=.env.supabase supabase/scripts/configura-correu.mjs",
+    "test:supabase": "node --test \"supabase/scripts/**/*.test.mjs\""
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^21.2.3",
+    "@commitlint/config-conventional": "^21.2.3",
+    "@eslint-community/eslint-plugin-eslint-comments": "^4.8.1",
+    "@eslint/js": "^9.39.5",
+    "eslint": "^9.39.5",
+    "eslint-config-expo": "~57.0.2",
+    "eslint-config-prettier": "^10.1.8",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.4.0",
+    "prettier": "^3.9.9",
+    "typescript-eslint": "^8.71.1"
+  },
+  "lint-staged": {
+    "*.{js,mjs,cjs,jsx,ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,yml,yaml,css}": "prettier --write"
+  },
+  "overrides": {
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "kysely": "^0.28.17"
+  },
+  "kysely-codegen": {
+    "dialect": "postgres",
+    "camelCase": true,
+    "defaultSchemas": [
+      "public"
+    ],
+    "includePattern": "public.*",
+    "outFile": "packages/db/src/schema.ts",
+    "overrides": {
+      "columns": {
+        "punts_observacio.origen": "\"OFICIAL\" | \"COMUNITAT\"",
+        "punts_observacio.estat": "Generated<\"PENDENT\" | \"PUBLICAT\" | \"REBUTJAT\" | \"DESACTIVAT\">",
+        "fonts_astronomiques.organitzacio": "\"IMO\" | \"NASA\"",
+        "fenomens_astronomics.periodicitat": "\"mensual\" | \"anual\" | \"ocasional\"",
+        "esdeveniments_astronomics.rellevancia": "\"principal\" | \"secundari\"",
+        "esdeveniments_astronomics.dificultat_observacio": "\"baixa\" | \"mitjana\" | \"alta\"",
+        "index_visibilitat.franja": "\"tap\" | \"jus\" | \"ras\""
+      }
+    }
+  }
+}

@@ -6,6 +6,7 @@ node_modules/
 dist/
 build/
 coverage/
+.scannerwork/
 *.tsbuildinfo
 
 # Expo / React Native
@@ -25,6 +26,7 @@ android/
 .env
 .env.*
 !.env.example
+!.env.supabase.example
 
 # Dades grans (es descarreguen amb els scripts de data/)
 data/raw/

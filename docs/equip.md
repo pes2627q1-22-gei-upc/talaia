@@ -7,7 +7,7 @@
 | Martina Maldonado de las Heras | `martinamaldox` | martinamaldox | Front | Supabase i autenticació, pantalla «Què vols veure?», worker horari |
 | Mohamed Dari Bachiri | `mohamed-dari` | mohamed-dari | Back (propietari de Taiga) | Model de punts, endpoints, desplegament a la VM, code review backend |
 | Hugo Nienhausen Mesanza | `HugoNienhausen` | hugonienhausen | Back | Motor de l'índex: Open-Meteo, Astronomy Engine, foscor del cel, fórmula |
-| Victor Lancastle Vivancos | `victorlancastle` | victorlancastle | Back | Calendari de fenòmens, servei d'esdeveniments, contracte amb Mobilicat i Aprop |
+| Victor Lancastle Vivancos | `victorlancastle` | victorlancastle | Back | Calendari de fenòmens, servei d'esdeveniments, contracte amb Aprop i Mobilicat |
 
 Professor: Víctor Asenjo (stakeholder a Taiga).
 

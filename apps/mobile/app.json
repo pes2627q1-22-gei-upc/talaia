@@ -1,0 +1,74 @@
+{
+  "expo": {
+    "name": "Talaia",
+    "slug": "talaia",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "talaia",
+    "userInterfaceStyle": "dark",
+    "ios": {
+      "bundleIdentifier": "cat.talaia.app",
+      "usesAppleSignIn": true,
+      "infoPlist": {
+        "CFBundleAllowMixedLocalizations": true,
+        "CFBundleLocalizations": ["ca", "es", "en"]
+      }
+    },
+    "locales": {
+      "ca": "./locales/ca.json",
+      "es": "./locales/es.json",
+      "en": "./locales/en.json"
+    },
+    "android": {
+      "package": "cat.talaia.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#0E1433",
+        "foregroundImage": "./assets/images/android-icon-foreground.png",
+        "backgroundImage": "./assets/images/android-icon-background.png",
+        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "output": "static",
+      "favicon": "./assets/images/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#0E1433",
+          "image": "./assets/images/splash-icon.png",
+          "imageWidth": 104
+        }
+      ],
+      "expo-localization",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Talaia fa servir la teva ubicació per recomanar-te els millors llocs per mirar el cel a prop d'on ets."
+        }
+      ],
+      "expo-secure-store",
+      "expo-apple-authentication",
+      "expo-font",
+      "expo-image",
+      "expo-status-bar",
+      "expo-web-browser"
+    ],
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    },
+    "backgroundColor": "#0E1433",
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "ef610e9c-2275-41da-a5cf-bb69de7430d2"
+      }
+    },
+    "owner": "talaia.pes"
+  }
+}

@@ -1,16 +1,27 @@
 # Com contribuir
 
+Primera vegada? Prepara l'entorn amb la **[guia d'onboarding](docs/onboarding.md)**. Hi ha el flux complet d'una tasca amb exemples (secció 6) i els problemes freqüents.
+
+Resum del flux:
+
 1. **Agafa una tasca a Taiga** que tinguis assignada i mou-la a «En curso». Mira'n la *Data d'inici*, la data límit i les hores estimades.
 2. **Crea la branca** des de `snapshot`:
    ```bash
    git switch snapshot && git pull
    git switch -c feature/TG-<ref>-descripcio-curta
    ```
-3. **Treballa amb commits petits** i amb la referència de Taiga:
-   `feat(api): endpoint GET /punts amb filtre bbox TG-88`
-4. **Abans de la PR:** `git rebase snapshot`, passa lint, typecheck i tests en local.
-5. **Obre la PR cap a `snapshot`** amb la plantilla, assigna un revisor. Cap PR s'aprova a si mateixa.
-6. **En fusionar** (squash): tanca la tasca a Taiga i omple **Hores reals**.
+3. **Treballa amb commits petits** en format [Conventional Commits 1.0.0](https://www.conventionalcommits.org/en/v1.0.0/), sempre amb el peu de Taiga:
+   ```
+   feat(api): afegeix GET /punts amb filtre per bbox
+
+   Refs: TG-88
+   ```
+   Els hooks (s'activen amb `npm install`) rebutgen el commit si el missatge no compleix el format o si ESLint troba errors.
+4. **Abans de la PR:** actualitza la branca amb `snapshot` i passa `npm run lint && npm run typecheck && npm test`.
+5. **Obre la PR cap a `snapshot`** amb la plantilla i un títol en format Conventional Commits. Revisor: backend (API, worker, base de dades), Mohamed; la resta, qualsevol company amb permís d'escriptura. Cap PR s'aprova a si mateixa, i no es fusiona sense la CI en verd.
+6. **En fusionar** (merge commit): tanca la tasca a Taiga i omple **Hores reals**.
+
+Releases i hotfixos (Gitflow) els fa el sprint master: [docs/git-workflow.md](docs/git-workflow.md).
 
 Normes completes: [docs/git-workflow.md](docs/git-workflow.md). Convencions de codi: [CLAUDE.md](CLAUDE.md#convencions).
 

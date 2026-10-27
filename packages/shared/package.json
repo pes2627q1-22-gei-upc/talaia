@@ -1,0 +1,13 @@
+{
+  "name": "@talaia/shared",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Tipus de domini compartits per l'app, l'admin, l'API i el worker. Només tipus: vegeu README.md.",
+  "types": "src/index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "~6.0.3"
+  }
+}

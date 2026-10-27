@@ -1,0 +1,95 @@
+/* Colors del design system (apps/mobile/src/core/theme/tokens.ts). Fonts del sistema: carregar-les
+   de Google Fonts li passaria l'IP de qui obre la política de privacitat. */
+:root {
+  color-scheme: dark;
+  --nit: #0e1433;
+  --card: #141b42;
+  --linia: #26306a;
+  --lluna: #eef0f7;
+  --boira: #9aa3c7;
+  --far: #ffb547;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  background: var(--nit);
+  color: var(--lluna);
+  font:
+    17px/1.6 'Atkinson Hyperlegible Next',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Helvetica,
+    Arial,
+    sans-serif;
+}
+main {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 48px 20px 64px;
+}
+.marca {
+  font:
+    800 26px/1 'Big Shoulders Display',
+    'Arial Narrow',
+    Arial,
+    sans-serif;
+  color: var(--lluna);
+  text-decoration: none;
+}
+.marca span {
+  color: var(--far);
+}
+h1,
+h2 {
+  font-family: 'Big Shoulders Display', 'Arial Narrow', Arial, sans-serif;
+  font-weight: 800;
+  line-height: 1.1;
+}
+h1 {
+  font-size: 44px;
+  margin: 40px 0 8px;
+}
+h2 {
+  font-size: 26px;
+  margin: 36px 0 8px;
+}
+p,
+li {
+  color: var(--boira);
+}
+strong {
+  color: var(--lluna);
+}
+a {
+  color: var(--far);
+}
+.data {
+  font-size: 14px;
+}
+.enllacos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 32px;
+  padding: 0;
+  list-style: none;
+}
+.enllacos a {
+  display: inline-block;
+  padding: 10px 16px;
+  border: 1px solid var(--linia);
+  border-radius: 12px;
+  background: var(--card);
+  color: var(--lluna);
+  text-decoration: none;
+}
+footer {
+  margin-top: 56px;
+  padding-top: 20px;
+  border-top: 1px solid var(--linia);
+  font-size: 14px;
+  color: var(--boira);
+}

@@ -1,0 +1,377 @@
+{
+  "common": {
+    "appName": "Talaia",
+    "comingSoon": "Aviat, aquí."
+  },
+  "tabs": {
+    "explore": "Explora",
+    "calendar": "Calendari",
+    "alerts": "Alertes",
+    "profile": "Perfil"
+  },
+  "map": {
+    "userLocation": "La teva ubicació",
+    "a11y": "Mapa nocturn de Catalunya amb el relleu",
+    "pointsLoading": "S'estan carregant els llocs d'observació…",
+    "pointsError": "No hem pogut carregar els llocs",
+    "pointsEmptyHint": "Torna-ho a provar més endavant.",
+    "pointsEmpty": "Encara no hi ha llocs disponibles",
+    "retry": "Torna-ho a provar",
+    "back": "Enrere",
+    "daytime": "És de dia",
+    "daytimeHint": "L'índex compta a partir del vespre. Fins aleshores, els punts surten en gris."
+  },
+  "calendar": {
+    "title": "Calendari",
+    "subtitle": "Fenòmens astronòmics del mes: pluges d'estels, eclipsis i fases de la Lluna.",
+    "previous": "Mes anterior",
+    "next": "Mes següent",
+    "goToday": "Torna a avui",
+    "events": "Fenòmens",
+    "allMonth": "Mostra tot el mes",
+    "relative": { "today": "Avui", "tomorrow": "Demà", "past": "Passat" },
+    "filterLabel": "Filtra fenòmens: {{filter}}",
+    "filterTitle": "Filtra fenòmens",
+    "closeFilter": "Tanca els filtres",
+    "showPast": "Mostra els passats",
+    "filterShort": {
+      "all": "Tots",
+      "meteor": "Estels",
+      "moon": "Lluna",
+      "sun": "Sol",
+      "other": "Conjuncions"
+    },
+    "weekdays": ["dl", "dt", "dc", "dj", "dv", "ds", "dg"],
+    "filters": {
+      "all": "Tots els fenòmens",
+      "meteor": "Pluges d'estels",
+      "moon": "Lluna",
+      "sun": "Sol",
+      "other": "Conjuncions"
+    },
+    "types": {
+      "fase_llunar": "fase lunar",
+      "pluja_estels": "pluja d'estels",
+      "eclipsi_solar": "eclipsi solar",
+      "eclipsi_llunar": "eclipsi lunar",
+      "conjuncio": "conjunció",
+      "superlluna": "superlluna",
+      "other": "fenomen astronòmic"
+    },
+    "dayWithEvents_one": "{{day}}: {{count}} fenomen, {{types}}",
+    "dayWithEvents_other": "{{day}}: {{count}} fenòmens, {{types}}",
+    "error": "No hem pogut carregar els fenòmens",
+    "retry": "Torna-ho a provar",
+    "empty": {
+      "day": "No hi ha fenòmens aquest dia",
+      "month": "No hi ha fenòmens aquest mes",
+      "upcomingDay": "No hi ha fenòmens pendents aquest dia",
+      "upcomingMonth": "No hi ha fenòmens pendents aquest mes"
+    }
+  },
+  "profile": {
+    "title": "Perfil",
+    "language": "Idioma",
+    "languages": {
+      "ca": "Català",
+      "es": "Castellà",
+      "en": "Anglès"
+    },
+    "account": "Compte"
+  },
+  "apiStatus": {
+    "title": "Estat del servidor",
+    "loading": "Comprovant la connexió…",
+    "ok": "Connectat · API v{{version}}",
+    "error": "No es pot connectar amb el servidor",
+    "retry": "Torna-ho a provar"
+  },
+  "point": {
+    "title": "Punt d'observació",
+    "currentIndex": "Índex actual de visibilitat",
+    "noIndex": "Índex encara no disponible",
+    "bestHour": "Millor moment de <strong>{{from}}</strong> a <strong>{{to}}</strong>.",
+    "altitudeTag": "Altitud: {{value}}",
+    "metres": "{{value}} m",
+    "unavailable": "Sense dades",
+    "darkness": "Foscor del cel",
+    "sqmLabel": "Foscor del cel (SQM)",
+    "sqmValue": "{{value}} mag/arcsec²",
+    "sqmQuality": {
+      "excellent": "Cel molt fosc · qualitat excel·lent",
+      "veryGood": "Cel fosc · qualitat molt bona",
+      "good": "Bona foscor · qualitat bona",
+      "moderate": "Foscor moderada",
+      "low": "Poca foscor · qualitat baixa",
+      "poor": "Molt poca foscor · qualitat deficient",
+      "veryPoor": "Cel molt il·luminat · qualitat molt deficient"
+    },
+    "sqmHint": "Foscor de referència del lloc",
+    "darknessEstimated": "Valor estimat; pendent de dades de contaminació lumínica.",
+    "clouds": "Núvols",
+    "sun": "Sol",
+    "moon": "Lluna",
+    "info": "Informació del punt",
+    "openHorizon": "Vistes obertes",
+    "openHorizonValue": "Cap {{directions}}",
+    "listAnd": "i",
+    "directionN": "al nord",
+    "directionNE": "al nord-est",
+    "directionE": "a l'est",
+    "directionSE": "al sud-est",
+    "directionS": "al sud",
+    "directionSW": "al sud-oest",
+    "directionW": "a l'oest",
+    "directionNW": "al nord-oest",
+    "description": "Descripció",
+    "accessibility": "Accessibilitat",
+    "directions": "Com arribar",
+    "createPlan": "Crea un pla",
+    "mapsErrorTitle": "No hem pogut obrir el mapa",
+    "mapsErrorMessage": "Torna-ho a provar d'aquí a un moment.",
+    "planSoonTitle": "Plans, aviat",
+    "planSoonMessage": "La creació de plans encara no està disponible.",
+    "timezone": "Hora local de Catalunya · Europe/Madrid",
+    "noHours": "Encara no hi ha previsió per a aquesta nit.",
+    "hourA11y": "{{time}}: índex {{value}} de 100, {{level}}",
+    "bestHourWithStatusA11y": "{{label}}. Dins del millor moment",
+    "notFoundTitle": "No hem trobat aquest punt",
+    "notFoundMessage": "Pot haver deixat d'estar disponible. Torna al mapa i tria un altre punt.",
+    "errorTitle": "No hem pogut carregar la fitxa",
+    "errorMessage": "Comprova la connexió i torna-ho a provar.",
+    "refreshError": "No s'han pogut actualitzar les dades. Es mostra l'última informació disponible.",
+    "retry": "Torna-ho a provar",
+    "mapA11y": "Ubicació de {{name}}",
+    "mapCredits": "Crèdits del mapa",
+    "mapUnavailable": "No s'ha pogut carregar el mapa.",
+    "indexAt": "Índex del {{time}}",
+    "tonight": "Aquesta nit",
+    "hoursError": "No hem pogut carregar la previsió d'aquesta nit.",
+    "factorHints": {
+      "nuvols": {
+        "ras": "Cel ras",
+        "jus": "Alguns núvols",
+        "tap": "Molt ennuvolat"
+      },
+      "foscor": {
+        "ras": "Lluny de la contaminació lumínica",
+        "jus": "Una mica de contaminació lumínica",
+        "tap": "Molta contaminació lumínica"
+      },
+      "lluna": {
+        "none": "La Lluna no molesta",
+        "ras": "La Lluna molesta poc",
+        "jus": "La Lluna aclareix el cel",
+        "tap": "La Lluna il·lumina molt el cel"
+      },
+      "sol": "Encara queda llum del crepuscle"
+    },
+    "factorsAt": "Factors a les {{time}}",
+    "daytime": "És de dia",
+    "daytimeHint": "L'índex compta a partir del vespre."
+  },
+  "index": {
+    "level": {
+      "ras": "Cel ras",
+      "jus": "Justet",
+      "tap": "Tapat"
+    },
+    "a11y": "Índex de visibilitat: {{value}} de 100, {{level}}"
+  },
+  "welcome": {
+    "appName": "Talaia",
+    "tagline": "On i quan mirar el cel.",
+    "description": "Et diem quin és el millor lloc a prop teu per veure postes de sol, pluges d'estels i nits clares.",
+    "continueGoogle": "Continua amb Google",
+    "continueApple": "Continua amb Apple",
+    "continueEmail": "Continua amb el correu",
+    "legal": "En continuar acceptes les condicions d'ús i la política de privacitat de Talaia.",
+    "signingIn": "Entrant…"
+  },
+  "notFound": {
+    "title": "Aquesta pantalla no existeix",
+    "back": "Torna a l'inici"
+  },
+  "explore": {
+    "greeting": {
+      "morning": "Bon dia",
+      "afternoon": "Bona tarda",
+      "night": "Bona nit"
+    },
+    "title": "Què vols veure?",
+    "goals": {
+      "pluja_estels": "Pluja d'estels",
+      "eclipsi": "Eclipsi",
+      "via_lactia": "Via Làctia",
+      "posta_sol": "Posta de sol",
+      "sortida_sol": "Sortida de sol",
+      "cel_estrellat": "Cel estrellat",
+      "constellacions": "Constel·lacions"
+    },
+    "constellationsHint": "Amb el mite que hi ha al darrere",
+    "soon": "Aviat",
+    "origin": {
+      "title": "Des d'on surts",
+      "current": "Ubicació actual",
+      "here": "On ets ara",
+      "locating": "Buscant on ets…",
+      "denied": "Activa la ubicació",
+      "settings": "Configuració",
+      "error": "No hem trobat on ets",
+      "retry": "Torna-ho a provar",
+      "allow": "Permet-ho"
+    },
+    "when": {
+      "title": "Quan",
+      "tonight": "Aquesta nit",
+      "tomorrow": "Demà",
+      "pick": "Tria el dia",
+      "range": "De {{from}} a {{to}}",
+      "rangeHint": "Franja horària",
+      "picked": "{{weekday}} {{day}} {{month}}"
+    },
+    "weekdays": ["dg.", "dl.", "dt.", "dc.", "dj.", "dv.", "ds."],
+    "calendar": {
+      "title": "Tria el dia",
+      "close": "Tanca",
+      "month": "{{month}} de {{year}}",
+      "day": "{{day}} {{month}}",
+      "previous": "Mes anterior",
+      "next": "Mes següent",
+      "months": [
+        "gener",
+        "febrer",
+        "març",
+        "abril",
+        "maig",
+        "juny",
+        "juliol",
+        "agost",
+        "setembre",
+        "octubre",
+        "novembre",
+        "desembre"
+      ],
+      "monthsShort": [
+        "gen.",
+        "febr.",
+        "març",
+        "abr.",
+        "maig",
+        "juny",
+        "jul.",
+        "ag.",
+        "set.",
+        "oct.",
+        "nov.",
+        "des."
+      ],
+      "monthsOf": [
+        "de gener",
+        "de febrer",
+        "de març",
+        "d'abril",
+        "de maig",
+        "de juny",
+        "de juliol",
+        "d'agost",
+        "de setembre",
+        "d'octubre",
+        "de novembre",
+        "de desembre"
+      ]
+    },
+    "rangeSheet": {
+      "title": "Franja horària",
+      "from": "Des de",
+      "to": "Fins a",
+      "duration_one": "{{count}} hora d'observació",
+      "duration_other": "{{count}} hores d'observació",
+      "done": "Fet"
+    },
+    "travel": {
+      "title": "Fins a quina distància",
+      "minutes": "{{minutes}} min en cotxe",
+      "hours": "{{hours}} h en cotxe",
+      "hoursMinutes": "{{hours}} h {{minutes}} min en cotxe",
+      "min": "30 min",
+      "max": "4 h"
+    },
+    "cta": "Troba el millor lloc",
+    "browse": "Mostra el mapa"
+  },
+  "alerts": {
+    "title": "Alertes",
+    "soonTitle": "Aviat",
+    "soonMessage": "Aquí podràs crear alertes perquè t'avisem quan hi hagi bones condicions per al que vols veure."
+  },
+  "auth": {
+    "signOut": "Tanca la sessió",
+    "signingOut": "Tancant la sessió…",
+    "restoreError": "No s'ha pogut recuperar la sessió. Torna-ho a provar.",
+    "logoutError": "No s'ha pogut tancar la sessió. Torna-ho a provar.",
+    "retry": "Torna-ho a provar",
+    "errors": {
+      "network": "No hi ha connexió. Revisa-la i torna-ho a provar.",
+      "invalidEmail": "Aquesta adreça de correu no és vàlida.",
+      "invalidCode": "El codi no és correcte o ha caducat.",
+      "rateLimited": "Massa intents seguits. Espera un moment i torna-ho a provar.",
+      "unavailable": "L'inici de sessió no està configurat en aquesta versió de l'app.",
+      "profile": "Has entrat, però no hem pogut preparar el teu perfil. Torna-ho a provar.",
+      "unknown": "No s'ha pogut iniciar la sessió. Torna-ho a provar.",
+      "invalidLink": "L'enllaç no és vàlid o ja s'ha fet servir. Obre'l al mateix mòbil on l'has demanat, o demana'n un altre.",
+      "emailNotAllowed": "Ara mateix no podem enviar correus a aquesta adreça. Prova d'entrar amb Google."
+    }
+  },
+  "emailLogin": {
+    "title": "Entra amb el correu",
+    "close": "Tanca",
+    "emailSubtitle": "T'enviarem un correu per entrar. Si no tens compte, en crearem un.",
+    "emailLabel": "Correu electrònic",
+    "emailPlaceholder": "nom@exemple.cat",
+    "send": "Envia el codi",
+    "sending": "Enviant…",
+    "codeTitle": "Escriu el codi",
+    "codeSubtitle": "L'hem enviat a {{email}}. Mira també el correu brossa.",
+    "codeLabel": "Codi de 6 xifres",
+    "verify": "Entra",
+    "verifying": "Comprovant…",
+    "resend": "Torna a enviar el codi",
+    "resendIn": "Torna a enviar el codi ({{seconds}} s)",
+    "resent": "T'hem enviat un codi nou.",
+    "changeEmail": "Canvia l'adreça",
+    "back": "Enrere"
+  },
+  "emailLink": {
+    "title": "Entrant…",
+    "subtitle": "Un moment: estem comprovant l'enllaç del correu.",
+    "errorTitle": "No hem pogut entrar",
+    "back": "Torna a l'inici"
+  },
+  "recommendations": {
+    "title": "{{goal}}, {{when}}",
+    "when": {
+      "tonight": "aquesta nit",
+      "tomorrow": "demà a la nit"
+    },
+    "from": "Des de {{place}}, fins a {{travel}}",
+    "fromHere": "Des d'on ets, fins a {{travel}}",
+    "duration": {
+      "minutes": "{{minutes}} min",
+      "hours": "{{hours}} h",
+      "hoursMinutes": "{{hours}} h {{minutes}} min"
+    },
+    "best": "Millors punts per a {{when}}",
+    "showAll": "Mostra'ls tots",
+    "showLess": "Mostra'n menys",
+    "loading": "Buscant els millors punts…",
+    "error": "No hem pogut carregar les recomanacions",
+    "empty": "No hi ha cap punt a menys de {{travel}}",
+    "emptyHint": "Amplia la distància o tria una altra nit.",
+    "noIndex": "Encara sense previsió",
+    "bestHour": "Millor hora: {{hour}}",
+    "byCar": "{{travel}} en cotxe",
+    "collapseSheet": "Plega la llista",
+    "expandSheet": "Desplega la llista"
+  }
+}

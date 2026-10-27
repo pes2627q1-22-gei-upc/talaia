@@ -1,0 +1,17 @@
+# Context de build de les imatges de deploy/ (arrel del monorepo). Només hi entra el que cal.
+**/node_modules
+**/dist
+**/coverage
+**/.expo
+.git
+.github
+.husky
+.env
+.env.*
+!.env.example
+apps
+data
+docs
+supabase
+deploy
+*.md

@@ -1,0 +1,330 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:talaia:schema:calendari-astronomic:v1",
+  "title": "Calendari astronòmic normalitzat de Talaia",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["versio_esquema", "periode", "fonts", "fenomens", "esdeveniments"],
+  "properties": {
+    "versio_esquema": {
+      "const": 1
+    },
+    "periode": {
+      "$ref": "#/$defs/periode"
+    },
+    "fonts": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/font"
+      }
+    },
+    "fenomens": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/fenomen"
+      }
+    },
+    "esdeveniments": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/esdeveniment"
+      }
+    }
+  },
+  "$defs": {
+    "codi": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "data": {
+      "type": "string",
+      "format": "date"
+    },
+    "instant": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "Z$"
+    },
+    "periode": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["des_de", "fins_a"],
+      "properties": {
+        "des_de": {
+          "$ref": "#/$defs/data"
+        },
+        "fins_a": {
+          "$ref": "#/$defs/data"
+        }
+      }
+    },
+    "text_fenomen": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["nom", "descripcio", "consell_general"],
+      "properties": {
+        "nom": {
+          "type": "string",
+          "minLength": 1
+        },
+        "descripcio": {
+          "type": "string",
+          "minLength": 1
+        },
+        "consell_general": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "textos_fenomen": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ca"],
+      "properties": {
+        "ca": {
+          "$ref": "#/$defs/text_fenomen"
+        },
+        "es": {
+          "$ref": "#/$defs/text_fenomen"
+        },
+        "en": {
+          "$ref": "#/$defs/text_fenomen"
+        }
+      }
+    },
+    "text_esdeveniment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["nota_visibilitat", "consell_observacio"],
+      "properties": {
+        "nota_visibilitat": {
+          "type": "string",
+          "minLength": 1
+        },
+        "consell_observacio": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "textos_esdeveniment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ca"],
+      "properties": {
+        "ca": {
+          "$ref": "#/$defs/text_esdeveniment"
+        },
+        "es": {
+          "$ref": "#/$defs/text_esdeveniment"
+        },
+        "en": {
+          "$ref": "#/$defs/text_esdeveniment"
+        }
+      }
+    },
+    "font": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["codi", "organitzacio", "titol", "url", "consultat_el"],
+      "properties": {
+        "codi": {
+          "$ref": "#/$defs/codi"
+        },
+        "organitzacio": {
+          "enum": ["IMO", "NASA"]
+        },
+        "titol": {
+          "type": "string",
+          "minLength": 1
+        },
+        "url": {
+          "type": "string",
+          "format": "uri"
+        },
+        "any_publicacio": {
+          "type": "integer",
+          "minimum": 1900
+        },
+        "consultat_el": {
+          "$ref": "#/$defs/data"
+        }
+      }
+    },
+    "fenomen": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["codi", "tipus", "periodicitat", "publicable_calendari", "textos"],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "tipus": {
+                "const": "pluja_estels"
+              }
+            },
+            "required": ["tipus"]
+          },
+          "then": {
+            "required": ["velocitat_km_s"]
+          },
+          "else": {
+            "not": {
+              "required": ["velocitat_km_s"]
+            }
+          }
+        }
+      ],
+      "properties": {
+        "codi": {
+          "$ref": "#/$defs/codi"
+        },
+        "tipus": {
+          "enum": ["pluja_estels", "eclipsi_solar", "eclipsi_llunar"]
+        },
+        "periodicitat": {
+          "enum": ["anual", "ocasional"]
+        },
+        "publicable_calendari": {
+          "type": "boolean"
+        },
+        "velocitat_km_s": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "Velocitat geocèntrica característica dels meteors, en km/s; només s'aplica a pluges d'estels."
+        },
+        "textos": {
+          "$ref": "#/$defs/textos_fenomen"
+        }
+      }
+    },
+    "zhr": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["valor", "qualificador"],
+      "description": "Taxa horària zenital prevista: meteors per hora en condicions ideals, amb cel fosc i el radiant al zenit. El recompte real acostuma a ser inferior.",
+      "properties": {
+        "valor": {
+          "type": "number",
+          "minimum": 0
+        },
+        "qualificador": {
+          "enum": ["estimat", "aproximat", "minim", "variable"]
+        }
+      }
+    },
+    "radiant": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ascensio_recta_graus", "declinacio_graus"],
+      "description": "Posició aparent d'on semblen provenir els meteors al màxim. No cal mirar directament el radiant per observar-los.",
+      "properties": {
+        "ascensio_recta_graus": {
+          "type": "number",
+          "minimum": 0,
+          "exclusiveMaximum": 360
+        },
+        "declinacio_graus": {
+          "type": "number",
+          "minimum": -90,
+          "maximum": 90
+        }
+      }
+    },
+    "precisio": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["inici", "fi", "maxim"],
+      "properties": {
+        "inici": {
+          "enum": ["dia", "hora", "minut", "segon"]
+        },
+        "fi": {
+          "enum": ["dia", "hora", "minut", "segon"]
+        },
+        "maxim": {
+          "oneOf": [
+            {
+              "enum": ["dia", "hora", "minut", "segon"]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "esdeveniment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "codi",
+        "fenomen_codi",
+        "inici",
+        "fi",
+        "maxim",
+        "precisio",
+        "rellevant_catalunya",
+        "rellevancia",
+        "dificultat_observacio",
+        "textos",
+        "font_codi"
+      ],
+      "properties": {
+        "codi": {
+          "$ref": "#/$defs/codi"
+        },
+        "fenomen_codi": {
+          "$ref": "#/$defs/codi"
+        },
+        "inici": {
+          "$ref": "#/$defs/instant"
+        },
+        "fi": {
+          "$ref": "#/$defs/instant"
+        },
+        "maxim": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/instant"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "precisio": {
+          "$ref": "#/$defs/precisio"
+        },
+        "rellevant_catalunya": {
+          "const": true
+        },
+        "rellevancia": {
+          "enum": ["principal", "secundari"]
+        },
+        "dificultat_observacio": {
+          "enum": ["baixa", "mitjana", "alta"]
+        },
+        "zhr": {
+          "$ref": "#/$defs/zhr"
+        },
+        "radiant_maxim": {
+          "$ref": "#/$defs/radiant"
+        },
+        "textos": {
+          "$ref": "#/$defs/textos_esdeveniment"
+        },
+        "font_codi": {
+          "$ref": "#/$defs/codi"
+        },
+        "referencia_font": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  }
+}

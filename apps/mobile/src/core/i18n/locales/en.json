@@ -1,0 +1,377 @@
+{
+  "common": {
+    "appName": "Talaia",
+    "comingSoon": "Coming soon."
+  },
+  "tabs": {
+    "explore": "Explore",
+    "calendar": "Calendar",
+    "alerts": "Alerts",
+    "profile": "Profile"
+  },
+  "map": {
+    "userLocation": "Your location",
+    "a11y": "Night map of Catalonia with its terrain",
+    "pointsLoading": "Loading observing locations…",
+    "pointsError": "We couldn't load the locations",
+    "pointsEmptyHint": "Please try again later.",
+    "pointsEmpty": "No locations are available yet",
+    "retry": "Try again",
+    "back": "Back",
+    "daytime": "It's daytime",
+    "daytimeHint": "The index counts from dusk onwards. Until then, points show in grey."
+  },
+  "calendar": {
+    "title": "Calendar",
+    "subtitle": "This month's sky events: meteor showers, eclipses and Moon phases.",
+    "previous": "Previous month",
+    "next": "Next month",
+    "goToday": "Back to today",
+    "events": "Events",
+    "allMonth": "View whole month",
+    "relative": { "today": "Today", "tomorrow": "Tomorrow", "past": "Past" },
+    "filterLabel": "Filter events: {{filter}}",
+    "filterTitle": "Filter events",
+    "closeFilter": "Close filters",
+    "showPast": "Show past events",
+    "filterShort": {
+      "all": "All",
+      "meteor": "Meteors",
+      "moon": "Moon",
+      "sun": "Sun",
+      "other": "Conjunctions"
+    },
+    "weekdays": ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"],
+    "filters": {
+      "all": "All events",
+      "meteor": "Meteor showers",
+      "moon": "Moon",
+      "sun": "Sun",
+      "other": "Conjunctions"
+    },
+    "types": {
+      "fase_llunar": "lunar phase",
+      "pluja_estels": "meteor shower",
+      "eclipsi_solar": "solar eclipse",
+      "eclipsi_llunar": "lunar eclipse",
+      "conjuncio": "conjunction",
+      "superlluna": "supermoon",
+      "other": "sky event"
+    },
+    "dayWithEvents_one": "{{day}}: {{count}} event, {{types}}",
+    "dayWithEvents_other": "{{day}}: {{count}} events, {{types}}",
+    "error": "Could not load sky events",
+    "retry": "Try again",
+    "empty": {
+      "day": "No sky events this day",
+      "month": "No sky events this month",
+      "upcomingDay": "No upcoming events this day",
+      "upcomingMonth": "No upcoming events this month"
+    }
+  },
+  "profile": {
+    "title": "Profile",
+    "language": "Language",
+    "languages": {
+      "ca": "Catalan",
+      "es": "Spanish",
+      "en": "English"
+    },
+    "account": "Account"
+  },
+  "apiStatus": {
+    "title": "Server status",
+    "loading": "Checking the connection…",
+    "ok": "Connected · API v{{version}}",
+    "error": "Can't reach the server",
+    "retry": "Try again"
+  },
+  "point": {
+    "title": "Observation spot",
+    "currentIndex": "Current visibility index",
+    "noIndex": "Index not available yet",
+    "bestHour": "Best time from <strong>{{from}}</strong> to <strong>{{to}}</strong>.",
+    "altitudeTag": "Altitude: {{value}}",
+    "metres": "{{value}} m",
+    "unavailable": "No data",
+    "darkness": "Sky darkness",
+    "sqmLabel": "Sky darkness (SQM)",
+    "sqmValue": "{{value}} mag/arcsec²",
+    "sqmQuality": {
+      "excellent": "Very dark sky · excellent quality",
+      "veryGood": "Dark sky · very good quality",
+      "good": "Good darkness · good quality",
+      "moderate": "Moderate darkness",
+      "low": "Little darkness · low quality",
+      "poor": "Very little darkness · poor quality",
+      "veryPoor": "Very bright sky · very poor quality"
+    },
+    "sqmHint": "Reference darkness for this location",
+    "darknessEstimated": "Estimated value; light pollution data is not available yet.",
+    "clouds": "Clouds",
+    "sun": "Sun",
+    "moon": "Moon",
+    "info": "About this spot",
+    "openHorizon": "Open views",
+    "openHorizonValue": "Toward {{directions}}",
+    "listAnd": "and",
+    "directionN": "the north",
+    "directionNE": "the northeast",
+    "directionE": "the east",
+    "directionSE": "the southeast",
+    "directionS": "the south",
+    "directionSW": "the southwest",
+    "directionW": "the west",
+    "directionNW": "the northwest",
+    "description": "Description",
+    "accessibility": "Accessibility",
+    "directions": "Get directions",
+    "createPlan": "Create a plan",
+    "mapsErrorTitle": "Could not open maps",
+    "mapsErrorMessage": "Please try again in a moment.",
+    "planSoonTitle": "Plans coming soon",
+    "planSoonMessage": "Plan creation is not available yet.",
+    "timezone": "Local time in Catalonia · Europe/Madrid",
+    "noHours": "There's no forecast for tonight yet.",
+    "hourA11y": "{{time}}: index {{value}} out of 100, {{level}}",
+    "bestHourWithStatusA11y": "{{label}}. Within the best time window",
+    "notFoundTitle": "Observation spot not found",
+    "notFoundMessage": "It may no longer be available. Go back to the map and choose another spot.",
+    "errorTitle": "Could not load this spot",
+    "errorMessage": "Check your connection and try again.",
+    "refreshError": "Could not refresh the data. Showing the last available information.",
+    "retry": "Try again",
+    "mapA11y": "Location of {{name}}",
+    "mapCredits": "Map credits",
+    "mapUnavailable": "Could not load the map.",
+    "indexAt": "Index for {{time}}",
+    "tonight": "Tonight",
+    "hoursError": "We couldn't load tonight's forecast.",
+    "factorHints": {
+      "nuvols": {
+        "ras": "Clear sky",
+        "jus": "Some clouds",
+        "tap": "Very cloudy"
+      },
+      "foscor": {
+        "ras": "Far from light pollution",
+        "jus": "Some light pollution",
+        "tap": "Heavy light pollution"
+      },
+      "lluna": {
+        "none": "The Moon doesn't interfere",
+        "ras": "The Moon barely interferes",
+        "jus": "The Moon brightens the sky",
+        "tap": "The Moon lights up the sky a lot"
+      },
+      "sol": "There's still twilight"
+    },
+    "factorsAt": "Factors at {{time}}",
+    "daytime": "It's daytime",
+    "daytimeHint": "The index counts from dusk onwards."
+  },
+  "index": {
+    "level": {
+      "ras": "Clear",
+      "jus": "Fair",
+      "tap": "Overcast"
+    },
+    "a11y": "Visibility index: {{value}} out of 100, {{level}}"
+  },
+  "welcome": {
+    "appName": "Talaia",
+    "tagline": "Where and when to look at the sky.",
+    "description": "We tell you the best place near you to watch sunsets, meteor showers and clear nights.",
+    "continueGoogle": "Continue with Google",
+    "continueApple": "Continue with Apple",
+    "continueEmail": "Continue with email",
+    "legal": "By continuing, you accept Talaia's terms of use and privacy policy.",
+    "signingIn": "Signing in…"
+  },
+  "notFound": {
+    "title": "This screen doesn't exist",
+    "back": "Back to start"
+  },
+  "explore": {
+    "greeting": {
+      "morning": "Good morning",
+      "afternoon": "Good afternoon",
+      "night": "Good evening"
+    },
+    "title": "What do you want to see?",
+    "goals": {
+      "pluja_estels": "Meteor shower",
+      "eclipsi": "Eclipse",
+      "via_lactia": "Milky Way",
+      "posta_sol": "Sunset",
+      "sortida_sol": "Sunrise",
+      "cel_estrellat": "Starry sky",
+      "constellacions": "Constellations"
+    },
+    "constellationsHint": "With the myth behind them",
+    "soon": "Soon",
+    "origin": {
+      "title": "Where you start from",
+      "current": "Current location",
+      "here": "Where you are now",
+      "locating": "Finding where you are…",
+      "denied": "Turn on location",
+      "settings": "Settings",
+      "error": "We couldn't find where you are",
+      "retry": "Try again",
+      "allow": "Allow"
+    },
+    "when": {
+      "title": "When",
+      "tonight": "Tonight",
+      "tomorrow": "Tomorrow",
+      "pick": "Pick a day",
+      "range": "From {{from}} to {{to}}",
+      "rangeHint": "Time range",
+      "picked": "{{weekday}}, {{month}} {{day}}"
+    },
+    "weekdays": ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+    "calendar": {
+      "title": "Pick a day",
+      "close": "Close",
+      "month": "{{month}} {{year}}",
+      "day": "{{month}} {{day}}",
+      "previous": "Previous month",
+      "next": "Next month",
+      "months": [
+        "January",
+        "February",
+        "March",
+        "April",
+        "May",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "November",
+        "December"
+      ],
+      "monthsShort": [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul",
+        "Aug",
+        "Sep",
+        "Oct",
+        "Nov",
+        "Dec"
+      ],
+      "monthsOf": [
+        "January",
+        "February",
+        "March",
+        "April",
+        "May",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "November",
+        "December"
+      ]
+    },
+    "rangeSheet": {
+      "title": "Time range",
+      "from": "From",
+      "to": "To",
+      "duration_one": "{{count}} hour of observing",
+      "duration_other": "{{count}} hours of observing",
+      "done": "Done"
+    },
+    "travel": {
+      "title": "How far",
+      "minutes": "{{minutes}} min by car",
+      "hours": "{{hours}} h by car",
+      "hoursMinutes": "{{hours}} h {{minutes}} min by car",
+      "min": "30 min",
+      "max": "4 h"
+    },
+    "cta": "Find the best spot",
+    "browse": "See the map"
+  },
+  "alerts": {
+    "title": "Alerts",
+    "soonTitle": "Coming soon",
+    "soonMessage": "Here you'll be able to create alerts so we can tell you when conditions are good for what you want to see."
+  },
+  "auth": {
+    "signOut": "Sign out",
+    "signingOut": "Signing out…",
+    "restoreError": "Could not restore your session. Please try again.",
+    "logoutError": "Could not sign out. Please try again.",
+    "retry": "Try again",
+    "errors": {
+      "network": "You're offline. Check your connection and try again.",
+      "invalidEmail": "This email address isn't valid.",
+      "invalidCode": "The code is wrong or has expired.",
+      "rateLimited": "Too many attempts in a row. Wait a moment and try again.",
+      "unavailable": "Sign-in isn't set up in this version of the app.",
+      "profile": "You're signed in, but we couldn't set up your profile. Try again.",
+      "unknown": "Couldn't sign you in. Try again.",
+      "invalidLink": "This link isn't valid or has already been used. Open it on the same phone you requested it from, or ask for a new one.",
+      "emailNotAllowed": "We can't send emails to this address right now. Try signing in with Google."
+    }
+  },
+  "emailLogin": {
+    "title": "Sign in with email",
+    "close": "Close",
+    "emailSubtitle": "We'll send you an email to sign in. If you don't have an account, we'll create one.",
+    "emailLabel": "Email",
+    "emailPlaceholder": "name@example.com",
+    "send": "Send code",
+    "sending": "Sending…",
+    "codeTitle": "Enter the code",
+    "codeSubtitle": "We sent it to {{email}}. Check your spam folder too.",
+    "codeLabel": "6-digit code",
+    "verify": "Sign in",
+    "verifying": "Checking…",
+    "resend": "Resend code",
+    "resendIn": "Resend code ({{seconds}} s)",
+    "resent": "We've sent you a new code.",
+    "changeEmail": "Change address",
+    "back": "Back"
+  },
+  "emailLink": {
+    "title": "Signing in…",
+    "subtitle": "One moment: we're checking the link from your email.",
+    "errorTitle": "We couldn't sign you in",
+    "back": "Back to start"
+  },
+  "recommendations": {
+    "title": "{{goal}}, {{when}}",
+    "when": {
+      "tonight": "tonight",
+      "tomorrow": "tomorrow night"
+    },
+    "from": "From {{place}}, up to {{travel}}",
+    "fromHere": "From where you are, up to {{travel}}",
+    "duration": {
+      "minutes": "{{minutes}} min",
+      "hours": "{{hours}} h",
+      "hoursMinutes": "{{hours}} h {{minutes}} min"
+    },
+    "best": "Best spots for {{when}}",
+    "showAll": "See all",
+    "showLess": "See fewer",
+    "loading": "Finding the best spots…",
+    "error": "We couldn't load the recommendations",
+    "empty": "No spots within {{travel}}",
+    "emptyHint": "Try a longer distance or another night.",
+    "noIndex": "No forecast yet",
+    "bestHour": "Best time: {{hour}}",
+    "byCar": "{{travel}} by car",
+    "collapseSheet": "Collapse the list",
+    "expandSheet": "Expand the list"
+  }
+}

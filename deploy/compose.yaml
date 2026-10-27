@@ -1,0 +1,115 @@
+# Desplegament a la VM (TG-71, ADR-0006, ADR-0019). Guia: docs/desplegament.md.
+#
+#   docker compose -f deploy/compose.yaml --env-file /opt/talaia/.env up -d --build
+#
+# Les variables es llegeixen del fitxer de --env-file, que és fora del repo. Cada servei rep
+# només les que necessita (llista explícita a `environment`). Cada contenidor té un sostre de
+# memòria (un procés desbocat no tomba la VM) i cap procés no pot guanyar privilegis.
+
+name: talaia
+
+services:
+  api:
+    build:
+      context: ..
+      dockerfile: services/api/Dockerfile
+    restart: unless-stopped
+    mem_limit: 512m
+    security_opt: ['no-new-privileges:true']
+    environment:
+      API_PORT: 3000
+      DATABASE_URL: ${DATABASE_URL:-}
+      # Valida els JWT de /perfil. Sense, l'API faria servir el Supabase local (127.0.0.1:54321).
+      SUPABASE_URL: ${SUPABASE_URL:?Falta SUPABASE_URL (https://<ref>.supabase.co)}
+      APROP_API_KEY: ${APROP_API_KEY:-}
+    volumes:
+      # Certificat arrel de Supabase per validar la connexió a la BD (sslmode=verify-full,
+      # docs/desplegament.md). Sense SUPABASE_CA_CERT, s'hi munta un fitxer buit.
+      - ${SUPABASE_CA_CERT:-/dev/null}:/run/talaia/supabase-ca.crt:ro
+    expose:
+      - '3000'
+
+  # Recalcula l'índex en arrencar i cada hora amb node-cron (TG-99, ADR-0024).
+  worker:
+    # Docker dona 10 s per aturar-se: no n'hi ha prou per acabar el lot d'Open-Meteo en curs.
+    stop_grace_period: 75s
+    build:
+      context: ..
+      dockerfile: services/worker/Dockerfile
+    restart: unless-stopped
+    mem_limit: 512m
+    security_opt: ['no-new-privileges:true']
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-}
+      OPEN_METEO_BASE_URL: ${OPEN_METEO_BASE_URL:-}
+      METEOCAT_API_KEY: ${METEOCAT_API_KEY:-}
+    volumes:
+      - ${SUPABASE_CA_CERT:-/dev/null}:/run/talaia/supabase-ca.crt:ro
+
+  # Emet i renova el certificat de Let's Encrypt amb el repte DNS-01 de DuckDNS
+  # (sense ports 80/443 no hi ha repte HTTP). Mentre no n'hi ha cap, en genera un
+  # d'autosignat perquè Nginx pugui arrencar. Primera emissió: deploy/scripts/emet-certificat.sh.
+  acme:
+    image: neilpang/acme.sh:3.1.1
+    restart: unless-stopped
+    mem_limit: 128m
+    security_opt: ['no-new-privileges:true']
+    entrypoint: ['/bin/sh', '-c']
+    command:
+      - |
+        if [ ! -s /certs/fullchain.pem ]; then
+          openssl req -x509 -nodes -newkey rsa:2048 -days 30 -subj "/CN=$$PUBLIC_HOST" \
+            -keyout /certs/key.pem -out /certs/fullchain.pem
+        fi
+        exec /entry.sh daemon
+    environment:
+      PUBLIC_HOST: ${PUBLIC_HOST:?Falta PUBLIC_HOST}
+      ACME_EMAIL: ${ACME_EMAIL:-}
+      DuckDNS_Token: ${DUCKDNS_TOKEN:-}
+    volumes:
+      - acme:/acme.sh
+      - certs:/certs
+    healthcheck:
+      test: ['CMD', 'test', '-s', '/certs/fullchain.pem']
+      interval: 5s
+      retries: 12
+
+  nginx:
+    image: nginx:1.28-alpine
+    restart: unless-stopped
+    mem_limit: 128m
+    security_opt: ['no-new-privileges:true']
+    depends_on:
+      api:
+        condition: service_healthy
+      acme:
+        condition: service_healthy
+    environment:
+      PUBLIC_HOST: ${PUBLIC_HOST:?Falta PUBLIC_HOST}
+      PUBLIC_PORT: ${PUBLIC_PORT:?Falta PUBLIC_PORT}
+    ports:
+      # La VM redirigeix nattech.fib.upc.edu:40000+XXX·10 al 8080. Els altres ports (8081–8089)
+      # no es publiquen fins que es facin servir.
+      - '8080:8080'
+    volumes:
+      - ./nginx/templates:/etc/nginx/templates:ro
+      - ./nginx/entrypoint.d/40-recarrega-certificat.sh:/docker-entrypoint.d/40-recarrega-certificat.sh:ro
+      - certs:/etc/nginx/certs:ro
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'wget',
+          '-q',
+          '--no-check-certificate',
+          '-O',
+          '/dev/null',
+          'https://127.0.0.1:8080/api/v1/health',
+        ]
+      interval: 15s
+      timeout: 3s
+      retries: 3
+
+volumes:
+  acme:
+  certs:

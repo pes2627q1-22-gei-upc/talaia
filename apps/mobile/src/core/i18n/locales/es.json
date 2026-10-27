@@ -1,0 +1,377 @@
+{
+  "common": {
+    "appName": "Talaia",
+    "comingSoon": "Muy pronto, aquí."
+  },
+  "tabs": {
+    "explore": "Explorar",
+    "calendar": "Calendario",
+    "alerts": "Alertas",
+    "profile": "Perfil"
+  },
+  "map": {
+    "userLocation": "Tu ubicación",
+    "a11y": "Mapa nocturno de Cataluña con el relieve",
+    "pointsLoading": "Cargando lugares de observación…",
+    "pointsError": "No hemos podido cargar los lugares",
+    "pointsEmptyHint": "Vuelve a intentarlo más adelante.",
+    "pointsEmpty": "Todavía no hay lugares disponibles",
+    "retry": "Volver a intentar",
+    "back": "Atrás",
+    "daytime": "Es de día",
+    "daytimeHint": "El índice cuenta a partir del anochecer. Hasta entonces, los puntos salen en gris."
+  },
+  "calendar": {
+    "title": "Calendario",
+    "subtitle": "Fenómenos astronómicos del mes: lluvias de estrellas, eclipses y fases de la Luna.",
+    "previous": "Mes anterior",
+    "next": "Mes siguiente",
+    "goToday": "Volver a hoy",
+    "events": "Fenómenos",
+    "allMonth": "Ver todo el mes",
+    "relative": { "today": "Hoy", "tomorrow": "Mañana", "past": "Pasado" },
+    "filterLabel": "Filtrar fenómenos: {{filter}}",
+    "filterTitle": "Filtrar fenómenos",
+    "closeFilter": "Cerrar filtros",
+    "showPast": "Mostrar los pasados",
+    "filterShort": {
+      "all": "Todos",
+      "meteor": "Estrellas",
+      "moon": "Luna",
+      "sun": "Sol",
+      "other": "Conjunciones"
+    },
+    "weekdays": ["lu", "ma", "mi", "ju", "vi", "sá", "do"],
+    "filters": {
+      "all": "Todos los fenómenos",
+      "meteor": "Lluvias de estrellas",
+      "moon": "Luna",
+      "sun": "Sol",
+      "other": "Conjunciones"
+    },
+    "types": {
+      "fase_llunar": "fase lunar",
+      "pluja_estels": "lluvia de estrellas",
+      "eclipsi_solar": "eclipse solar",
+      "eclipsi_llunar": "eclipse lunar",
+      "conjuncio": "conjunción",
+      "superlluna": "superluna",
+      "other": "fenómeno astronómico"
+    },
+    "dayWithEvents_one": "{{day}}: {{count}} fenómeno, {{types}}",
+    "dayWithEvents_other": "{{day}}: {{count}} fenómenos, {{types}}",
+    "error": "No hemos podido cargar los fenómenos",
+    "retry": "Volver a intentar",
+    "empty": {
+      "day": "No hay fenómenos este día",
+      "month": "No hay fenómenos este mes",
+      "upcomingDay": "No hay fenómenos pendientes este día",
+      "upcomingMonth": "No hay fenómenos pendientes este mes"
+    }
+  },
+  "profile": {
+    "title": "Perfil",
+    "language": "Idioma",
+    "languages": {
+      "ca": "Catalán",
+      "es": "Castellano",
+      "en": "Inglés"
+    },
+    "account": "Cuenta"
+  },
+  "apiStatus": {
+    "title": "Estado del servidor",
+    "loading": "Comprobando la conexión…",
+    "ok": "Conectado · API v{{version}}",
+    "error": "No se puede conectar con el servidor",
+    "retry": "Reintentar"
+  },
+  "point": {
+    "title": "Punto de observación",
+    "currentIndex": "Índice actual de visibilidad",
+    "noIndex": "Índice aún no disponible",
+    "bestHour": "Mejor momento de <strong>{{from}}</strong> a <strong>{{to}}</strong>.",
+    "altitudeTag": "Altitud: {{value}}",
+    "metres": "{{value}} m",
+    "unavailable": "Sin datos",
+    "darkness": "Oscuridad del cielo",
+    "sqmLabel": "Oscuridad del cielo (SQM)",
+    "sqmValue": "{{value}} mag/arcsec²",
+    "sqmQuality": {
+      "excellent": "Cielo muy oscuro · calidad excelente",
+      "veryGood": "Cielo oscuro · calidad muy buena",
+      "good": "Buena oscuridad · calidad buena",
+      "moderate": "Oscuridad moderada",
+      "low": "Poca oscuridad · calidad baja",
+      "poor": "Muy poca oscuridad · calidad deficiente",
+      "veryPoor": "Cielo muy iluminado · calidad muy deficiente"
+    },
+    "sqmHint": "Oscuridad de referencia del lugar",
+    "darknessEstimated": "Valor estimado; pendiente de datos de contaminación lumínica.",
+    "clouds": "Nubes",
+    "sun": "Sol",
+    "moon": "Luna",
+    "info": "Información del punto",
+    "openHorizon": "Vistas despejadas",
+    "openHorizonValue": "Hacia {{directions}}",
+    "listAnd": "y",
+    "directionN": "el norte",
+    "directionNE": "el noreste",
+    "directionE": "el este",
+    "directionSE": "el sureste",
+    "directionS": "el sur",
+    "directionSW": "el suroeste",
+    "directionW": "el oeste",
+    "directionNW": "el noroeste",
+    "description": "Descripción",
+    "accessibility": "Accesibilidad",
+    "directions": "Cómo llegar",
+    "createPlan": "Crea un plan",
+    "mapsErrorTitle": "No hemos podido abrir el mapa",
+    "mapsErrorMessage": "Vuelve a intentarlo dentro de un momento.",
+    "planSoonTitle": "Planes, próximamente",
+    "planSoonMessage": "La creación de planes aún no está disponible.",
+    "timezone": "Hora local de Cataluña · Europe/Madrid",
+    "noHours": "Todavía no hay previsión para esta noche.",
+    "hourA11y": "{{time}}: índice {{value}} de 100, {{level}}",
+    "bestHourWithStatusA11y": "{{label}}. Dentro del mejor momento",
+    "notFoundTitle": "No hemos encontrado este punto",
+    "notFoundMessage": "Puede que ya no esté disponible. Vuelve al mapa y elige otro punto.",
+    "errorTitle": "No hemos podido cargar la ficha",
+    "errorMessage": "Comprueba la conexión e inténtalo de nuevo.",
+    "refreshError": "No se han podido actualizar los datos. Se muestra la última información disponible.",
+    "retry": "Volver a intentar",
+    "mapA11y": "Ubicación de {{name}}",
+    "mapCredits": "Créditos del mapa",
+    "mapUnavailable": "No se ha podido cargar el mapa.",
+    "indexAt": "Índice del {{time}}",
+    "tonight": "Esta noche",
+    "hoursError": "No hemos podido cargar la previsión de esta noche.",
+    "factorHints": {
+      "nuvols": {
+        "ras": "Cielo despejado",
+        "jus": "Algunas nubes",
+        "tap": "Muy nublado"
+      },
+      "foscor": {
+        "ras": "Lejos de la contaminación lumínica",
+        "jus": "Algo de contaminación lumínica",
+        "tap": "Mucha contaminación lumínica"
+      },
+      "lluna": {
+        "none": "La Luna no molesta",
+        "ras": "La Luna molesta poco",
+        "jus": "La Luna aclara el cielo",
+        "tap": "La Luna ilumina mucho el cielo"
+      },
+      "sol": "Aún queda luz del crepúsculo"
+    },
+    "factorsAt": "Factores a las {{time}}",
+    "daytime": "Es de día",
+    "daytimeHint": "El índice cuenta a partir del anochecer."
+  },
+  "index": {
+    "level": {
+      "ras": "Despejado",
+      "jus": "Justito",
+      "tap": "Cubierto"
+    },
+    "a11y": "Índice de visibilidad: {{value}} de 100, {{level}}"
+  },
+  "welcome": {
+    "appName": "Talaia",
+    "tagline": "Dónde y cuándo mirar el cielo.",
+    "description": "Te decimos cuál es el mejor lugar cerca de ti para ver puestas de sol, lluvias de estrellas y noches despejadas.",
+    "continueGoogle": "Continuar con Google",
+    "continueApple": "Continuar con Apple",
+    "continueEmail": "Continuar con el correo",
+    "legal": "Al continuar aceptas las condiciones de uso y la política de privacidad de Talaia.",
+    "signingIn": "Entrando…"
+  },
+  "notFound": {
+    "title": "Esta pantalla no existe",
+    "back": "Volver al inicio"
+  },
+  "explore": {
+    "greeting": {
+      "morning": "Buenos días",
+      "afternoon": "Buenas tardes",
+      "night": "Buenas noches"
+    },
+    "title": "¿Qué quieres ver?",
+    "goals": {
+      "pluja_estels": "Lluvia de estrellas",
+      "eclipsi": "Eclipse",
+      "via_lactia": "Vía Láctea",
+      "posta_sol": "Puesta de sol",
+      "sortida_sol": "Salida del sol",
+      "cel_estrellat": "Cielo estrellado",
+      "constellacions": "Constelaciones"
+    },
+    "constellationsHint": "Con el mito que hay detrás",
+    "soon": "Pronto",
+    "origin": {
+      "title": "Desde dónde sales",
+      "current": "Ubicación actual",
+      "here": "Donde estás ahora",
+      "locating": "Buscando dónde estás…",
+      "denied": "Activa la ubicación",
+      "settings": "Ajustes",
+      "error": "No hemos encontrado dónde estás",
+      "retry": "Vuelve a intentarlo",
+      "allow": "Permitir"
+    },
+    "when": {
+      "title": "Cuándo",
+      "tonight": "Esta noche",
+      "tomorrow": "Mañana",
+      "pick": "Elige el día",
+      "range": "De {{from}} a {{to}}",
+      "rangeHint": "Franja horaria",
+      "picked": "{{weekday}} {{day}} {{month}}"
+    },
+    "weekdays": ["dom.", "lun.", "mar.", "mié.", "jue.", "vie.", "sáb."],
+    "calendar": {
+      "title": "Elige el día",
+      "close": "Cerrar",
+      "month": "{{month}} de {{year}}",
+      "day": "{{day}} {{month}}",
+      "previous": "Mes anterior",
+      "next": "Mes siguiente",
+      "months": [
+        "enero",
+        "febrero",
+        "marzo",
+        "abril",
+        "mayo",
+        "junio",
+        "julio",
+        "agosto",
+        "septiembre",
+        "octubre",
+        "noviembre",
+        "diciembre"
+      ],
+      "monthsShort": [
+        "ene.",
+        "feb.",
+        "mar.",
+        "abr.",
+        "may.",
+        "jun.",
+        "jul.",
+        "ago.",
+        "sept.",
+        "oct.",
+        "nov.",
+        "dic."
+      ],
+      "monthsOf": [
+        "de enero",
+        "de febrero",
+        "de marzo",
+        "de abril",
+        "de mayo",
+        "de junio",
+        "de julio",
+        "de agosto",
+        "de septiembre",
+        "de octubre",
+        "de noviembre",
+        "de diciembre"
+      ]
+    },
+    "rangeSheet": {
+      "title": "Franja horaria",
+      "from": "Desde",
+      "to": "Hasta",
+      "duration_one": "{{count}} hora de observación",
+      "duration_other": "{{count}} horas de observación",
+      "done": "Hecho"
+    },
+    "travel": {
+      "title": "Hasta qué distancia",
+      "minutes": "{{minutes}} min en coche",
+      "hours": "{{hours}} h en coche",
+      "hoursMinutes": "{{hours}} h {{minutes}} min en coche",
+      "min": "30 min",
+      "max": "4 h"
+    },
+    "cta": "Encuentra el mejor lugar",
+    "browse": "Ver el mapa"
+  },
+  "alerts": {
+    "title": "Alertas",
+    "soonTitle": "Pronto",
+    "soonMessage": "Aquí podrás crear alertas para que te avisemos cuando haya buenas condiciones para lo que quieres ver."
+  },
+  "auth": {
+    "signOut": "Cerrar sesión",
+    "signingOut": "Cerrando sesión…",
+    "restoreError": "No se ha podido recuperar la sesión. Inténtalo de nuevo.",
+    "logoutError": "No se ha podido cerrar la sesión. Inténtalo de nuevo.",
+    "retry": "Reintentar",
+    "errors": {
+      "network": "No hay conexión. Revísala y vuelve a intentarlo.",
+      "invalidEmail": "Esta dirección de correo no es válida.",
+      "invalidCode": "El código no es correcto o ha caducado.",
+      "rateLimited": "Demasiados intentos seguidos. Espera un momento y vuelve a intentarlo.",
+      "unavailable": "El inicio de sesión no está configurado en esta versión de la app.",
+      "profile": "Has entrado, pero no hemos podido preparar tu perfil. Vuelve a intentarlo.",
+      "unknown": "No se ha podido iniciar sesión. Vuelve a intentarlo.",
+      "invalidLink": "El enlace no es válido o ya se ha usado. Ábrelo en el mismo móvil donde lo pediste, o pide otro.",
+      "emailNotAllowed": "Ahora mismo no podemos enviar correos a esta dirección. Prueba a entrar con Google."
+    }
+  },
+  "emailLogin": {
+    "title": "Entra con el correo",
+    "close": "Cerrar",
+    "emailSubtitle": "Te enviaremos un correo para entrar. Si no tienes cuenta, crearemos una.",
+    "emailLabel": "Correo electrónico",
+    "emailPlaceholder": "nombre@ejemplo.es",
+    "send": "Envía el código",
+    "sending": "Enviando…",
+    "codeTitle": "Escribe el código",
+    "codeSubtitle": "Lo hemos enviado a {{email}}. Mira también el correo no deseado.",
+    "codeLabel": "Código de 6 cifras",
+    "verify": "Entra",
+    "verifying": "Comprobando…",
+    "resend": "Vuelve a enviar el código",
+    "resendIn": "Vuelve a enviar el código ({{seconds}} s)",
+    "resent": "Te hemos enviado un código nuevo.",
+    "changeEmail": "Cambia la dirección",
+    "back": "Atrás"
+  },
+  "emailLink": {
+    "title": "Entrando…",
+    "subtitle": "Un momento: estamos comprobando el enlace del correo.",
+    "errorTitle": "No hemos podido entrar",
+    "back": "Vuelve al inicio"
+  },
+  "recommendations": {
+    "title": "{{goal}}, {{when}}",
+    "when": {
+      "tonight": "esta noche",
+      "tomorrow": "mañana por la noche"
+    },
+    "from": "Desde {{place}}, hasta {{travel}}",
+    "fromHere": "Desde donde estás, hasta {{travel}}",
+    "duration": {
+      "minutes": "{{minutes}} min",
+      "hours": "{{hours}} h",
+      "hoursMinutes": "{{hours}} h {{minutes}} min"
+    },
+    "best": "Mejores puntos para {{when}}",
+    "showAll": "Ver todos",
+    "showLess": "Ver menos",
+    "loading": "Buscando los mejores puntos…",
+    "error": "No hemos podido cargar las recomendaciones",
+    "empty": "No hay ningún punto a menos de {{travel}}",
+    "emptyHint": "Amplía la distancia o elige otra noche.",
+    "noIndex": "Aún sin previsión",
+    "bestHour": "Mejor hora: {{hour}}",
+    "byCar": "{{travel}} en coche",
+    "collapseSheet": "Plegar la lista",
+    "expandSheet": "Desplegar la lista"
+  }
+}

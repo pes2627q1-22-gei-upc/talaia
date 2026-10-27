@@ -1,0 +1,16 @@
+# Prettier ja ignora el que hi ha al .gitignore de l'arrel
+package-lock.json
+expo-env.d.ts
+.expo/
+
+# Documentació escrita a mà (taules compactes)
+*.md
+
+# Generat per Icon Composer
+*.icon/
+
+# Còpia fixa de l'estil de l'ICGC: es manté idèntica a l'original
+apps/mobile/src/features/map/style/icgc-mapa-base-fosc.json
+
+# Generat per kysely-codegen (npm run db:types): db:types:verify el compara byte a byte
+packages/db/src/schema.ts
