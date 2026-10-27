@@ -22,7 +22,7 @@ export const TERRAIN_SOURCE_ID = 'relleu-3d';
 const reliefSource: SourceSpecification = {
   type: 'raster-dem',
   tiles: [
-    'https://tilemaps.icgc.cat/tileserver/tileserver/terreny-5m-30m-rgb-extent/{z}/{x}/{y}.png',
+    'https://tilemaps.icgc.cat/tileserver/tileserver.php/terreny-5m-30m-rgb-extent/{z}/{x}/{y}.png',
   ],
   encoding: 'mapbox',
   tileSize: 256,
