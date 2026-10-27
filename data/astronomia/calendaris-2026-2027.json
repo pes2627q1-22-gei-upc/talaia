@@ -36,10 +36,13 @@
       "periodicitat": "anual",
       "publicable_calendari": true,
       "velocitat_km_s": 20,
-      "textos": { "ca": {
-        "nom": "Dracònids",
-        "descripcio": "Pluja lenta d'origen cometari que sol tenir poca activitat, però que alguns anys pot presentar esclats inesperats.",
-        "consell_general": "Observeu-la al vespre des d'un lloc fosc i amb una vista àmplia del cel; no cal cap instrument." } }
+      "textos": {
+        "ca": {
+          "nom": "Dracònids",
+          "descripcio": "Pluja lenta d'origen cometari que sol tenir poca activitat, però que alguns anys pot presentar esclats inesperats.",
+          "consell_general": "Observeu-la al vespre des d'un lloc fosc i amb una vista àmplia del cel; no cal cap instrument."
+        }
+      }
     },
     {
       "codi": "orionids",
@@ -47,10 +50,13 @@
       "periodicitat": "anual",
       "publicable_calendari": true,
       "velocitat_km_s": 66,
-      "textos": { "ca": {
-        "nom": "Oriònids",
-        "descripcio": "Pluja anual de meteors ràpids associada al cometa Halley, amb un màxim habitualment ample.",
-        "consell_general": "Busqueu un cel fosc durant la segona meitat de la nit i mireu una zona extensa, lluny de la Lluna." } }
+      "textos": {
+        "ca": {
+          "nom": "Oriònids",
+          "descripcio": "Pluja anual de meteors ràpids associada al cometa Halley, amb un màxim habitualment ample.",
+          "consell_general": "Busqueu un cel fosc durant la segona meitat de la nit i mireu una zona extensa, lluny de la Lluna."
+        }
+      }
     },
     {
       "codi": "southern-taurids",
@@ -58,10 +64,13 @@
       "periodicitat": "anual",
       "publicable_calendari": true,
       "velocitat_km_s": 27,
-      "textos": { "ca": {
-        "nom": "Tàurids del sud",
-        "descripcio": "Pluja de baixa freqüència i activitat molt estesa en el temps, coneguda per produir alguns meteors especialment brillants.",
-        "consell_general": "Cal paciència i un cel fosc; és més probable veure algun meteor brillant que una successió intensa." } }
+      "textos": {
+        "ca": {
+          "nom": "Tàurids del sud",
+          "descripcio": "Pluja de baixa freqüència i activitat molt estesa en el temps, coneguda per produir alguns meteors especialment brillants.",
+          "consell_general": "Cal paciència i un cel fosc; és més probable veure algun meteor brillant que una successió intensa."
+        }
+      }
     },
     {
       "codi": "northern-taurids",
@@ -69,10 +78,13 @@
       "periodicitat": "anual",
       "publicable_calendari": true,
       "velocitat_km_s": 29,
-      "textos": { "ca": {
-        "nom": "Tàurids del nord",
-        "descripcio": "Component nord del complex de les Tàurids, de taxa baixa i màxim ample, però amb possibilitat de meteors brillants.",
-        "consell_general": "Observeu a ull nu una zona gran del cel i assumiu que poden passar força minuts entre meteors." } }
+      "textos": {
+        "ca": {
+          "nom": "Tàurids del nord",
+          "descripcio": "Component nord del complex de les Tàurids, de taxa baixa i màxim ample, però amb possibilitat de meteors brillants.",
+          "consell_general": "Observeu a ull nu una zona gran del cel i assumiu que poden passar força minuts entre meteors."
+        }
+      }
     },
     {
       "codi": "leonids",
@@ -80,10 +92,13 @@
       "periodicitat": "anual",
       "publicable_calendari": true,
       "velocitat_km_s": 71,
-      "textos": { "ca": {
-        "nom": "Leònids",
-        "descripcio": "Pluja de meteors molt ràpids que pot variar quan la Terra travessa traces de pols del seu cometa progenitor.",
-        "consell_general": "La segona meitat de la nit acostuma a ser la més adequada; deixeu que la vista s'adapti a la foscor." } }
+      "textos": {
+        "ca": {
+          "nom": "Leònids",
+          "descripcio": "Pluja de meteors molt ràpids que pot variar quan la Terra travessa traces de pols del seu cometa progenitor.",
+          "consell_general": "La segona meitat de la nit acostuma a ser la més adequada; deixeu que la vista s'adapti a la foscor."
+        }
+      }
     },
     {
       "codi": "geminids",
@@ -91,10 +106,13 @@
       "periodicitat": "anual",
       "publicable_calendari": true,
       "velocitat_km_s": 35,
-      "textos": { "ca": {
-        "nom": "Gemínids",
-        "descripcio": "Una de les pluges anuals més abundants i regulars, amb meteors de velocitat moderada visibles durant bona part de la nit.",
-        "consell_general": "Observeu a ull nu des d'un indret fosc i protegit de llums directes; el radiant puja al llarg de la nit." } }
+      "textos": {
+        "ca": {
+          "nom": "Gemínids",
+          "descripcio": "Una de les pluges anuals més abundants i regulars, amb meteors de velocitat moderada visibles durant bona part de la nit.",
+          "consell_general": "Observeu a ull nu des d'un indret fosc i protegit de llums directes; el radiant puja al llarg de la nit."
+        }
+      }
     },
     {
       "codi": "ursids",
@@ -102,10 +120,13 @@
       "periodicitat": "anual",
       "publicable_calendari": true,
       "velocitat_km_s": 33,
-      "textos": { "ca": {
-        "nom": "Úrsids",
-        "descripcio": "Pluja boreal de final de desembre, normalment modesta però ben situada per a observadors de l'hemisferi nord.",
-        "consell_general": "Abrigueu-vos, trieu un horitzó poc il·luminat i reserveu una estona llarga d'observació." } }
+      "textos": {
+        "ca": {
+          "nom": "Úrsids",
+          "descripcio": "Pluja boreal de final de desembre, normalment modesta però ben situada per a observadors de l'hemisferi nord.",
+          "consell_general": "Abrigueu-vos, trieu un horitzó poc il·luminat i reserveu una estona llarga d'observació."
+        }
+      }
     },
     {
       "codi": "quadrantids",
@@ -113,10 +134,13 @@
       "periodicitat": "anual",
       "publicable_calendari": true,
       "velocitat_km_s": 41,
-      "textos": { "ca": {
-        "nom": "Quadràntids",
-        "descripcio": "Pluja intensa de començament d'any amb un màxim relativament curt i un radiant favorable a latituds nord.",
-        "consell_general": "Convé observar tan a prop del màxim com sigui possible, perquè l'activitat alta dura menys que en altres pluges." } }
+      "textos": {
+        "ca": {
+          "nom": "Quadràntids",
+          "descripcio": "Pluja intensa de començament d'any amb un màxim relativament curt i un radiant favorable a latituds nord.",
+          "consell_general": "Convé observar tan a prop del màxim com sigui possible, perquè l'activitat alta dura menys que en altres pluges."
+        }
+      }
     },
     {
       "codi": "lirids",
@@ -124,10 +148,13 @@
       "periodicitat": "anual",
       "publicable_calendari": true,
       "velocitat_km_s": 49,
-      "textos": { "ca": {
-        "nom": "Lírides",
-        "descripcio": "Pluja anual de primavera amb activitat moderada i algun meteor brillant ocasional.",
-        "consell_general": "Observeu després de mitjanit des d'un cel fosc i eviteu tenir la Lluna o llums artificials dins del camp de visió." } }
+      "textos": {
+        "ca": {
+          "nom": "Lírides",
+          "descripcio": "Pluja anual de primavera amb activitat moderada i algun meteor brillant ocasional.",
+          "consell_general": "Observeu després de mitjanit des d'un cel fosc i eviteu tenir la Lluna o llums artificials dins del camp de visió."
+        }
+      }
     },
     {
       "codi": "eta-aquariids",
@@ -135,10 +162,13 @@
       "periodicitat": "anual",
       "publicable_calendari": true,
       "velocitat_km_s": 66,
-      "textos": { "ca": {
-        "nom": "Eta Aquàrids",
-        "descripcio": "Pluja ràpida associada al cometa Halley, molt activa al sud però amb el radiant baix vista des de Catalunya.",
-        "consell_general": "Cal observar poc abans de l'alba, amb l'horitzó est o sud-est ben lliure i sense esperar la taxa ideal anunciada." } }
+      "textos": {
+        "ca": {
+          "nom": "Eta Aquàrids",
+          "descripcio": "Pluja ràpida associada al cometa Halley, molt activa al sud però amb el radiant baix vista des de Catalunya.",
+          "consell_general": "Cal observar poc abans de l'alba, amb l'horitzó est o sud-est ben lliure i sense esperar la taxa ideal anunciada."
+        }
+      }
     },
     {
       "codi": "alpha-capricornids",
@@ -146,10 +176,13 @@
       "periodicitat": "anual",
       "publicable_calendari": true,
       "velocitat_km_s": 23,
-      "textos": { "ca": {
-        "nom": "Alfa Capricòrnids",
-        "descripcio": "Pluja estival poc abundant, de meteors lents, que pot oferir bòlids vistosos malgrat la seva taxa baixa.",
-        "consell_general": "No espereu molts meteors: observeu amb paciència una àrea àmplia del cel per poder detectar els més brillants." } }
+      "textos": {
+        "ca": {
+          "nom": "Alfa Capricòrnids",
+          "descripcio": "Pluja estival poc abundant, de meteors lents, que pot oferir bòlids vistosos malgrat la seva taxa baixa.",
+          "consell_general": "No espereu molts meteors: observeu amb paciència una àrea àmplia del cel per poder detectar els més brillants."
+        }
+      }
     },
     {
       "codi": "southern-delta-aquariids",
@@ -157,10 +190,13 @@
       "periodicitat": "anual",
       "publicable_calendari": true,
       "velocitat_km_s": 41,
-      "textos": { "ca": {
-        "nom": "Delta Aquàrids del sud",
-        "descripcio": "Pluja d'estiu de durada llarga, més favorable a l'hemisferi sud però observable parcialment des de Catalunya.",
-        "consell_general": "Observeu de matinada cap a un cel obert al sud; la taxa real serà inferior a la ZHR ideal pel radiant baix." } }
+      "textos": {
+        "ca": {
+          "nom": "Delta Aquàrids del sud",
+          "descripcio": "Pluja d'estiu de durada llarga, més favorable a l'hemisferi sud però observable parcialment des de Catalunya.",
+          "consell_general": "Observeu de matinada cap a un cel obert al sud; la taxa real serà inferior a la ZHR ideal pel radiant baix."
+        }
+      }
     },
     {
       "codi": "perseids",
@@ -168,248 +204,499 @@
       "periodicitat": "anual",
       "publicable_calendari": true,
       "velocitat_km_s": 59,
-      "textos": { "ca": {
-        "nom": "Perseids",
-        "descripcio": "Pluja d'estiu molt activa i popular, amb meteors ràpids i un radiant ben situat des de latituds mitjanes nord.",
-        "consell_general": "Observeu estirats i a ull nu des d'un lloc fosc; mirar una zona àmplia separada del radiant facilita veure traces llargues." } }
+      "textos": {
+        "ca": {
+          "nom": "Perseids",
+          "descripcio": "Pluja d'estiu molt activa i popular, amb meteors ràpids i un radiant ben situat des de latituds mitjanes nord.",
+          "consell_general": "Observeu estirats i a ull nu des d'un lloc fosc; mirar una zona àmplia separada del radiant facilita veure traces llargues."
+        }
+      }
     },
     {
       "codi": "eclipsi-lunar-penumbral",
       "tipus": "eclipsi_llunar",
       "periodicitat": "ocasional",
       "publicable_calendari": true,
-      "textos": { "ca": {
-        "nom": "Eclipsi lunar penumbral",
-        "descripcio": "La Lluna travessa la penombra de la Terra i perd llum de manera gradual, sense arribar a entrar a l'ombra central.",
-        "consell_general": "El canvi pot ser molt subtil; compareu l'aspecte de la Lluna abans i durant el màxim o feu fotografies amb la mateixa exposició." } }
+      "textos": {
+        "ca": {
+          "nom": "Eclipsi lunar penumbral",
+          "descripcio": "La Lluna travessa la penombra de la Terra i perd llum de manera gradual, sense arribar a entrar a l'ombra central.",
+          "consell_general": "El canvi pot ser molt subtil; compareu l'aspecte de la Lluna abans i durant el màxim o feu fotografies amb la mateixa exposició."
+        }
+      }
     },
     {
       "codi": "eclipsi-solar-total",
       "tipus": "eclipsi_solar",
       "periodicitat": "ocasional",
       "publicable_calendari": true,
-      "textos": { "ca": {
-        "nom": "Eclipsi solar total",
-        "descripcio": "Eclipsi en què la Lluna cobreix completament el Sol dins la franja de totalitat; des d'altres llocs només se'n veu una fase parcial.",
-        "consell_general": "Fora de la totalitat, mireu el Sol només amb ulleres o visors solars conformes amb ISO 12312-2; els instruments necessiten un filtre solar frontal adequat." } }
+      "textos": {
+        "ca": {
+          "nom": "Eclipsi solar total",
+          "descripcio": "Eclipsi en què la Lluna cobreix completament el Sol dins la franja de totalitat; des d'altres llocs només se'n veu una fase parcial.",
+          "consell_general": "Fora de la totalitat, mireu el Sol només amb ulleres o visors solars conformes amb ISO 12312-2; els instruments necessiten un filtre solar frontal adequat."
+        }
+      }
     }
   ],
   "esdeveniments": [
     {
-      "codi": "draconids-2026", "fenomen_codi": "draconids",
-      "inici": "2026-10-06T00:00:00Z", "fi": "2026-10-10T23:59:59Z", "maxim": "2026-10-09T12:00:00Z",
+      "codi": "draconids-2026",
+      "fenomen_codi": "draconids",
+      "inici": "2026-10-06T00:00:00Z",
+      "fi": "2026-10-10T23:59:59Z",
+      "maxim": "2026-10-09T12:00:00Z",
       "precisio": { "inici": "dia", "fi": "dia", "maxim": "dia" },
-      "rellevant_catalunya": true, "rellevancia": "secundari", "dificultat_observacio": "mitjana",
+      "rellevant_catalunya": true,
+      "rellevancia": "secundari",
+      "dificultat_observacio": "mitjana",
       "zhr": { "valor": 5, "qualificador": "estimat" },
       "radiant_maxim": { "ascensio_recta_graus": 262, "declinacio_graus": 54 },
-      "textos": { "ca": { "nota_visibilitat": "Observable des de Catalunya, però amb poca activitat habitual i sense cap augment previst per al 2026.", "consell_observacio": "Proveu-ho al vespre del 9 d'octubre des d'un cel fosc i valoreu-la com una observació pacient, no com una pluja intensa." } },
-      "font_codi": "imo-2026", "referencia_font": "Taula 5 i apartat Draconids"
+      "textos": {
+        "ca": {
+          "nota_visibilitat": "Observable des de Catalunya, però amb poca activitat habitual i sense cap augment previst per al 2026.",
+          "consell_observacio": "Proveu-ho al vespre del 9 d'octubre des d'un cel fosc i valoreu-la com una observació pacient, no com una pluja intensa."
+        }
+      },
+      "font_codi": "imo-2026",
+      "referencia_font": "Taula 5 i apartat Draconids"
     },
     {
-      "codi": "orionids-2026", "fenomen_codi": "orionids",
-      "inici": "2026-10-02T00:00:00Z", "fi": "2026-11-07T23:59:59Z", "maxim": "2026-10-21T12:00:00Z",
+      "codi": "orionids-2026",
+      "fenomen_codi": "orionids",
+      "inici": "2026-10-02T00:00:00Z",
+      "fi": "2026-11-07T23:59:59Z",
+      "maxim": "2026-10-21T12:00:00Z",
       "precisio": { "inici": "dia", "fi": "dia", "maxim": "dia" },
-      "rellevant_catalunya": true, "rellevancia": "principal", "dificultat_observacio": "mitjana",
+      "rellevant_catalunya": true,
+      "rellevancia": "principal",
+      "dificultat_observacio": "mitjana",
       "zhr": { "valor": 20, "qualificador": "minim" },
       "radiant_maxim": { "ascensio_recta_graus": 95, "declinacio_graus": 16 },
-      "textos": { "ca": { "nota_visibilitat": "El radiant és visible des de Catalunya i el màxim és prou ample perquè també siguin útils les nits pròximes.", "consell_observacio": "Observeu durant la matinada del 21 d'octubre, quan Orió sigui més alt, des d'una zona sense llum directa." } },
-      "font_codi": "imo-2026", "referencia_font": "Taula 5 i apartat Orionids"
+      "textos": {
+        "ca": {
+          "nota_visibilitat": "El radiant és visible des de Catalunya i el màxim és prou ample perquè també siguin útils les nits pròximes.",
+          "consell_observacio": "Observeu durant la matinada del 21 d'octubre, quan Orió sigui més alt, des d'una zona sense llum directa."
+        }
+      },
+      "font_codi": "imo-2026",
+      "referencia_font": "Taula 5 i apartat Orionids"
     },
     {
-      "codi": "southern-taurids-2026", "fenomen_codi": "southern-taurids",
-      "inici": "2026-09-20T00:00:00Z", "fi": "2026-11-20T23:59:59Z", "maxim": "2026-11-05T12:00:00Z",
+      "codi": "southern-taurids-2026",
+      "fenomen_codi": "southern-taurids",
+      "inici": "2026-09-20T00:00:00Z",
+      "fi": "2026-11-20T23:59:59Z",
+      "maxim": "2026-11-05T12:00:00Z",
       "precisio": { "inici": "dia", "fi": "dia", "maxim": "dia" },
-      "rellevant_catalunya": true, "rellevancia": "secundari", "dificultat_observacio": "mitjana",
+      "rellevant_catalunya": true,
+      "rellevancia": "secundari",
+      "dificultat_observacio": "mitjana",
       "zhr": { "valor": 7, "qualificador": "estimat" },
       "radiant_maxim": { "ascensio_recta_graus": 52, "declinacio_graus": 15 },
-      "textos": { "ca": { "nota_visibilitat": "Visible des de Catalunya amb una taxa baixa, però amb possibilitat de meteors brillants.", "consell_observacio": "Dediqueu-hi una sessió llarga al voltant del 5 de novembre i no interpreteu la baixa freqüència com una incidència del servei." } },
-      "font_codi": "imo-2026", "referencia_font": "Taula 5"
+      "textos": {
+        "ca": {
+          "nota_visibilitat": "Visible des de Catalunya amb una taxa baixa, però amb possibilitat de meteors brillants.",
+          "consell_observacio": "Dediqueu-hi una sessió llarga al voltant del 5 de novembre i no interpreteu la baixa freqüència com una incidència del servei."
+        }
+      },
+      "font_codi": "imo-2026",
+      "referencia_font": "Taula 5"
     },
     {
-      "codi": "northern-taurids-2026", "fenomen_codi": "northern-taurids",
-      "inici": "2026-10-20T00:00:00Z", "fi": "2026-12-10T23:59:59Z", "maxim": "2026-11-12T12:00:00Z",
+      "codi": "northern-taurids-2026",
+      "fenomen_codi": "northern-taurids",
+      "inici": "2026-10-20T00:00:00Z",
+      "fi": "2026-12-10T23:59:59Z",
+      "maxim": "2026-11-12T12:00:00Z",
       "precisio": { "inici": "dia", "fi": "dia", "maxim": "dia" },
-      "rellevant_catalunya": true, "rellevancia": "secundari", "dificultat_observacio": "mitjana",
+      "rellevant_catalunya": true,
+      "rellevancia": "secundari",
+      "dificultat_observacio": "mitjana",
       "zhr": { "valor": 5, "qualificador": "estimat" },
       "radiant_maxim": { "ascensio_recta_graus": 58, "declinacio_graus": 22 },
-      "textos": { "ca": { "nota_visibilitat": "Observable des de Catalunya, amb activitat baixa i distribuïda durant moltes nits.", "consell_observacio": "Cerqueu un cel fosc pels volts del 12 de novembre i centreu l'expectativa en algun meteor brillant aïllat." } },
-      "font_codi": "imo-2026", "referencia_font": "Taula 5"
+      "textos": {
+        "ca": {
+          "nota_visibilitat": "Observable des de Catalunya, amb activitat baixa i distribuïda durant moltes nits.",
+          "consell_observacio": "Cerqueu un cel fosc pels volts del 12 de novembre i centreu l'expectativa en algun meteor brillant aïllat."
+        }
+      },
+      "font_codi": "imo-2026",
+      "referencia_font": "Taula 5"
     },
     {
-      "codi": "leonids-2026", "fenomen_codi": "leonids",
-      "inici": "2026-11-06T00:00:00Z", "fi": "2026-11-30T23:59:59Z", "maxim": "2026-11-17T23:45:00Z",
+      "codi": "leonids-2026",
+      "fenomen_codi": "leonids",
+      "inici": "2026-11-06T00:00:00Z",
+      "fi": "2026-11-30T23:59:59Z",
+      "maxim": "2026-11-17T23:45:00Z",
       "precisio": { "inici": "dia", "fi": "dia", "maxim": "minut" },
-      "rellevant_catalunya": true, "rellevancia": "principal", "dificultat_observacio": "mitjana",
+      "rellevant_catalunya": true,
+      "rellevancia": "principal",
+      "dificultat_observacio": "mitjana",
       "zhr": { "valor": 15, "qualificador": "aproximat" },
       "radiant_maxim": { "ascensio_recta_graus": 152, "declinacio_graus": 22 },
-      "textos": { "ca": { "nota_visibilitat": "El radiant es pot observar des de Catalunya i guanya altura durant la matinada.", "consell_observacio": "Prioritzeu la nit del 17 al 18 de novembre, especialment després de mitjanit." } },
-      "font_codi": "imo-2026", "referencia_font": "Taula 5 i apartat Leonids"
+      "textos": {
+        "ca": {
+          "nota_visibilitat": "El radiant es pot observar des de Catalunya i guanya altura durant la matinada.",
+          "consell_observacio": "Prioritzeu la nit del 17 al 18 de novembre, especialment després de mitjanit."
+        }
+      },
+      "font_codi": "imo-2026",
+      "referencia_font": "Taula 5 i apartat Leonids"
     },
     {
-      "codi": "geminids-2026", "fenomen_codi": "geminids",
-      "inici": "2026-12-04T00:00:00Z", "fi": "2026-12-20T23:59:59Z", "maxim": "2026-12-14T14:00:00Z",
+      "codi": "geminids-2026",
+      "fenomen_codi": "geminids",
+      "inici": "2026-12-04T00:00:00Z",
+      "fi": "2026-12-20T23:59:59Z",
+      "maxim": "2026-12-14T14:00:00Z",
       "precisio": { "inici": "dia", "fi": "dia", "maxim": "hora" },
-      "rellevant_catalunya": true, "rellevancia": "principal", "dificultat_observacio": "baixa",
+      "rellevant_catalunya": true,
+      "rellevancia": "principal",
+      "dificultat_observacio": "baixa",
       "zhr": { "valor": 150, "qualificador": "estimat" },
       "radiant_maxim": { "ascensio_recta_graus": 112, "declinacio_graus": 33 },
-      "textos": { "ca": { "nota_visibilitat": "Màxim molt actiu i amb condicions lunars favorables durant la nit principal.", "consell_observacio": "Observeu les nits del 13 al 14 i del 14 al 15 de desembre; el màxim diürn queda compensat per l'amplitud de l'activitat." } },
-      "font_codi": "imo-2026", "referencia_font": "Taula 5 i apartat Geminids"
+      "textos": {
+        "ca": {
+          "nota_visibilitat": "Màxim molt actiu i amb condicions lunars favorables durant la nit principal.",
+          "consell_observacio": "Observeu les nits del 13 al 14 i del 14 al 15 de desembre; el màxim diürn queda compensat per l'amplitud de l'activitat."
+        }
+      },
+      "font_codi": "imo-2026",
+      "referencia_font": "Taula 5 i apartat Geminids"
     },
     {
-      "codi": "ursids-2026", "fenomen_codi": "ursids",
-      "inici": "2026-12-17T00:00:00Z", "fi": "2026-12-26T23:59:59Z", "maxim": "2026-12-22T12:00:00Z",
+      "codi": "ursids-2026",
+      "fenomen_codi": "ursids",
+      "inici": "2026-12-17T00:00:00Z",
+      "fi": "2026-12-26T23:59:59Z",
+      "maxim": "2026-12-22T12:00:00Z",
       "precisio": { "inici": "dia", "fi": "dia", "maxim": "dia" },
-      "rellevant_catalunya": true, "rellevancia": "principal", "dificultat_observacio": "alta",
+      "rellevant_catalunya": true,
+      "rellevancia": "principal",
+      "dificultat_observacio": "alta",
       "zhr": { "valor": 10, "qualificador": "estimat" },
       "radiant_maxim": { "ascensio_recta_graus": 217, "declinacio_graus": 76 },
-      "textos": { "ca": { "nota_visibilitat": "El radiant boreal és favorable, però la llum de la Lluna perjudicarà especialment el màxim de 2026.", "consell_observacio": "Situeu la Lluna darrere d'un obstacle i busqueu un indret tan fosc com sigui possible la nit del 22 de desembre." } },
-      "font_codi": "imo-2026", "referencia_font": "Taula 5 i resum de condicions del 2026"
+      "textos": {
+        "ca": {
+          "nota_visibilitat": "El radiant boreal és favorable, però la llum de la Lluna perjudicarà especialment el màxim de 2026.",
+          "consell_observacio": "Situeu la Lluna darrere d'un obstacle i busqueu un indret tan fosc com sigui possible la nit del 22 de desembre."
+        }
+      },
+      "font_codi": "imo-2026",
+      "referencia_font": "Taula 5 i resum de condicions del 2026"
     },
     {
-      "codi": "quadrantids-2027", "fenomen_codi": "quadrantids",
-      "inici": "2026-12-28T00:00:00Z", "fi": "2027-01-12T23:59:59Z", "maxim": "2027-01-04T03:25:00Z",
+      "codi": "quadrantids-2027",
+      "fenomen_codi": "quadrantids",
+      "inici": "2026-12-28T00:00:00Z",
+      "fi": "2027-01-12T23:59:59Z",
+      "maxim": "2027-01-04T03:25:00Z",
       "precisio": { "inici": "dia", "fi": "dia", "maxim": "minut" },
-      "rellevant_catalunya": true, "rellevancia": "principal", "dificultat_observacio": "mitjana",
+      "rellevant_catalunya": true,
+      "rellevancia": "principal",
+      "dificultat_observacio": "mitjana",
       "zhr": { "valor": 80, "qualificador": "minim" },
       "radiant_maxim": { "ascensio_recta_graus": 230, "declinacio_graus": 49 },
-      "textos": { "ca": { "nota_visibilitat": "Màxim favorable des de Catalunya, poc abans de la Lluna nova, però concentrat en un interval curt.", "consell_observacio": "Planifiqueu la matinada del 4 de gener i comenceu abans de les 03:25 UTC per no perdre el pic." } },
-      "font_codi": "imo-2027", "referencia_font": "Taula 5 i apartat Quadrantids"
+      "textos": {
+        "ca": {
+          "nota_visibilitat": "Màxim favorable des de Catalunya, poc abans de la Lluna nova, però concentrat en un interval curt.",
+          "consell_observacio": "Planifiqueu la matinada del 4 de gener i comenceu abans de les 03:25 UTC per no perdre el pic."
+        }
+      },
+      "font_codi": "imo-2027",
+      "referencia_font": "Taula 5 i apartat Quadrantids"
     },
     {
-      "codi": "eclipsi-lunar-penumbral-2027-02-20", "fenomen_codi": "eclipsi-lunar-penumbral",
-      "inici": "2027-02-20T21:12:00Z", "fi": "2027-02-21T01:13:00Z", "maxim": "2027-02-20T23:13:00Z",
+      "codi": "eclipsi-lunar-penumbral-2027-02-20",
+      "fenomen_codi": "eclipsi-lunar-penumbral",
+      "inici": "2027-02-20T21:12:00Z",
+      "fi": "2027-02-21T01:13:00Z",
+      "maxim": "2027-02-20T23:13:00Z",
       "precisio": { "inici": "minut", "fi": "minut", "maxim": "minut" },
-      "rellevant_catalunya": true, "rellevancia": "principal", "dificultat_observacio": "alta",
-      "textos": { "ca": { "nota_visibilitat": "L'eclipsi és visible des d'Europa i, per tant, des de Catalunya, però l'enfosquiment penumbral serà subtil.", "consell_observacio": "Compareu la Lluna abans del màxim i cap a les 23:13 UTC; una fotografia amb exposició constant pot fer més evident el canvi." } },
-      "font_codi": "nasa-eclipsis-2027", "referencia_font": "Taula de fases de l'eclipsi lunar penumbral del 20 de febrer"
+      "rellevant_catalunya": true,
+      "rellevancia": "principal",
+      "dificultat_observacio": "alta",
+      "textos": {
+        "ca": {
+          "nota_visibilitat": "L'eclipsi és visible des d'Europa i, per tant, des de Catalunya, però l'enfosquiment penumbral serà subtil.",
+          "consell_observacio": "Compareu la Lluna abans del màxim i cap a les 23:13 UTC; una fotografia amb exposició constant pot fer més evident el canvi."
+        }
+      },
+      "font_codi": "nasa-eclipsis-2027",
+      "referencia_font": "Taula de fases de l'eclipsi lunar penumbral del 20 de febrer"
     },
     {
-      "codi": "lirids-2027", "fenomen_codi": "lirids",
-      "inici": "2027-04-14T00:00:00Z", "fi": "2027-04-30T23:59:59Z", "maxim": "2027-04-23T01:40:00Z",
+      "codi": "lirids-2027",
+      "fenomen_codi": "lirids",
+      "inici": "2027-04-14T00:00:00Z",
+      "fi": "2027-04-30T23:59:59Z",
+      "maxim": "2027-04-23T01:40:00Z",
       "precisio": { "inici": "dia", "fi": "dia", "maxim": "minut" },
-      "rellevant_catalunya": true, "rellevancia": "principal", "dificultat_observacio": "alta",
+      "rellevant_catalunya": true,
+      "rellevancia": "principal",
+      "dificultat_observacio": "alta",
       "zhr": { "valor": 18, "qualificador": "estimat" },
       "radiant_maxim": { "ascensio_recta_graus": 271, "declinacio_graus": 34 },
-      "textos": { "ca": { "nota_visibilitat": "El radiant és observable, però el màxim arriba poc després de la Lluna plena i se'n perdran els meteors febles.", "consell_observacio": "Observeu la matinada del 23 d'abril mantenint la Lluna fora del camp visual." } },
-      "font_codi": "imo-2027", "referencia_font": "Taula 5 i apartat Lyrids"
+      "textos": {
+        "ca": {
+          "nota_visibilitat": "El radiant és observable, però el màxim arriba poc després de la Lluna plena i se'n perdran els meteors febles.",
+          "consell_observacio": "Observeu la matinada del 23 d'abril mantenint la Lluna fora del camp visual."
+        }
+      },
+      "font_codi": "imo-2027",
+      "referencia_font": "Taula 5 i apartat Lyrids"
     },
     {
-      "codi": "eta-aquariids-2027", "fenomen_codi": "eta-aquariids",
-      "inici": "2027-04-19T00:00:00Z", "fi": "2027-05-28T23:59:59Z", "maxim": "2027-05-06T09:00:00Z",
+      "codi": "eta-aquariids-2027",
+      "fenomen_codi": "eta-aquariids",
+      "inici": "2027-04-19T00:00:00Z",
+      "fi": "2027-05-28T23:59:59Z",
+      "maxim": "2027-05-06T09:00:00Z",
       "precisio": { "inici": "dia", "fi": "dia", "maxim": "hora" },
-      "rellevant_catalunya": true, "rellevancia": "principal", "dificultat_observacio": "alta",
+      "rellevant_catalunya": true,
+      "rellevancia": "principal",
+      "dificultat_observacio": "alta",
       "zhr": { "valor": 50, "qualificador": "variable" },
       "radiant_maxim": { "ascensio_recta_graus": 338, "declinacio_graus": -1 },
-      "textos": { "ca": { "nota_visibilitat": "Des de Catalunya el radiant queda baix i només ofereix una finestra curta abans de l'alba; la taxa real serà molt inferior a la ZHR ideal.", "consell_observacio": "Busqueu un horitzó est o sud-est completament lliure durant les matinades pròximes al 6 de maig." } },
-      "font_codi": "imo-2027", "referencia_font": "Taula 5 i apartat Eta Aquariids"
+      "textos": {
+        "ca": {
+          "nota_visibilitat": "Des de Catalunya el radiant queda baix i només ofereix una finestra curta abans de l'alba; la taxa real serà molt inferior a la ZHR ideal.",
+          "consell_observacio": "Busqueu un horitzó est o sud-est completament lliure durant les matinades pròximes al 6 de maig."
+        }
+      },
+      "font_codi": "imo-2027",
+      "referencia_font": "Taula 5 i apartat Eta Aquariids"
     },
     {
-      "codi": "alpha-capricornids-2027", "fenomen_codi": "alpha-capricornids",
-      "inici": "2027-07-03T00:00:00Z", "fi": "2027-08-15T23:59:59Z", "maxim": "2027-07-31T12:00:00Z",
+      "codi": "alpha-capricornids-2027",
+      "fenomen_codi": "alpha-capricornids",
+      "inici": "2027-07-03T00:00:00Z",
+      "fi": "2027-08-15T23:59:59Z",
+      "maxim": "2027-07-31T12:00:00Z",
       "precisio": { "inici": "dia", "fi": "dia", "maxim": "dia" },
-      "rellevant_catalunya": true, "rellevancia": "secundari", "dificultat_observacio": "mitjana",
+      "rellevant_catalunya": true,
+      "rellevancia": "secundari",
+      "dificultat_observacio": "mitjana",
       "zhr": { "valor": 5, "qualificador": "estimat" },
       "radiant_maxim": { "ascensio_recta_graus": 307, "declinacio_graus": -10 },
-      "textos": { "ca": { "nota_visibilitat": "Observable des de Catalunya amb una taxa baixa; l'interès principal són els possibles bòlids.", "consell_observacio": "Observeu una zona àmplia del cel la nit del 30 al 31 de juliol i tingueu present que poden passar molts minuts sense activitat." } },
-      "font_codi": "imo-2027", "referencia_font": "Taula 5 i apartat Alpha Capricornids"
+      "textos": {
+        "ca": {
+          "nota_visibilitat": "Observable des de Catalunya amb una taxa baixa; l'interès principal són els possibles bòlids.",
+          "consell_observacio": "Observeu una zona àmplia del cel la nit del 30 al 31 de juliol i tingueu present que poden passar molts minuts sense activitat."
+        }
+      },
+      "font_codi": "imo-2027",
+      "referencia_font": "Taula 5 i apartat Alpha Capricornids"
     },
     {
-      "codi": "southern-delta-aquariids-2027", "fenomen_codi": "southern-delta-aquariids",
-      "inici": "2027-07-12T00:00:00Z", "fi": "2027-08-23T23:59:59Z", "maxim": "2027-07-31T12:00:00Z",
+      "codi": "southern-delta-aquariids-2027",
+      "fenomen_codi": "southern-delta-aquariids",
+      "inici": "2027-07-12T00:00:00Z",
+      "fi": "2027-08-23T23:59:59Z",
+      "maxim": "2027-07-31T12:00:00Z",
       "precisio": { "inici": "dia", "fi": "dia", "maxim": "dia" },
-      "rellevant_catalunya": true, "rellevancia": "principal", "dificultat_observacio": "alta",
+      "rellevant_catalunya": true,
+      "rellevancia": "principal",
+      "dificultat_observacio": "alta",
       "zhr": { "valor": 25, "qualificador": "estimat" },
       "radiant_maxim": { "ascensio_recta_graus": 340, "declinacio_graus": -16 },
-      "textos": { "ca": { "nota_visibilitat": "Només una part de l'activitat ideal és visible des de Catalunya perquè el radiant culmina baix sobre l'horitzó sud.", "consell_observacio": "Prioritzeu les hores prèvies a l'alba del 31 de juliol des d'un lloc amb l'horitzó sud lliure." } },
-      "font_codi": "imo-2027", "referencia_font": "Taula 5 i apartat Southern Delta Aquariids"
+      "textos": {
+        "ca": {
+          "nota_visibilitat": "Només una part de l'activitat ideal és visible des de Catalunya perquè el radiant culmina baix sobre l'horitzó sud.",
+          "consell_observacio": "Prioritzeu les hores prèvies a l'alba del 31 de juliol des d'un lloc amb l'horitzó sud lliure."
+        }
+      },
+      "font_codi": "imo-2027",
+      "referencia_font": "Taula 5 i apartat Southern Delta Aquariids"
     },
     {
-      "codi": "perseids-2027", "fenomen_codi": "perseids",
-      "inici": "2027-07-17T00:00:00Z", "fi": "2027-08-24T23:59:59Z", "maxim": "2027-08-13T09:00:00Z",
+      "codi": "perseids-2027",
+      "fenomen_codi": "perseids",
+      "inici": "2027-07-17T00:00:00Z",
+      "fi": "2027-08-24T23:59:59Z",
+      "maxim": "2027-08-13T09:00:00Z",
       "precisio": { "inici": "dia", "fi": "dia", "maxim": "hora" },
-      "rellevant_catalunya": true, "rellevancia": "principal", "dificultat_observacio": "mitjana",
+      "rellevant_catalunya": true,
+      "rellevancia": "principal",
+      "dificultat_observacio": "mitjana",
       "zhr": { "valor": 110, "qualificador": "minim" },
       "radiant_maxim": { "ascensio_recta_graus": 48, "declinacio_graus": 58 },
-      "textos": { "ca": { "nota_visibilitat": "Molt ben situada des de Catalunya, tot i que la Lluna creixent reduirà el contrast dels meteors més febles.", "consell_observacio": "El màxim previst és entre les 08:00 i les 10:00 UTC del 13 d'agost; observeu les nits immediatament anterior i posterior, amagant la Lluna de la vista." } },
-      "font_codi": "imo-2027", "referencia_font": "Taula 5 i apartat Perseids; el camp maxim representa el punt mitjà de l'interval 08:00-10:00 UTC"
+      "textos": {
+        "ca": {
+          "nota_visibilitat": "Molt ben situada des de Catalunya, tot i que la Lluna creixent reduirà el contrast dels meteors més febles.",
+          "consell_observacio": "El màxim previst és entre les 08:00 i les 10:00 UTC del 13 d'agost; observeu les nits immediatament anterior i posterior, amagant la Lluna de la vista."
+        }
+      },
+      "font_codi": "imo-2027",
+      "referencia_font": "Taula 5 i apartat Perseids; el camp maxim representa el punt mitjà de l'interval 08:00-10:00 UTC"
     },
     {
-      "codi": "eclipsi-solar-total-2027-08-02", "fenomen_codi": "eclipsi-solar-total",
-      "inici": "2027-08-02T07:30:00Z", "fi": "2027-08-02T12:43:00Z", "maxim": "2027-08-02T10:07:00Z",
+      "codi": "eclipsi-solar-total-2027-08-02",
+      "fenomen_codi": "eclipsi-solar-total",
+      "inici": "2027-08-02T07:30:00Z",
+      "fi": "2027-08-02T12:43:00Z",
+      "maxim": "2027-08-02T10:07:00Z",
       "precisio": { "inici": "minut", "fi": "minut", "maxim": "minut" },
-      "rellevant_catalunya": true, "rellevancia": "principal", "dificultat_observacio": "mitjana",
-      "textos": { "ca": { "nota_visibilitat": "L'eclipsi és total globalment, però des de Catalunya només se'n veu la fase parcial; les hores són els contactes globals, no els locals.", "consell_observacio": "A Catalunya cal protecció solar homologada ISO 12312-2 durant tota l'observació. No useu ulleres de sol i poseu un filtre solar adequat davant de qualsevol telescopi, prismàtic o càmera." } },
-      "font_codi": "nasa-eclipsis-2027", "referencia_font": "Fases globals i màxim de l'eclipsi solar total del 2 d'agost"
+      "rellevant_catalunya": true,
+      "rellevancia": "principal",
+      "dificultat_observacio": "mitjana",
+      "textos": {
+        "ca": {
+          "nota_visibilitat": "L'eclipsi és total globalment, però des de Catalunya només se'n veu la fase parcial; les hores són els contactes globals, no els locals.",
+          "consell_observacio": "A Catalunya cal protecció solar homologada ISO 12312-2 durant tota l'observació. No useu ulleres de sol i poseu un filtre solar adequat davant de qualsevol telescopi, prismàtic o càmera."
+        }
+      },
+      "font_codi": "nasa-eclipsis-2027",
+      "referencia_font": "Fases globals i màxim de l'eclipsi solar total del 2 d'agost"
     },
     {
-      "codi": "draconids-2027", "fenomen_codi": "draconids",
-      "inici": "2027-10-06T00:00:00Z", "fi": "2027-10-10T23:59:59Z", "maxim": "2027-10-09T12:00:00Z",
+      "codi": "draconids-2027",
+      "fenomen_codi": "draconids",
+      "inici": "2027-10-06T00:00:00Z",
+      "fi": "2027-10-10T23:59:59Z",
+      "maxim": "2027-10-09T12:00:00Z",
       "precisio": { "inici": "dia", "fi": "dia", "maxim": "dia" },
-      "rellevant_catalunya": true, "rellevancia": "secundari", "dificultat_observacio": "alta",
+      "rellevant_catalunya": true,
+      "rellevancia": "secundari",
+      "dificultat_observacio": "alta",
       "zhr": { "valor": 5, "qualificador": "estimat" },
       "radiant_maxim": { "ascensio_recta_graus": 263, "declinacio_graus": 56 },
-      "textos": { "ca": { "nota_visibilitat": "Observable al vespre, però la baixa taxa habitual i la Lluna gibosa dificultaran l'observació de 2027.", "consell_observacio": "Mantingueu la Lluna tapada per un edifici o relleu i considereu qualsevol meteor observat un resultat valuós." } },
-      "font_codi": "imo-2027", "referencia_font": "Taula 5 i apartat Draconids"
+      "textos": {
+        "ca": {
+          "nota_visibilitat": "Observable al vespre, però la baixa taxa habitual i la Lluna gibosa dificultaran l'observació de 2027.",
+          "consell_observacio": "Mantingueu la Lluna tapada per un edifici o relleu i considereu qualsevol meteor observat un resultat valuós."
+        }
+      },
+      "font_codi": "imo-2027",
+      "referencia_font": "Taula 5 i apartat Draconids"
     },
     {
-      "codi": "orionids-2027", "fenomen_codi": "orionids",
-      "inici": "2027-10-02T00:00:00Z", "fi": "2027-11-07T23:59:59Z", "maxim": "2027-10-22T12:00:00Z",
+      "codi": "orionids-2027",
+      "fenomen_codi": "orionids",
+      "inici": "2027-10-02T00:00:00Z",
+      "fi": "2027-11-07T23:59:59Z",
+      "maxim": "2027-10-22T12:00:00Z",
       "precisio": { "inici": "dia", "fi": "dia", "maxim": "dia" },
-      "rellevant_catalunya": true, "rellevancia": "principal", "dificultat_observacio": "alta",
+      "rellevant_catalunya": true,
+      "rellevancia": "principal",
+      "dificultat_observacio": "alta",
       "zhr": { "valor": 20, "qualificador": "estimat" },
       "radiant_maxim": { "ascensio_recta_graus": 95, "declinacio_graus": 16 },
-      "textos": { "ca": { "nota_visibilitat": "El màxim ample és observable des de Catalunya, però una Lluna minvant brillant ocultarà part dels meteors.", "consell_observacio": "Compareu diverses matinades al voltant del 22 d'octubre i situeu-vos de manera que la Lluna quedi fora de la vista." } },
-      "font_codi": "imo-2027", "referencia_font": "Taula 5 i apartat Orionids"
+      "textos": {
+        "ca": {
+          "nota_visibilitat": "El màxim ample és observable des de Catalunya, però una Lluna minvant brillant ocultarà part dels meteors.",
+          "consell_observacio": "Compareu diverses matinades al voltant del 22 d'octubre i situeu-vos de manera que la Lluna quedi fora de la vista."
+        }
+      },
+      "font_codi": "imo-2027",
+      "referencia_font": "Taula 5 i apartat Orionids"
     },
     {
-      "codi": "southern-taurids-2027", "fenomen_codi": "southern-taurids",
-      "inici": "2027-09-20T00:00:00Z", "fi": "2027-11-20T23:59:59Z", "maxim": "2027-11-06T12:00:00Z",
+      "codi": "southern-taurids-2027",
+      "fenomen_codi": "southern-taurids",
+      "inici": "2027-09-20T00:00:00Z",
+      "fi": "2027-11-20T23:59:59Z",
+      "maxim": "2027-11-06T12:00:00Z",
       "precisio": { "inici": "dia", "fi": "dia", "maxim": "dia" },
-      "rellevant_catalunya": true, "rellevancia": "secundari", "dificultat_observacio": "mitjana",
+      "rellevant_catalunya": true,
+      "rellevancia": "secundari",
+      "dificultat_observacio": "mitjana",
       "zhr": { "valor": 7, "qualificador": "estimat" },
       "radiant_maxim": { "ascensio_recta_graus": 52, "declinacio_graus": 15 },
-      "textos": { "ca": { "nota_visibilitat": "Visible des de Catalunya amb una freqüència baixa i un màxim poc concentrat.", "consell_observacio": "Feu una observació llarga durant les nits pròximes al 6 de novembre i fixeu-vos especialment en meteors brillants." } },
-      "font_codi": "imo-2027", "referencia_font": "Taula 5"
+      "textos": {
+        "ca": {
+          "nota_visibilitat": "Visible des de Catalunya amb una freqüència baixa i un màxim poc concentrat.",
+          "consell_observacio": "Feu una observació llarga durant les nits pròximes al 6 de novembre i fixeu-vos especialment en meteors brillants."
+        }
+      },
+      "font_codi": "imo-2027",
+      "referencia_font": "Taula 5"
     },
     {
-      "codi": "northern-taurids-2027", "fenomen_codi": "northern-taurids",
-      "inici": "2027-10-20T00:00:00Z", "fi": "2027-12-10T23:59:59Z", "maxim": "2027-11-13T12:00:00Z",
+      "codi": "northern-taurids-2027",
+      "fenomen_codi": "northern-taurids",
+      "inici": "2027-10-20T00:00:00Z",
+      "fi": "2027-12-10T23:59:59Z",
+      "maxim": "2027-11-13T12:00:00Z",
       "precisio": { "inici": "dia", "fi": "dia", "maxim": "dia" },
-      "rellevant_catalunya": true, "rellevancia": "secundari", "dificultat_observacio": "mitjana",
+      "rellevant_catalunya": true,
+      "rellevancia": "secundari",
+      "dificultat_observacio": "mitjana",
       "zhr": { "valor": 5, "qualificador": "estimat" },
       "radiant_maxim": { "ascensio_recta_graus": 58, "declinacio_graus": 22 },
-      "textos": { "ca": { "nota_visibilitat": "Observable des de Catalunya, però la taxa és baixa i l'activitat es reparteix en un període extens.", "consell_observacio": "Observeu al voltant del 13 de novembre sense esperar un pic sobtat; l'interès principal són els meteors brillants." } },
-      "font_codi": "imo-2027", "referencia_font": "Taula 5"
+      "textos": {
+        "ca": {
+          "nota_visibilitat": "Observable des de Catalunya, però la taxa és baixa i l'activitat es reparteix en un període extens.",
+          "consell_observacio": "Observeu al voltant del 13 de novembre sense esperar un pic sobtat; l'interès principal són els meteors brillants."
+        }
+      },
+      "font_codi": "imo-2027",
+      "referencia_font": "Taula 5"
     },
     {
-      "codi": "leonids-2027", "fenomen_codi": "leonids",
-      "inici": "2027-11-06T00:00:00Z", "fi": "2027-11-30T23:59:59Z", "maxim": "2027-11-18T06:00:00Z",
+      "codi": "leonids-2027",
+      "fenomen_codi": "leonids",
+      "inici": "2027-11-06T00:00:00Z",
+      "fi": "2027-11-30T23:59:59Z",
+      "maxim": "2027-11-18T06:00:00Z",
       "precisio": { "inici": "dia", "fi": "dia", "maxim": "hora" },
-      "rellevant_catalunya": true, "rellevancia": "principal", "dificultat_observacio": "alta",
+      "rellevant_catalunya": true,
+      "rellevancia": "principal",
+      "dificultat_observacio": "alta",
       "zhr": { "valor": 15, "qualificador": "minim" },
       "radiant_maxim": { "ascensio_recta_graus": 152, "declinacio_graus": 22 },
-      "textos": { "ca": { "nota_visibilitat": "El radiant és favorable, però la Lluna gibosa interferirà i només es detectaran amb facilitat els meteors més brillants.", "consell_observacio": "Prioritzeu la matinada del 18 de novembre i, si és possible, repetiu l'observació els dies següents per possibles traces de pols." } },
-      "font_codi": "imo-2027", "referencia_font": "Taula 5 i apartat Leonids"
+      "textos": {
+        "ca": {
+          "nota_visibilitat": "El radiant és favorable, però la Lluna gibosa interferirà i només es detectaran amb facilitat els meteors més brillants.",
+          "consell_observacio": "Prioritzeu la matinada del 18 de novembre i, si és possible, repetiu l'observació els dies següents per possibles traces de pols."
+        }
+      },
+      "font_codi": "imo-2027",
+      "referencia_font": "Taula 5 i apartat Leonids"
     },
     {
-      "codi": "geminids-2027", "fenomen_codi": "geminids",
-      "inici": "2027-12-04T00:00:00Z", "fi": "2027-12-20T23:59:59Z", "maxim": "2027-12-14T20:00:00Z",
+      "codi": "geminids-2027",
+      "fenomen_codi": "geminids",
+      "inici": "2027-12-04T00:00:00Z",
+      "fi": "2027-12-20T23:59:59Z",
+      "maxim": "2027-12-14T20:00:00Z",
       "precisio": { "inici": "dia", "fi": "dia", "maxim": "hora" },
-      "rellevant_catalunya": true, "rellevancia": "principal", "dificultat_observacio": "alta",
+      "rellevant_catalunya": true,
+      "rellevancia": "principal",
+      "dificultat_observacio": "alta",
       "zhr": { "valor": 150, "qualificador": "estimat" },
       "radiant_maxim": { "ascensio_recta_graus": 112, "declinacio_graus": 33 },
-      "textos": { "ca": { "nota_visibilitat": "La pluja és intrínsecament molt activa, però la Lluna plena perjudicarà severament el màxim de 2027.", "consell_observacio": "Observeu la nit del 14 de desembre amb la Lluna darrere d'un obstacle i espereu sobretot els meteors més lluminosos." } },
-      "font_codi": "imo-2027", "referencia_font": "Taula 5 i apartat Geminids"
+      "textos": {
+        "ca": {
+          "nota_visibilitat": "La pluja és intrínsecament molt activa, però la Lluna plena perjudicarà severament el màxim de 2027.",
+          "consell_observacio": "Observeu la nit del 14 de desembre amb la Lluna darrere d'un obstacle i espereu sobretot els meteors més lluminosos."
+        }
+      },
+      "font_codi": "imo-2027",
+      "referencia_font": "Taula 5 i apartat Geminids"
     },
     {
-      "codi": "ursids-2027", "fenomen_codi": "ursids",
-      "inici": "2027-12-17T00:00:00Z", "fi": "2027-12-26T23:59:59Z", "maxim": "2027-12-23T04:00:00Z",
+      "codi": "ursids-2027",
+      "fenomen_codi": "ursids",
+      "inici": "2027-12-17T00:00:00Z",
+      "fi": "2027-12-26T23:59:59Z",
+      "maxim": "2027-12-23T04:00:00Z",
       "precisio": { "inici": "dia", "fi": "dia", "maxim": "hora" },
-      "rellevant_catalunya": true, "rellevancia": "principal", "dificultat_observacio": "mitjana",
+      "rellevant_catalunya": true,
+      "rellevancia": "principal",
+      "dificultat_observacio": "mitjana",
       "zhr": { "valor": 10, "qualificador": "estimat" },
       "radiant_maxim": { "ascensio_recta_graus": 217, "declinacio_graus": 76 },
-      "textos": { "ca": { "nota_visibilitat": "El radiant és ben situat des de Catalunya, però l'IMO no preveu cap augment especial d'activitat el 2027.", "consell_observacio": "Observeu la matinada del 23 de desembre des d'un lloc fosc i reserveu almenys una hora per compensar la taxa moderada." } },
-      "font_codi": "imo-2027", "referencia_font": "Taula 5 i apartat Ursids"
+      "textos": {
+        "ca": {
+          "nota_visibilitat": "El radiant és ben situat des de Catalunya, però l'IMO no preveu cap augment especial d'activitat el 2027.",
+          "consell_observacio": "Observeu la matinada del 23 de desembre des d'un lloc fosc i reserveu almenys una hora per compensar la taxa moderada."
+        }
+      },
+      "font_codi": "imo-2027",
+      "referencia_font": "Taula 5 i apartat Ursids"
     }
   ]
 }

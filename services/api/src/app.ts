@@ -1,9 +1,13 @@
 import express from 'express';
+import { z } from 'zod';
 
 import { loadEnv } from './config/env';
 import { ApiError, errorHandler, notFound } from './middleware/errors';
 import { createApiRouter, type ApiDeps } from './routes';
 import type { ProfileStore } from './services/profileService';
+
+// Els missatges de validació de zod, en català com la resta de l'API.
+z.config(z.locales.ca());
 
 export type AppOptions = ApiDeps & {
   profileStore?: ProfileStore;
