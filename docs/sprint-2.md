@@ -2,7 +2,7 @@
 
 **Objectiu:** Tancar el MVP (ubicació triada al mapa, com arribar, fitxa del fenomen) i tenir a punt per a la demo del 23/11 els aspectes transversals: alertes amb notificacions push, plans sincronitzats amb el calendari, canvi d'idioma, web d'administració amb gestió de punts i bloqueig de comptes, i el servei d'esdeveniments per a Aprop; i els metodològics: desplegament automàtic, cobertura, RNF mesurables i gestió de bugs a Taiga.
 
-**Compromís:** 137 story points en 25 històries (24 d'usuari + la tècnica [TEC]) · 64 tasques · 139 h estimades (inclouen la TG-257, que no penja de cap història, i les 5 h proposades per a TG-259 i TG-260). Sprint master: **Hugo** (intercanviat amb la Martina, que porta el Sprint 3).
+**Compromís:** 137 story points en 25 històries (24 d'usuari + la tècnica [TEC]) · 64 tasques · 139 h estimades (inclouen la TG-257, que no penja de cap història). Sprint master: **Hugo** (intercanviat amb la Martina, que porta el Sprint 3).
 
 **Criteri d'estimació:** 1 story point = 1 hora. Els story points d'una història són la suma de les hores estimades de les seves tasques.
 
@@ -333,7 +333,7 @@ Les tasques del Sprint 1 que no es tanquin el 28/10 s'hi afegeixen a la planning
 | TG-179 | Avís a l'app quan el compte està bloquejat | Martina | 17/11 | 18/11 | 1 |
 
 ## [TEC] Qualitat, desplegament i índex v2 (Sprint 2) · [TG-117](https://tree.taiga.io/project/mohamed-dari-pes_22_c_talaia/us/117)
-Història tècnica (sense èpica de producte) · **15 SP**  
+Història tècnica (sense èpica de producte) · **20 SP**  
 Història tècnica del Sprint 2: aspectes metodològics (desplegament automàtic, cobertura, RNF mesurables, gestió de bugs), índex v2 i feedback d'usuaris reals.
 
 | Ref | Tasca | Responsable | Inici | Límit | h |
@@ -348,7 +348,7 @@ Història tècnica del Sprint 2: aspectes metodològics (desplegament automàtic
 | TG-259 | Preparar els tests de guerrilla: formulari amb les funcionalitats a provar i recollida de respostes | Vinyet | — | — | 2 |
 | TG-260 | Tests de presentació de les pantalles existents: botons, textos i desplegables sense superposicions | *per assignar* | — | — | 3 |
 
-Les hores de TG-259 i TG-260 són una proposta de la planning (sense elles, la història té 15 punts). A més, totes les tasques de frontend porten a Taiga el criteri que les pantalles noves inclouen aquests tests de presentació.
+Totes les tasques de frontend porten a Taiga el criteri que les pantalles noves inclouen aquests tests de presentació.
 
 ## Tasques sense història
 
