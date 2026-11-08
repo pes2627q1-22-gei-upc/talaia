@@ -1,0 +1,9 @@
+{
+  "name": "talaia-sm",
+  "private": true,
+  "description": "Eines del sprint master (scripts/sm/README.md). Fora dels workspaces: només el generador del planning necessita dependències.",
+  "type": "module",
+  "dependencies": {
+    "docx": "9.5.1"
+  }
+}
