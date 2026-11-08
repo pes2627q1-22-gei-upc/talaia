@@ -21,4 +21,6 @@ TG-<ref> · <títol de la tasca>
 - [ ] OpenAPI / docs actualitzats si toca
 - [ ] Textos via i18n i colors via tokens del design system
 - [ ] Si toca UI: provat al dispositiu, amb el moviment i els estats de càrrega i error revisats (captura o vídeo a dalt; `docs/design-system.md` → «Moviment i fluïdesa»)
+- [ ] Si toca UI: tests de presentació a les pantalles noves o modificades (botons, textos i desplegables es veuen sencers, sense superposicions ni elements tapats)
+- [ ] Tasca a «Ready for test» a Taiga (amb la integració, `TG-<ref> #ready-for-test` al darrer commit: `docs/git-workflow.md`)
 - [ ] Hores reals anotades a Taiga en tancar
