@@ -1,20 +1,16 @@
 import { Redirect } from 'expo-router';
 import { NativeTabs } from 'expo-router/native-tabs';
 import { useTranslation } from 'react-i18next';
-import { Platform } from 'react-native';
 
 import { colors } from '@/core/theme/tokens';
 import { RestoreErrorScreen } from '@/features/auth/RestoreErrorScreen';
 import { useSessionGate } from '@/features/auth/useSessionGate';
 
-// Icones provisionals: SF Symbols a iOS i les del template a Android/web.
+// SF Symbols a iOS i Material Symbols a Android (expo-symbols, que Expo Go porta).
 // La barra pròpia del mockup (icones de Talaia) queda per a una tasca a part.
-const mapIcon = require('@/assets/images/tabIcons/home.png');
-const calendarIcon = require('@/assets/images/tabIcons/explore.png');
 
 export default function TabsLayout() {
   const { t } = useTranslation();
-  const ios = Platform.OS === 'ios';
   const gate = useSessionGate();
 
   // Sense sessió no s'entra a l'app: la benvinguda és la porta (HU35). Mentre es restaura, res.
@@ -31,35 +27,19 @@ export default function TabsLayout() {
     >
       <NativeTabs.Trigger name="(explora)">
         <NativeTabs.Trigger.Label>{t('tabs.explore')}</NativeTabs.Trigger.Label>
-        {ios ? (
-          <NativeTabs.Trigger.Icon sf="safari" />
-        ) : (
-          <NativeTabs.Trigger.Icon src={mapIcon} renderingMode="template" />
-        )}
+        <NativeTabs.Trigger.Icon sf="safari" md="explore" />
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="calendari">
         <NativeTabs.Trigger.Label>{t('tabs.calendar')}</NativeTabs.Trigger.Label>
-        {ios ? (
-          <NativeTabs.Trigger.Icon sf="calendar" />
-        ) : (
-          <NativeTabs.Trigger.Icon src={calendarIcon} renderingMode="template" />
-        )}
+        <NativeTabs.Trigger.Icon sf="calendar" md="calendar_month" />
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="alertes">
         <NativeTabs.Trigger.Label>{t('tabs.alerts')}</NativeTabs.Trigger.Label>
-        {ios ? (
-          <NativeTabs.Trigger.Icon sf="bell" />
-        ) : (
-          <NativeTabs.Trigger.Icon src={calendarIcon} renderingMode="template" />
-        )}
+        <NativeTabs.Trigger.Icon sf="bell" md="notifications" />
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="perfil">
         <NativeTabs.Trigger.Label>{t('tabs.profile')}</NativeTabs.Trigger.Label>
-        {ios ? (
-          <NativeTabs.Trigger.Icon sf="person.crop.circle" />
-        ) : (
-          <NativeTabs.Trigger.Icon src={mapIcon} renderingMode="template" />
-        )}
+        <NativeTabs.Trigger.Icon sf="person.crop.circle" md="account_circle" />
       </NativeTabs.Trigger>
     </NativeTabs>
   );
