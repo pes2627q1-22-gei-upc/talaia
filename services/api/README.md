@@ -15,6 +15,7 @@ npm run api                   # = npm run dev -w services/api, amb recàrrega
 - Calendari: `GET /api/v1/esdeveniments?des_de=2026-10-01&fins_a=2026-10-31` (JWT de Talaia o `X-API-Key` d'Aprop)
 - Desglossament de l'índex d'un punt: `http://localhost:3000/api/v1/punts/{id}/index?nit=2026-10-19` (cal `DATABASE_URL`)
 - Perfil: `GET`, `POST` i `PATCH /api/v1/perfil` (cal el JWT de Supabase a `Authorization: Bearer`)
+- Alertes: `GET` i `POST /api/v1/alertes` (cal el JWT de Supabase)
 - Recomanacions: `http://localhost:3000/api/v1/recomanacions?objectiu=cel_estrellat&lat=41.39&lon=2.17&data=<YYYY-MM-DD>&desDe=22&finsA=6&tempsMaxim=150`
 - Documentació (Swagger UI): <http://localhost:3000/api/v1/docs>
 - OpenAPI: <http://localhost:3000/api/v1/openapi.json>
@@ -35,7 +36,7 @@ Es llegeixen del `.env` de l'**arrel** del repo (`dev` i `start` el carreguen am
 | Variable | Per defecte | Què és |
 |---|---|---|
 | `API_PORT` | `3000` | Port on escolta l'API |
-| `DATABASE_URL` | — | Postgres (`postgresql://…`). **Opcional:** sense ella l'API arrenca amb un avís, `/health` funciona i `/punts`, `/punts/{id}`, `/punts/{id}/index`, `/recomanacions` i `/perfil` responen 503 `database_unavailable`. Amb Supabase local: `postgresql://postgres:postgres@127.0.0.1:54322/postgres` |
+| `DATABASE_URL` | — | Postgres (`postgresql://…`). **Opcional:** sense ella l'API arrenca amb un avís, `/health` funciona i `/punts`, `/punts/{id}`, `/punts/{id}/index`, `/recomanacions`, `/perfil` i `/alertes` responen 503 `database_unavailable`. Amb Supabase local: `postgresql://postgres:postgres@127.0.0.1:54322/postgres` |
 | `SUPABASE_URL` | `http://127.0.0.1:54321` | URL del projecte de Supabase. `requireAuth` hi valida els JWT amb el JWKS (`/auth/v1/.well-known/jwks.json`, ADR-0023): 401 si el token és dolent, 503 si Supabase no respon. Al compose de la VM és obligatòria |
 | `APROP_API_KEY` | — | Secret de l'API assignat a Aprop. No s'inclou al repositori ni a l'app; sense configurar-lo, l'accés amb API key retorna 503, però l'accés JWT continua disponible. |
 
@@ -55,6 +56,7 @@ src/
     punts.ts            GET /punts (bbox, ETag, Cache-Control i 304) i GET /punts/{id}
     esdeveniments.ts    GET /esdeveniments, autenticació API key o JWT
     auth.ts             GET, POST i PATCH /perfil (JWT de Supabase, ADR-0023)
+    alertes.ts          GET i POST /alertes: les alertes de l'usuari del JWT (HU16)
     puntIndex.ts        GET /punts/{id}/index: desglossament de l'índex per hores i factors (HU04)
     recomanacions.ts    GET /recomanacions (validació de la consulta i OpenAPI)
   punts/
@@ -70,6 +72,8 @@ src/
     night.ts            Què és «una nit» (12:00 → 12:00, hora de Catalunya) i la nit per defecte
     indexSchemas.ts     Esquemes zod/OpenAPI de l'índex per hora (IndexHora), compartits per /punts/{id} i /punts/{id}/index
     breakdownService.ts Punt + nit → DesglossamentIndex; 404 si el punt no és públic, 503 si la BD falla
+  alertes/
+    alertesRepository.ts  Alertes de l'usuari amb @talaia/db: sempre filtrades pel perfil del JWT
   recomanacions/
     franja.ts           Franja horària local de Catalunya (Europe/Madrid) → UTC, amb el canvi d'hora
     rutes.ts            Temps en cotxe ↔ radi en línia recta, fins que hi hagi Mobilicat
@@ -138,6 +142,17 @@ El perfil de l'usuari autenticat (tipus `Perfil` a `@talaia/shared`, taula `perf
 - `PATCH /perfil`: de moment només es pot editar el nom: `{ "nom": "Martina" }` (1–100 caràcters, sense els espais dels extrems). Un camp que no es pot editar és un 400, no s'ignora. Torna el perfil amb el canvi; `data_actualitzacio` la posa el trigger de la taula.
 
 Errors: JWT absent o invàlid → 401 `unauthorized`; cos invàlid → 400 `validation_error`; sense `DATABASE_URL` o sense poder validar el JWT → 503.
+
+## `/alertes` (HU16 · TG-145)
+
+Les alertes de l'usuari autenticat (tipus `Alerta` i `AlertaNova` a `@talaia/shared`, taula `alertes`). Com `/perfil`, demanen el JWT de Supabase i responen amb `Cache-Control: no-store`.
+
+- `POST /alertes`: crea una alerta (201), sempre activa. Cos: `{ "objectiu": "pluja_estels", "origen": { "lat": 41.3874, "lon": 2.1686 }, "distanciaMaxKm": 60, "indexMinim": 70 }`. `objectiu` és un `ObjectiuObservacio` (el selector de «Què vols veure?»), `distanciaMaxKm` un enter d'1 a 200 i `indexMinim` un enter de 0 a 100. El cos és estricte: un camp de més (per exemple `perfilId`) és un 400.
+- `GET /alertes`: les alertes de l'usuari, de la més nova a la més antiga (`[]` si no en té cap).
+
+**Només les de l'usuari:** l'usuari surt sempre del `sub` del JWT, mai del cos, i les consultes filtren pel seu perfil a l'SQL. Esborrar el compte esborra les alertes (`on delete cascade`).
+
+Errors: JWT absent o invàlid → 401 `unauthorized`; cos invàlid → 400 `validation_error`; usuari sense perfil (no ha fet `POST /perfil`) → 404 `profile_not_found`; sense `DATABASE_URL` → 503.
 
 ## Afegir una ruta
 

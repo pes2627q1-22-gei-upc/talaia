@@ -1,5 +1,6 @@
 import { createDb } from '@talaia/db';
 
+import { createDatabaseAlertesStore } from './alertes/alertesRepository';
 import { createApp } from './app';
 import { loadEnv } from './config/env';
 import { createEsdevenimentsRepository } from './esdeveniments/esdevenimentsRepository';
@@ -17,6 +18,7 @@ let punts;
 let breakdown;
 let recomanacions;
 let profileStore;
+let alertes;
 let esdeveniments;
 if (env.DATABASE_URL) {
   // Un sol pool per a tota l'API.
@@ -31,14 +33,15 @@ if (env.DATABASE_URL) {
   breakdown = createBreakdownService(puntsRepository);
   recomanacions = createRecomanacionsService(createRecomanacionsRepository(db));
   profileStore = createDatabaseProfileStore(db);
+  alertes = createDatabaseAlertesStore(db);
   esdeveniments = createEsdevenimentsService(createEsdevenimentsRepository(db));
 } else {
   console.warn(
-    'Avís: sense DATABASE_URL. /api/v1/health funciona, però /api/v1/punts, /api/v1/punts/{id}/index, /api/v1/recomanacions, /api/v1/perfil i /api/v1/esdeveniments responen 503.',
+    'Avís: sense DATABASE_URL. /api/v1/health funciona, però /api/v1/punts, /api/v1/punts/{id}/index, /api/v1/recomanacions, /api/v1/perfil, /api/v1/alertes i /api/v1/esdeveniments responen 503.',
   );
 }
 
-createApp({ punts, breakdown, recomanacions, profileStore, esdeveniments }).listen(
+createApp({ punts, breakdown, recomanacions, profileStore, alertes, esdeveniments }).listen(
   env.API_PORT,
   (error) => {
     if (error) throw error;

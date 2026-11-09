@@ -2,6 +2,7 @@ import { Router } from 'express';
 import swaggerUi from 'swagger-ui-express';
 
 import { version } from '../config/env';
+import type { AlertesStore } from '../alertes/alertesRepository';
 import type { EsdevenimentsService } from '../esdeveniments/esdevenimentsService';
 import type { BreakdownService } from '../index/breakdownService';
 import type { JwksSource } from '../middleware/auth';
@@ -9,6 +10,7 @@ import { buildOpenApiDocument } from '../openapi';
 import type { PuntsService } from '../punts/puntsService';
 import type { RecomanacionsService } from '../recomanacions/recomanacionsService';
 import type { ProfileStore } from '../services/profileService';
+import { createAlertesRouter } from './alertes';
 import { createAuthRouter } from './auth';
 import { createEsdevenimentsRouter } from './esdeveniments';
 import './esdeveniments.contract';
@@ -26,6 +28,8 @@ export type ApiDeps = {
   supabaseUrl?: string;
   jwks?: JwksSource;
   profileStore?: ProfileStore;
+  /** `POST` i `GET /alertes` (TG-145). */
+  alertes?: AlertesStore;
   esdeveniments?: EsdevenimentsService;
   apropApiKey?: string;
 };
@@ -38,9 +42,10 @@ export function createApiRouter({
   supabaseUrl,
   jwks,
   profileStore,
+  alertes,
   esdeveniments,
   apropApiKey,
-}: ApiDeps & { profileStore: ProfileStore }): Router {
+}: ApiDeps & { profileStore: ProfileStore; alertes: AlertesStore }): Router {
   const router = Router();
   router.use('/health', healthRouter);
   router.use('/punts', createPuntsRouter(punts));
@@ -50,6 +55,7 @@ export function createApiRouter({
     '/esdeveniments',
     createEsdevenimentsRouter(esdeveniments, apropApiKey, { supabaseUrl, jwks }),
   );
+  router.use('/alertes', createAlertesRouter({ store: alertes, supabaseUrl, jwks }));
   router.use(createAuthRouter({ supabaseUrl, profileStore, jwks }));
 
   // Es genera quan ja s'han importat tots els routers, que són els que registren les rutes.
