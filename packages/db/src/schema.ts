@@ -27,6 +27,18 @@ export type Numeric = ColumnType<string, number | string, number | string>;
 
 export type Timestamp = ColumnType<Date, Date | string, Date | string>;
 
+export interface Alertes {
+  activa: Generated<boolean>;
+  dataActualitzacio: Generated<Timestamp>;
+  dataCreacio: Generated<Timestamp>;
+  distanciaMaxKm: number;
+  id: Generated<string>;
+  indexMinim: number;
+  objectiu: string;
+  origen: string;
+  perfilId: string;
+}
+
 export interface EsdevenimentsAstronomics {
   codi: string;
   dataActualitzacio: Generated<Timestamp>;
@@ -143,6 +155,7 @@ export interface TipusFenomen {
 }
 
 export interface DB {
+  alertes: Alertes;
   esdevenimentsAstronomics: EsdevenimentsAstronomics;
   estacionsXema: EstacionsXema;
   execucionsWorker: ExecucionsWorker;
