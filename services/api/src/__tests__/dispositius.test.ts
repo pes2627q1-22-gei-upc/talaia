@@ -2,6 +2,7 @@ import { createLocalJWKSet, exportJWK, generateKeyPair, SignJWT } from 'jose';
 import request from 'supertest';
 
 import { createApp } from '../app';
+import type { ProfileStore } from '../services/profileService';
 import type { PushDeviceStore } from '../services/pushDeviceService';
 
 /** `PUT` i `DELETE /api/v1/perfil/dispositius` (TG-152, ADR-0028). */
@@ -26,7 +27,21 @@ beforeAll(async () => {
     .sign(privateKey);
 });
 
-function setup(registered = true) {
+const notUsed = async (): Promise<never> => {
+  throw new Error('no s’hauria de cridar');
+};
+
+/** Només `getAccountStatus`, que fa servir `requireUser` (ADR-0029). */
+const profileStore = (bloquejat = false): ProfileStore => ({
+  ensureProfile: notUsed,
+  getProfile: notUsed,
+  updateProfile: notUsed,
+  getAccountStatus: async () => ({ perfilId: 'perfil-1', rol: 'usuari', bloquejat }),
+  listProfiles: notUsed,
+  setBlocked: notUsed,
+});
+
+function setup(registered = true, bloquejat = false) {
   const store = {
     registerDevice: jest.fn<
       ReturnType<PushDeviceStore['registerDevice']>,
@@ -37,7 +52,15 @@ function setup(registered = true) {
       Parameters<PushDeviceStore['removeDevice']>
     >(async () => undefined),
   };
-  return { store, app: createApp({ supabaseUrl, jwks, dispositius: store }) };
+  return {
+    store,
+    app: createApp({
+      supabaseUrl,
+      jwks,
+      dispositius: store,
+      profileStore: profileStore(bloquejat),
+    }),
+  };
 }
 
 describe('PUT /api/v1/perfil/dispositius', () => {
@@ -113,6 +136,23 @@ describe('PUT /api/v1/perfil/dispositius', () => {
   });
 });
 
+describe('/api/v1/perfil/dispositius amb el compte bloquejat', () => {
+  it.each([
+    ['put', '/api/v1/perfil/dispositius'],
+    ['delete', `/api/v1/perfil/dispositius/${encodeURIComponent(TOKEN)}`],
+  ] as const)('%s respon 403 account_blocked i no toca els tokens', async (method, path) => {
+    const { app, store } = setup(true, true);
+    const res = await request(app)
+      [method](path)
+      .set('Authorization', `Bearer ${jwt}`)
+      .send({ token: TOKEN, plataforma: 'ios' });
+    expect(res.status).toBe(403);
+    expect(res.body.error.code).toBe('account_blocked');
+    expect(store.registerDevice).not.toHaveBeenCalled();
+    expect(store.removeDevice).not.toHaveBeenCalled();
+  });
+});
+
 describe('DELETE /api/v1/perfil/dispositius/{token}', () => {
   it('treu el token (descodificat) de l’usuari del JWT i respon 204', async () => {
     const { app, store } = setup();
@@ -160,11 +200,11 @@ describe('/perfil/dispositius a l’OpenAPI', () => {
     const res = await request(createApp()).get('/api/v1/openapi.json');
     const { put } = res.body.paths['/perfil/dispositius'];
     const del = res.body.paths['/perfil/dispositius/{token}'].delete;
-    expect(Object.keys(put.responses).sort()).toEqual(['204', '400', '401', '404', '503']);
+    expect(Object.keys(put.responses).sort()).toEqual(['204', '400', '401', '403', '404', '503']);
     expect(put.requestBody.content['application/json'].schema.$ref).toBe(
       '#/components/schemas/DispositiuPush',
     );
-    expect(Object.keys(del.responses).sort()).toEqual(['204', '400', '401', '503']);
+    expect(Object.keys(del.responses).sort()).toEqual(['204', '400', '401', '403', '503']);
     expect(del.parameters).toEqual([
       expect.objectContaining({ name: 'token', in: 'path', required: true }),
     ]);

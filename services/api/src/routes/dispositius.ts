@@ -1,15 +1,18 @@
 import type { DispositiuPush } from '@talaia/shared';
-import { Router, type NextFunction, type Request, type Response } from 'express';
+import {
+  Router,
+  type NextFunction,
+  type Request,
+  type RequestHandler,
+  type Response,
+} from 'express';
 import { z } from 'zod';
 
-import {
-  requireAuth,
-  type AuthenticatedRequest,
-  type AuthMiddlewareOptions,
-} from '../middleware/auth';
+import type { AuthenticatedRequest } from '../middleware/auth';
 import { ApiError } from '../middleware/errors';
 import { registry } from '../openapi';
 import type { PushDeviceStore } from '../services/pushDeviceService';
+import { ERRORS_AUTH, errorResponse } from './auth';
 
 /**
  * Expo push token (ADR-0028). `ExpoPushToken[…]` és el prefix nou que també accepta
@@ -26,16 +29,6 @@ const PushTokenSchema = z
 const DispositiuPushSchema: z.ZodType<DispositiuPush> = z
   .strictObject({ token: PushTokenSchema, plataforma: z.enum(['ios', 'android']) })
   .meta({ id: 'DispositiuPush' });
-
-const ErrorSchema = z.object({ error: z.object({ code: z.string(), message: z.string() }) });
-const errorResponse = (description: string) => ({
-  description,
-  content: { 'application/json': { schema: ErrorSchema } },
-});
-const ERRORS_AUTH = {
-  401: errorResponse('JWT no vàlid o absent'),
-  503: errorResponse('No es pot validar el JWT de Supabase o no hi ha base de dades'),
-};
 
 registry.registerPath({
   method: 'put',
@@ -87,13 +80,15 @@ function currentUserId(req: Request): string {
   return user.id;
 }
 
-/** Sense `store` (no hi ha `DATABASE_URL`), les rutes responen 503 `database_unavailable`. */
-export function createDispositiusRouter(
-  store: PushDeviceStore | undefined,
-  auth: AuthMiddlewareOptions,
-): Router {
+export type DispositiusRouterOptions = {
+  /** El de `routes/index.ts`: JWT vàlid i compte no bloquejat (ADR-0029). */
+  requireUser: RequestHandler;
+  /** Sense store (no hi ha `DATABASE_URL`), les rutes responen 503 `database_unavailable`. */
+  store?: PushDeviceStore;
+};
+
+export function createDispositiusRouter({ requireUser, store }: DispositiusRouterOptions): Router {
   const router = Router();
-  const authenticate = requireAuth(auth);
   const devices: PushDeviceStore = store ?? {
     registerDevice: missingDatabase,
     removeDevice: missingDatabase,
@@ -101,7 +96,7 @@ export function createDispositiusRouter(
 
   router.put(
     '/perfil/dispositius',
-    authenticate,
+    requireUser,
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const authUserId = currentUserId(req);
@@ -126,7 +121,7 @@ export function createDispositiusRouter(
 
   router.delete(
     '/perfil/dispositius/:token',
-    authenticate,
+    requireUser,
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const authUserId = currentUserId(req);
