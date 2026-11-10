@@ -44,7 +44,7 @@ Refs: TG-<ref>
 - **Àmbit** (opcional, recomanat): `mobile`, `admin`, `api`, `worker`, `shared`, `data`, `infra`, `deps`.
 - **Descripció:** en català, en imperatiu o present, començant en minúscula, sense punt final, ≤ 72 caràcters amb el prefix.
 - **Canvi incompatible:** `!` després del tipus/àmbit i/o un peu `BREAKING CHANGE: …` (→ versió *major*).
-- **Peu `Refs: TG-<ref>` obligatori** a cada commit (l'assignatura exigeix lligar-los a Taiga i la integració Taiga ↔ GitHub reconeix `TG-<ref>`). Diverses tasques: `Refs: TG-88, TG-91`.
+- **Peu `Refs: TG-<ref>` obligatori** a cada commit (l'assignatura exigeix lligar-los a Taiga). Diverses tasques: `Refs: TG-88, TG-91`. Per canviar l'estat de la tasca des del commit, vegeu «Integració Taiga ↔ GitHub».
 
 Exemples:
 
@@ -66,6 +66,24 @@ feat(api)!: canvia el format d'errors a { error: { code, message } }
 BREAKING CHANGE: els clients han de llegir error.code en lloc de message.
 Refs: TG-68
 ```
+
+### Integració Taiga ↔ GitHub
+
+Quan està activa, Taiga llegeix els commits que arriben a GitHub (només els *push*: no mira ni el títol ni la descripció de les PR) i, si el missatge porta `TG-<ref> #<estat>`, canvia l'estat de la tasca. Estats: `#new`, `#in-progress`, `#ready-for-test`, `#closed` i `#needs-info`. La línia va al peu, just abans de `Refs`, que commitlint continua exigint tal qual:
+
+```
+feat(api): afegeix GET /visibilitat
+
+TG-130 #ready-for-test
+Refs: TG-130
+```
+
+Conveni: `#in-progress` al primer commit de la tasca i `#ready-for-test` al darrer abans d'obrir la PR. En fusionar, la tasca es tanca a mà a Taiga amb les hores reals (el merge commit de GitHub només porta el títol de la PR).
+
+Configuració, un cop (cal ser administrador del projecte de Taiga i del repositori):
+
+1. Taiga → Admin → Integracions → GitHub: copiar la *payload URL* i la *secret key* (o deixar la que genera).
+2. GitHub → Settings → Webhooks → Add webhook: la *payload URL* de Taiga, *content type* `application/json`, la mateixa *secret* i només l'esdeveniment **push** («Just the push event»): amb els d'*issues*, Taiga crearia una issue per cada issue de GitHub, també les del parte de la daily.
 
 ### Validació automàtica (husky)
 
