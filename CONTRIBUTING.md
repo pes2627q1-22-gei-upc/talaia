@@ -25,6 +25,8 @@ Releases i hotfixos (Gitflow) els fa el sprint master: [docs/git-workflow.md](do
 
 Normes completes: [docs/git-workflow.md](docs/git-workflow.md). Convencions de codi: [CLAUDE.md](CLAUDE.md#convencions).
 
+Si detectes un defecte preexistent o fora de la tasca que estàs implementant, consulta [la guia de gestió de bugs](docs/gestio-bugs.md) abans de crear una issue a Taiga. Els errors propis d'una tasca encara en curs es resolen dins d'aquella tasca.
+
 ## Definition of Done
 
 Especificada → implementada → provada (tests a la CI) → revisada (PR aprovada) → documentada (OpenAPI / memòria) → integrada a `snapshot`.
