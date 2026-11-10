@@ -9,6 +9,8 @@ import {
   useState,
 } from 'react';
 
+import { pushRepository } from '@/features/notifications/pushRepository';
+
 import { authRepository, type AuthUser } from './authRepository';
 
 type AuthState = {
@@ -93,6 +95,8 @@ export function AuthProvider({ children }: PropsWithChildren) {
     // Un getSession anterior no pot restaurar l'usuari després del logout.
     const version = ++revision.current;
     try {
+      // Primer el token (amb el JWT encara vàlid), després la sessió (ADR-0028).
+      await pushRepository.unregisterDevice();
       await authRepository.signOut();
       if (mounted.current && revision.current === version) accept(null);
     } catch {

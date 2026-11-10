@@ -26,7 +26,12 @@ if (!env.REACT_NATIVE_PACKAGER_HOSTNAME) {
   }
 }
 
-const expo = spawn('npx', ['expo', 'start', ...process.argv.slice(2)], {
+// Amb `expo-dev-client` instal·lat (push, ADR-0028), `expo start` obriria el development build:
+// per defecte continua sent Expo Go, i `npm run mobile -- --dev-client` obre el build.
+const args = process.argv.slice(2);
+if (!args.includes('--dev-client') && !args.includes('--go')) args.push('--go');
+
+const expo = spawn('npx', ['expo', 'start', ...args], {
   env,
   stdio: 'inherit',
   shell: process.platform === 'win32',

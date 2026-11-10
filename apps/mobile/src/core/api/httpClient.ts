@@ -48,6 +48,26 @@ export async function apiPost<T>(path: string, body?: unknown, init?: RequestIni
   });
 }
 
+/** `PUT` amb cos JSON; un `204` es resol amb `undefined` (`/perfil/dispositius`, TG-152). */
+export async function apiPut<T = void>(
+  path: string,
+  body: unknown,
+  init?: RequestInit,
+): Promise<T> {
+  const headers = new Headers(init?.headers);
+  headers.set('Content-Type', 'application/json');
+  return apiRequest<T>(buildUrl(path), {
+    ...init,
+    method: 'PUT',
+    headers,
+    body: JSON.stringify(body),
+  });
+}
+
+export async function apiDelete<T = void>(path: string, init?: RequestInit): Promise<T> {
+  return apiRequest<T>(buildUrl(path), { ...init, method: 'DELETE' });
+}
+
 async function apiRequest<T>(url: string, init: RequestInit): Promise<T> {
   // Els repositories només poden enviar el JWT a l'API configurada.
   if (new URL(url).origin !== new URL(env.apiUrl).origin) {
@@ -72,6 +92,8 @@ async function apiRequest<T>(url: string, init: RequestInit): Promise<T> {
   try {
     const response = await fetch(url, { ...init, headers, signal: controller.signal });
     if (!response.ok) throw await toApiError(response);
+    // Sense cos (`PUT`/`DELETE` que responen 204).
+    if (response.status === 204) return undefined as T;
     return (await response.json()) as T;
   } catch (error) {
     // Un ApiError < 500, perquè TanStack Query no hi torni (3 × 15 s d'esquelet) i es pugui

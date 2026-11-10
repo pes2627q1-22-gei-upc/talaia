@@ -303,7 +303,10 @@
   "alerts": {
     "title": "Alertes",
     "soonTitle": "Aviat",
-    "soonMessage": "Aquí podràs crear alertes perquè t'avisem quan hi hagi bones condicions per al que vols veure."
+    "soonMessage": "Aquí podràs crear alertes perquè t'avisem quan hi hagi bones condicions per al que vols veure.",
+    "pushDenied": "Les notificacions estan desactivades: no t'avisarem al mòbil quan hi hagi bones condicions. Pots activar-les a la configuració.",
+    "pushUnavailable": "Aquest dispositiu no pot rebre notificacions. La resta de l'app funciona igual.",
+    "openSettings": "Obre la configuració"
   },
   "auth": {
     "signOut": "Tanca la sessió",
@@ -373,5 +376,8 @@
     "byCar": "{{travel}} en cotxe",
     "collapseSheet": "Plega la llista",
     "expandSheet": "Desplega la llista"
+  },
+  "notifications": {
+    "channelName": "Alertes del cel"
   }
 }

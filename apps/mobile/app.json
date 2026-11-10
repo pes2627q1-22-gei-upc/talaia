@@ -56,7 +56,13 @@
       "expo-font",
       "expo-image",
       "expo-status-bar",
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "expo-notifications",
+        {
+          "color": "#0E1433"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
