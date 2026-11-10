@@ -140,6 +140,26 @@ describe('pushRepository.registerDevice', () => {
     });
   });
 
+  it('no repeteix el PUT si el token és el que ja s’ha desat', async () => {
+    await pushRepository.registerDevice('Alertes');
+    await pushRepository.registerDevice('Alertes');
+    expect(apiPut).toHaveBeenCalledTimes(1);
+
+    notifications.getExpoPushTokenAsync.mockResolvedValue({
+      type: 'expo',
+      data: 'ExponentPushToken[nou]',
+    });
+    await pushRepository.registerDevice('Alertes');
+    expect(apiPut).toHaveBeenCalledTimes(2);
+  });
+
+  it('després del logout, el mateix token es torna a desar (pot ser una altra persona)', async () => {
+    await pushRepository.registerDevice('Alertes');
+    await pushRepository.unregisterDevice();
+    await pushRepository.registerDevice('Alertes');
+    expect(apiPut).toHaveBeenCalledTimes(2);
+  });
+
   it('propaga l’error si no hi ha token (sense xarxa)', async () => {
     notifications.getExpoPushTokenAsync.mockRejectedValue(new Error('network'));
     await expect(pushRepository.registerDevice('Alertes')).rejects.toThrow('network');
@@ -153,6 +173,24 @@ describe('pushRepository.unregisterDevice', () => {
     await pushRepository.unregisterDevice();
     await pushRepository.unregisterDevice();
     expect(apiDelete).toHaveBeenCalledTimes(1);
+    expect(apiDelete).toHaveBeenCalledWith('/perfil/dispositius/ExponentPushToken%5Babc%5D');
+  });
+
+  it('si el PUT encara no ha acabat, l’espera i després esborra el token', async () => {
+    let finishPut!: () => void;
+    jest.mocked(apiPut).mockReturnValueOnce(
+      new Promise<undefined>((resolve) => {
+        finishPut = () => resolve(undefined);
+      }),
+    );
+    const registration = pushRepository.registerDevice('Alertes');
+    await Promise.resolve();
+    const unregister = pushRepository.unregisterDevice();
+    await new Promise<void>((resolve) => setImmediate(resolve));
+    expect(apiDelete).not.toHaveBeenCalled();
+    finishPut();
+    await registration;
+    await unregister;
     expect(apiDelete).toHaveBeenCalledWith('/perfil/dispositius/ExponentPushToken%5Babc%5D');
   });
 

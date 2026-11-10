@@ -19,8 +19,13 @@ export const ALERTS_CHANNEL_ID = 'alertes';
 /** Com a molt el temps que el logout espera el `DELETE` del token. */
 export const UNREGISTER_TIMEOUT_MS = 3_000;
 
-// El token que s'ha registrat a l'API en aquesta execució: el que es treu en tancar la sessió.
+// El token que s'ha registrat a l'API en aquesta sessió: el que es treu en tancar-la, i el que
+// evita repetir el `PUT` si no ha canviat.
 let registeredToken: string | null = null;
+// El registre en curs: el logout l'espera, perquè el `DELETE` no arribi abans que el `PUT`.
+let pendingRegistration: Promise<unknown> | null = null;
+// Puja a cada logout: un registre que acaba després no deixa el token com a registrat.
+let generation = 0;
 
 function platform(): PlataformaPush | null {
   return Platform.OS === 'ios' || Platform.OS === 'android' ? Platform.OS : null;
@@ -71,39 +76,62 @@ export const pushRepository = {
   },
 
   /**
-   * Obté l'Expo push token i el desa al perfil (`PUT /perfil/dispositius`). Només amb permís
-   * concedit. Pot fallar sense xarxa o sense `projectId`: qui la crida decideix què en fa.
+   * Obté l'Expo push token i el desa al perfil (`PUT /perfil/dispositius`), si no és el que ja
+   * s'ha desat en aquesta sessió. Només amb permís concedit. Pot fallar sense xarxa o sense
+   * `projectId`: qui la crida decideix què en fa.
    */
   async registerDevice(channelName: string): Promise<string> {
     const plataforma = platform();
     if (!plataforma) throw new Error('Push notifications are not supported on this platform');
-    await ensureChannel(channelName);
-    const { data: token } = await Notifications.getExpoPushTokenAsync({ projectId: projectId() });
-    const body: DispositiuPush = { token, plataforma };
-    await apiPut('/perfil/dispositius', body);
-    registeredToken = token;
-    return token;
+    const started = generation;
+    const registration = (async () => {
+      await ensureChannel(channelName);
+      const { data: token } = await Notifications.getExpoPushTokenAsync({
+        projectId: projectId(),
+      });
+      if (token === registeredToken) return token;
+      const body: DispositiuPush = { token, plataforma };
+      await apiPut('/perfil/dispositius', body);
+      if (generation === started) registeredToken = token;
+      return token;
+    })();
+    const pending = registration.catch(() => {});
+    pendingRegistration = pending;
+    try {
+      return await registration;
+    } finally {
+      if (pendingRegistration === pending) pendingRegistration = null;
+    }
   },
 
   /**
-   * Treu el token registrat del perfil abans del logout (ADR-0028). No falla mai ni espera més
-   * de `UNREGISTER_TIMEOUT_MS`: sense xarxa, el logout continua i el token queda al perfil.
+   * Treu el token registrat del perfil abans del logout (ADR-0028), també si el `PUT` encara
+   * no havia acabat. No falla mai ni espera més de `UNREGISTER_TIMEOUT_MS`: sense xarxa, el
+   * logout continua i el token queda al perfil.
    */
   async unregisterDevice(): Promise<void> {
-    const token = registeredToken;
-    if (!token) return;
-    registeredToken = null;
+    const pending = pendingRegistration;
+    if (!registeredToken && !pending) return;
     let timer: ReturnType<typeof setTimeout> | undefined;
     const timeout = new Promise<void>((resolve) => {
       timer = setTimeout(resolve, UNREGISTER_TIMEOUT_MS);
     });
+    const unregister = async () => {
+      await pending;
+      const token = registeredToken;
+      registeredToken = null;
+      generation++;
+      if (token) {
+        await apiDelete(`/perfil/dispositius/${encodeURIComponent(token)}`).catch(() => {});
+      }
+    };
     try {
-      await Promise.race([
-        apiDelete(`/perfil/dispositius/${encodeURIComponent(token)}`).catch(() => {}),
-        timeout,
-      ]);
+      await Promise.race([unregister(), timeout]);
     } finally {
       clearTimeout(timer);
+      // Si s'ha esgotat el temps, la sessió que ve no ha d'heretar el token d'aquesta.
+      registeredToken = null;
+      generation++;
     }
   },
 
