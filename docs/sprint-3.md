@@ -2,7 +2,7 @@
 
 **Objectiu:** Completar el volum funcional (registre d'observacions, constel·lacions, aportacions de la comunitat amb moderació, comparar punts i trofeus), deixar els RNF complerts, publicar la release final i fer la presentació tècnica del 16/12.
 
-**Compromís:** 88 story points en 16 històries (15 d'usuari + la tècnica [TEC]) · 38 tasques · 88 h estimades. Sprint master: **Hugo**.
+**Compromís:** 88 story points en 16 històries (15 d'usuari + la tècnica [TEC]) · 38 tasques · 88 h estimades. Sprint master: **Martina** (intercanviat amb el Hugo, que porta el Sprint 2).
 
 **Criteri d'estimació:** 1 story point = 1 hora. Els story points d'una història són la suma de les hores estimades de les seves tasques.
 
@@ -223,11 +223,11 @@ Fora del sprint backlog (sense story points, no compta al burndown). Les hores e
 
 | Ref | Tasca | Responsable | Inici | Límit | h |
 |---|---|---|---|---|---|
-| TG-228 | Sprint Planning (30/11) i lliurament de planning_3.pdf | Hugo | 30/11 | 30/11 | 2 |
-| TG-229 | Daily scrums a classe i seguiment del taulell | Hugo | 30/11 | 16/12 | 2 |
-| TG-230 | Release 1.0.0 (stable → prod) | Hugo | 15/12 | 15/12 | 1 |
-| TG-231 | Retrospective Meeting (16/12) i lliurament de report_3.pdf | Hugo | 16/12 | 18/12 | 2 |
-| TG-232 | Managerial report de l'entrega final | Hugo | 14/12 | 18/12 | 2 |
+| TG-228 | Sprint Planning (30/11) i lliurament de planning_3.pdf | Martina | 30/11 | 30/11 | 2 |
+| TG-229 | Daily scrums a classe i seguiment del taulell | Martina | 30/11 | 16/12 | 2 |
+| TG-230 | Release 1.0.0 (stable → prod) | Martina | 15/12 | 15/12 | 1 |
+| TG-231 | Retrospective Meeting (16/12) i lliurament de report_3.pdf | Martina | 16/12 | 18/12 | 2 |
+| TG-232 | Managerial report de l'entrega final | Martina | 14/12 | 18/12 | 2 |
 | TG-233 | Actualitzar la PRT i els gràfics (burndown, velocitat i product burndown) | Victor | 16/12 | 18/12 | 1 |
 | TG-234 | Memòria final (requisits, metodologia i descripció tècnica) | Hugo | 14/12 | 18/12 | 2 |
 | TG-235 | Informació de la release final: com executar l'app | Mohamed | 15/12 | 18/12 | 2 |
@@ -239,9 +239,9 @@ Backlog del sprint i gestió [GES], per persona. L'acumulat inclou el Sprint 1 i
 
 | Persona | Sprint 3 | Acumulat |
 |---|---|---|
-| Joan | 28 | 99 |
-| Vinyet | 12 | 59 |
-| Martina | 13 | 55 |
+| Joan | 28 | 96 |
+| Vinyet | 12 | 61 |
+| Martina | 22 | 62 |
 | Mohamed | 12 | 60 |
-| Hugo | 23 | 62 |
+| Hugo | 14 | 60 |
 | Victor | 14 | 56 |

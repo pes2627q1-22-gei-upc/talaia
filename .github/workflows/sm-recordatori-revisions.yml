@@ -1,0 +1,33 @@
+name: SM · Recordatori de revisions
+
+# Cada dia feiner a les 8:00 (hora d'hivern) comenta les PR que fa més de 24 h que esperen revisió
+# i hi demana també la revisió de qui menys en porta al sprint (scripts/sm/README.md).
+on:
+  schedule:
+    - cron: '0 7 * * 1-5'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+jobs:
+  recordatori:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Configura Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version-file: .nvmrc
+
+      - name: Recorda les revisions pendents
+        run: node scripts/sm/recordatori-revisions.mjs --publica
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
