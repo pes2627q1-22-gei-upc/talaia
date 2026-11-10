@@ -6,6 +6,8 @@ Aquest és el criteri de l'equip per detectar, registrar, prioritzar i seguir el
 
 Un bug és un comportament **reproduïble** que contradiu els criteris d'acceptació, un contracte o la documentació d'una funcionalitat que ja s'havia donat per operativa. També ho és una regressió d'una funcionalitat que abans funcionava. Cal descriure què s'esperava i què passa realment, amb evidències; si encara no es pot reproduir, primer s'investiga.
 
+Abans de confirmar-lo, comproveu que s'ha reproduït en un entorn admès pel projecte (per exemple, la versió de Node de `.nvmrc`) i que no és un problema de configuració local. Anoteu l'entorn a la issue; un error que només apareix amb una versió no admesa no demostra un bug de Talaia.
+
 Si la funcionalitat encara s'està implementant o provant dins de la tasca actual, la correcció forma part d'aquella tasca i de la seva PR. Si es detecta un defecte **preexistent o fora de l'abast** de la tasca actual, s'avisa la persona responsable i es registra una issue abans d'iniciar-ne la correcció. Una funcionalitat prevista per a un sprint posterior o una petició de millora no és un bug: s'ha de gestionar com a història, tasca o issue de tipus *Enhancement*, segons pertoqui.
 
 Un assistent de codi pot identificar un possible bug i preparar-ne la informació, però **no ha de crear la issue ni ampliar l'abast de la tasca sense que la persona responsable ho confirmi**. Tampoc ha d'amagar un defecte real només perquè el detecti durant una altra tasca.
