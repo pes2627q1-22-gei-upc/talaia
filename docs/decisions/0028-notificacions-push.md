@@ -27,13 +27,13 @@ Què es va comprovar a la documentació d'Expo de l'SDK 58 (`expo-notifications`
 Proposta, perquè la concreti la TG-152:
 
 - **Migració:** `public.dispositius_push`, amb `id`, `perfil_id` (FK a `perfils`, `on delete cascade`), `token text not null unique`, `plataforma` (`ios` o `android`), `data_creacio` i `data_actualitzacio`. Té RLS sense polítiques, com la resta ([ADR-0013](0013-acces-bd-kysely.md)). Un perfil pot tenir diversos dispositius, i un token només pot ser d'un perfil: si al mateix mòbil hi entra una altra persona, la fila passa al perfil nou (`on conflict (token) do update set perfil_id = …`).
-- **Endpoints**, amb JWT ([ADR-0023](0023-validacio-jwt-jwks.md)) i documentats a l'OpenAPI:
+- **Endpoints**, amb JWT ([ADR-0023](0023-validacio-jwt-jwks.md)) i el `requireUser` de l'[ADR-0029](0029-rol-admin-i-bloqueig.md) (un compte bloquejat rep un 403 `account_blocked`). Es documenten a l'OpenAPI:
   - `PUT /api/v1/perfil/dispositius` amb `{ token, plataforma }`, validat amb zod (el token ha de tenir el format `ExponentPushToken[…]`). És un *upsert* idempotent i respon `204`.
-  - `DELETE /api/v1/perfil/dispositius/{token}` (el token, amb `encodeURIComponent`). Treu el token del perfil que fa la petició i respon `204`, també si ja no hi era.
+  - `DELETE /api/v1/perfil/dispositius/{token}` (el token, amb `encodeURIComponent`). Treu el token del perfil que fa la petició i respon `204`, també si ja no hi era. El token queda als logs d'accés de Nginx. S'accepta, perquè amb la seguretat reforçada (vegeu «Credencials») el token sol no permet enviar res. Si es vol evitar, es pot esborrar pel camp `id` del dispositiu.
 - **Quan el registra l'app:**
   - Després de cada inici de sessió i cada vegada que s'obre amb sessió, si hi ha permís. Hi ha `addPushTokenListener` per si el token canvia.
   - El permís es demana des de la pantalla d'alertes, en crear-ne una, i no en obrir l'app.
-  - En tancar la sessió, primer es fa el `DELETE` i després `signOut`.
+  - En tancar la sessió, primer es fa el `DELETE` i després `signOut`. El `DELETE` és *best-effort*: si falla, el `signOut` es fa igualment. Pot fallar per un 403 d'un compte bloquejat, perquè no hi ha xarxa o perquè passa un temps límit curt. Així, el «Tanca la sessió» de la pantalla de compte bloquejat continua funcionant. El token que queda el descarta el worker, que no envia res als comptes bloquejats.
   - Sense permís, no es registra res, i la pantalla d'alertes ho indica (criteri 4).
 
 ### Qui envia: el worker, després d'avaluar les alertes
@@ -42,6 +42,8 @@ Proposta, perquè la concreti la TG-152:
 - **Una per alerta i nit.** S'afegeix la taula `notificacions_alertes`, amb `alerta_id` (FK, `on delete cascade`), `nit date`, `punt_id`, `index`, `enviada_el` i els `ticket_ids`, i amb **clau primària `(alerta_id, nit)`**. La `nit` és la de 12:00 a 12:00 local de la TG-104 (`services/api/src/index/night.ts`): el codi s'ha de compartir, no copiar. Abans d'enviar, el worker fa `insert … on conflict do nothing returning`, i només envia si la fila és nova. Així, una execució repetida o solapada no notifica dues vegades. Si l'enviament falla després de la inserció, aquella nit l'alerta es perd: és preferible a enviar-la dues vegades.
 - **Contingut:**
   - Un missatge per alerta, adreçat a tots els tokens del perfil.
+  - Només compten les alertes `activa = true` de perfils **no bloquejats** (`perfils.bloquejat = false`, ADR-0029). El worker llegeix la BD directament i no passa per `requireUser`, així que el filtre ha de ser a la consulta.
+  - Només compten les hores de la nit que **encara no han passat**. El worker recalcula cada hora i la nit va de 12:00 a 12:00, i una execució de les 04:00 no pot anunciar la millor hora de les 23:00. Si no queda cap hora futura que superi el mínim, no s'envia res, i la nit tampoc no queda marcada.
   - El punt és el millor dels que superen el mínim, amb l'hora i l'índex al text.
   - Porta `channelId: 'alertes'` (el canal que crea l'app a Android), `sound: 'default'` i `data: { puntId }`.
   - El text, de moment en català. L'idioma del perfil queda per quan existeixi.
@@ -50,7 +52,7 @@ Proposta, perquè la concreti la TG-152:
 ### Deep link: `data: { puntId }` obre `/punt/[id]`
 
 - La TG-154 posa un *hook* al `_layout.tsx` arrel, com el `useNotificationObserver` de la guia d'Expo Router. Llegeix `useLastNotificationResponse()` per a l'arrencada en fred i `addNotificationResponseReceivedListener` amb l'app oberta, i fa `router.push({ pathname: '/punt/[id]', params: { id: puntId } })`, igual que el mapa i les recomanacions. Després, l'app esborra la resposta perquè no es torni a obrir. La documentació de l'SDK 58 marca `clearLastNotificationResponse()` com a obsoleta i, alhora, el mateix exemple d'Expo Router la fa servir. L'alternativa és `clearLastNotificationResponseAsync()`, i la TG-154 ha de comprovar quina toca amb els tipus de la versió que s'instal·li.
-- La navegació espera que `useSessionGate` hagi resolt: sense sessió, l'app va a la benvinguda.
+- La navegació espera que `useSessionGate` hagi resolt i només obre la fitxa si l'usuari té sessió i no està bloquejat. Sense sessió, l'app va a la benvinguda. Amb el compte bloquejat (`'blocked'`), es queda a l'avís. `punt/[id]` és a l'stack arrel, fora de `(tabs)`, i sense aquesta comprovació la notificació se saltaria l'avís.
 - S'envia `puntId` i no una URL: l'app valida el que rep, i la ruta continua sent cosa de l'app.
 
 ### Excepció a l'ADR-0014: development build per provar les push
@@ -86,6 +88,7 @@ Opcions:
   - S'afegeixen `expo-notifications` i `expo-dev-client`, amb els *config plugins* a `app.json`, i un `eas.json` amb el perfil `development`. Això actualitza la conseqüència de l'ADR-0014 que deia «no hi ha `expo-dev-client` ni `eas.json`».
   - Cal un mòdul MVVM per al permís i el token, amb tests del ViewModel, i textos via i18n.
   - Amb Expo Go s'hi pot continuar treballant: les push només es proven al development build.
+  - Amb `expo-dev-client` instal·lat, `npx expo start` obre per defecte el development build, i el QR ja no obre Expo Go. Per això `npm run mobile` (`apps/mobile/scripts/start.mjs`) hi afegeix `--go` per defecte, i `npm run mobile -- --dev-client` obre el build. S'explica a `apps/mobile/README.md` (TG-152).
 - **API (TG-152):** la migració de `dispositius_push`, els dos endpoints, l'OpenAPI i els tests.
 - **Worker (TG-153, TG-154, TG-155):**
   - La migració de `notificacions_alertes` i la dependència `expo-server-sdk`, que és ESM i demana Node ≥ 22.12. Cal comprovar que tsup l'empaqueta.
