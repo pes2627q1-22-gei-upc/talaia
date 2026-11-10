@@ -43,8 +43,11 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const accept = useCallback(
     (next: AuthUser | null) => {
       if (currentUser.current?.id !== next?.id) cache.clear();
-      // El bloqueig és d'aquest compte: tancar la sessió el treu, i el següent compte comença net.
-      if (!next) accountBlocked.clear();
+      // El bloqueig és d'aquest compte: tancar la sessió o canviar de compte el treu. D'una sessió
+      // nova no: el 403 del login pot arribar abans que l'avís d'Auth (vegeu signIn.ts).
+      if (!next || (currentUser.current && currentUser.current.id !== next.id)) {
+        accountBlocked.clear();
+      }
       currentUser.current = next;
       setUser(next);
     },

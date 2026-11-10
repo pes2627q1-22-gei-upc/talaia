@@ -76,7 +76,16 @@ async function apiRequest<T>(url: string, init: RequestInit): Promise<T> {
     if (!response.ok) {
       const error = await toApiError(response);
       // Un sol lloc per a tota l'app: la porta de la sessió hi mostra l'avís (TG-179).
-      if (error.status === 403 && error.code === ACCOUNT_BLOCKED) accountBlocked.report();
+      // Només si la sessió encara és la de la petició: una resposta tardana d'un compte que ja
+      // ha sortit no pot bloquejar el següent.
+      if (
+        error.status === 403 &&
+        error.code === ACCOUNT_BLOCKED &&
+        token &&
+        (await getAccessToken().catch(() => null)) === token
+      ) {
+        accountBlocked.report();
+      }
       throw error;
     }
     return (await response.json()) as T;

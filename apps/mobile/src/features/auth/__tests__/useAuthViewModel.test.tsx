@@ -84,6 +84,17 @@ it('account_blocked activa l’avís i tancar la sessió el treu (TG-179)', asyn
   expect(result.current.blocked).toBe(false);
 });
 
+it('canviar de compte treu l’avís; entrar amb una sessió nova, no', async () => {
+  const { result } = await renderHook(useAuthViewModel, { wrapper });
+  await waitFor(() => expect(result.current.loading).toBe(false));
+  // El 403 del POST /perfil del login pot arribar abans que l'avís d'Auth.
+  await act(() => accountBlocked.report());
+  await act(() => change({ id: 'one' }));
+  expect(result.current.blocked).toBe(true);
+  await act(() => change({ id: 'two' }));
+  expect(result.current.blocked).toBe(false);
+});
+
 it('un resultat de restauració antic no sobreescriu un canvi de sessió', async () => {
   let resolve!: (user: AuthUser | null) => void;
   repository.getUser.mockReturnValue(
