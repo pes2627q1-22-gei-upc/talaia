@@ -30,6 +30,9 @@ export function createApp({ profileStore, ...apiDeps }: AppOptions = {}) {
       ensureProfile: unavailable,
       getProfile: unavailable,
       updateProfile: unavailable,
+      getAccountStatus: unavailable,
+      listProfiles: unavailable,
+      setBlocked: unavailable,
     } satisfies ProfileStore);
 
   const app = express();

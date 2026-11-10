@@ -4,11 +4,12 @@ import swaggerUi from 'swagger-ui-express';
 import { version } from '../config/env';
 import type { EsdevenimentsService } from '../esdeveniments/esdevenimentsService';
 import type { BreakdownService } from '../index/breakdownService';
-import type { JwksSource } from '../middleware/auth';
+import { requireAuth, type JwksSource } from '../middleware/auth';
 import { buildOpenApiDocument } from '../openapi';
 import type { PuntsService } from '../punts/puntsService';
 import type { RecomanacionsService } from '../recomanacions/recomanacionsService';
 import type { ProfileStore } from '../services/profileService';
+import { createAdminRouter } from './admin';
 import { createAuthRouter } from './auth';
 import { createEsdevenimentsRouter } from './esdeveniments';
 import './esdeveniments.contract';
@@ -50,7 +51,15 @@ export function createApiRouter({
     '/esdeveniments',
     createEsdevenimentsRouter(esdeveniments, apropApiKey, { supabaseUrl, jwks }),
   );
-  router.use(createAuthRouter({ supabaseUrl, profileStore, jwks }));
+  // Totes les rutes d'usuari passen per aquí: JWT vàlid i compte no bloquejat (403
+  // `account_blocked`, TG-177). Les rutes noves (alertes, plans, favorits) han de fer servir aquest.
+  const requireUser = requireAuth({
+    supabaseUrl,
+    jwks,
+    accountStatus: profileStore.getAccountStatus,
+  });
+  router.use(createAuthRouter({ requireUser, profileStore }));
+  router.use('/admin', createAdminRouter({ requireUser, profileStore }));
 
   // Es genera quan ja s'han importat tots els routers, que són els que registren les rutes.
   const openapi = buildOpenApiDocument(version);

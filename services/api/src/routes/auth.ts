@@ -1,18 +1,23 @@
 import type { Perfil, PerfilCanvis } from '@talaia/shared';
-import { Router, type NextFunction, type Request, type Response } from 'express';
+import {
+  Router,
+  type NextFunction,
+  type Request,
+  type RequestHandler,
+  type Response,
+} from 'express';
 import { z } from 'zod';
 
-import type { JwksSource } from '../middleware/auth';
-import { requireAuth, type AuthenticatedRequest } from '../middleware/auth';
+import type { AuthenticatedRequest } from '../middleware/auth';
 import { ApiError } from '../middleware/errors';
 import { registry } from '../openapi';
 import { NOM_MAXIM, type ProfileRecord, type ProfileStore } from '../services/profileService';
 
 export type AuthRouterOptions = {
-  supabaseUrl?: string;
+  /** `requireAuth` amb `accountStatus`: JWT vàlid i compte no bloquejat (`routes/index.ts`). */
+  requireUser: RequestHandler;
   /** Sense `DATABASE_URL`, `createApp` hi passa un store que respon 503. */
   profileStore: ProfileStore;
-  jwks?: JwksSource;
 };
 
 /** El nom, igual al `POST` i al `PATCH`: sense els espais dels extrems, d'1 a `NOM_MAXIM`. */
@@ -26,9 +31,10 @@ const ProfileEnsureBodySchema = z
   .object({ nom: NomSchema.optional() })
   .meta({ id: 'ProfileEnsureBody' });
 
-const PerfilSchema: z.ZodType<Perfil> = z
+export const PerfilSchema: z.ZodType<Perfil> = z
   .object({
     id: z.string(),
+    rol: z.enum(['usuari', 'admin']),
     authUserId: z.string(),
     email: z.string().nullable(),
     nom: z.string().nullable(),
@@ -48,12 +54,16 @@ const PerfilCanvisSchema: z.ZodType<PerfilCanvis> = z
   .meta({ id: 'PerfilCanvis' });
 
 const ErrorSchema = z.object({ error: z.object({ code: z.string(), message: z.string() }) });
-const errorResponse = (description: string) => ({
+export const errorResponse = (description: string) => ({
   description,
   content: { 'application/json': { schema: ErrorSchema } },
 });
-const ERRORS_AUTH = {
+/** Les respostes d'error de qualsevol ruta amb `requireUser`. */
+export const ERRORS_AUTH = {
   401: errorResponse('JWT no vàlid o absent'),
+  403: errorResponse(
+    '`account_blocked`: el compte està bloquejat (HU41). L’app hi mostra l’avís a partir del codi',
+  ),
   503: errorResponse('No es pot validar el JWT de Supabase o no hi ha base de dades'),
 };
 
@@ -112,9 +122,10 @@ registry.registerPath({
   },
 });
 
-function toPerfil(profile: ProfileRecord): Perfil {
+export function toPerfil(profile: ProfileRecord): Perfil {
   return {
     id: profile.id,
+    rol: profile.rol,
     authUserId: profile.authUserId,
     email: profile.email,
     nom: profile.nom,
@@ -134,9 +145,8 @@ function currentUser(req: Request) {
   return user;
 }
 
-export function createAuthRouter({ supabaseUrl, profileStore, jwks }: AuthRouterOptions): Router {
+export function createAuthRouter({ requireUser, profileStore }: AuthRouterOptions): Router {
   const router = Router();
-  const requireCurrentUser = requireAuth({ supabaseUrl, jwks });
 
   const handleProfileEnsure = async (req: Request, res: Response, next: NextFunction) => {
     const authReq = req as AuthenticatedRequest;
@@ -183,9 +193,9 @@ export function createAuthRouter({ supabaseUrl, profileStore, jwks }: AuthRouter
     }
   };
 
-  router.post('/perfil', requireCurrentUser, handleProfileEnsure);
-  router.get('/perfil', requireCurrentUser, handleProfileGet);
-  router.patch('/perfil', requireCurrentUser, handleProfilePatch);
+  router.post('/perfil', requireUser, handleProfileEnsure);
+  router.get('/perfil', requireUser, handleProfileGet);
+  router.patch('/perfil', requireUser, handleProfilePatch);
 
   return router;
 }
