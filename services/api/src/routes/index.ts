@@ -56,7 +56,7 @@ export function createApiRouter({
   const requireUser = requireAuth({
     supabaseUrl,
     jwks,
-    accountStatus: profileStore.getAccountStatus,
+    accountStatus: (authUserId) => profileStore.getAccountStatus(authUserId),
   });
   router.use(createAuthRouter({ requireUser, profileStore }));
   router.use('/admin', createAdminRouter({ requireUser, profileStore }));

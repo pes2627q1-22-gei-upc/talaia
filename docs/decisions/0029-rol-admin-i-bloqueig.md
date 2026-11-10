@@ -16,6 +16,7 @@ Opció **A**:
 - `perfils.rol text not null default 'usuari'`, amb un `check (rol in ('usuari', 'admin'))`. També `perfils.bloquejat boolean not null default false` i `perfils.data_bloqueig timestamptz`, amb un `check` que les manté coherents.
 - `requireAuth({ …, accountStatus })` (`services/api/src/middleware/auth.ts`) valida el JWT i, després, llegeix el rol i el bloqueig del perfil (`ProfileStore.getAccountStatus`). Si el compte està bloquejat, respon **403 `account_blocked`**. Es crea un sol cop, a `routes/index.ts` (`requireUser`), i el fan servir totes les rutes d'usuari.
 - `requireAdmin`, posat després de `requireUser`, només deixa passar `rol = 'admin'`. Si no, respon **403 `forbidden`**. Un usuari sense perfil no està bloquejat ni és admin.
+- Un administrador pot bloquejar qualsevol compte, també el d'un altre administrador, però no el seu (400 `cannot_block_self`): així sempre en queda algun que pot desfer un bloqueig des de la web. Si un administrador abusa del rol, se li treu amb SQL.
 - Per fer administrador algú, cal SQL (un `UPDATE` al SQL Editor de Supabase o una migració); no hi ha cap endpoint per fer-ho:
 
   ```sql

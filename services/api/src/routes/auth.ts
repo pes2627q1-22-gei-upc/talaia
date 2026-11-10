@@ -31,7 +31,7 @@ const ProfileEnsureBodySchema = z
   .object({ nom: NomSchema.optional() })
   .meta({ id: 'ProfileEnsureBody' });
 
-export const PerfilSchema: z.ZodType<Perfil> = z
+const PerfilSchema: z.ZodType<Perfil> = z
   .object({
     id: z.string(),
     rol: z.enum(['usuari', 'admin']),
