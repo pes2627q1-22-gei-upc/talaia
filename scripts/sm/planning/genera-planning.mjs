@@ -12,7 +12,7 @@
  * Les dependències crítiques no surten de cap dada: s'escriuen a mà al document.
  */
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -519,14 +519,18 @@ function buildDocument({ sprint, data, pages }) {
 
 function findSoffice() {
   for (const candidate of ['soffice', '/Applications/LibreOffice.app/Contents/MacOS/soffice']) {
-    try {
-      execFileSync(candidate, ['--version'], { stdio: 'ignore' });
-      return candidate;
-    } catch {
-      // no hi és: provem el següent
-    }
+    if (works(candidate, ['--version'])) return candidate;
   }
   return null;
+}
+
+function works(command, args) {
+  try {
+    execFileSync(command, args, { stdio: 'ignore' });
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 /** Converteix el .docx a PDF i hi busca a quina pàgina cau cada encapçalament. */
@@ -560,6 +564,7 @@ async function main() {
   if (!sprint) throw new Error('Indica el sprint: --sprint <N>.');
   const date = argument('--data') ?? sprint.start;
   const out = resolve(argument('--sortida') ?? '.');
+  mkdirSync(out, { recursive: true });
   const docxPath = join(out, `${date.replaceAll('-', '')}_talaia_planning_${sprint.number}.docx`);
 
   const data = await loadData(sprint);
@@ -568,7 +573,10 @@ async function main() {
   await write({});
 
   const soffice = findSoffice();
-  if (soffice) {
+  if (soffice && !works('pdftotext', ['-v'])) {
+    console.warn("Hi ha LibreOffice però no `pdftotext` (poppler): l'índex quedarà sense paginar.");
+  }
+  if (soffice && works('pdftotext', ['-v'])) {
     const { pages } = headingPages(soffice, docxPath);
     await write(pages);
     const { pdf } = headingPages(soffice, docxPath);
@@ -578,7 +586,7 @@ async function main() {
     );
   } else {
     console.log(
-      `Planning desat a ${docxPath}. Sense LibreOffice, l'índex no té números de pàgina.`,
+      `Planning desat a ${docxPath}. Sense LibreOffice i pdftotext, l'índex no té números de pàgina.`,
     );
   }
   console.log('Revisa-hi a mà les dependències crítiques (apartat 4) abans de lliurar-lo.');

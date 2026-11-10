@@ -128,6 +128,15 @@ async function publishOnIssue(sprint, report) {
   const issues = await githubAll(repoPath('/issues?state=open&creator=github-actions%5Bbot%5D'));
   let issue = issues.find((candidate) => candidate.title === title);
   if (!issue) {
+    // Tanca els parte dels sprints anteriors.
+    for (const old of issues.filter((candidate) =>
+      candidate.title.startsWith('Parte de la daily · Sprint '),
+    )) {
+      await github(repoPath(`/issues/${old.number}`), {
+        method: 'PATCH',
+        body: { state: 'closed', state_reason: 'completed' },
+      });
+    }
     issue = await github(repoPath('/issues'), {
       method: 'POST',
       body: {
@@ -163,8 +172,12 @@ async function main() {
   console.log(report);
 
   if (process.argv.includes('--copia')) {
-    spawnSync('pbcopy', { input: report });
-    console.log('\n(copiat al porta-retalls)');
+    const copy = spawnSync('pbcopy', { input: report });
+    if (copy.error || copy.status !== 0) {
+      console.warn("\nNo s'ha pogut copiar al porta-retalls (cal `pbcopy`, només a macOS).");
+    } else {
+      console.log('\n(copiat al porta-retalls)');
+    }
   }
   if (process.argv.includes('--issue')) {
     console.log(`\nPublicat a ${await publishOnIssue(sprint, report)}`);

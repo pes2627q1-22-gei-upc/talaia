@@ -9,7 +9,9 @@ const HOUR = 3_600_000;
 
 /**
  * Una PR espera revisió si no és un esborrany, no té cap aprovació al darrer commit (el ruleset
- * descarta les aprovacions en pujar-ne de nous) i fa més de 24 h que ningú no la revisa.
+ * descarta les aprovacions en pujar-ne de nous), no té canvis demanats sense commits posteriors
+ * (llavors li toca a l'autor) i fa més de 24 h de l'última activitat: la creació, el darrer commit,
+ * el moment en què va deixar de ser esborrany o la darrera review.
  * Retorna les hores d'espera, o `null` si no n'espera.
  */
 export function hoursWaiting(pull, now = new Date()) {
@@ -18,7 +20,18 @@ export function hoursWaiting(pull, now = new Date()) {
   if (reviews.some((review) => review.state === 'APPROVED' && review.commit === pull.headSha)) {
     return null;
   }
-  const lastActivity = [pull.created, ...reviews.map((review) => review.submitted)]
+  const latest = reviews
+    .filter((review) => review.commit === pull.headSha && review.state !== 'COMMENTED')
+    .sort((a, b) => new Date(a.submitted) - new Date(b.submitted))
+    .at(-1);
+  if (latest?.state === 'CHANGES_REQUESTED') return null;
+  const lastActivity = [
+    pull.created,
+    pull.lastCommit,
+    pull.readyAt,
+    ...reviews.map((review) => review.submitted),
+  ]
+    .filter(Boolean)
     .map((date) => new Date(date).getTime())
     .reduce((latest, time) => Math.max(latest, time), 0);
   const hours = (now.getTime() - lastActivity) / HOUR;

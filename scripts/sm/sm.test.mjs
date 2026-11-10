@@ -103,6 +103,26 @@ describe('revisions', () => {
     assert.equal(hoursWaiting(pull({ reviews: [old] }), NOW), 26);
   });
 
+  it("si s'han demanat canvis i no hi ha commits nous, li toca a l'autor", () => {
+    const changes = {
+      login: 'Jsolee',
+      state: 'CHANGES_REQUESTED',
+      submitted: hoursAgo(25),
+      commit: 'abc',
+    };
+    assert.equal(hoursWaiting(pull({ reviews: [changes] }), NOW), null);
+  });
+
+  it("un esborrany marcat com a llest compta des d'aquell moment", () => {
+    assert.equal(hoursWaiting(pull({ created: hoursAgo(72), readyAt: hoursAgo(1) }), NOW), null);
+    assert.equal(hoursWaiting(pull({ created: hoursAgo(72), readyAt: hoursAgo(30) }), NOW), 30);
+  });
+
+  it('un commit nou reinicia el compte', () => {
+    const old = { login: 'Jsolee', state: 'APPROVED', submitted: hoursAgo(48), commit: 'old' };
+    assert.equal(hoursWaiting(pull({ reviews: [old], lastCommit: hoursAgo(2) }), NOW), null);
+  });
+
   it("proposa qui menys revisions porta, sense l'autor, i reparteix els empats", () => {
     const counts = {
       Jsolee: 9,

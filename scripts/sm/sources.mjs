@@ -129,10 +129,28 @@ export async function githubAll(path, maxPages = 10) {
 export const repoPath = (suffix = '') => `/repos/${GITHUB.repo}${suffix}`;
 
 /** PR obertes amb les seves revisions, ja llestes per decidir si esperen revisió. */
+/**
+ * Dates que reinicien el compte de les 24 h: el darrer commit i el moment en què l'esborrany es va
+ * marcar com a llest per revisar.
+ */
+async function pullActivity(pull) {
+  if (pull.draft) return { lastCommit: null, readyAt: null };
+  const [commits, timeline] = await Promise.all([
+    githubAll(repoPath(`/pulls/${pull.number}/commits`)),
+    githubAll(repoPath(`/issues/${pull.number}/timeline`)),
+  ]);
+  const ready = timeline.filter((event) => event.event === 'ready_for_review');
+  return {
+    lastCommit: commits.at(-1)?.commit.committer?.date ?? null,
+    readyAt: ready.at(-1)?.created_at ?? null,
+  };
+}
+
 export async function fetchOpenPulls() {
   const pulls = await githubAll(repoPath('/pulls?state=open'));
   return Promise.all(
     pulls.map(async (pull) => ({
+      ...(await pullActivity(pull)),
       number: pull.number,
       title: pull.title,
       url: pull.html_url,

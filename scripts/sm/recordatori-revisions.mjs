@@ -83,13 +83,16 @@ async function main() {
       );
       continue;
     }
-    const extra = leastLoadedReviewer(pull.author, counts, pull.number);
+    // Només s'afegeix un revisor si ningú no n'té demanat, perquè una PR encallada no n'acumuli.
+    const extra = pull.requested.length
+      ? null
+      : leastLoadedReviewer(pull.author, counts, pull.number);
     const body = composeReminder({ hours, requested: pull.requested, extra });
     if (!publish) {
       console.log(`#${pull.number} (${pull.title})\n${body}\n`);
       continue;
     }
-    if (extra && !pull.requested.includes(extra.login)) {
+    if (extra) {
       await github(repoPath(`/pulls/${pull.number}/requested_reviewers`), {
         method: 'POST',
         body: { reviewers: [extra.login] },
