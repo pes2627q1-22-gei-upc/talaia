@@ -64,6 +64,7 @@ it.each(['ca', 'es', 'en'])(
     expect(within(content).getByRole('header')).toBe(title);
     expect(within(content).getByText(i18n.t('accountBlocked.message'))).toBe(message);
     expect(button).toBeOnTheScreen();
+    expect(screen.getByRole('button', { name: i18n.t('accountBlocked.retry') })).toBeOnTheScreen();
     expect(title.props.numberOfLines).toBeUndefined();
     expect(message.props.numberOfLines).toBeUndefined();
   },
@@ -73,6 +74,7 @@ it('mentre tanca la sessió, el botó no es pot tornar a prémer', async () => {
   auth({ signingOut: true, logoutLabel: 'Tancant la sessió…' });
   await renderScreen();
   expect(screen.getByRole('button', { name: 'Tancant la sessió…' })).toBeDisabled();
+  expect(screen.getByRole('button', { name: 'Torna-ho a comprovar' })).toBeDisabled();
 });
 
 it('si no ha pogut tancar la sessió, ho diu', async () => {

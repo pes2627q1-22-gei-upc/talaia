@@ -325,7 +325,9 @@
   },
   "accountBlocked": {
     "title": "Tu cuenta está bloqueada",
-    "message": "No puedes usar Talaia con esta cuenta. Si crees que es un error, contacta con el equipo de Talaia."
+    "message": "No puedes usar Talaia con esta cuenta. Si crees que es un error, contacta con el equipo de Talaia.",
+    "retry": "Vuelve a comprobarlo",
+    "checking": "Comprobando…"
   },
   "emailLogin": {
     "title": "Entra con el correo",

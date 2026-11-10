@@ -85,7 +85,8 @@ s'ha pogut recuperar (sense cobertura i amb el token caducat), no s'envia a la
 benvinguda: `RestoreErrorScreen` deixa tornar-ho a provar, i quan torna la xarxa el
 SDK la renova sol. Si l'API respon 403 `account_blocked` (compte bloquejat, TG-177),
 el client HTTP (`core/api/accountBlocked.ts`) ho apunta i la porta mostra
-`AccountBlockedScreen` fins que es tanca la sessió (TG-179); en recuperar una sessió es
+`AccountBlockedScreen` fins que es tanca la sessió o, amb «Torna-ho a comprovar», fins que
+l'API diu que ja no està bloquejat (TG-179); en recuperar una sessió es
 fa un `POST /perfil` perquè ho sàpiga sense esperar cap altra crida. Sense les variables de Supabase la porta queda oberta, per poder
 provar l'app en local sense compte.
 
