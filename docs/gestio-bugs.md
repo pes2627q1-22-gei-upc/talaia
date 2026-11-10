@@ -6,11 +6,19 @@ Aquest és el criteri de l'equip per detectar, registrar, prioritzar i seguir el
 
 Un bug és un comportament **reproduïble** que contradiu els criteris d'acceptació, un contracte o la documentació d'una funcionalitat que ja s'havia donat per operativa. També ho és una regressió d'una funcionalitat que abans funcionava. Cal descriure què s'esperava i què passa realment, amb evidències; si encara no es pot reproduir, primer s'investiga.
 
-Abans de confirmar-lo, comproveu que s'ha reproduït en un entorn admès pel projecte (per exemple, la versió de Node de `.nvmrc`) i que no és un problema de configuració local. Anoteu l'entorn a la issue; un error que només apareix amb una versió no admesa no demostra un bug de Talaia.
+Abans de confirmar-lo, comproveu que s'ha reproduït en un entorn admès pel projecte i que no és un problema de configuració local. Anoteu l'entorn a la issue; un error que només apareix en un entorn no admès no demostra un bug de Talaia.
 
 Si la funcionalitat encara s'està implementant o provant dins de la tasca actual, la correcció forma part d'aquella tasca i de la seva PR. Si es detecta un defecte **preexistent o fora de l'abast** de la tasca actual, s'avisa la persona responsable i es registra una issue abans d'iniciar-ne la correcció. Una funcionalitat prevista per a un sprint posterior o una petició de millora no és un bug: s'ha de gestionar com a història, tasca o issue de tipus *Enhancement*, segons pertoqui.
 
 Un assistent de codi pot identificar un possible bug i preparar-ne la informació, però **no ha de crear la issue ni ampliar l'abast de la tasca sense que la persona responsable ho confirmi**. Tampoc ha d'amagar un defecte real només perquè el detecti durant una altra tasca.
+
+## Qui el corregeix i quan cal una tasca nova
+
+La **severitat** mesura l'impacte del defecte; l'**esforç** de corregir-lo és una qüestió diferent. La severitat no és un llindar per decidir si es registra: un bug *Minor* continua sent un bug, i un bug *Important* pot tenir una correcció curta. Registrar-los tots permet fer seguiment del que s'ha detectat i resolt durant el sprint.
+
+Si el defecte es detecta mentre la tasca que l'ha introduït encara és oberta i la correcció és petita i acotada, qui l'ha implementat el resol dins de la mateixa tasca i PR. **Quan aquella tasca ja està tancada, qualsevol bug confirmat es registra com a issue**, també si és *Minor* o fàcil de corregir. Si la correcció és curta, preferentment l'assumeix qui va implementar la funcionalitat, si té disponibilitat, sense necessitat de crear una tasca nova. La issue s'enllaça a la PR de correcció.
+
+Quan la correcció és prou extensa per planificar-la per separat, afecta altres funcionalitats o requereix coordinació, el triatge crea una **nova tasca de Taiga** vinculada a la issue i n'acorda responsable i termini. Un impacte *Important* o *Critical* obliga a prioritzar i comunicar el problema de seguida, però no implica per si sol que calgui una tasca nova: això depèn de l'abast de la correcció. L'equip decideix els casos dubtosos al triatge.
 
 ## Com registrar una issue
 
@@ -33,7 +41,7 @@ Taiga ofereix els nivells *Wishlist*, *Minor*, *Normal*, *Important* i *Critical
 | **Critical** | Caiguda general, pèrdua de dades, vulnerabilitat explotable o flux essencial inutilitzable sense alternativa. |
 | **Important** | Funcionalitat principal bloquejada o resultat incorrecte amb impacte important; alternativa limitada o costosa. |
 | **Normal** | Fallada funcional acotada amb alternativa raonable, sense pèrdua de dades. |
-| **Minor** | Defecte petit, visual o de detall, que no impedeix completar el flux. |
+| **Minor** | Impacte menor, com un defecte visual o de detall que no impedeix completar el flux. |
 | **Wishlist** | Reserveu-lo per a peticions de millora, no per a bugs confirmats. |
 
 Al triatge, l'equip confirma la reproducció, l'abast i si és duplicat; ajusta severitat i prioritat; decideix responsable i sprint, i deixa la decisió comentada a la issue. Els bugs *Critical* o *Important* que bloquegin un flux del sprint s'han de comunicar al grup tan aviat com es detectin, sense esperar a la reunió següent. Un bug no es tanca només perquè hi hagi una PR: cal que la correcció s'hagi fusionat, que la CI passi i que s'hagi comprovat el cas de reproducció (manualment o amb un test). La issue ha de contenir l'enllaç a la PR i el resultat de la verificació.
