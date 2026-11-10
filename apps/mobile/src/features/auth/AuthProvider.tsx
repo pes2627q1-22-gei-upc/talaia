@@ -7,14 +7,20 @@ import {
   useEffect,
   useRef,
   useState,
+  useSyncExternalStore,
 } from 'react';
 
+import { accountBlocked } from '@/core/api/accountBlocked';
+
 import { authRepository, type AuthUser } from './authRepository';
+import { profileRepository } from './profileRepository';
 
 type AuthState = {
   user: AuthUser | null;
   loading: boolean;
   signingOut: boolean;
+  /** L'API ha respost `account_blocked` (TG-179): fins que no es tanca la sessió. */
+  blocked: boolean;
   error: 'restore' | 'logout' | null;
   restore: () => Promise<void>;
   signOut: () => Promise<void>;
@@ -28,6 +34,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const [loading, setLoading] = useState(true);
   const [signingOut, setSigningOut] = useState(false);
   const [error, setError] = useState<AuthState['error']>(null);
+  const blocked = useSyncExternalStore(accountBlocked.subscribe, accountBlocked.get);
   const currentUser = useRef<AuthUser | null>(null);
   const revision = useRef(0);
   const mounted = useRef(false);
@@ -36,6 +43,8 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const accept = useCallback(
     (next: AuthUser | null) => {
       if (currentUser.current?.id !== next?.id) cache.clear();
+      // El bloqueig és d'aquest compte: tancar la sessió el treu, i el següent compte comença net.
+      if (!next) accountBlocked.clear();
       currentUser.current = next;
       setUser(next);
     },
@@ -51,6 +60,9 @@ export function AuthProvider({ children }: PropsWithChildren) {
         if (!mounted.current || revision.current !== version) return;
         accept(next);
         setLoading(false);
+        // Una sessió recuperada no passa pel login: si l'han bloquejat mentrestant, l'API ho diu
+        // aquí i el client HTTP activa l'avís (TG-179). Idempotent; un error de xarxa no fa res.
+        if (next) profileRepository.ensure().catch(() => {});
       },
       () => {
         if (!mounted.current || revision.current !== version) return;
@@ -107,7 +119,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
   }, [accept]);
 
   return (
-    <AuthContext.Provider value={{ user, loading, signingOut, error, restore, signOut }}>
+    <AuthContext.Provider value={{ user, loading, signingOut, blocked, error, restore, signOut }}>
       {children}
     </AuthContext.Provider>
   );

@@ -83,7 +83,10 @@ Sense sessió no s'entra a l'app: `(tabs)/_layout.tsx` redirigeix a `/benvinguda
 (`useSessionGate`), i en tancar la sessió s'hi torna. Si la sessió hi és però no
 s'ha pogut recuperar (sense cobertura i amb el token caducat), no s'envia a la
 benvinguda: `RestoreErrorScreen` deixa tornar-ho a provar, i quan torna la xarxa el
-SDK la renova sol. Sense les variables de Supabase la porta queda oberta, per poder
+SDK la renova sol. Si l'API respon 403 `account_blocked` (compte bloquejat, TG-177),
+el client HTTP (`core/api/accountBlocked.ts`) ho apunta i la porta mostra
+`AccountBlockedScreen` fins que es tanca la sessió (TG-179); en recuperar una sessió es
+fa un `POST /perfil` perquè ho sàpiga sense esperar cap altra crida. Sense les variables de Supabase la porta queda oberta, per poder
 provar l'app en local sense compte.
 
 Tots els mètodes són a `features/auth/authRepository.ts`, amb el client únic de

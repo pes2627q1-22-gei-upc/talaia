@@ -21,6 +21,7 @@ function auth(overrides: Partial<Auth> = {}): Auth {
     user: { id: 'one', email: 'one@example.test' },
     loading: false,
     signingOut: false,
+    blocked: false,
     error: null,
     isAuthenticated: true,
     logoutLabel: 'Tanca la sessió',
