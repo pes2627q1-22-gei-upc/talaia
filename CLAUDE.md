@@ -101,6 +101,7 @@ Regla: un tipus de domini s'escriu **una sola vegada** a `packages/shared` i el 
 - **API:** REST, recursos en català tal com estan acordats amb altres equips (`/punts`, `/recomanacions`, `/esdeveniments`). Errors amb format uniforme `{ error: { code, message } }`. Tota ruta nova es documenta a l'OpenAPI a la mateixa PR.
 - **Tests:** Jest. Cada ViewModel i cada servei de domini amb tests. La fórmula de l'índex és codi pur i 100 % testejable.
 - **Secrets:** mai al repositori (és **públic**). `.env.example` documenta les variables; els valors reals van a `.env` (ignorat) i als secrets de GitHub.
+- **Bugs:** segueix `docs/gestio-bugs.md`. Si detectes un defecte preexistent o fora de l'abast de la tasca, informa'n la persona responsable amb passos per reproduir-lo; no creïs una issue ni n'iniciïs la correcció sense confirmar-ho amb ella. Els errors d'una tasca en curs es resolen dins de la mateixa tasca.
 
 ## Flux de Git (obligatori): Gitflow + Conventional Commits 1.0.0
 
