@@ -1,4 +1,4 @@
--- Rol d'administrador i bloqueig de comptes (TG-177, HU41, ADR-0028).
+-- Rol d'administrador i bloqueig de comptes (TG-177, HU41, ADR-0029).
 -- L'API llegeix les dues columnes a cada petició autenticada: un canvi val a l'instant, sense
 -- esperar que l'usuari renovi el JWT. Per fer administrador algú:
 --   update public.perfils set rol = 'admin' where email = '<correu>';

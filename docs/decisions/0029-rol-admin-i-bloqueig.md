@@ -1,4 +1,4 @@
-# ADR-0028: Rol d'administrador i bloqueig de comptes a la taula `perfils`
+# ADR-0029: Rol d'administrador i bloqueig de comptes a la taula `perfils`
 
 **Estat:** Acceptada · **Data:** 2026-11-10 · TG-177 (HU41)
 

@@ -1,4 +1,4 @@
-/** Rol d'un compte (`perfils.rol`). Es canvia amb SQL: vegeu ADR-0028. */
+/** Rol d'un compte (`perfils.rol`). Es canvia amb SQL: vegeu ADR-0029. */
 export type Rol = 'usuari' | 'admin';
 
 /**
@@ -7,7 +7,7 @@ export type Rol = 'usuari' | 'admin';
  */
 export type Perfil = {
   id: string;
-  /** `admin` pot fer servir les rutes de `/api/v1/admin` i entrar a la web d'administració (ADR-0028). */
+  /** `admin` pot fer servir les rutes de `/api/v1/admin` i entrar a la web d'administració (ADR-0029). */
   rol: Rol;
   /** L'usuari de Supabase Auth (`sub` del JWT). */
   authUserId: string;
