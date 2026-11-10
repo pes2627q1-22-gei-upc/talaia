@@ -15,6 +15,7 @@ npm run api                   # = npm run dev -w services/api, amb recàrrega
 - Calendari: `GET /api/v1/esdeveniments?des_de=2026-10-01&fins_a=2026-10-31` (JWT de Talaia o `X-API-Key` d'Aprop)
 - Desglossament de l'índex d'un punt: `http://localhost:3000/api/v1/punts/{id}/index?nit=2026-10-19` (cal `DATABASE_URL`)
 - Perfil: `GET`, `POST` i `PATCH /api/v1/perfil` (cal el JWT de Supabase a `Authorization: Bearer`)
+- Tokens de push: `PUT /api/v1/perfil/dispositius` i `DELETE /api/v1/perfil/dispositius/{token}` (JWT)
 - Recomanacions: `http://localhost:3000/api/v1/recomanacions?objectiu=cel_estrellat&lat=41.39&lon=2.17&data=<YYYY-MM-DD>&desDe=22&finsA=6&tempsMaxim=150`
 - Documentació (Swagger UI): <http://localhost:3000/api/v1/docs>
 - OpenAPI: <http://localhost:3000/api/v1/openapi.json>
@@ -35,7 +36,7 @@ Es llegeixen del `.env` de l'**arrel** del repo (`dev` i `start` el carreguen am
 | Variable | Per defecte | Què és |
 |---|---|---|
 | `API_PORT` | `3000` | Port on escolta l'API |
-| `DATABASE_URL` | — | Postgres (`postgresql://…`). **Opcional:** sense ella l'API arrenca amb un avís, `/health` funciona i `/punts`, `/punts/{id}`, `/punts/{id}/index`, `/recomanacions` i `/perfil` responen 503 `database_unavailable`. Amb Supabase local: `postgresql://postgres:postgres@127.0.0.1:54322/postgres` |
+| `DATABASE_URL` | — | Postgres (`postgresql://…`). **Opcional:** sense ella l'API arrenca amb un avís, `/health` funciona i `/punts`, `/punts/{id}`, `/punts/{id}/index`, `/recomanacions`, `/perfil` i `/perfil/dispositius` responen 503 `database_unavailable`. Amb Supabase local: `postgresql://postgres:postgres@127.0.0.1:54322/postgres` |
 | `SUPABASE_URL` | `http://127.0.0.1:54321` | URL del projecte de Supabase. `requireAuth` hi valida els JWT amb el JWKS (`/auth/v1/.well-known/jwks.json`, ADR-0023): 401 si el token és dolent, 503 si Supabase no respon. Al compose de la VM és obligatòria |
 | `APROP_API_KEY` | — | Secret de l'API assignat a Aprop. No s'inclou al repositori ni a l'app; sense configurar-lo, l'accés amb API key retorna 503, però l'accés JWT continua disponible. |
 
@@ -55,6 +56,7 @@ src/
     punts.ts            GET /punts (bbox, ETag, Cache-Control i 304) i GET /punts/{id}
     esdeveniments.ts    GET /esdeveniments, autenticació API key o JWT
     auth.ts             GET, POST i PATCH /perfil (JWT de Supabase, ADR-0023)
+    dispositius.ts      PUT i DELETE /perfil/dispositius: Expo push tokens (ADR-0028)
     puntIndex.ts        GET /punts/{id}/index: desglossament de l'índex per hores i factors (HU04)
     recomanacions.ts    GET /recomanacions (validació de la consulta i OpenAPI)
   punts/
@@ -138,6 +140,20 @@ El perfil de l'usuari autenticat (tipus `Perfil` a `@talaia/shared`, taula `perf
 - `PATCH /perfil`: de moment només es pot editar el nom: `{ "nom": "Martina" }` (1–100 caràcters, sense els espais dels extrems). Un camp que no es pot editar és un 400, no s'ignora. Torna el perfil amb el canvi; `data_actualitzacio` la posa el trigger de la taula.
 
 Errors: JWT absent o invàlid → 401 `unauthorized`; cos invàlid → 400 `validation_error`; sense `DATABASE_URL` o sense poder validar el JWT → 503.
+
+## `/perfil/dispositius` (HU17, TG-152, ADR-0028)
+
+Els Expo push tokens dels dispositius de l'usuari (taula `dispositius_push`, tipus `DispositiuPush` a `@talaia/shared`), que el worker fa servir per enviar les alertes. Un perfil pot tenir diversos dispositius; un token només és d'un perfil.
+
+- `PUT /perfil/dispositius` amb `{ "token": "ExponentPushToken[…]", "plataforma": "android" }`: upsert idempotent per `token` → 204. Si el token era d'un altre perfil (una altra persona ha entrat al mateix mòbil), passa al de l'usuari del JWT. Es valida el format del token (`ExponentPushToken[…]` o `ExpoPushToken[…]`) i la plataforma (`ios`, `android`); un camp de més és un 400. 404 `profile_not_found` si encara no s'ha fet el `POST /perfil`.
+- `DELETE /perfil/dispositius/{token}` (amb `encodeURIComponent`): l'app la crida en tancar la sessió. Només treu el token si és de l'usuari del JWT i respon 204 també si no hi era.
+
+Prova a mà amb l'API local i un JWT (per exemple, el de l'app):
+
+```bash
+curl -i -X PUT localhost:3000/api/v1/perfil/dispositius -H "Authorization: Bearer $JWT" -H 'Content-Type: application/json' -d '{"token":"ExponentPushToken[prova]","plataforma":"android"}'
+curl -i -X DELETE "localhost:3000/api/v1/perfil/dispositius/ExponentPushToken%5Bprova%5D" -H "Authorization: Bearer $JWT"
+```
 
 ## Afegir una ruta
 

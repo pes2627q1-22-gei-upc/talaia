@@ -9,7 +9,9 @@ import { buildOpenApiDocument } from '../openapi';
 import type { PuntsService } from '../punts/puntsService';
 import type { RecomanacionsService } from '../recomanacions/recomanacionsService';
 import type { ProfileStore } from '../services/profileService';
+import type { PushDeviceStore } from '../services/pushDeviceService';
 import { createAuthRouter } from './auth';
+import { createDispositiusRouter } from './dispositius';
 import { createEsdevenimentsRouter } from './esdeveniments';
 import './esdeveniments.contract';
 import { healthRouter } from './health';
@@ -26,6 +28,8 @@ export type ApiDeps = {
   supabaseUrl?: string;
   jwks?: JwksSource;
   profileStore?: ProfileStore;
+  /** Expo push tokens (`/perfil/dispositius`, TG-152). */
+  dispositius?: PushDeviceStore;
   esdeveniments?: EsdevenimentsService;
   apropApiKey?: string;
 };
@@ -38,6 +42,7 @@ export function createApiRouter({
   supabaseUrl,
   jwks,
   profileStore,
+  dispositius,
   esdeveniments,
   apropApiKey,
 }: ApiDeps & { profileStore: ProfileStore }): Router {
@@ -51,6 +56,7 @@ export function createApiRouter({
     createEsdevenimentsRouter(esdeveniments, apropApiKey, { supabaseUrl, jwks }),
   );
   router.use(createAuthRouter({ supabaseUrl, profileStore, jwks }));
+  router.use(createDispositiusRouter(dispositius, { supabaseUrl, jwks }));
 
   // Es genera quan ja s'han importat tots els routers, que són els que registren les rutes.
   const openapi = buildOpenApiDocument(version);
