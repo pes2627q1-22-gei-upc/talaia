@@ -1,5 +1,6 @@
 import type { Esdeveniment } from '@talaia/shared';
 import { act, renderHook } from '@testing-library/react-native';
+import { router } from 'expo-router';
 
 import i18n from '@/core/i18n';
 
@@ -7,6 +8,7 @@ import { useCalendarEventsQuery } from '../calendarRepository';
 import { useCalendarViewModel } from '../useCalendarViewModel';
 
 jest.mock('../calendarRepository', () => ({ useCalendarEventsQuery: jest.fn() }));
+jest.mock('expo-router', () => ({ router: { push: jest.fn() } }));
 
 const query = jest.mocked(useCalendarEventsQuery);
 const event = (id: string, date: string): Esdeveniment => ({
@@ -32,6 +34,15 @@ describe('useCalendarViewModel', () => {
       isError: false,
       refetch: jest.fn(),
     } as unknown as ReturnType<typeof useCalendarEventsQuery>);
+  });
+
+  it('tocar un fenomen n’obre la fitxa (HU10)', async () => {
+    const { result } = await renderHook(() => useCalendarViewModel());
+    result.current.openEvent('orionids-2026');
+    expect(router.push).toHaveBeenCalledWith({
+      pathname: '/calendari/[id]',
+      params: { id: 'orionids-2026' },
+    });
   });
 
   it('canvia de mes i torna a mostrar el mes complet', async () => {
