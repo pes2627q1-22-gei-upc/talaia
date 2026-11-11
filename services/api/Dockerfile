@@ -7,6 +7,7 @@ COPY package.json package-lock.json ./
 COPY services/api/package.json services/api/
 COPY packages/shared/package.json packages/shared/
 COPY packages/db/package.json packages/db/
+COPY packages/index/package.json packages/index/
 # Només les dependències de l'API i dels paquets que consumeix (res de l'app mòbil).
 RUN npm ci --workspace services/api --include-workspace-root=false --ignore-scripts
 
@@ -14,6 +15,7 @@ FROM deps AS build
 COPY tsconfig.base.json ./
 COPY packages/shared packages/shared
 COPY packages/db packages/db
+COPY packages/index packages/index
 COPY services/api services/api
 RUN npm run build --workspace services/api
 
@@ -23,6 +25,7 @@ COPY --from=deps /app/package.json /app/package-lock.json ./
 COPY --from=deps /app/services/api/package.json services/api/
 COPY --from=deps /app/packages/shared/package.json packages/shared/
 COPY --from=deps /app/packages/db/package.json packages/db/
+COPY --from=deps /app/packages/index/package.json packages/index/
 RUN npm ci --workspace services/api --include-workspace-root=false --ignore-scripts --omit=dev
 
 FROM node:22-alpine

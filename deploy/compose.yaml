@@ -22,6 +22,8 @@ services:
       # Valida els JWT de /perfil. Sense, l'API faria servir el Supabase local (127.0.0.1:54321).
       SUPABASE_URL: ${SUPABASE_URL:?Falta SUPABASE_URL (https://<ref>.supabase.co)}
       APROP_API_KEY: ${APROP_API_KEY:-}
+      # Previsió de GET /visibilitat (TG-130). Buida: la URL pública d'Open-Meteo.
+      OPEN_METEO_BASE_URL: ${OPEN_METEO_BASE_URL:-}
     volumes:
       # Certificat arrel de Supabase per validar la connexió a la BD (sslmode=verify-full,
       # docs/desplegament.md). Sense SUPABASE_CA_CERT, s'hi munta un fitxer buit.
