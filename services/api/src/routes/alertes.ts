@@ -1,20 +1,27 @@
 import type { Alerta, AlertaNova } from '@talaia/shared';
-import { Router, type NextFunction, type Request, type Response } from 'express';
+import {
+  Router,
+  type NextFunction,
+  type Request,
+  type RequestHandler,
+  type Response,
+} from 'express';
 import { z } from 'zod';
 
 import type { AlertesStore } from '../alertes/alertesRepository';
-import { requireAuth, type AuthenticatedRequest, type JwksSource } from '../middleware/auth';
+import type { AuthenticatedRequest } from '../middleware/auth';
 import { ApiError } from '../middleware/errors';
-import { ErrorSchema, registry } from '../openapi';
+import { registry } from '../openapi';
+import { ERRORS_AUTH, errorResponse } from './auth';
 import { OBJECTIUS } from './recomanacions';
 
 export const DISTANCIA_MAXIMA_KM = 200;
 
 export type AlertesRouterOptions = {
+  /** `requireAuth` amb `accountStatus`: JWT vàlid i compte no bloquejat (`routes/index.ts`). */
+  requireUser: RequestHandler;
   /** Sense `DATABASE_URL`, `createApp` hi passa un store que respon 503. */
   store: AlertesStore;
-  supabaseUrl?: string;
-  jwks?: JwksSource;
 };
 
 const OrigenSchema = z
@@ -75,15 +82,9 @@ const AlertaSchema: z.ZodType<Alerta> = z
   })
   .meta({ id: 'Alerta' });
 
-const errorResponse = (description: string) => ({
-  description,
-  content: { 'application/json': { schema: ErrorSchema } },
-});
-const ERRORS = {
-  401: errorResponse('JWT no vàlid o absent'),
-  404: errorResponse('L’usuari encara no té perfil: l’app ha de fer abans `POST /perfil`'),
-  503: errorResponse('No es pot validar el JWT de Supabase o no hi ha base de dades'),
-};
+const PROFILE_NOT_FOUND = errorResponse(
+  '`profile_not_found`: l’usuari encara no té perfil, l’app ha de fer abans `POST /perfil`',
+);
 
 registry.registerPath({
   method: 'post',
@@ -100,7 +101,8 @@ registry.registerPath({
       content: { 'application/json': { schema: AlertaSchema } },
     },
     400: errorResponse('El cos no és vàlid'),
-    ...ERRORS,
+    404: PROFILE_NOT_FOUND,
+    ...ERRORS_AUTH,
   },
 });
 
@@ -114,30 +116,31 @@ registry.registerPath({
       description: 'Les alertes (una llista buida si no en té cap)',
       content: { 'application/json': { schema: z.array(AlertaSchema) } },
     },
-    ...ERRORS,
+    404: PROFILE_NOT_FOUND,
+    ...ERRORS_AUTH,
   },
 });
 
 const profileNotFound = () =>
   new ApiError(404, 'profile_not_found', "L'usuari encara no té perfil (cal POST /perfil)");
 
-/** `requireAuth` ja ha respost 401 si no hi ha usuari: aquí sempre hi és. */
-function currentUserId(req: Request): string {
-  const { user } = req as AuthenticatedRequest;
-  if (!user) throw new ApiError(401, 'unauthorized', 'JWT invàlid o caducat');
-  return user.id;
+/**
+ * El perfil de l'usuari del JWT, que `requireUser` ja ha llegit (i ha rebutjat si està bloquejat).
+ * `null` si encara no té perfil.
+ */
+function currentPerfilId(req: Request): string | null {
+  return (req as AuthenticatedRequest).account?.perfilId ?? null;
 }
 
-export function createAlertesRouter({ store, supabaseUrl, jwks }: AlertesRouterOptions): Router {
+export function createAlertesRouter({ requireUser, store }: AlertesRouterOptions): Router {
   const router = Router();
-  const requireCurrentUser = requireAuth({ supabaseUrl, jwks });
 
   const handleCreate = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const userId = currentUserId(req);
+      const perfilId = currentPerfilId(req);
+      if (!perfilId) return next(profileNotFound());
       const alertaNova = AlertaNovaSchema.parse(req.body ?? {});
-      const alerta = await store.create(userId, alertaNova);
-      if (!alerta) return next(profileNotFound());
+      const alerta = await store.create(perfilId, alertaNova);
       // Dades personals: cap memòria cau (ni del mòbil ni d'un proxy) no les ha de desar.
       res.set('Cache-Control', 'no-store').status(201).json(alerta);
       return undefined;
@@ -148,17 +151,17 @@ export function createAlertesRouter({ store, supabaseUrl, jwks }: AlertesRouterO
 
   const handleList = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const alertes = await store.list(currentUserId(req));
-      if (!alertes) return next(profileNotFound());
-      res.set('Cache-Control', 'no-store').json(alertes);
+      const perfilId = currentPerfilId(req);
+      if (!perfilId) return next(profileNotFound());
+      res.set('Cache-Control', 'no-store').json(await store.list(perfilId));
       return undefined;
     } catch (error) {
       return next(error);
     }
   };
 
-  router.post('/', requireCurrentUser, handleCreate);
-  router.get('/', requireCurrentUser, handleList);
+  router.post('/', requireUser, handleCreate);
+  router.get('/', requireUser, handleList);
 
   return router;
 }

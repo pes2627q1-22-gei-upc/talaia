@@ -193,11 +193,6 @@
     "back": "Torna a l'inici"
   },
   "explore": {
-    "greeting": {
-      "morning": "Bon dia",
-      "afternoon": "Bona tarda",
-      "night": "Bona nit"
-    },
     "title": "Què vols veure?",
     "goals": {
       "pluja_estels": "Pluja d'estels",

@@ -14,7 +14,6 @@ import {
   dayParts,
   DEFAULT_RANGE,
   formatHour,
-  greetingFor,
   GRID_GOALS,
   HOURS,
   nightOf,
@@ -150,7 +149,6 @@ export function useExploreViewModel() {
   };
 
   return {
-    greeting: t(`explore.greeting.${greetingFor(now)}`),
     title: t('explore.title'),
     goals: GRID_GOALS.map((id) => {
       const soon = SOON_GOALS.includes(id);

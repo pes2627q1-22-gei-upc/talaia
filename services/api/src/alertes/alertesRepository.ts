@@ -4,34 +4,23 @@ import { lat, lon, puntDesDeLonLat, type createDb } from '@talaia/db';
 type Db = ReturnType<typeof createDb>;
 
 /**
- * Alertes de l'usuari autenticat (HU16, TG-145). Totes les operacions reben l'usuari del JWT
- * (`sub`) i filtren per ell a l'SQL: una alerta d'un altre usuari no es pot ni llegir ni tocar.
+ * Alertes d'un perfil (HU16, TG-145). Reben el `perfilId` que `requireUser` llegeix del perfil de
+ * l'usuari del JWT (`req.account`), mai un que vingui de la petició, i filtren per ell a l'SQL.
  */
 export type AlertesStore = {
-  /** Crea l'alerta (activa). `null` si l'usuari encara no té perfil (cal `POST /perfil`). */
-  create: (authUserId: string, alerta: AlertaNova) => Promise<Alerta | null>;
-  /** Les alertes de l'usuari, de la més nova a la més antiga. `null` si no té perfil. */
-  list: (authUserId: string) => Promise<Alerta[] | null>;
+  /** Crea l'alerta (activa). */
+  create: (perfilId: string, alerta: AlertaNova) => Promise<Alerta>;
+  /** Les alertes del perfil, de la més nova a la més antiga. */
+  list: (perfilId: string) => Promise<Alerta[]>;
 };
 
 export function createDatabaseAlertesStore(db: Db): AlertesStore {
-  const perfilId = async (authUserId: string) => {
-    const perfil = await db
-      .selectFrom('perfils')
-      .select('id')
-      .where('authUserId', '=', authUserId)
-      .executeTakeFirst();
-    return perfil?.id ?? null;
-  };
-
   return {
-    async create(authUserId, { objectiu, origen, distanciaMaxKm, indexMinim }) {
-      const perfil = await perfilId(authUserId);
-      if (!perfil) return null;
+    async create(perfilId, { objectiu, origen, distanciaMaxKm, indexMinim }) {
       const row = await db
         .insertInto('alertes')
         .values({
-          perfilId: perfil,
+          perfilId,
           objectiu,
           origen: puntDesDeLonLat(origen.lon, origen.lat),
           distanciaMaxKm,
@@ -52,9 +41,7 @@ export function createDatabaseAlertesStore(db: Db): AlertesStore {
       return toAlerta(row);
     },
 
-    async list(authUserId) {
-      const perfil = await perfilId(authUserId);
-      if (!perfil) return null;
+    async list(perfilId) {
       const rows = await db
         .selectFrom('alertes')
         .select((eb) => [
@@ -68,7 +55,7 @@ export function createDatabaseAlertesStore(db: Db): AlertesStore {
           'dataCreacio',
           'dataActualitzacio',
         ])
-        .where('perfilId', '=', perfil)
+        .where('perfilId', '=', perfilId)
         // Amb `id` per desempatar: dues alertes creades en la mateixa transacció tenen la mateixa data.
         .orderBy('dataCreacio', 'desc')
         .orderBy('id')

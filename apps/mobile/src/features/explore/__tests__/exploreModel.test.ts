@@ -2,7 +2,6 @@ import {
   addDays,
   dayParts,
   formatHour,
-  greetingFor,
   HOURS,
   nightOf,
   rangeHours,
@@ -30,15 +29,6 @@ describe('exploreModel', () => {
   it('dona el dia de la setmana i del mes', () => {
     expect(dayParts('2026-10-16')).toEqual({ weekday: 5, day: 16 });
     expect(dayParts('2026-10-18')).toEqual({ weekday: 0, day: 18 });
-  });
-
-  it('saluda segons l’hora', () => {
-    expect(greetingFor(at(6))).toBe('morning');
-    expect(greetingFor(at(13, 59))).toBe('morning');
-    expect(greetingFor(at(14))).toBe('afternoon');
-    expect(greetingFor(at(20, 59))).toBe('afternoon');
-    expect(greetingFor(at(21))).toBe('night');
-    expect(greetingFor(at(5, 59))).toBe('night');
   });
 
   it('mou les hores donant la volta a mitjanit i en compta la durada', () => {

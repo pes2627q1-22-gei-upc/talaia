@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import { fireEvent, render, screen, within } from '@testing-library/react-native';
 import { useRouter } from 'expo-router';
 import type { PropsWithChildren } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -69,6 +69,13 @@ describe('ExploreScreen', () => {
     expect(await screen.findByLabelText('Girona, Ubicació actual')).toBeOnTheScreen();
     expect(screen.getByRole('tab', { name: 'Aquesta nit' })).toBeSelected();
     expect(screen.getByText('2 h 30 min en cotxe')).toBeOnTheScreen();
+  });
+
+  it('el títol queda dins de l’àrea segura de dalt (Android)', async () => {
+    await renderScreen();
+    const safeArea = screen.getByTestId('explore-safe-area');
+    expect(safeArea.props.edges).toMatchObject({ top: 'additive', bottom: 'off' });
+    expect(within(safeArea).getByRole('header', { name: 'Què vols veure?' })).toBeOnTheScreen();
   });
 
   it('en triar un fenomen, queda marcat', async () => {
