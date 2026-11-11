@@ -7,10 +7,15 @@ import { useSessionGate } from '../useSessionGate';
 jest.mock('../AuthProvider', () => ({ useAuthState: jest.fn() }));
 jest.mock('../authRepository', () => ({ authRepository: { isConfigured: jest.fn(() => true) } }));
 
-function gate(user: { id: string } | null, loading = false, error: 'restore' | null = null) {
+function gate(
+  user: { id: string } | null,
+  loading = false,
+  error: 'restore' | null = null,
+  blocked = false,
+) {
   jest
     .mocked(useAuthState)
-    .mockReturnValue({ user, loading, error } as ReturnType<typeof useAuthState>);
+    .mockReturnValue({ user, loading, error, blocked } as ReturnType<typeof useAuthState>);
   return renderHook(() => useSessionGate());
 }
 
@@ -23,6 +28,11 @@ it('sense sessió, la porta és la benvinguda; amb sessió, l’app', async () =
 it("si no s'ha pogut recuperar la sessió, no envia a la benvinguda: es torna a provar", async () => {
   expect((await gate(null, false, 'restore')).result.current).toBe('restoreFailed');
   expect((await gate({ id: 'u' }, false, 'restore')).result.current).toBe('signedIn');
+});
+
+it('un compte bloquejat es queda a l’avís; sense sessió, torna a la benvinguda (TG-179)', async () => {
+  expect((await gate({ id: 'u' }, false, null, true)).result.current).toBe('blocked');
+  expect((await gate(null, false, null, true)).result.current).toBe('signedOut');
 });
 
 it('sense Supabase configurat, la porta és oberta', async () => {
