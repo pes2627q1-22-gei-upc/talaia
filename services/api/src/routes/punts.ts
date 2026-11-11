@@ -123,6 +123,9 @@ const FitxaQuerySchema = z.object({
     }),
 });
 
+/** Direccions de `horitzo_obert`: les mateixes que admet la restricció de la taula. */
+export const DireccioHoritzoSchema = z.enum(['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW']);
+
 const PuntFitxaSchema: z.ZodType<PuntFitxa> = z
   .object({
     id: z.string(),
@@ -131,7 +134,7 @@ const PuntFitxaSchema: z.ZodType<PuntFitxa> = z
     descripcio: z.string(),
     altitud: z.number().int().nullable().meta({ description: 'Metres sobre el nivell del mar' }),
     horitzoObert: z
-      .array(z.enum(['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW']))
+      .array(DireccioHoritzoSchema)
       .nullable()
       .meta({ description: "Direccions amb l'horitzó obert (aproximat). `null` si no és clar." }),
     accessibilitat: z.string().nullable(),

@@ -4,6 +4,12 @@ import { TIPUS_FENOMEN } from './tipus';
 
 type Db = ReturnType<typeof createDb>;
 
+/**
+ * El punt oficial que dona la ubicació de tots els esdeveniments d'Aprop (ADR-0026). Si no està
+ * publicat, `/esdeveniments` respon 503: l'administració no el deixa retirar (TG-174).
+ */
+export const SLUG_PUNT_REFERENCIA = 'centre-observacio-univers';
+
 export type FilaEsdeveniment = {
   codi: string;
   tipus: string;
@@ -63,7 +69,7 @@ export function createEsdevenimentsRepository(db: Db): EsdevenimentsRepository {
           lon(eb.ref('p.ubicacio')).as('longitud'),
           lat(eb.ref('p.ubicacio')).as('latitud'),
         ])
-        .where('p.slug', '=', 'centre-observacio-univers')
+        .where('p.slug', '=', SLUG_PUNT_REFERENCIA)
         .where('p.origen', '=', 'OFICIAL')
         .where('p.estat', '=', 'PUBLICAT')
         .executeTakeFirst();

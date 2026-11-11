@@ -81,3 +81,57 @@ export type DesglossamentIndex = {
    */
   hores: IndexHora[];
 };
+
+/** Estat d'un punt al catàleg (`punts_observacio.estat`). Només els `PUBLICAT` surten a l'app. */
+export type EstatPunt = 'PENDENT' | 'PUBLICAT' | 'REBUTJAT' | 'DESACTIVAT';
+
+/**
+ * Els estats que posa la web d'administració (HU39): `PUBLICAT` o `DESACTIVAT` (retirat). Un punt
+ * no s'esborra mai. `PENDENT` i `REBUTJAT` són de la moderació dels punts proposats (HU28, HU40).
+ */
+export type EstatPuntAdmin = Extract<EstatPunt, 'PUBLICAT' | 'DESACTIVAT'>;
+
+/** `OFICIAL`: el catàleg de l'equip i els punts creats des de l'administració. `COMUNITAT`: HU28. */
+export type OrigenPunt = 'OFICIAL' | 'COMUNITAT';
+
+/**
+ * Un punt tal com el veu la web d'administració (`/api/v1/admin/punts`, HU39): les metadades de la
+ * fitxa sense l'índex, en qualsevol estat. Dates en ISO 8601.
+ */
+export type PuntAdmin = Omit<PuntFitxa, 'index'> & {
+  /** Únic i estable (`kebab-case`). No es pot canviar. */
+  slug: string;
+  estat: EstatPunt;
+  origen: OrigenPunt;
+  dataCreacio: string;
+  dataActualitzacio: string;
+};
+
+/**
+ * Cos de `POST /api/v1/admin/punts`: un punt `OFICIAL` nou. Els camps opcionals que falten queden a
+ * `null`; sense `sqm`, el punt té la foscor estimada (ADR-0020).
+ */
+export type PuntAdminNou = {
+  slug: string;
+  nom: string;
+  municipi: string;
+  descripcio: string;
+  /** Graus WGS84, dins de Catalunya. */
+  lat: number;
+  lon: number;
+  /** Metres sobre el nivell del mar. */
+  altitud?: number | null;
+  horitzoObert?: DireccioHoritzo[] | null;
+  accessibilitat?: string | null;
+  /** Foscor del cel en mag/arcsec² (10–23), com al mapa de la Generalitat. */
+  sqm?: number | null;
+  /** Per defecte, `PUBLICAT`. */
+  estat?: EstatPuntAdmin;
+};
+
+/**
+ * Cos de `PATCH /api/v1/admin/punts/{id}`: els camps que canvien (com a mínim un), sense `slug`.
+ * `lat` i `lon` van junts. Per retirar un punt, `{ "estat": "DESACTIVAT" }`; per tornar-lo a
+ * publicar, `{ "estat": "PUBLICAT" }`.
+ */
+export type PuntAdminCanvis = Partial<Omit<PuntAdminNou, 'slug'>>;

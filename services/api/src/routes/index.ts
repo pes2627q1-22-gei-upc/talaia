@@ -6,6 +6,7 @@ import type { EsdevenimentsService } from '../esdeveniments/esdevenimentsService
 import type { BreakdownService } from '../index/breakdownService';
 import { requireAuth, type JwksSource } from '../middleware/auth';
 import { buildOpenApiDocument } from '../openapi';
+import type { PuntsAdminService } from '../punts/puntsAdminService';
 import type { PuntsService } from '../punts/puntsService';
 import type { RecomanacionsService } from '../recomanacions/recomanacionsService';
 import type { ProfileStore } from '../services/profileService';
@@ -24,6 +25,8 @@ export type ApiDeps = {
   /** `GET /punts/{id}/index` (TG-104). */
   breakdown?: BreakdownService;
   recomanacions?: RecomanacionsService;
+  /** `/admin/punts` (TG-174): ha de descartar el document del mapa de `punts` a cada canvi. */
+  puntsAdmin?: PuntsAdminService;
   supabaseUrl?: string;
   jwks?: JwksSource;
   profileStore?: ProfileStore;
@@ -36,6 +39,7 @@ export function createApiRouter({
   punts,
   breakdown,
   recomanacions,
+  puntsAdmin,
   supabaseUrl,
   jwks,
   profileStore,
@@ -59,7 +63,7 @@ export function createApiRouter({
     accountStatus: (authUserId) => profileStore.getAccountStatus(authUserId),
   });
   router.use(createAuthRouter({ requireUser, profileStore }));
-  router.use('/admin', createAdminRouter({ requireUser, profileStore }));
+  router.use('/admin', createAdminRouter({ requireUser, profileStore, puntsAdmin }));
 
   // Es genera quan ja s'han importat tots els routers, que són els que registren les rutes.
   const openapi = buildOpenApiDocument(version);
