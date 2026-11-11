@@ -16,6 +16,11 @@ export type PuntsService = {
   getMapDocument(bbox?: Bbox): Promise<VersionedMapDocument>;
   /** La fitxa d'un punt publicat amb l'índex de l'hora en curs i de les `hores` següents. */
   getFitxa(id: string, hores: number, now?: Date): Promise<PuntFitxa>;
+  /**
+   * El catàleg ha canviat (administració, TG-174): la petició següent a `/punts` regenera el
+   * document. La fitxa i les recomanacions no en tenen cap còpia: ja llegeixen la base de dades.
+   */
+  invalidateMapDocument(): void;
 };
 
 /** Inici de l'hora en curs (UTC): és la `hora` amb què el worker desa l'índex. */
@@ -66,6 +71,10 @@ export function createPuntsService(
         throw new ApiError(404, 'punt_not_found', `No hi ha cap punt publicat amb id ${id}`);
       }
       return { ...punt, index: splitIndexHores(files, horaActual) };
+    },
+
+    invalidateMapDocument() {
+      cache.invalidate();
     },
   };
 }
