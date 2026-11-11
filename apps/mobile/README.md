@@ -125,6 +125,11 @@ tanca la sessió i la vista ho diu, perquè no quedi cap compte a mitges.
   (`scripts/start.mjs`) arrenca Expo amb un nom de [nip.io](https://nip.io) que resol a la
   IP de la wifi, p. ex. `exp://192-168-1-50.nip.io:8081`, que `exp://**` ja permet. No cal
   fer res més; per forçar-ne un altre, `REACT_NATIVE_PACKAGER_HOSTNAME=… npm run mobile`.
+- Obre l'app amb el QR o amb *Enter URL manually* (`exp://<ip-amb-guions>.nip.io:8081`), no
+  des de la llista *Development servers* d'Expo Go, que l'obre per IP i el login torna a fallar.
+- L'adreça de tornada la construeix `core/config/appUrl.ts`: a Expo Go, `exp://<host>/--/…`
+  (`Linking.createURL` hi tornava `talaia://`, perquè Expo Go 58 es presenta com a `bare`); als
+  builds natius, `talaia://…`.
 - `EXPO_PUBLIC_API_URL` no cal: si no hi és, l'app fa servir el mateix host de Metro
   (`core/config/env.ts`), on també corre l'API.
 
