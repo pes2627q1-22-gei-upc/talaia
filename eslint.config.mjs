@@ -42,10 +42,17 @@ export default defineConfig([
     },
   },
   {
-    // Scripts de Node en JavaScript (supabase/scripts i scripts/sm): sense TypeScript, no-undef
-    // necessita els globals.
+    // Scripts de Node en JavaScript (supabase/scripts, scripts/sm i scripts/rnf): sense TypeScript,
+    // no-undef necessita els globals.
     files: ['supabase/scripts/**/*.mjs', 'scripts/**/*.mjs'],
-    languageOptions: { globals: { console: 'readonly', process: 'readonly', fetch: 'readonly' } },
+    languageOptions: {
+      globals: {
+        console: 'readonly',
+        process: 'readonly',
+        fetch: 'readonly',
+        AbortSignal: 'readonly',
+      },
+    },
   },
   {
     files: ['apps/mobile/**'],

@@ -27,6 +27,8 @@
     "supabase:correu": "node --env-file-if-exists=.env.supabase supabase/scripts/configura-correu.mjs",
     "test:supabase": "node --test \"supabase/scripts/**/*.test.mjs\"",
     "test:sm": "node --test \"scripts/sm/**/*.test.mjs\"",
+    "test:rnf": "node --test \"scripts/rnf/**/*.test.mjs\"",
+    "rnf:api": "node scripts/rnf/carrega-api.mjs",
     "sm:parte": "node scripts/sm/parte-daily.mjs --copia"
   },
   "devDependencies": {
