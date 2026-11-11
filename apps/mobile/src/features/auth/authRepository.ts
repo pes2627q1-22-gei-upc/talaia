@@ -1,12 +1,12 @@
 import { isAuthError, isAuthRetryableFetchError } from '@supabase/supabase-js';
 import * as AppleAuthentication from 'expo-apple-authentication';
-import Constants, { ExecutionEnvironment } from 'expo-constants';
 import * as Crypto from 'expo-crypto';
-import * as Linking from 'expo-linking';
 import * as WebBrowser from 'expo-web-browser';
+import { isRunningInExpoGo } from 'expo';
 import { AppState, Platform } from 'react-native';
 
 import { getAuthClient } from '@/core/auth/supabase';
+import { appUrl } from '@/core/config/appUrl';
 
 export type AuthUser = { id: string; email?: string };
 
@@ -106,7 +106,7 @@ function toUser(user: AuthUser | null | undefined): AuthUser | null {
 /** OAuth pel navegador del sistema (PKCE). A Expo Go la redirecció és `exp://…`. */
 async function signInWithBrowser(provider: 'google' | 'apple'): Promise<void> {
   const client = requireClient();
-  const redirectTo = Linking.createURL(OAUTH_CALLBACK_PATH);
+  const redirectTo = appUrl(OAUTH_CALLBACK_PATH);
   const { data } = await guard(() =>
     client.auth.signInWithOAuth({
       provider,
@@ -119,10 +119,13 @@ async function signInWithBrowser(provider: 'google' | 'apple'): Promise<void> {
     }),
   );
   if (!data.url) throw new SignInFailure('unknown');
-  // A Android, la pestanya del navegador en una tasca pròpia no es tanca en tornar a l'app, i el
-  // login següent hi reprenia la pàgina de l'anterior (`bad_oauth_state`). Dins la tasca de l'app,
-  // es tanca sola.
-  const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo, { createTask: false });
+  // A Android, la pestanya va en una tasca pròpia sense historial (sense l'activitat intermèdia
+  // d'expo-web-browser): quan torna a l'app, Android la tanca. Dins la tasca de l'app
+  // (`createTask: false`) quedava damunt de l'app, a la pàgina «Found»; amb l'activitat
+  // intermèdia, el login següent reprenia la de l'anterior (`bad_oauth_state`).
+  const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo, {
+    useProxyActivity: false,
+  });
   if (result.type !== 'success') throw new SignInFailure('cancelled');
   const params = new URL(result.url).searchParams;
   const code = params.get('code');
@@ -141,7 +144,8 @@ async function signInWithBrowser(provider: 'google' | 'apple'): Promise<void> {
  */
 async function appleNativeAvailable(): Promise<boolean> {
   if (Platform.OS !== 'ios') return false;
-  if (Constants.executionEnvironment === ExecutionEnvironment.StoreClient) return false;
+  // Expo Go 58 diu `bare` a `executionEnvironment`: no serveix per saber si som a Expo Go.
+  if (isRunningInExpoGo()) return false;
   return AppleAuthentication.isAvailableAsync().catch(() => false);
 }
 
@@ -218,7 +222,7 @@ export const authRepository = {
    */
   async sendEmailCode(email: string): Promise<void> {
     const client = requireClient();
-    const emailRedirectTo = Linking.createURL(EMAIL_LINK_PATH);
+    const emailRedirectTo = appUrl(EMAIL_LINK_PATH);
     await guard(() =>
       client.auth.signInWithOtp({ email, options: { shouldCreateUser: true, emailRedirectTo } }),
     );

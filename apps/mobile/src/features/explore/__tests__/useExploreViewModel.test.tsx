@@ -58,7 +58,6 @@ describe('useExploreViewModel', () => {
     const { result } = await renderViewModel();
     const vm = result.current;
 
-    expect(['Bon dia', 'Bona tarda', 'Bona nit']).toContain(vm.greeting);
     expect(vm.title).toBe('Què vols veure?');
     expect(vm.goals.find((goal) => goal.selected)?.id).toBe('cel_estrellat');
     expect(vm.origin).toMatchObject({ state: 'loading', label: 'Buscant on ets…' });
@@ -132,18 +131,16 @@ describe('useExploreViewModel', () => {
     await waitFor(() => expect(result.current.origin.label).toBe('Barcelona'));
   });
 
-  it('en tornar a l’app l’endemà, «aquesta nit» i la salutació s’actualitzen', async () => {
+  it('en tornar a l’app l’endemà, «aquesta nit» s’actualitza', async () => {
     jest.useFakeTimers({ now: new Date(2026, 9, 14, 23, 0), doNotFake: ['queueMicrotask'] });
     const backToApp = captureAppState();
     mockedPlace.mockResolvedValue(BARCELONA);
     const { result } = await renderViewModel();
     expect(result.current.calendar.today).toBe('2026-10-14');
-    expect(result.current.greeting).toBe('Bona nit');
 
     jest.setSystemTime(new Date(2026, 9, 15, 7, 0));
     await backToApp('active');
     expect(result.current.calendar.today).toBe('2026-10-15');
-    expect(result.current.greeting).toBe('Bon dia');
     jest.useRealTimers();
   });
 

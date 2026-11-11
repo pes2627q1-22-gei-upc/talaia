@@ -1,6 +1,6 @@
 import { AuthApiError, AuthRetryableFetchError } from '@supabase/supabase-js';
+import { isRunningInExpoGo } from 'expo';
 import * as AppleAuthentication from 'expo-apple-authentication';
-import Constants, { ExecutionEnvironment } from 'expo-constants';
 import * as WebBrowser from 'expo-web-browser';
 import { Platform } from 'react-native';
 
@@ -9,9 +9,12 @@ import { getAuthClient } from '@/core/auth/supabase';
 import { authRepository, SignInFailure, toSignInFailure } from '../authRepository';
 
 jest.mock('@/core/auth/supabase', () => ({ getAuthClient: jest.fn() }));
-jest.mock('expo-linking', () => ({
-  createURL: (path: string) => `exp://192.168.1.50:8081/--/${path}`,
+jest.mock('expo', () => ({ isRunningInExpoGo: jest.fn() }));
+jest.mock('expo-constants', () => ({
+  __esModule: true,
+  default: { expoConfig: { hostUri: '192-168-1-50.nip.io:8081' } },
 }));
+jest.mock('expo-linking', () => ({ createURL: (path: string) => `talaia://${path}` }));
 jest.mock('expo-web-browser', () => ({ openAuthSessionAsync: jest.fn() }));
 jest.mock('expo-crypto', () => ({
   randomUUID: () => 'raw-nonce',
@@ -24,7 +27,9 @@ jest.mock('expo-apple-authentication', () => ({
   AppleAuthenticationScope: { FULL_NAME: 0, EMAIL: 1 },
 }));
 
-const REDIRECT = 'exp://192.168.1.50:8081/--/auth/callback';
+/** Build natiu. A Expo Go, la tornada és `exp://<host>/--/…` (vegeu els tests d'Expo Go). */
+const REDIRECT = 'talaia://auth/callback';
+const EXPO_GO = 'exp://192-168-1-50.nip.io:8081/--';
 const auth = {
   signInWithOAuth: jest.fn(),
   exchangeCodeForSession: jest.fn(),
@@ -36,6 +41,7 @@ const ok = { data: {}, error: null };
 
 beforeEach(() => {
   jest.clearAllMocks();
+  jest.mocked(isRunningInExpoGo).mockReturnValue(false);
   jest
     .mocked(getAuthClient)
     .mockReturnValue({ auth } as unknown as NonNullable<ReturnType<typeof getAuthClient>>);
@@ -78,7 +84,7 @@ describe('Google', () => {
     expect(WebBrowser.openAuthSessionAsync).toHaveBeenCalledWith(
       'https://supabase.test/authorize',
       REDIRECT,
-      { createTask: false },
+      { useProxyActivity: false },
     );
     expect(auth.exchangeCodeForSession).toHaveBeenCalledWith('abc');
   });
@@ -101,6 +107,25 @@ describe('Google', () => {
       .mocked(WebBrowser.openAuthSessionAsync)
       .mockResolvedValue({ type: 'success', url: `${REDIRECT}?error=server_error` });
     expect(await reason(authRepository.signInWithGoogle())).toBe('unknown');
+  });
+
+  it("a Expo Go torna a l'Expo Go d'on s'ha carregat l'app, no a talaia://", async () => {
+    jest.mocked(isRunningInExpoGo).mockReturnValue(true);
+    jest
+      .mocked(WebBrowser.openAuthSessionAsync)
+      .mockResolvedValue({ type: 'success', url: `${EXPO_GO}/auth/callback?code=abc` });
+    await authRepository.signInWithGoogle();
+    expect(auth.signInWithOAuth).toHaveBeenCalledWith(
+      expect.objectContaining({
+        options: expect.objectContaining({ redirectTo: `${EXPO_GO}/auth/callback` }),
+      }),
+    );
+    expect(WebBrowser.openAuthSessionAsync).toHaveBeenCalledWith(
+      'https://supabase.test/authorize',
+      `${EXPO_GO}/auth/callback`,
+      { useProxyActivity: false },
+    );
+    expect(auth.exchangeCodeForSession).toHaveBeenCalledWith('abc');
   });
 });
 
@@ -135,20 +160,17 @@ describe('Apple', () => {
   });
 
   it('a Expo Go va pel navegador encara que hi hagi el mòdul natiu (token de host.exp.Exponent)', async () => {
-    const restore = jest.replaceProperty(
-      Constants,
-      'executionEnvironment',
-      ExecutionEnvironment.StoreClient,
-    );
+    // Expo Go 58 diu `bare` a `executionEnvironment`: cal `isRunningInExpoGo`.
+    jest.mocked(isRunningInExpoGo).mockReturnValue(true);
     jest
       .mocked(WebBrowser.openAuthSessionAsync)
-      .mockResolvedValue({ type: 'success', url: `${REDIRECT}?code=abc` });
+      .mockResolvedValue({ type: 'success', url: `${EXPO_GO}/auth/callback?code=abc` });
     expect(await authRepository.isAppleNativeAvailable()).toBe(false);
     await authRepository.signInWithApple();
-    restore.restore();
-    expect(auth.signInWithOAuth).toHaveBeenCalledWith(
-      expect.objectContaining({ provider: 'apple' }),
-    );
+    expect(auth.signInWithOAuth).toHaveBeenCalledWith({
+      provider: 'apple',
+      options: { redirectTo: `${EXPO_GO}/auth/callback`, skipBrowserRedirect: true },
+    });
     expect(AppleAuthentication.signInAsync).not.toHaveBeenCalled();
   });
 
@@ -210,7 +232,7 @@ describe('correu', () => {
       email: 'nom@exemple.cat',
       options: {
         shouldCreateUser: true,
-        emailRedirectTo: 'exp://192.168.1.50:8081/--/auth/correu',
+        emailRedirectTo: 'talaia://auth/correu',
       },
     });
     await authRepository.verifyEmailCode('nom@exemple.cat', '123456');
@@ -218,6 +240,15 @@ describe('correu', () => {
       email: 'nom@exemple.cat',
       token: '123456',
       type: 'email',
+    });
+  });
+
+  it("a Expo Go, l'enllaç del correu torna a Expo Go", async () => {
+    jest.mocked(isRunningInExpoGo).mockReturnValue(true);
+    await authRepository.sendEmailCode('nom@exemple.cat');
+    expect(auth.signInWithOtp).toHaveBeenCalledWith({
+      email: 'nom@exemple.cat',
+      options: { shouldCreateUser: true, emailRedirectTo: `${EXPO_GO}/auth/correu` },
     });
   });
 

@@ -193,11 +193,6 @@
     "back": "Volver al inicio"
   },
   "explore": {
-    "greeting": {
-      "morning": "Buenos días",
-      "afternoon": "Buenas tardes",
-      "night": "Buenas noches"
-    },
     "title": "¿Qué quieres ver?",
     "goals": {
       "pluja_estels": "Lluvia de estrellas",

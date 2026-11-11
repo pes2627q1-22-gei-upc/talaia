@@ -51,7 +51,7 @@ Més context: `docs/producte.md` (abast, MVP, NOT list), `docs/arquitectura.md`,
 |---|---|
 | App mòbil | React Native + TypeScript amb **Expo** (EAS Build, Expo Push), arquitectura **MVVM** |
 | Mapa | **MapLibre GL JS** en una DOM component d'Expo + tessel·les vectorials i relleu 3D de l'**ICGC** (estil nocturn propi; ADR-0015) |
-| Web d'administració | React + TypeScript (estàtica, servida per Nginx) |
+| Web d'administració | Vite + React + TypeScript (estàtica, servida per Nginx; ADR-0030) |
 | API | **Node.js + TypeScript + Express**, REST a `/api/v1`, documentada amb **OpenAPI** |
 | Worker | Procés Node.js que recalcula l'índex **cada hora** (índex precalculat, no a cada petició) |
 | Dades | **Supabase**: PostgreSQL + **PostGIS**, Auth (Google, Apple, correu → JWT), Storage |

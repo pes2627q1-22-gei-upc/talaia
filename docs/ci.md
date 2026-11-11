@@ -1,4 +1,4 @@
-# CI i SonarCloud (TG-70)
+# CI i SonarCloud (TG-70, TG-181)
 
 El workflow [ci.yml](../.github/workflows/ci.yml) executa tres checks independents:
 `lint`, `typecheck` i `tests`. S'activa en obrir o reobrir una PR, quan s'hi pugen
@@ -25,15 +25,25 @@ Un workflow més, separat de `ci.yml` (detalls a [desplegament.md](desplegament.
 
 El deploy de `stable` no és a GitHub Actions: el fa un cron de la VM ([ADR-0021](decisions/0021-deploy-per-pull-des-de-la-vm.md)).
 
-## Activar SonarCloud quan hi hagi accés
+## Estat de la integració
 
-La integració està preparada però **desactivada per defecte**. Sense la variable
+La integració amb SonarCloud està **activada** al repositori i importa la cobertura
+de l'app mòbil. El projecte utilitza el Quality Gate **Sonar way**, amb un mínim
+del **80 % de cobertura al codi nou**. El llindar es configura a SonarCloud;
+`sonar.qualitygate.wait=true` fa que la CI esperi el resultat i falli si no se supera.
+No és un mínim del 80 % sobre tot el codi existent.
+
+Sense la variable
 `SONAR_ENABLED=true`, els passos de Sonar s'ometen i la CI bàsica continua funcionant.
+
+## Configuració de SonarCloud
+
+Els passos següents permeten reproduir la configuració de la integració:
 
 1. Importa o vincula el repositori `talaia` al projecte de SonarCloud de l'equip.
    Comprova que la branca principal del projecte sigui `snapshot`.
 2. A SonarCloud, desactiva **Administration → Analysis Method → Automatic Analysis**
-   si està activat: utilitzarem l'anàlisi de GitHub Actions per importar cobertura.
+   si està activat: utilitzem l'anàlisi de GitHub Actions per importar cobertura.
 3. A GitHub, entra a **Settings → Secrets and variables → Actions**. Qui tingui
    permisos de configuració del repositori ha d'afegir aquests valors:
 
@@ -49,8 +59,8 @@ La integració està preparada però **desactivada per defecte**. Sense la varia
 4. Executa primer la CI sobre `snapshot` per disposar d'una anàlisi de referència.
    Després obre o actualitza una PR i comprova el resultat de SonarCloud.
 5. Verifica al tauler de Sonar que s'han importat els fitxers i la cobertura,
-   i que el Quality Gate retorna un resultat. Acordeu les seves condicions amb
-   l'equip; aquesta configuració no crea llindars de qualitat nous.
+   i que el Quality Gate assignat és **Sonar way**, amb un mínim del **80 % de
+   cobertura al codi nou**. Aquest llindar no es defineix al YAML ni a Jest.
 6. Fes obligatoris `lint`, `typecheck` i `tests` al ruleset de GitHub si encara no
    ho són. Sonar s'executa dins de `tests`: un Quality Gate fallit també fa fallar
    aquest check quan l'anàlisi està activada.
@@ -58,6 +68,41 @@ La integració està preparada però **desactivada per defecte**. Sense la varia
 No cal editar el YAML per activar la integració. Si s'activa amb alguna credencial
 o clau absent, el workflow falla amb un missatge que indica el nom que falta,
 sense mostrar el valor del token.
+
+## Consultar els informes i el llindar
+
+1. A GitHub, obre **Actions → CI** i selecciona una execució recent acabada.
+2. Al resum, a **Artifacts**, descarrega `mobile-coverage`. Es conserva durant
+   **7 dies**; una execució més antiga pot haver perdut l'artefacte.
+3. Descomprimeix el ZIP i obre `lcov-report/index.html` al navegador per consultar
+   la cobertura per fitxer. `lcov.info` conté les dades que es preparen per a SonarCloud.
+4. A SonarCloud, obre el projecte i **Analysis → Summary → New Code** per veure
+   la cobertura del codi nou, el mínim requerit i el resultat del Quality Gate.
+   L'enllaç **Sonar way** permet consultar les condicions del gate assignat.
+5. A les PR, consulta el comentari de SonarQube Cloud i el seu enllaç als detalls
+   de l'anàlisi per veure la cobertura dels canvis.
+
+SonarCloud pot ometre les condicions de cobertura i duplicació en canvis de menys
+de 20 línies noves si està activada l'opció **Ignore duplication and coverage on
+small changes**. Cal consultar aquesta opció al Quality Gate del projecte;
+la validació de la TG-181 no n'ha comprovat l'estat.
+
+### Evidències de validació (TG-181)
+
+Validació del 2026-11-11, a partir de les captures de SonarCloud i GitHub i de la
+comprovació de l'artefacte feta per la responsable de la tasca:
+
+- A `snapshot`, SonarCloud mostra **Sonar way**, amb **93,21 %** de cobertura del
+  codi nou, mínim requerit del **80 %** i resultat **Passed**.
+- La [PR #93](https://github.com/pes2627q1-22-gei-upc/talaia/pull/93) mostra
+  **91,9 %** de cobertura del codi nou i **Quality Gate passed**, com a evidència
+  de l'anàlisi de cobertura en una PR amb canvis de codi.
+- S'ha confirmat la disponibilitat de `mobile-coverage` en una execució recent
+  de CI, amb `lcov.info` i l'informe HTML.
+
+Aquestes comprovacions validen la importació de cobertura i l'avaluació del gate.
+No s'ha fet una prova controlada amb cobertura inferior al llindar; el comportament
+de fallada està configurat al workflow amb `sonar.qualitygate.wait=true`.
 
 ## Com funciona l'anàlisi
 
@@ -90,10 +135,12 @@ Jest actualment recull cobertura dels fitxers carregats pels tests. El percentat
 local no representa necessàriament tot el codi de l'app; Sonar també analitza
 els fitxers de producció dins de l'abast que no apareixen a l'informe.
 
-La integració encara s'ha de validar contra el projecte real de SonarCloud.
+La integració de l'app està validada contra el projecte real de SonarCloud.
+Ampliar-ne l'abast a altres serveis és una millora posterior.
 
 ## Referències
 
 - [Acció oficial de SonarSource](https://github.com/SonarSource/sonarqube-scan-action)
 - [Cobertura JavaScript/TypeScript i anàlisi des de CI](https://docs.sonarsource.com/sonarqube-cloud/analyzing-source-code/test-coverage/javascript-typescript-test-coverage)
 - [Paràmetres del Quality Gate](https://docs.sonarsource.com/sonarqube-cloud/analyzing-source-code/analysis-parameters/parameters-not-settable-in-ui)
+- [Quality Gate i excepció per a canvis petits](https://docs.sonarsource.com/sonarqube-cloud/managing-your-projects/project-analysis/changing-quality-gate)
