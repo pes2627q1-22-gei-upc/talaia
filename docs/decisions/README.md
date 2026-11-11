@@ -33,5 +33,6 @@ Format: **Context → Decisió → Conseqüències**. Estat: `Acceptada`, `Propo
 | [0025](0025-observacions-xema.md) | Observacions de la XEMA de Meteocat: les lectures d'ahir de l'estació més propera a cada punt, un cop al dia (unes 190 consultes al mes) | Acceptada |
 | [0026](0026-contracte-esdeveniments-aprop.md) | Contracte del calendari amb Aprop: sis tipus, dies civils de Catalunya, ubicació general i accés amb API key o JWT (P14) | Acceptada |
 | [0027](0027-index-per-objectiu.md) | Índex per objectiu: `100 × núvols × condició × qualitat`, amb un perfil per objectiu (posta, Lluna, pluja d'estels, eclipsi, Via Làctia…); el del cel estrellat és la v1 | Proposada |
+| [0033](0033-avaluacio-alertes-worker.md) | Avaluació de les alertes al worker després de cada recàlcul: una sola consulta, una decisió pura (índex ≥ mínim a les hores que queden de la nit; desempat per índex, distància i hora) i com a molt una notificació per alerta i nit a `notificacions_alertes`, que envia la TG-154 | Proposada |
 
 Decisions encara obertes: [pendents.md](pendents.md).

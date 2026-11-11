@@ -2,7 +2,7 @@
 
 Procés de Talaia que ingesta les dades externes i recalcula l'índex de visibilitat de tots els punts **cada hora** ([ADR-0004](../../docs/decisions/0004-index-precalculat.md)). Node 22 + TypeScript (strict), mateixes eines que l'API.
 
-Estat: hi ha la **ingesta de la previsió d'Open-Meteo** (TG-95 i TG-114), el **càlcul astronòmic** amb Astronomy Engine (TG-96), la **fórmula de l'índex v1** amb la seva persistència (TG-98) i la **ingesta de les observacions de la XEMA** de Meteocat (TG-115, `npm run xema`). El **procés horari** (TG-99) recalcula l'índex de tots els punts en arrencar i cada hora amb node-cron, dins del contenidor.
+Estat: hi ha la **ingesta de la previsió d'Open-Meteo** (TG-95 i TG-114), el **càlcul astronòmic** amb Astronomy Engine (TG-96), la **fórmula de l'índex v1** amb la seva persistència (TG-98) i la **ingesta de les observacions de la XEMA** de Meteocat (TG-115, `npm run xema`). El **procés horari** (TG-99) recalcula l'índex de tots els punts en arrencar i cada hora amb node-cron, dins del contenidor, i després **avalua les alertes** (TG-153): l'enviament de les notificacions push és la TG-154.
 
 ## Ordres
 
@@ -151,7 +151,7 @@ npm run index -w services/worker -- 42.0294,0.7112 21.56    # amb l'SQM del lloc
 
 ```
 src/
-  main.ts                  Cablejat del procés llarg: pool, node-cron a «5 * * * *» (UTC), la XEMA i senyals
+  main.ts                  Cablejat del procés llarg: pool, node-cron a «5 * * * *» (UTC), alertes, XEMA i senyals
   recalcul/
     executor.ts            Sense solapaments, errors que no aturen el procés i aturada que espera
     recalcul.ts            Una execució, per lots: punts → Open-Meteo → efemèrides → índex → BD
@@ -160,7 +160,7 @@ src/
 
 Per què node-cron i no el cron del sistema: [ADR-0024](../../docs/decisions/0024-planificacio-worker-node-cron.md).
 
-- **Una execució** (`recalculaIndex`): llegeix els punts `PUBLICAT` (posició, altitud i SQM), i els recalcula **en lots de 10**: per a cada lot, en demana la previsió a Open-Meteo (timeout de 30 s i **un reintent** si l'error és de xarxa, timeout, 429 o 5xx), hi creua les efemèrides i desa l'índex de l'hora en curs i de les següents (`desaIndexs` substitueix les hores ja calculades). Un lot que falla no atura els altres. Després esborra l'índex de fa més de 24 hores.
+- **Una execució** (`recalculaIndex`): llegeix els punts `PUBLICAT` (posició, altitud i SQM), i els recalcula **en lots de 10**: per a cada lot, en demana la previsió a Open-Meteo (timeout de 30 s i **un reintent** si l'error és de xarxa, timeout, 429 o 5xx), hi creua les efemèrides i desa l'índex de l'hora en curs i de les següents (`desaIndexs` substitueix les hores ja calculades). Un lot que falla no atura els altres. Després esborra l'índex de fa més de 24 hores i avalua les alertes (vegeu «Avaluació de les alertes»).
 - **La marca de versió** (ADR-0012): en acabar, desa una fila a `execucions_worker` (`iniciada_el`, `acabada_el`, `estat`, punts i hores desats, i el missatge de l'error). L'estat és `ok` només si tots els lots han anat bé; si no, és `error` i l'error diu quins punts han fallat. Si el registre mateix falla, es mostra al log i no amaga l'error de l'execució. L'API fa servir l'última `acabada_el` d'una execució que ha desat algun punt (també si n'ha fallat algun lot) per saber quan ha de regenerar el GeoJSON del mapa.
 - **Errors:** si falla Open-Meteo o la base de dades, l'error queda a `execucions_worker`, es mostra al log i el procés continua: es torna a provar a l'hora següent. Si una execució encara no ha acabat quan arriba la següent, la nova se salta.
 - **Base de dades penjada:** el pool té timeouts (10 s per connectar, 30 s per consulta), i una BD que no respon no pot deixar l'execució encallada per sempre.
@@ -173,6 +173,26 @@ Prova en local amb la base de dades de Supabase local (`npx supabase start`):
 DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:54322/postgres npm run start -w services/worker
 ```
 
+## Avaluació de les alertes (TG-153)
+
+```
+src/
+  alertes/
+    avaluacio.ts           La finestra de la nit, la decisió pura i el cas d'ús (`evaluateAlerts`)
+    repository.ts          Una consulta per als candidats i un insert per a les notificacions (Kysely)
+```
+
+Per què així: [ADR-0033](../../docs/decisions/0033-avaluacio-alertes-worker.md), que concreta l'[ADR-0028](../../docs/decisions/0028-notificacions-push.md).
+
+- **Quan:** dins de cada execució (port `alertes` de `recalculaIndex`), amb l'índex ja desat, si l'execució n'ha desat algun punt (també si ha fallat algun lot). Un error de les alertes **no fa fallar el recàlcul**: queda al log i a `execucions_worker.error_alertes`, i l'`estat` continua sent el de l'índex. `execucions_worker.notificacions` diu quantes notificacions noves s'han desat.
+- **Quines hores** (`alertsWindow`): les que queden de la nit en curs, des de l'hora en curs fins a les 12:00 locals de l'endemà. La nit és la de l'API (TG-104), compartida a `@talaia/shared` (`nit.ts`): de 12:00 a 12:00 a `Europe/Madrid`, de 23 o 25 hores els dies del canvi d'hora.
+- **La decisió** (`pickNotifications`, codi pur): per a cada alerta activa, els punts publicats a `distancia_max_km` o menys de l'origen amb un índex ≥ `index_minim` i més gran que 0. El millor és el de més índex; si empaten, el més proper, i després l'hora més d'hora. A la v1 l'índex és el mateix per a tots els objectius (ADR-0018).
+- **Una per alerta i nit:** `notificacions_alertes` té la clau primària `(alerta_id, nit)` i la notificació es desa amb `on conflict do nothing`. La consulta de candidats ja salta les alertes notificades aquesta nit. Si cap hora no arriba al mínim, no es desa res i una previsió millor encara pot notificar més tard.
+- **Eficient:** una sola consulta per a totes les alertes (`st_dwithin` amb el radi de cada una, sobre l'índex GIST) i un sol `insert`, sigui quin sigui el nombre d'alertes.
+- **Per a la TG-154:** `evaluateAlerts` torna només les notificacions noves, amb `perfilId` (per buscar-ne els tokens), `puntId` (el `data: { puntId }` que obre la fitxa), `puntNom`, `hora` i `index`. L'enviament s'afegeix a `createAlertsStep`, que és el que `main.ts` passa a `recalculaIndex`, i omple `enviada_el` i `ticket_ids`.
+
+Pendent: deixar fora els perfils bloquejats (`perfils.bloquejat`, ADR-0029) quan aquesta branca integri `snapshot` (vegeu l'ADR-0033).
+
 ## Tests
 
-Jest, sense xarxa: el client d'Open-Meteo es prova amb un `fetch` fals (URL construïda, resposta d'un lloc i de diversos, lots i un lot que falla, `null`, unitats inesperades, timeout, errors de xarxa i HTTP, cossos inesperats) i la ingesta amb un client i un repositori falsos. El càlcul astronòmic es contrasta amb fets independents de la llibreria: l'alçada del Sol al migdia del solstici (90° − latitud + 23,44°), la Lluna nova durant l'eclipsi solar del 12/08/2026 i la plena durant l'eclipsi lunar del 03/03/2026, les hores de l'USNO i de JPL Horizons a Barcelona (posta, crepuscles, Lluna i la nit del canvi d'hora), l'ordre i la durada dels crepuscles i el Sol just al llindar en cada esdeveniment. La fórmula de l'índex es prova factor a factor, amb l'exemple de l'ADR-0018, les franges i el repositori en memòria.
+Jest, sense xarxa: el client d'Open-Meteo es prova amb un `fetch` fals (URL construïda, resposta d'un lloc i de diversos, lots i un lot que falla, `null`, unitats inesperades, timeout, errors de xarxa i HTTP, cossos inesperats) i la ingesta amb un client i un repositori falsos. El càlcul astronòmic es contrasta amb fets independents de la llibreria: l'alçada del Sol al migdia del solstici (90° − latitud + 23,44°), la Lluna nova durant l'eclipsi solar del 12/08/2026 i la plena durant l'eclipsi lunar del 03/03/2026, les hores de l'USNO i de JPL Horizons a Barcelona (posta, crepuscles, Lluna i la nit del canvi d'hora), l'ordre i la durada dels crepuscles i el Sol just al llindar en cada esdeveniment. La fórmula de l'índex es prova factor a factor, amb l'exemple de l'ADR-0018, les franges i el repositori en memòria. Les alertes (TG-155): la finestra de la nit (migdia, matinada, estiu i hivern, les nits de 23 i 25 hores del canvi d'hora), la decisió (mínim, índex 0, radi, alertes inactives, hores passades i de la nit següent, desempats), la no repetició amb un repositori en memòria que fa de clau primària i amb l'SQL de Kysely (`src/testing/fakeDb.ts`), i que un error de les alertes no fa fallar el recàlcul. Els tests de l'enviament arriben amb la TG-154.
