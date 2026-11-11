@@ -16,6 +16,33 @@ const appear = FadeIn.duration(motion.base).reduceMotion(ReduceMotion.System);
 const backIcon = require('@/assets/images/event/back.svg');
 const clockIcon = require('@/assets/images/explora/rellotge.svg');
 const starIcon = require('@/assets/images/event/estel.svg');
+const moonIcon = require('@/assets/images/point/moon.svg');
+const watchIcon = require('@/assets/images/explora/constellacions.svg');
+
+/** Un apartat de la fitxa: icona, títol i text. */
+function Fact({
+  icon,
+  tint,
+  title,
+  text,
+}: {
+  icon: number;
+  tint?: string;
+  title: string;
+  text: string;
+}) {
+  return (
+    <View style={styles.fact}>
+      <Image source={icon} tintColor={tint} style={styles.factIcon} accessible={false} />
+      <View style={styles.factCopy}>
+        <AppText variant="label">{title}</AppText>
+        <AppText variant="small" color="boira">
+          {text}
+        </AppText>
+      </View>
+    </View>
+  );
+}
 
 /** Fitxa d'un esdeveniment del calendari (HU10, mockup 09). El mite, el millor lloc i els plans són d'altres històries. */
 export function EventDetailScreen({ eventId }: { eventId: string }) {
@@ -64,30 +91,13 @@ export function EventDetailScreen({ eventId }: { eventId: string }) {
               </View>
             </View>
             <View style={styles.facts}>
-              <View style={styles.fact}>
-                <Image
-                  source={clockIcon}
-                  tintColor={colors.pedra}
-                  style={styles.factIcon}
-                  accessible={false}
-                />
-                <View style={styles.factCopy}>
-                  <AppText variant="label">{vm.whenTitle}</AppText>
-                  <AppText variant="small" color="boira">
-                    {vm.when}
-                  </AppText>
-                </View>
-              </View>
-              {vm.description ? (
-                <View style={styles.fact}>
-                  <Image source={starIcon} style={styles.factIcon} accessible={false} />
-                  <View style={styles.factCopy}>
-                    <AppText variant="label">{vm.descriptionTitle}</AppText>
-                    <AppText variant="small" color="boira">
-                      {vm.description}
-                    </AppText>
-                  </View>
-                </View>
+              <Fact icon={clockIcon} tint={colors.pedra} title={vm.whenTitle} text={vm.when} />
+              <Fact icon={starIcon} title={vm.descriptionTitle} text={vm.description} />
+              {vm.particularity ? (
+                <Fact icon={moonIcon} title={vm.particularityTitle} text={vm.particularity} />
+              ) : null}
+              {vm.howToWatch ? (
+                <Fact icon={watchIcon} title={vm.howToWatchTitle} text={vm.howToWatch} />
               ) : null}
             </View>
           </Animated.View>

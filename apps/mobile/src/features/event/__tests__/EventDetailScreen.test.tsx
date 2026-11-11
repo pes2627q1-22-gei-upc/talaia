@@ -1,4 +1,4 @@
-import type { Esdeveniment } from '@talaia/shared';
+import type { EsdevenimentDetall } from '@talaia/shared';
 import { fireEvent, render, screen } from '@testing-library/react-native';
 import { router } from 'expo-router';
 import { StyleSheet } from 'react-native';
@@ -20,18 +20,29 @@ jest.mock('expo-router', () => ({
 }));
 const get = jest.mocked(apiGet);
 
-const eclipsi: Esdeveniment = {
-  id: 'eclipsi-lunar-penumbral-2027-02-20',
-  tipus: 'eclipsi_llunar',
-  nom: 'Eclipsi lunar penombral, visible sencer des de tot Catalunya i les Illes',
+const instants = {
   inici: '2027-02-20T21:12:00Z',
   fi: '2027-02-21T01:13:00Z',
   maxim: '2027-02-20T23:13:00Z',
-  descripcio:
-    'La Lluna travessa la penombra de la Terra i s’enfosqueix lleugerament. Observable a ull nu des de qualsevol lloc amb l’horitzó est obert.',
+};
+const eclipsi: EsdevenimentDetall = {
+  id: 'eclipsi-lunar-penumbral-2027-02-20',
+  tipus: 'eclipsi_llunar',
+  nom: 'Eclipsi lunar penombral, visible sencer des de tot Catalunya i les Illes',
+  ...instants,
+  descripcio: 'La Lluna travessa la penombra de la Terra i s’enfosqueix lleugerament.',
   ubicacio: { nom: "Centre d'Observació de l'Univers", latitud: 41.95, longitud: 1.3 },
   font: 'NASA',
+  horari: { ...instants, precisio: { inici: 'minut', maxim: 'minut', fi: 'minut' } },
+  explicacio: {
+    fenomen: 'La Lluna travessa la penombra de la Terra i s’enfosqueix lleugerament.',
+    particularitat:
+      'Aquesta vegada és visible sencer des de tot Catalunya, amb la Lluna ben alta cap a mitjanit.',
+    observacioEsdeveniment: 'Mireu la vora sud de la Lluna al voltant de les 00:13.',
+    observacioGeneral: 'Observable a ull nu des de qualsevol lloc amb l’horitzó est obert.',
+  },
 };
+const howToWatch = `${eclipsi.explicacio.observacioEsdeveniment} ${eclipsi.explicacio.observacioGeneral}`;
 
 function renderScreen() {
   const QueryWrapper = createQueryWrapper();
@@ -55,7 +66,7 @@ beforeEach(async () => {
   await i18n.changeLanguage('ca');
 });
 
-it('mostra la fitxa: el nom, el tipus, la nit, l’horari i l’explicació', async () => {
+it('mostra la fitxa: el nom, el tipus, la nit, l’horari, l’explicació i com observar-ho', async () => {
   await renderScreen();
   expect(await screen.findByRole('header', { name: eclipsi.nom })).toBeOnTheScreen();
   expect(screen.getByText('Esdeveniment')).toBeOnTheScreen();
@@ -64,7 +75,11 @@ it('mostra la fitxa: el nom, el tipus, la nit, l’horari i l’explicació', as
   expect(screen.getByText('Quan')).toBeOnTheScreen();
   expect(screen.getByText('De les 22:12 a les 02:13, amb el màxim a les 00:13.')).toBeOnTheScreen();
   expect(screen.getByText('Què veuràs')).toBeOnTheScreen();
-  expect(screen.getByText(eclipsi.descripcio)).toBeOnTheScreen();
+  expect(screen.getByText(eclipsi.explicacio.fenomen)).toBeOnTheScreen();
+  expect(screen.getByText('Aquesta vegada')).toBeOnTheScreen();
+  expect(screen.getByText(eclipsi.explicacio.particularitat)).toBeOnTheScreen();
+  expect(screen.getByText('Com observar-ho')).toBeOnTheScreen();
+  expect(screen.getByText(howToWatch)).toBeOnTheScreen();
   expect(screen.getByRole('image', { name: 'Font: NASA' })).toBeOnTheScreen();
 });
 
@@ -79,7 +94,13 @@ it('torna al calendari amb el botó enrere', async () => {
 it('no talla cap text de la fitxa i les etiquetes passen a la línia següent si no hi caben', async () => {
   await renderScreen();
   await screen.findByRole('header', { name: eclipsi.nom });
-  for (const text of [eclipsi.nom, eclipsi.descripcio, 'Nit del 20 al 21 de febrer']) {
+  for (const text of [
+    eclipsi.nom,
+    eclipsi.explicacio.fenomen,
+    eclipsi.explicacio.particularitat,
+    howToWatch,
+    'Nit del 20 al 21 de febrer',
+  ]) {
     expect(screen.getByText(text).props.numberOfLines).toBeUndefined();
   }
   expect(StyleSheet.flatten(screen.getByTestId('event-tags').props.style)).toMatchObject({

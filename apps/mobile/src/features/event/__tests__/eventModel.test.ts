@@ -1,6 +1,6 @@
 import type { Esdeveniment } from '@talaia/shared';
 
-import { cataloniaTime, eventSchedule, nightOf } from '../eventModel';
+import { cataloniaTime, eventSchedule, type Precision } from '../eventModel';
 
 const base: Esdeveniment = {
   id: 'orionids-2026',
@@ -20,24 +20,38 @@ it('dona l’hora de Catalunya, amb el canvi d’hora del 25/10', () => {
   expect(cataloniaTime('2027-02-21T00:13:00Z')).toBe('01:13');
 });
 
-it('situa el màxim d’una pluja a la nit que el conté', () => {
-  // Màxim publicat només amb el dia (12:00 UTC): la nit d'aquell dia al següent.
-  expect(nightOf('2026-10-21T12:00:00Z')).toEqual({ from: '2026-10-21', to: '2026-10-22' });
-  // Abans del migdia, encara és la nit anterior; també a final de mes i d'any.
-  expect(nightOf('2026-11-17T23:45:00Z')).toEqual({ from: '2026-11-17', to: '2026-11-18' });
-  expect(nightOf('2027-01-04T03:25:00Z')).toEqual({ from: '2027-01-03', to: '2027-01-04' });
-  expect(nightOf('2026-11-01T02:00:00Z')).toEqual({ from: '2026-10-31', to: '2026-11-01' });
-});
+const perDies: Precision = { inici: 'dia', maxim: 'dia', fi: 'dia' };
 
-it('una pluja d’estels: els dies publicats i la nit del màxim, sense hores', () => {
-  expect(eventSchedule(base)).toEqual({
+it('una pluja d’estels: els dies publicats i el dia del màxim, sense hora si no en té', () => {
+  expect(eventSchedule(base, perDies)).toEqual({
     kind: 'season',
     // Els límits de dia UTC de l'IMO: el 07/11 a les 23:59 UTC ja és el 08/11 a Catalunya.
     from: '2026-10-02',
     to: '2026-11-07',
-    peakNight: { from: '2026-10-21', to: '2026-10-22' },
+    peak: { date: '2026-10-21', time: null },
   });
-  expect(eventSchedule({ ...base, maxim: null })).toMatchObject({ peakNight: null });
+  expect(eventSchedule({ ...base, maxim: null }, { ...perDies, maxim: null })).toMatchObject({
+    peak: null,
+  });
+});
+
+it('l’hora del màxim d’una pluja surt de la precisió que publica l’API', () => {
+  const leonids = { ...base, maxim: '2026-11-17T23:45:00Z' };
+  // Al minut: el dia i l'hora de Catalunya, ja passada la mitjanit.
+  expect(eventSchedule(leonids, { ...perDies, maxim: 'minut' })).toMatchObject({
+    peak: { date: '2026-11-18', time: '00:45' },
+  });
+  // Si la font només en dona el dia, no s'inventa l'hora encara que l'instant en tingui.
+  expect(eventSchedule(leonids, perDies)).toMatchObject({
+    peak: { date: '2026-11-18', time: null },
+  });
+});
+
+it('sense el detall, només el migdia UTC d’una pluja és un marcador del dia', () => {
+  expect(eventSchedule(base)).toMatchObject({ peak: { date: '2026-10-21', time: null } });
+  expect(eventSchedule({ ...base, maxim: '2026-11-17T23:45:00Z' })).toMatchObject({
+    peak: { date: '2026-11-18', time: '00:45' },
+  });
 });
 
 it('una fase lunar ocupa el dia civil i en dona l’instant exacte', () => {
@@ -48,7 +62,13 @@ it('una fase lunar ocupa el dia civil i en dona l’instant exacte', () => {
     fi: '2026-11-09T22:59:59Z',
     maxim: '2026-11-09T07:02:12Z',
   };
-  expect(eventSchedule(nova)).toEqual({ kind: 'day', date: '2026-11-09', exact: '08:02' });
+  expect(eventSchedule(nova, { ...perDies, maxim: 'segon' })).toEqual({
+    kind: 'day',
+    date: '2026-11-09',
+    exact: '08:02',
+  });
+  expect(eventSchedule(nova, perDies)).toMatchObject({ kind: 'day', exact: null });
+  expect(eventSchedule(nova)).toMatchObject({ exact: '08:02' });
   // El dia del canvi d'hora en fa 25.
   expect(
     eventSchedule({ ...nova, inici: '2026-10-24T22:00:00Z', fi: '2026-10-25T22:59:59Z' }),

@@ -1,4 +1,4 @@
-import type { Esdeveniment } from '@talaia/shared';
+import type { Esdeveniment, EsdevenimentDetall } from '@talaia/shared';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook, waitFor } from '@testing-library/react-native';
 import { router } from 'expo-router';
@@ -7,6 +7,7 @@ import type { PropsWithChildren } from 'react';
 import { ApiError, apiGet } from '@/core/api/httpClient';
 import i18n from '@/core/i18n';
 
+import type { Precision } from '../eventModel';
 import { useEventDetailViewModel } from '../useEventDetailViewModel';
 
 jest.mock('@/core/api/httpClient', () => ({
@@ -25,10 +26,25 @@ const orionids: Esdeveniment = {
   inici: '2026-10-02T00:00:00Z',
   fi: '2026-11-07T23:59:59Z',
   maxim: '2026-10-21T12:00:00Z',
-  descripcio: 'Pluja anual de meteors ràpids associada al cometa Halley.',
+  descripcio:
+    'Pluja anual de meteors ràpids associada al cometa Halley. El radiant és visible des de Catalunya.',
   ubicacio: { nom: "Centre d'Observació de l'Univers", latitud: 41.95, longitud: 1.3 },
   font: 'IMO',
 };
+
+const explicacio: EsdevenimentDetall['explicacio'] = {
+  fenomen: 'Pluja anual de meteors ràpids associada al cometa Halley.',
+  particularitat: 'El radiant és visible des de Catalunya.',
+  observacioGeneral: 'Busqueu un cel fosc durant la segona meitat de la nit.',
+  observacioEsdeveniment: "Observeu durant la matinada del 21 d'octubre.",
+};
+
+/** El que respon `GET /esdeveniments/{id}` (TG-138). */
+function detail(event: Esdeveniment, precisio: Precision): EsdevenimentDetall {
+  const { inici, maxim, fi } = event;
+  return { ...event, horari: { inici, maxim, fi, precisio }, explicacio };
+}
+const perDies: Precision = { inici: 'dia', maxim: 'dia', fi: 'dia' };
 
 function renderVm(id: string, calendar: Esdeveniment[] = []) {
   const client = new QueryClient({
@@ -42,27 +58,68 @@ function renderVm(id: string, calendar: Esdeveniment[] = []) {
   return renderHook(() => useEventDetailViewModel(id), { wrapper });
 }
 
+const request = (id: string, language: string) => [
+  `/esdeveniments/${id}`,
+  undefined,
+  { signal: expect.any(AbortSignal), headers: { 'Accept-Language': language } },
+];
+
 beforeEach(async () => {
   get.mockReset();
+  // Per defecte, el detall encara no ha arribat.
+  get.mockReturnValue(new Promise(() => {}));
   await i18n.changeLanguage('ca');
 });
 
-it('obre a l’instant l’esdeveniment que ja ha baixat el calendari', async () => {
+it('s’obre a l’instant amb el calendari i el detall de l’API la completa', async () => {
+  let arrive!: (value: EsdevenimentDetall) => void;
+  get.mockReturnValue(new Promise((resolve) => (arrive = resolve)));
   const { result } = await renderVm('orionids-2026', [orionids]);
   expect(result.current).toMatchObject({
     status: 'ok',
     headerTitle: 'Esdeveniment',
     name: 'Oriònids',
     typeLabel: "Pluja d'estels",
-    dateLabel: "Nit del 21 al 22 d'octubre",
+    dateLabel: "Dimecres, 21 d'octubre",
     whenTitle: 'Quan',
-    when: "Activa del 2 d'octubre al 7 de novembre. El màxim és la nit del 21 al 22 d'octubre.",
+    when: "Activa del 2 d'octubre al 7 de novembre. El màxim és el 21 d'octubre.",
     descriptionTitle: 'Què veuràs',
     description: orionids.descripcio,
+    particularity: null,
+    howToWatch: null,
     source: 'Font: IMO',
     meteors: true,
   });
-  expect(get).not.toHaveBeenCalled();
+  expect(get).toHaveBeenCalledWith(...request('orionids-2026', 'ca'));
+
+  arrive(detail(orionids, perDies));
+  await waitFor(() =>
+    expect(result.current).toMatchObject({
+      status: 'ok',
+      description: explicacio.fenomen,
+      particularityTitle: 'Aquesta vegada',
+      particularity: explicacio.particularitat,
+      howToWatchTitle: 'Com observar-ho',
+      howToWatch: `${explicacio.observacioEsdeveniment} ${explicacio.observacioGeneral}`,
+    }),
+  );
+});
+
+it('una pluja amb el màxim publicat al minut en dona el dia i l’hora de Catalunya', async () => {
+  const leonids = {
+    ...orionids,
+    id: 'leonids-2026',
+    inici: '2026-11-06T00:00:00Z',
+    fi: '2026-11-30T23:59:59Z',
+    maxim: '2026-11-17T23:45:00Z',
+  };
+  get.mockResolvedValue(detail(leonids, { ...perDies, maxim: 'minut' }));
+  const { result } = await renderVm('leonids-2026');
+  await waitFor(() => expect(result.current.status).toBe('ok'));
+  expect(result.current).toMatchObject({
+    dateLabel: 'Dimecres, 18 de novembre',
+    when: 'Activa del 6 de novembre al 30 de novembre. El màxim és el 18 de novembre a les 00:45.',
+  });
 });
 
 it('si no és al calendari, demana la fitxa a l’API', async () => {
@@ -76,12 +133,10 @@ it('si no és al calendari, demana la fitxa a l’API', async () => {
     maxim: '2026-11-09T07:02:12Z',
     font: 'Astronomy Engine 2.1.19',
   };
-  get.mockResolvedValue(nova);
+  get.mockResolvedValue(detail(nova, { ...perDies, maxim: 'segon' }));
   const { result } = await renderVm('lluna-nova-2026-11-09');
   await waitFor(() => expect(result.current.status).toBe('ok'));
-  expect(get).toHaveBeenCalledWith('/esdeveniments/lluna-nova-2026-11-09', undefined, {
-    signal: expect.any(AbortSignal),
-  });
+  expect(get).toHaveBeenCalledWith(...request('lluna-nova-2026-11-09', 'ca'));
   expect(result.current).toMatchObject({
     typeLabel: 'Fase lunar',
     dateLabel: 'Dilluns, 9 de novembre',
@@ -108,8 +163,8 @@ it('apostrofa l’1 i l’11 i diu «a la» per a la una', async () => {
   };
   const { result } = await renderVm('taurids', [taurids, eclipsi]);
   expect(result.current).toMatchObject({
-    dateLabel: "Nit del 31 d'octubre a l'1 de novembre",
-    when: "Activa de l'1 de novembre a l'11 de desembre. El màxim és la nit del 31 d'octubre a l'1 de novembre.",
+    dateLabel: 'Diumenge, 1 de novembre',
+    when: "Activa de l'1 de novembre a l'11 de desembre. El màxim és l'1 de novembre a les 03:00.",
   });
   const { result: window } = await renderVm('eclipsi', [eclipsi]);
   expect(window.current).toMatchObject({
@@ -118,22 +173,33 @@ it('apostrofa l’1 i l’11 i diu «a la» per a la una', async () => {
   });
 });
 
-it('també en castellà i en anglès', async () => {
+it('també en castellà i en anglès, i demana el detall en aquest idioma', async () => {
   const { result } = await renderVm('orionids-2026', [orionids]);
   await act(() => i18n.changeLanguage('es'));
   expect(result.current).toMatchObject({
     headerTitle: 'Evento',
     typeLabel: 'Lluvia de estrellas',
-    dateLabel: 'Noche del 21 al 22 de octubre',
-    when: 'Activa del 2 de octubre al 7 de noviembre. El máximo es la noche del 21 al 22 de octubre.',
+    dateLabel: 'Miércoles, 21 de octubre',
+    when: 'Activa del 2 de octubre al 7 de noviembre. El máximo es el 21 de octubre.',
   });
+  expect(get).toHaveBeenLastCalledWith(...request('orionids-2026', 'es'));
   await act(() => i18n.changeLanguage('en'));
   expect(result.current).toMatchObject({
     headerTitle: 'Event',
     typeLabel: 'Meteor shower',
-    dateLabel: 'Night of 21 to 22 October',
-    when: 'Active from 2 October to 7 November. It peaks on the night of 21 to 22 October.',
+    dateLabel: 'Wednesday 21 October',
+    when: 'Active from 2 October to 7 November. It peaks on 21 October.',
   });
+  expect(get).toHaveBeenLastCalledWith(...request('orionids-2026', 'en'));
+});
+
+it('si el detall falla, es queda amb el que en sap el calendari', async () => {
+  get.mockRejectedValue(new ApiError(503, 'service_unavailable', 'Caigut'));
+  const { result } = await renderVm('orionids-2026', [orionids]);
+  await waitFor(() => expect(get).toHaveBeenCalled());
+  // TanStack Query notifica el canvi d'estat en un setTimeout.
+  await act(() => new Promise((resolve) => setTimeout(resolve, 10)));
+  expect(result.current).toMatchObject({ status: 'ok', description: orionids.descripcio });
 });
 
 it('diu que l’esdeveniment no existeix, sense «torna-ho a provar»', async () => {
@@ -147,7 +213,7 @@ it('si falla la xarxa, es pot tornar a provar', async () => {
   get.mockRejectedValueOnce(new ApiError(503, 'service_unavailable', 'Caigut'));
   const { result } = await renderVm('orionids-2026');
   await waitFor(() => expect(result.current.status).toBe('error'));
-  get.mockResolvedValueOnce(orionids);
+  get.mockResolvedValueOnce(detail(orionids, perDies));
   await act(async () => {
     if (result.current.status === 'error') result.current.retry();
   });

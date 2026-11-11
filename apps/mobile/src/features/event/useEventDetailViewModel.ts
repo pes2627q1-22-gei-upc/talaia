@@ -17,7 +17,7 @@ const oneOClock = (time: string) => (time.startsWith('01:') ? 'oneOClock' : unde
 /** Fitxa d'un esdeveniment del calendari (HU10, mockup 09). */
 export function useEventDetailViewModel(eventId: string) {
   const { t, i18n } = useTranslation();
-  const query = useEventQuery(eventId);
+  const query = useEventQuery(eventId, i18n.resolvedLanguage ?? 'ca');
   const common = {
     headerTitle: t('event.title'),
     backLabel: t('event.back'),
@@ -59,7 +59,8 @@ export function useEventDetailViewModel(eventId: string) {
     });
   const at = (time: string) => t('event.atTime', { time, context: oneOClock(time) });
 
-  const schedule = eventSchedule(event);
+  // Sense el detall, la precisió provisional del model (`provisionalPrecision`).
+  const schedule = eventSchedule(event, event.horari?.precisio);
   let dateLabel: string;
   let when: string;
   if (schedule.kind === 'season') {
@@ -67,11 +68,14 @@ export function useEventDetailViewModel(eventId: string) {
       from: t('event.rangeFrom', { date: dayMonth(schedule.from), context: vowel(schedule.from) }),
       to: t('event.rangeTo', { date: dayMonth(schedule.to), context: vowel(schedule.to) }),
     };
-    const peak = schedule.peakNight ? night(schedule.peakNight) : null;
-    dateLabel = capitalize(peak ?? `${range.from} ${range.to}`);
-    when = peak
-      ? t('event.whenSeason', { ...range, night: peak })
-      : t('event.whenSeasonNoPeak', range);
+    const { peak } = schedule;
+    dateLabel = peak ? fullDate(peak.date) : capitalize(`${range.from} ${range.to}`);
+    if (peak) {
+      const day = t('event.onDay', { date: dayMonth(peak.date), context: vowel(peak.date) });
+      when = t('event.whenSeason', { ...range, peak: peak.time ? `${day} ${at(peak.time)}` : day });
+    } else {
+      when = t('event.whenSeasonNoPeak', range);
+    }
   } else if (schedule.kind === 'day') {
     dateLabel = fullDate(schedule.date);
     when = schedule.exact
@@ -99,7 +103,14 @@ export function useEventDetailViewModel(eventId: string) {
     whenTitle: t('event.when'),
     when,
     descriptionTitle: t('event.whatYouWillSee'),
-    description: event.descripcio,
+    // Al calendari, `descripcio` ja hi porta la particularitat; al detall van separades.
+    description: event.explicacio?.fenomen ?? event.descripcio,
+    particularityTitle: t('event.particularity'),
+    particularity: event.explicacio?.particularitat ?? null,
+    howToWatchTitle: t('event.howToWatch'),
+    howToWatch: event.explicacio
+      ? `${event.explicacio.observacioEsdeveniment} ${event.explicacio.observacioGeneral}`
+      : null,
     source: t('event.source', { source: event.font }),
     icon: eventAppearance(event).icon,
     meteors: event.tipus === 'pluja_estels',
