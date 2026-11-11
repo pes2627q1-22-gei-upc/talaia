@@ -55,7 +55,7 @@ src/
     punts.ts            GET /punts (bbox, ETag, Cache-Control i 304) i GET /punts/{id}
     esdeveniments.ts    GET /esdeveniments, autenticació API key o JWT
     auth.ts             GET, POST i PATCH /perfil (JWT de Supabase, ADR-0023)
-    admin.ts            GET /admin/usuaris i PATCH /admin/usuaris/{id}: bloqueig de comptes (ADR-0029)
+    admin.ts            GET /admin/me, GET /admin/usuaris i PATCH /admin/usuaris/{id} (ADR-0029)
     puntIndex.ts        GET /punts/{id}/index: desglossament de l'índex per hores i factors (HU04)
     recomanacions.ts    GET /recomanacions (validació de la consulta i OpenAPI)
   punts/
@@ -152,6 +152,7 @@ update public.perfils set rol = 'admin' where email = '<correu>';
 
 Rutes de `/admin` (tipus `UsuariAdmin` i `UsuariAdminCanvis` a `@talaia/shared`, `Cache-Control: no-store`):
 
+- `GET /admin/me`: respon 204 sense cos si la sessió correspon a un administrador no bloquejat; la web el fa servir per comprovar l'accés sense descarregar la llista d'usuaris.
 - `GET /admin/usuaris`: tots els perfils, els més nous primer, amb `rol`, `bloquejat` i `dataBloqueig`.
 - `PATCH /admin/usuaris/{id}` amb `{ "bloquejat": true | false }`: bloqueja o desbloqueja el compte. L'`id` és el del perfil (`perfils.id`). Torna el compte amb el canvi. Tornar a bloquejar un compte bloquejat no en canvia la data.
 
