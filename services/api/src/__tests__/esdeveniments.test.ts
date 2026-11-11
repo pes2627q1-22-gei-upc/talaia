@@ -20,8 +20,17 @@ const FILA: FilaEsdeveniment = {
   inici: new Date('2026-10-25T23:00:00Z'),
   fi: new Date('2026-10-26T23:00:00Z'),
   maxim: new Date('2026-10-26T12:00:00Z'),
-  textosFenomen: { ca: { nom: 'Lluna plena', descripcio: 'Disc lunar il·luminat.' } },
-  textosEsdeveniment: { ca: { notaVisibilitat: 'Visible des de Catalunya.' } },
+  precisio: { inici: 'dia', maxim: 'dia', fi: 'dia' },
+  textosFenomen: {
+    ca: {
+      nom: 'Lluna plena',
+      descripcio: 'Disc lunar il·luminat.',
+      consellGeneral: 'Mireu el cel.',
+    },
+  },
+  textosEsdeveniment: {
+    ca: { notaVisibilitat: 'Visible des de Catalunya.', consellObservacio: 'Observeu-la de nit.' },
+  },
   organitzacio: null,
   metodeCalcul: 'Astronomy Engine 2.1.19',
 };
@@ -76,7 +85,72 @@ describe('GET /api/v1/esdeveniments/{id}', () => {
       nom: 'Lluna plena',
       maxim: FILA.maxim?.toISOString(),
       ubicacio: PUNT,
+      horari: {
+        inici: FILA.inici.toISOString(),
+        maxim: FILA.maxim?.toISOString(),
+        fi: FILA.fi.toISOString(),
+        precisio: { inici: 'dia', maxim: 'dia', fi: 'dia' },
+      },
+      explicacio: {
+        fenomen: 'Disc lunar il·luminat.',
+        particularitat: 'Visible des de Catalunya.',
+        observacioGeneral: 'Mireu el cel.',
+        observacioEsdeveniment: 'Observeu-la de nit.',
+      },
     });
+  });
+
+  it('no presenta el migdia marcador com una hora exacta del màxim', async () => {
+    const res = await request(appWith()).get(detailPath).set('X-API-Key', 'clau-secreta');
+    expect(res.body.horari.maxim).toBe('2026-10-26T12:00:00.000Z');
+    expect(res.body.horari.precisio.maxim).toBe('dia');
+  });
+
+  it('permet un màxim absent sense inventar-ne la precisió', async () => {
+    const repo = fakeRepository({
+      findPublicById: async () => ({
+        ...FILA,
+        maxim: null,
+        precisio: { inici: 'dia', maxim: null, fi: 'dia' },
+      }),
+    });
+    const res = await request(appWith(repo)).get(detailPath).set('X-API-Key', 'clau-secreta');
+    expect(res.body.horari.maxim).toBeNull();
+    expect(res.body.horari.precisio.maxim).toBeNull();
+  });
+
+  it('rebutja un detall sense consell o precisió fiables', async () => {
+    const repo = fakeRepository({
+      findPublicById: async () => ({
+        ...FILA,
+        precisio: { inici: 'dia', maxim: 'desconegut', fi: 'dia' },
+      }),
+    });
+    const spy = jest.spyOn(console, 'error').mockImplementation();
+    try {
+      const res = await request(appWith(repo)).get(detailPath).set('X-API-Key', 'clau-secreta');
+      expect(res.status).toBe(500);
+      expect(res.body.error.code).toBe('invalid_event_data');
+    } finally {
+      spy.mockRestore();
+    }
+  });
+
+  it('rebutja un detall sense consell específic', async () => {
+    const repo = fakeRepository({
+      findPublicById: async () => ({
+        ...FILA,
+        textosEsdeveniment: { ca: { notaVisibilitat: 'Visible des de Catalunya.' } },
+      }),
+    });
+    const spy = jest.spyOn(console, 'error').mockImplementation();
+    try {
+      const res = await request(appWith(repo)).get(detailPath).set('X-API-Key', 'clau-secreta');
+      expect(res.status).toBe(500);
+      expect(res.body.error.code).toBe('invalid_event_data');
+    } finally {
+      spy.mockRestore();
+    }
   });
 
   it('respon 404 si el codi no correspon a cap esdeveniment publicable', async () => {

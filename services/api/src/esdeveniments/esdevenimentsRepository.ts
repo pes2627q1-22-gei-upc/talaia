@@ -10,6 +10,7 @@ export type FilaEsdeveniment = {
   inici: Date;
   fi: Date;
   maxim: Date | null;
+  precisio: unknown;
   textosFenomen: unknown;
   textosEsdeveniment: unknown;
   organitzacio: 'IMO' | 'NASA' | null;
@@ -41,6 +42,7 @@ export function createEsdevenimentsRepository(db: Db): EsdevenimentsRepository {
         'e.inici',
         'e.fi',
         'e.maxim',
+        'e.precisio',
         'f.textos as textosFenomen',
         'e.textos as textosEsdeveniment',
         'font.organitzacio',
