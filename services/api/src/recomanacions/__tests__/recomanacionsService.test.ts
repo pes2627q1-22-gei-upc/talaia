@@ -6,7 +6,13 @@ import type {
   PuntCandidat,
   RecomanacionsRepository,
 } from '../recomanacionsRepository';
-import { createRecomanacionsService, resumeix } from '../recomanacionsService';
+import {
+  createRecomanacionsService,
+  LIMIT_PER_DEFECTE,
+  resolConsulta,
+  resumeix,
+  TEMPS_MAXIM_PER_DEFECTE,
+} from '../recomanacionsService';
 
 const HORA_MS = 3_600_000;
 
@@ -73,6 +79,54 @@ describe('resumeix', () => {
   });
 });
 
+describe('resolConsulta («A prop meu», TG-133)', () => {
+  const ORIGEN = { origen: CONSULTA.origen };
+
+  it('només amb l’origen: cel estrellat, 60 min, 20 punts i la nit sencera en curs', () => {
+    // 21:30 locals (CET) del 15 de desembre: la nit és la del 15.
+    const res = resolConsulta(ORIGEN, new Date('2026-12-15T20:30:00Z'));
+    expect(res).toEqual({
+      objectiu: 'cel_estrellat',
+      data: '2026-12-15',
+      tempsMaxim: TEMPS_MAXIM_PER_DEFECTE,
+      limit: LIMIT_PER_DEFECTE,
+      // De les 12:00 locals del 15 a les 12:00 del 16 (CET = UTC+1).
+      franja: {
+        desDe: new Date('2026-12-15T11:00:00Z'),
+        finsA: new Date('2026-12-16T11:00:00Z'),
+      },
+    });
+    expect(TEMPS_MAXIM_PER_DEFECTE).toBe(60);
+  });
+
+  it.each([
+    ['de matinada, la nit que s’acaba', '2026-12-16T03:00:00Z', '2026-12-15'],
+    ['al matí, encara la nit que s’acaba', '2026-12-16T10:59:00Z', '2026-12-15'],
+    ['a partir del migdia, la nit que ve', '2026-12-16T11:00:00Z', '2026-12-16'],
+  ])('sense data, %s', (_cas, ara, nit) => {
+    expect(resolConsulta(ORIGEN, new Date(ara)).data).toBe(nit);
+  });
+
+  it('amb data i sense franja: la nit sencera d’aquella data (a l’estiu, CEST)', () => {
+    const { franja } = resolConsulta({ ...ORIGEN, data: '2027-07-01' }, ABANS);
+    expect(franja).toEqual({
+      desDe: new Date('2027-07-01T10:00:00Z'),
+      finsA: new Date('2027-07-02T10:00:00Z'),
+    });
+  });
+
+  it('respecta tot el que porta la consulta', () => {
+    const res = resolConsulta({ ...CONSULTA, objectiu: 'via_lactia', limit: 5 }, ABANS);
+    expect(res).toEqual({
+      objectiu: 'via_lactia',
+      data: '2026-12-15',
+      tempsMaxim: 150,
+      limit: 5,
+      franja: { desDe: new Date(H(0)), finsA: new Date(H(8)) },
+    });
+  });
+});
+
 describe('recomanacionsService.getRecomanacions', () => {
   afterEach(() => jest.restoreAllMocks());
 
@@ -81,10 +135,31 @@ describe('recomanacionsService.getRecomanacions', () => {
     const res = await createRecomanacionsService(repository).getRecomanacions(CONSULTA, ABANS);
 
     expect(res.radiKm).toBe(115.4);
+    expect(res.data).toBe('2026-12-15');
+    expect(res.tempsMaxim).toBe(150);
     expect(crides.radi).toBe(115_400);
     expect(crides.origen).toEqual(CONSULTA.origen);
     expect(res.franja).toEqual({ desDe: H(0), finsA: H(8) });
     expect(crides.rang).toEqual([['a'], new Date(H(0)), new Date(H(8))]);
+  });
+
+  it('«A prop meu»: només amb l’origen, el radi de 60 min i la nit en curs des de l’hora actual', async () => {
+    const { repository, crides } = fakeRepository([punt('a', 10_000)], []);
+    const ara = new Date('2026-12-15T21:40:00Z'); // 22:40 locals
+    const res = await createRecomanacionsService(repository).getRecomanacions(
+      { origen: CONSULTA.origen },
+      ara,
+    );
+
+    expect(res.data).toBe('2026-12-15');
+    expect(res.tempsMaxim).toBe(60);
+    expect(res.radiKm).toBe(46.2);
+    expect(crides.radi).toBe(46_200);
+    expect(crides.origen).toEqual(CONSULTA.origen);
+    expect(res.franja).toEqual({
+      desDe: '2026-12-15T21:00:00.000Z',
+      finsA: '2026-12-16T11:00:00.000Z',
+    });
   });
 
   it('ordena per la millor hora, després per la mitjana i després per la distància', async () => {
