@@ -110,11 +110,14 @@ export interface LecturesXema {
 export interface Perfils {
   authUserId: string;
   avatarUrl: string | null;
+  bloquejat: Generated<boolean>;
   dataActualitzacio: Generated<Timestamp>;
+  dataBloqueig: Timestamp | null;
   dataCreacio: Generated<Timestamp>;
   email: string | null;
   id: Generated<string>;
   nom: string | null;
+  rol: Generated<string>;
 }
 
 export interface PuntsObservacio {
