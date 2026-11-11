@@ -135,7 +135,8 @@ export function toPerfil(profile: ProfileRecord): Perfil {
   };
 }
 
-const profileNotFound = () =>
+/** L'usuari del JWT encara no té perfil. També el fan servir les altres rutes d'usuari (favorits). */
+export const profileNotFound = () =>
   new ApiError(404, 'profile_not_found', "L'usuari encara no té perfil (cal POST /perfil)");
 
 /** `requireAuth` ja ha respost 401 si no hi ha usuari: aquí sempre hi és. */

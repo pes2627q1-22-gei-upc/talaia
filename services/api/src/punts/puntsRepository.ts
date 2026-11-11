@@ -31,6 +31,28 @@ export type PuntsRepository = {
   indexHores(id: string, desDe: Date, finsA: Date): Promise<IndexHora[]>;
 };
 
+/**
+ * L'índex del mapa a partir de les columnes d'`index_visibilitat` d'un `left join` amb l'hora en
+ * curs: `null` si el worker encara no l'ha calculat. També el fan servir els favorits (TG-169).
+ */
+export function indexMapa({
+  valor,
+  franja,
+  factors,
+}: {
+  valor: number | null;
+  franja: string | null;
+  factors: unknown;
+}): IndexMapa | null {
+  if (valor === null || franja === null) return null;
+  return {
+    valor,
+    // La taula ja limita `franja` a 'tap', 'jus' i 'ras' amb un check.
+    franja: franja as FranjaIndex,
+    deDia: (factors as IndexHora['factors'] | null)?.sol === 0,
+  };
+}
+
 export function createPuntsRepository(db: Db): PuntsRepository {
   return {
     async listPublished(hora) {
@@ -54,15 +76,7 @@ export function createPuntsRepository(db: Db): PuntsRepository {
         .execute();
       return files.map(({ valor, franja, factors, ...punt }) => ({
         ...punt,
-        index:
-          valor === null || franja === null
-            ? null
-            : {
-                valor,
-                // La taula ja limita `franja` a 'tap', 'jus' i 'ras' amb un check.
-                franja: franja as FranjaIndex,
-                deDia: (factors as IndexHora['factors'] | null)?.sol === 0,
-              },
+        index: indexMapa({ valor, franja, factors }),
       }));
     },
     async indexVersion() {

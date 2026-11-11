@@ -1,4 +1,4 @@
-import type { PuntFitxa, PuntsMapaGeoJson } from '@talaia/shared';
+import type { IndexMapa, PuntFitxa, PuntsMapaGeoJson } from '@talaia/shared';
 import { Router } from 'express';
 import { z } from 'zod';
 
@@ -28,8 +28,8 @@ export const BboxSchema = z
 
 const QuerySchema = z.object({ bbox: BboxSchema.optional() });
 
-// Tipat amb el tipus compartit: si l'esquema i @talaia/shared divergeixen, no compila.
-const IndexSchema = z.object({
+/** L'índex de l'hora en curs (`IndexMapa`): el del mapa i el de cada favorit (TG-169). */
+export const IndexMapaSchema: z.ZodType<IndexMapa> = z.object({
   valor: z.number().int().min(0).max(100),
   franja: z.enum(['tap', 'jus', 'ras']),
   deDia: z.boolean().meta({
@@ -53,7 +53,7 @@ const PuntsMapaSchema: z.ZodType<PuntsMapaGeoJson> = z
           id: z.string(),
           nom: z.string(),
           municipi: z.string(),
-          index: IndexSchema.nullable().meta({
+          index: IndexMapaSchema.nullable().meta({
             description:
               "Índex de l'hora en curs (worker horari, TG-99). `null` = encara no s'ha calculat: marcador gris.",
           }),

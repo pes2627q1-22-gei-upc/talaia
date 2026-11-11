@@ -4,6 +4,8 @@ import { createApp } from './app';
 import { loadEnv } from './config/env';
 import { createEsdevenimentsRepository } from './esdeveniments/esdevenimentsRepository';
 import { createEsdevenimentsService } from './esdeveniments/esdevenimentsService';
+import { createFavoritsRepository } from './favorits/favoritsRepository';
+import { createFavoritsService } from './favorits/favoritsService';
 import { createBreakdownService } from './index/breakdownService';
 import { createPuntsRepository } from './punts/puntsRepository';
 import { createDefaultPuntsService } from './punts/puntsService';
@@ -18,6 +20,7 @@ let breakdown;
 let recomanacions;
 let profileStore;
 let esdeveniments;
+let favorits;
 if (env.DATABASE_URL) {
   // Un sol pool per a tota l'API.
   // Per sota del timeout de 15 s de l'app: la ruta respon un error abans que l'app talli.
@@ -32,13 +35,14 @@ if (env.DATABASE_URL) {
   recomanacions = createRecomanacionsService(createRecomanacionsRepository(db));
   profileStore = createDatabaseProfileStore(db);
   esdeveniments = createEsdevenimentsService(createEsdevenimentsRepository(db));
+  favorits = createFavoritsService(createFavoritsRepository(db));
 } else {
   console.warn(
-    'Avís: sense DATABASE_URL. /api/v1/health funciona, però /api/v1/punts, /api/v1/punts/{id}/index, /api/v1/recomanacions, /api/v1/perfil i /api/v1/esdeveniments responen 503.',
+    'Avís: sense DATABASE_URL. /api/v1/health funciona, però /api/v1/punts, /api/v1/punts/{id}/index, /api/v1/recomanacions, /api/v1/perfil, /api/v1/favorits i /api/v1/esdeveniments responen 503.',
   );
 }
 
-createApp({ punts, breakdown, recomanacions, profileStore, esdeveniments }).listen(
+createApp({ punts, breakdown, recomanacions, profileStore, esdeveniments, favorits }).listen(
   env.API_PORT,
   (error) => {
     if (error) throw error;
