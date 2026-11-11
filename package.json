@@ -25,7 +25,9 @@
     "db:types": "kysely-codegen --url postgresql://postgres:postgres@127.0.0.1:54322/postgres",
     "db:types:verify": "kysely-codegen --verify",
     "supabase:correu": "node --env-file-if-exists=.env.supabase supabase/scripts/configura-correu.mjs",
-    "test:supabase": "node --test \"supabase/scripts/**/*.test.mjs\""
+    "test:supabase": "node --test \"supabase/scripts/**/*.test.mjs\"",
+    "test:sm": "node --test \"scripts/sm/**/*.test.mjs\"",
+    "sm:parte": "node scripts/sm/parte-daily.mjs --copia"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.2.3",
