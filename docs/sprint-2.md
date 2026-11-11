@@ -349,6 +349,10 @@ Història tècnica del Sprint 2: aspectes metodològics (desplegament automàtic
 | TG-260 | Tests de presentació de les pantalles existents: botons, textos i desplegables sense superposicions | *per assignar* | — | — | 3 |
 
 Totes les tasques de frontend porten a Taiga el criteri que les pantalles noves inclouen aquests tests de presentació.
+El procediment és a [Proves de presentació de la UI](testing-ui.md): qui crea o
+modifica una pantalla inclou els tests rellevants i la comprovació visual a la
+mateixa tasca i PR. La TG-260 revisa les pantalles existents i completa les proves
+que faltin, sense duplicar les que ja hi ha.
 
 ## Tasques sense història
 
