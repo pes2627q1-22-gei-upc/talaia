@@ -15,6 +15,7 @@ npm run api                   # = npm run dev -w services/api, amb recàrrega
 - Calendari: `GET /api/v1/esdeveniments?des_de=2026-10-01&fins_a=2026-10-31` (JWT de Talaia o `X-API-Key` d'Aprop)
 - Desglossament de l'índex d'un punt: `http://localhost:3000/api/v1/punts/{id}/index?nit=2026-10-19` (cal `DATABASE_URL`)
 - Perfil: `GET`, `POST` i `PATCH /api/v1/perfil` (cal el JWT de Supabase a `Authorization: Bearer`)
+- Administració: `/api/v1/admin/usuaris` i `/api/v1/admin/punts` (JWT d'un compte amb `rol = 'admin'`)
 - Recomanacions: `http://localhost:3000/api/v1/recomanacions?objectiu=cel_estrellat&lat=41.39&lon=2.17&data=<YYYY-MM-DD>&desDe=22&finsA=6&tempsMaxim=150`
 - Documentació (Swagger UI): <http://localhost:3000/api/v1/docs>
 - OpenAPI: <http://localhost:3000/api/v1/openapi.json>
@@ -35,7 +36,7 @@ Es llegeixen del `.env` de l'**arrel** del repo (`dev` i `start` el carreguen am
 | Variable | Per defecte | Què és |
 |---|---|---|
 | `API_PORT` | `3000` | Port on escolta l'API |
-| `DATABASE_URL` | — | Postgres (`postgresql://…`). **Opcional:** sense ella l'API arrenca amb un avís, `/health` funciona i `/punts`, `/punts/{id}`, `/punts/{id}/index`, `/recomanacions` i `/perfil` responen 503 `database_unavailable`. Amb Supabase local: `postgresql://postgres:postgres@127.0.0.1:54322/postgres` |
+| `DATABASE_URL` | — | Postgres (`postgresql://…`). **Opcional:** sense ella l'API arrenca amb un avís, `/health` funciona i `/punts`, `/punts/{id}`, `/punts/{id}/index`, `/recomanacions`, `/perfil` i `/admin` responen 503 `database_unavailable`. Amb Supabase local: `postgresql://postgres:postgres@127.0.0.1:54322/postgres` |
 | `SUPABASE_URL` | `http://127.0.0.1:54321` | URL del projecte de Supabase. `requireAuth` hi valida els JWT amb el JWKS (`/auth/v1/.well-known/jwks.json`, ADR-0023): 401 si el token és dolent, 503 si Supabase no respon. Al compose de la VM és obligatòria |
 | `APROP_API_KEY` | — | Secret de l'API assignat a Aprop. No s'inclou al repositori ni a l'app; sense configurar-lo, l'accés amb API key retorna 503, però l'accés JWT continua disponible. |
 
@@ -58,11 +59,14 @@ src/
     admin.ts            GET /admin/usuaris i PATCH /admin/usuaris/{id}: bloqueig de comptes (ADR-0029)
     puntIndex.ts        GET /punts/{id}/index: desglossament de l'índex per hores i factors (HU04)
     recomanacions.ts    GET /recomanacions (validació de la consulta i OpenAPI)
+    adminPunts.ts       /admin/punts: crear, editar i retirar punts (HU39), muntat a admin.ts
   punts/
     puntsRepository.ts  Consultes dels punts publicats i del seu índex amb @talaia/db (ADR-0013)
     mapDocument.ts      GeoJSON del mapa i retall per bbox
-    documentCache.ts    Document en memòria amb ETag del contingut (MapDocumentCache)
+    documentCache.ts    Document en memòria amb ETag del contingut (MapDocumentCache), amb invalidate()
     puntsService.ts     Memòria cau i bbox del mapa, i fitxa amb l'índex per hores; errors de la base de dades → 503
+    puntsAdminRepository.ts  Consultes de l'administració: tots els punts, crear i editar (HU39)
+    puntsAdminService.ts     409 si l'slug existeix, 404, 503, i descarta el document del mapa a cada canvi
   esdeveniments/
     dates.ts            Límits del dia civil de Catalunya convertits a UTC
     esdevenimentsRepository.ts  Consulta Kysely del calendari i el punt oficial
@@ -83,7 +87,7 @@ src/
 
 Un sol GeoJSON `FeatureCollection` amb tots els punts `PUBLICAT`: `[lon, lat]` amb 6 decimals i les propietats `id`, `nom`, `municipi` i `index`. `index` és el de l'**hora en curs** que ha desat el worker (TG-99), o `null` si encara no s'ha calculat (l'app pinta el marcador en gris). Porta `deDia: true` quan el Sol encara no s'ha post (factor `sol` 0): l'índex val 0 per l'hora, no pel cel, i l'app també el pinta en gris.
 
-- **Memòria cau:** el document es construeix en memòria i es regenera si té més de 5 minuts. L'`ETag` és un hash del contingut. Les peticions simultànies comparteixen una sola consulta, i si la base de dades falla se serveix l'últim document (503 si no n'hi ha cap).
+- **Memòria cau:** el document es construeix en memòria i es regenera si té més de 5 minuts. L'`ETag` és un hash del contingut. Les peticions simultànies comparteixen una sola consulta, i si la base de dades falla se serveix l'últim document (503 si no n'hi ha cap). Quan l'administració crea, edita o retira un punt (`/admin/punts`), el document es descarta i la petició següent el regenera.
 - **HTTP:** `Cache-Control: public, max-age=<segons fins a la propera hora>`. Amb `If-None-Match` igual a l'`ETag` (també `W/"…"`, que és com el deixa Nginx), 304 sense cos.
 - **`?bbox=minLon,minLat,maxLon,maxLat`:** opcional. Retalla el document en memòria, sense consultar la base de dades. Si és invàlid, 400 `validation_error`.
 - **Hora en curs i versió del worker** (ADR-0012, TG-99): a cada petició, l'API compara l'hora en curs (rellotge de l'API, sense anar a la BD) amb la del document, i si ha canviat el regenera amb l'índex de l'hora nova. A més, com a molt un cop per minut llegeix l'última execució de `execucions_worker` que ha desat algun punt, i si ha canviat també el regenera. L'`ETag` continua sent el hash del contingut.
@@ -157,6 +161,31 @@ Rutes de `/admin` (tipus `UsuariAdmin` i `UsuariAdminCanvis` a `@talaia/shared`,
 
 Errors: 401 `unauthorized`; 403 `forbidden` (no és admin) o `account_blocked`; 400 `validation_error` (l'`id` no és un UUID o el cos no és vàlid) o `cannot_block_self` (un administrador no es pot bloquejar a si mateix); 404 `usuari_not_found`; 503 sense base de dades.
 
+## Punts des de l'administració (TG-174, HU39)
+
+Rutes de `/admin/punts` per a la web d'administració (TG-175). Van darrere de `requireUser` i `requireAdmin` com la resta de `/admin`, i responen amb `Cache-Control: no-store`. Tipus `PuntAdmin`, `PuntAdminNou` i `PuntAdminCanvis` a `@talaia/shared`.
+
+- `GET /admin/punts`: **tots** els punts per `slug`, també els retirats i els proposats, amb `estat` i `origen`. Són les metadades de la fitxa (`PuntFitxa` sense `index`) més `slug`, `estat`, `origen`, `dataCreacio` i `dataActualitzacio`.
+- `GET /admin/punts/{id}`: un punt en qualsevol estat (el formulari d'edició).
+- `POST /admin/punts`: crea un punt `OFICIAL` (sense creador). Obligatoris: `slug`, `nom`, `municipi`, `descripcio`, `lat` i `lon`; opcionals: `altitud`, `horitzoObert`, `accessibilitat`, `sqm` i `estat` (`PUBLICAT` per defecte, o `DESACTIVAT`). Respon 201 amb el punt i `Location`. Un `slug` que ja existeix → 409 `slug_already_exists`.
+- `PATCH /admin/punts/{id}`: canvia només els camps que s'envien (com a mínim un). L'`slug` no es pot canviar: és la clau del seed i de `/esdeveniments`. `lat` i `lon` van junts.
+
+**Retirar un punt** és `PATCH /admin/punts/{id}` amb `{ "estat": "DESACTIVAT" }`, i `{ "estat": "PUBLICAT" }` el torna a publicar. No hi ha `DELETE`: un punt no s'esborra mai, perquè `index_visibilitat` hi apunta (amb `on delete cascade`) i els favorits i els plans també ho faran. Un punt retirat:
+
+- deixa de sortir a `GET /punts` a la petició següent: el servei descarta el document del mapa (`MapDocumentCache.invalidate()`) en lloc d'esperar els 5 minuts. L'`ETag` canvia, i l'app que tenia el document el torna a baixar com a molt a la propera hora (`Cache-Control`, ADR-0012). Amb més d'una instància de l'API, les altres el regenerarien en 5 minuts com a molt;
+- respon 404 `punt_not_found` a `/punts/{id}` i `/punts/{id}/index`, i no surt a `/recomanacions`: aquestes consultes ja filtren `estat = 'PUBLICAT'` a la base de dades i no en guarden cap còpia;
+- el worker ja no en calcula l'índex: `listPublicats` només llegeix els `PUBLICAT`. Les files que ja tenia a `index_visibilitat` s'hi queden fins que el worker esborra les hores velles; si es torna a publicar, se'n recalcula l'índex a la propera execució.
+
+El punt de referència de `/esdeveniments` (`centre-observacio-univers`, ADR-0026) no es pot retirar: sense ell publicat, el calendari d'Aprop respondria 503. Es pot editar i moure, però `{ "estat": "DESACTIVAT" }` respon 409 `reference_point_required`.
+
+**Validació** (la mateixa que el catàleg, `data/scripts/punts.ts`, i els `check` de la taula): `slug` en `kebab-case` (minúscules sense accents, xifres i guions); `lat` 40,5–42,9 i `lon` 0,15–3,35 (la caixa de Catalunya amb marge, que també atura `lat` i `lon` intercanviades); `altitud` enter de 0 a 3.200 m; `horitzoObert` una llista no buida de direccions (`N`, `NE`… `NW`) sense repeticions, o `null`; `sqm` de 10 a 23 (es desa amb 2 decimals); textos sense els espais dels extrems, no buits i amb un màxim (`nom` i `municipi` 100, `descripcio` 1.000, `accessibilitat` 300). Per buidar un camp opcional, `null`. Un camp desconegut (`origen`, `horitzo`, `slug` al `PATCH`…) és un 400. `estat` només admet `PUBLICAT` i `DESACTIVAT`: `PENDENT` i `REBUTJAT` són de la moderació de punts proposats (HU28, HU40).
+
+**Foscor, horitzó i índex d'un punt nou.** Sense `sqm`, el punt té la foscor estimada (`foscorEstimada`, ADR-0020) fins que algú la hi posi; `horitzo` (el perfil de l'ICGC, ADR-0022) queda `null`, i l'estació XEMA més propera la hi posa el worker el dia 1 de cada mes. L'índex és `null` (marcador gris) fins a la propera execució horària del worker. Si un `PATCH` mou el punt més de 10 m (`MATEIX_LLOC_M`), `horitzo`, `estacio_xema` i, si el mateix `PATCH` no porta `sqm`, també `sqm` tornen a `null`, perquè eren del lloc d'abans.
+
+**Punts del seed.** Els 32 punts del catàleg inicial surten de `data/punts_observacio.geojson` (ADR-0017). Si es torna a aplicar el seed (`supabase db reset` o `db push --include-seed`), en restaura les metadades i la ubicació, però no l'`estat`: un punt retirat continua retirat. Un canvi de metadades d'un punt del seed fet des de l'administració s'ha de copiar també al GeoJSON perquè no es perdi.
+
+Errors: 401 `unauthorized`; 403 `forbidden` o `account_blocked`; 400 `validation_error`; 404 `punt_not_found`; 409 `slug_already_exists` (`POST`) o `reference_point_required` (`PATCH`); 503 `database_unavailable`.
+
 ## Afegir una ruta
 
 1. Crea `src/routes/<recurs>.ts` amb el seu `Router`, els esquemes zod (`.meta({ id })` per als que han de sortir a l'OpenAPI) i `registry.registerPath(...)` per a cada ruta.
@@ -179,7 +208,9 @@ Tota resposta d'error té el format `{ error: { code, message } }`:
 | 403 | `forbidden` | Ruta de `/admin` amb un compte que no és administrador |
 | 404 | `not_found` | La ruta no existeix |
 | 404 | `usuari_not_found` | `PATCH /admin/usuaris/{id}`: cap perfil amb aquest `id` |
-| 404 | `punt_not_found` | `/punts/{id}` i `/punts/{id}/index`: cap punt publicat amb aquest `id` |
+| 404 | `punt_not_found` | `/punts/{id}` i `/punts/{id}/index`: cap punt publicat amb aquest `id`. `/admin/punts/{id}`: cap punt amb aquest `id` |
+| 409 | `slug_already_exists` | `POST /admin/punts`: ja hi ha un punt amb aquest `slug` |
+| 409 | `reference_point_required` | `PATCH /admin/punts/{id}`: es vol retirar el punt de referència de `/esdeveniments` (ADR-0026) |
 | 503 | `database_unavailable` | No hi ha `DATABASE_URL` o no es pot llegir la base de dades |
 | 500 | `internal_error` | Error inesperat (es registra al log i no s'envia el detall) |
 
