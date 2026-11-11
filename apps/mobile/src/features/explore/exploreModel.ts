@@ -38,7 +38,6 @@ const NIGHT_ENDS_AT = 6;
 
 export const DAY_CHOICES = ['tonight', 'tomorrow', 'pick'] as const;
 export type DayChoice = (typeof DAY_CHOICES)[number];
-export type Greeting = 'morning' | 'afternoon' | 'night';
 
 const pad = (n: number) => String(n).padStart(2, '0');
 
@@ -60,13 +59,6 @@ export function addDays(date: string, days: number): string {
 export function dayParts(date: string): { weekday: number; day: number } {
   const utc = new Date(`${date}T12:00:00Z`);
   return { weekday: utc.getUTCDay(), day: utc.getUTCDate() };
-}
-
-export function greetingFor(now: Date): Greeting {
-  const hour = now.getHours();
-  if (hour >= NIGHT_ENDS_AT && hour < 14) return 'morning';
-  if (hour >= 14 && hour < 21) return 'afternoon';
-  return 'night';
 }
 
 export const formatHour = (hour: number) => `${pad(hour)}:00`;

@@ -226,11 +226,6 @@
     "back": "Back to start"
   },
   "explore": {
-    "greeting": {
-      "morning": "Good morning",
-      "afternoon": "Good afternoon",
-      "night": "Good evening"
-    },
     "title": "What do you want to see?",
     "goals": {
       "pluja_estels": "Meteor shower",
@@ -355,6 +350,12 @@
       "invalidLink": "This link isn't valid or has already been used. Open it on the same phone you requested it from, or ask for a new one.",
       "emailNotAllowed": "We can't send emails to this address right now. Try signing in with Google."
     }
+  },
+  "accountBlocked": {
+    "title": "Your account is blocked",
+    "message": "You can't use Talaia with this account. If you think this is a mistake, contact the Talaia team.",
+    "retry": "Check again",
+    "checking": "Checking…"
   },
   "emailLogin": {
     "title": "Sign in with email",

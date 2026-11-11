@@ -226,11 +226,6 @@
     "back": "Volver al inicio"
   },
   "explore": {
-    "greeting": {
-      "morning": "Buenos días",
-      "afternoon": "Buenas tardes",
-      "night": "Buenas noches"
-    },
     "title": "¿Qué quieres ver?",
     "goals": {
       "pluja_estels": "Lluvia de estrellas",
@@ -355,6 +350,12 @@
       "invalidLink": "El enlace no es válido o ya se ha usado. Ábrelo en el mismo móvil donde lo pediste, o pide otro.",
       "emailNotAllowed": "Ahora mismo no podemos enviar correos a esta dirección. Prueba a entrar con Google."
     }
+  },
+  "accountBlocked": {
+    "title": "Tu cuenta está bloqueada",
+    "message": "No puedes usar Talaia con esta cuenta. Si crees que es un error, contacta con el equipo de Talaia.",
+    "retry": "Vuelve a comprobarlo",
+    "checking": "Comprobando…"
   },
   "emailLogin": {
     "title": "Entra con el correo",

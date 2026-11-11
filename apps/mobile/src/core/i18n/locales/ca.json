@@ -226,11 +226,6 @@
     "back": "Torna a l'inici"
   },
   "explore": {
-    "greeting": {
-      "morning": "Bon dia",
-      "afternoon": "Bona tarda",
-      "night": "Bona nit"
-    },
     "title": "Què vols veure?",
     "goals": {
       "pluja_estels": "Pluja d'estels",
@@ -355,6 +350,12 @@
       "invalidLink": "L'enllaç no és vàlid o ja s'ha fet servir. Obre'l al mateix mòbil on l'has demanat, o demana'n un altre.",
       "emailNotAllowed": "Ara mateix no podem enviar correus a aquesta adreça. Prova d'entrar amb Google."
     }
+  },
+  "accountBlocked": {
+    "title": "El teu compte està bloquejat",
+    "message": "No pots fer servir Talaia amb aquest compte. Si creus que és un error, contacta amb l'equip de Talaia.",
+    "retry": "Torna-ho a comprovar",
+    "checking": "Comprovant…"
   },
   "emailLogin": {
     "title": "Entra amb el correu",
