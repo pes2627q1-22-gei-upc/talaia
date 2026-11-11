@@ -29,7 +29,7 @@ Font de veritat visual: els mockups de **Figma** (16 pantalles). Aquest document
 
 Els quatre tokens `fenomen*` són categories del calendari, sense significat de qualitat de l'índex ni d'estat. Els punts, les icones i els filtres comparteixen el color de cada categoria. Les etiquetes «Avui» i «Demà» i la icona de passat fan servir colors neutres.
 
-**Degradats** (`gradients` a `tokens.ts`): `cel`, el fons de la benvinguda, de `#0B1030` a `#17205A` (58 %) i `#2F3680`; `pointMapFade`, la transició transparent del mapa de la fitxa cap a `nit` (punt intermedi `#0E143333`). S'apliquen amb `expo-linear-gradient`. Els colors exclusius dels degradats viuen aquí. `pointMapColors` agrupa els colors amb alfa del marcador i de l'atribució del mapa DOM.
+**Degradats** (`gradients` a `tokens.ts`): `cel`, el fons de la benvinguda, de `#0B1030` a `#17205A` (58 %) i `#2F3680`; `pointMapFade`, la transició transparent del mapa de la fitxa cap a `nit` (punt intermedi `#0E143333`). `eventSky`, el cel de la fitxa d'un esdeveniment (mockup 09), de `#1C2560` a `#0B1030`, i `eventHorizon`, l'horitzó que el tanca per sota, de transparent a `#06091A` (72 %). S'apliquen amb `expo-linear-gradient`. Els colors exclusius dels degradats viuen aquí. `pointMapColors` agrupa els colors amb alfa del marcador i de l'atribució del mapa DOM.
 
 Escala de l'índex de visibilitat: `tap` (0–39) → `jus` (40–69) → `ras` (70–100). *Llindars a confirmar amb la fórmula v1 (TG-98).* L'app no els calcula: la franja arriba de l'API (`IndexVisibilitat.franja`) i és el nom del token de color.
 
@@ -57,7 +57,7 @@ Es carreguen amb `@expo-google-fonts` al layout arrel. Cada pes és una família
 | `tag` | Atkinson 700 | 12 / 16 | Etiquetes |
 | `overline` | Atkinson 800 | 10,5 / 14, majúscules | Franja sota la xifra («CEL RAS») |
 
-Espaiats (`spacing`): 2 (entre un títol i el seu subtítol) · 4 · 8 · 12 · 16 · 20 · 24 · 32, sense sumar-hi ni restar-hi píxels. Radis (`radii`): 10 (etiquetes) · 14 (camps i controls de formulari) · 16 (botons, targetes) · 20 (targeta de l'índex) · píndola. Mides fixes (`sizes`): botó 54, xip 34, tacte mínim 44, icona 22 (petita, 16). «Què vols veure?» fa servir targetes de 81 amb icona de 26 i files de formulari de 46. El rànquing fa servir una columna d'índex de 72, una nansa de 36 × 4 i punts de llegenda de 8. La fitxa del punt fa servir mapa de 300, gràfic horari de 64, columna horària de 44, amplada de l'índex de 96 i marcador de 66 (nucli 43, tija 18, halo 10). El calendari fa servir files de fenomen de 82 i una caixa de data de 46 × 54.
+Espaiats (`spacing`): 2 (entre un títol i el seu subtítol) · 4 · 8 · 12 · 16 · 20 · 24 · 32, sense sumar-hi ni restar-hi píxels. Radis (`radii`): 10 (etiquetes) · 14 (camps i controls de formulari) · 16 (botons, targetes) · 20 (targeta de l'índex) · píndola. Mides fixes (`sizes`): botó 54, xip 34, tacte mínim 44, icona 22 (petita, 16). «Què vols veure?» fa servir targetes de 81 amb icona de 26 i files de formulari de 46. El rànquing fa servir una columna d'índex de 72, una nansa de 36 × 4 i punts de llegenda de 8. La fitxa del punt fa servir mapa de 300, gràfic horari de 64, columna horària de 44, amplada de l'índex de 96 i marcador de 66 (nucli 43, tija 18, halo 10). El calendari fa servir files de fenomen de 82 i una caixa de data de 46 × 54. La fitxa de l'esdeveniment fa servir una targeta del cel de 106 amb un horitzó de 28 i l'anell del radiant de 34.
 
 ## Components base (TG-113)
 

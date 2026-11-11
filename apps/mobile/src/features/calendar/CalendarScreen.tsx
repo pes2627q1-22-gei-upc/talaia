@@ -121,8 +121,9 @@ export function CalendarScreen() {
               <StateMessage title={vm.emptyMessage} />
             ) : (
               vm.events.map((event) => (
-                <View
+                <PressableScale
                   key={event.id}
+                  onPress={() => vm.openEvent(event.id)}
                   style={[
                     styles.event,
                     event.past && styles.pastEvent,
@@ -167,7 +168,7 @@ export function CalendarScreen() {
                   ) : (
                     <Image source={event.icon} style={styles.eventIcon} accessible={false} />
                   )}
-                </View>
+                </PressableScale>
               ))
             )}
           </View>

@@ -1,4 +1,5 @@
 import type { Esdeveniment } from '@talaia/shared';
+import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AppState } from 'react-native';
@@ -221,6 +222,8 @@ export function useCalendarViewModel() {
       setFilterMenuOpen(false);
     },
     events: rows,
+    /** Fitxa del fenomen (HU10, mockup 09). */
+    openEvent: (id: string) => router.push({ pathname: '/calendari/[id]', params: { id } }),
     eventsByDay,
     markersByDay,
     emptyMessage: t(
