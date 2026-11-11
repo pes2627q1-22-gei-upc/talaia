@@ -1,45 +1,5 @@
-import type { DB } from '@talaia/db';
-import {
-  CamelCasePlugin,
-  DummyDriver,
-  Kysely,
-  PostgresAdapter,
-  PostgresIntrospector,
-  PostgresQueryCompiler,
-  type CompiledQuery,
-  type DatabaseConnection,
-  type QueryResult,
-} from 'kysely';
-
+import { fakeDb } from '../../testing/fakeDb';
 import { createKyselyRecalculRepositories } from '../repository';
-
-/** Kysely sense base de dades: captura l'SQL i torna les files que li diem. */
-function fakeDb(files: Record<string, unknown>[] = []) {
-  const queries: CompiledQuery[] = [];
-  class Driver extends DummyDriver {
-    override async acquireConnection(): Promise<DatabaseConnection> {
-      return {
-        executeQuery: async <R>(query: CompiledQuery): Promise<QueryResult<R>> => {
-          queries.push(query);
-          return { rows: files as R[] };
-        },
-        streamQuery: () => {
-          throw new Error('no fa falta');
-        },
-      };
-    }
-  }
-  const db = new Kysely<DB>({
-    dialect: {
-      createAdapter: () => new PostgresAdapter(),
-      createDriver: () => new Driver(),
-      createIntrospector: (k) => new PostgresIntrospector(k),
-      createQueryCompiler: () => new PostgresQueryCompiler(),
-    },
-    plugins: [new CamelCasePlugin()],
-  });
-  return { db, queries };
-}
 
 describe('createKyselyRecalculRepositories', () => {
   it("llegeix els punts publicats i converteix el numeric de l'SQM a number", async () => {
@@ -109,5 +69,19 @@ describe('createKyselyRecalculRepositories', () => {
       null,
       null,
     ]);
+  });
+
+  it("registra les notificacions d'alertes noves o l'error de les alertes (TG-153)", async () => {
+    const { db, queries } = fakeDb();
+    const { execucions } = createKyselyRecalculRepositories(db);
+    const iniciadaEl = new Date('2026-11-11T19:05:00.000Z');
+    const acabadaEl = new Date('2026-11-11T19:05:03.000Z');
+    const base = { iniciadaEl, acabadaEl, estat: 'ok', punts: 32, hores: 2720 } as const;
+
+    await execucions.registra({ ...base, notificacions: 3 });
+    await execucions.registra({ ...base, errorAlertes: 'BD caiguda' });
+
+    expect(queries[0]?.parameters.slice(5)).toEqual([null, 3, null]);
+    expect(queries[1]?.parameters.slice(5)).toEqual([null, null, 'BD caiguda']);
   });
 });

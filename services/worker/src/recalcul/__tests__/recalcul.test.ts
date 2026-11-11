@@ -217,3 +217,102 @@ describe('recalculaIndex', () => {
     expect(execucions[0]).toMatchObject({ estat: 'error', punts: 10 });
   });
 });
+
+describe('recalculaIndex · alertes (TG-153)', () => {
+  beforeEach(() => jest.spyOn(console, 'error').mockImplementation(() => {}));
+  afterEach(() => jest.restoreAllMocks());
+
+  it("avalua les alertes amb l'índex ja desat i en registra les notificacions noves", async () => {
+    const { deps, indexs, execucions } = setup();
+    const alertes = jest.fn(async () => {
+      // Quan s'avaluen, l'índex de tots els punts ja és a la taula.
+      expect(await indexs.indexsDe('ciutat')).toHaveLength(3);
+      return { notificacions: 2 };
+    });
+
+    const resum = await recalculaIndex({ ...deps, alertes });
+
+    expect(alertes).toHaveBeenCalledTimes(1);
+    expect(alertes).toHaveBeenCalledWith(ARA);
+    expect(resum).toMatchObject({ estat: 'ok', punts: 2, notificacions: 2 });
+    expect(execucions).toEqual([
+      { iniciadaEl: ARA, acabadaEl: ARA, estat: 'ok', punts: 2, hores: 6, notificacions: 2 },
+    ]);
+  });
+
+  it("si les alertes fallen, el recàlcul acaba bé i l'error queda al log i a l'execució", async () => {
+    const { deps, indexs, execucions } = setup();
+    const alertes = jest.fn(async () => {
+      throw new Error('notificacions_alertes: timeout');
+    });
+
+    const resum = await recalculaIndex({ ...deps, alertes });
+
+    expect(resum).toMatchObject({ estat: 'ok', punts: 2, hores: 6 });
+    expect(resum).not.toHaveProperty('error');
+    expect(await indexs.indexsDe('montsec')).toHaveLength(3);
+    expect(execucions[0]).toEqual({
+      iniciadaEl: ARA,
+      acabadaEl: ARA,
+      estat: 'ok',
+      punts: 2,
+      hores: 6,
+      errorAlertes: 'notificacions_alertes: timeout',
+    });
+    expect(console.error).toHaveBeenCalledWith(
+      "[worker] l'avaluació de les alertes ha fallat",
+      expect.any(Error),
+    );
+  });
+
+  it("també avalua les alertes si ha fallat algun lot, i l'execució continua amb l'error del lot", async () => {
+    const punts = Array.from({ length: 25 }, (_, i) => punt(`p${i}`));
+    const client = clientAmb((llocs, crida) => {
+      if (crida === 2) throw new OpenMeteoError('Open-Meteo: cos inesperat', 200);
+      return llocs.map(() => previsio());
+    });
+    const { deps, execucions } = setup({ punts, client });
+    const alertes = jest.fn(async () => ({ notificacions: 1 }));
+
+    await expect(recalculaIndex({ ...deps, alertes })).rejects.toThrow('punts 11–20');
+
+    expect(alertes).toHaveBeenCalledTimes(1);
+    expect(execucions[0]).toMatchObject({ estat: 'error', punts: 15, notificacions: 1 });
+  });
+
+  it("no avalua les alertes si l'execució no ha desat cap punt", async () => {
+    const client = clientAmb(() => {
+      throw new OpenMeteoError('Open-Meteo: petició incorrecta', 400);
+    });
+    const { deps, execucions } = setup({ client });
+    const alertes = jest.fn(async () => ({ notificacions: 1 }));
+
+    await expect(recalculaIndex({ ...deps, alertes })).rejects.toThrow('petició incorrecta');
+    await recalculaIndex({ ...setup({ punts: [] }).deps, alertes });
+
+    expect(alertes).not.toHaveBeenCalled();
+    expect(execucions[0]).not.toHaveProperty('notificacions');
+  });
+
+  it("amb el senyal d'aturada, deixa les alertes per a l'execució següent", async () => {
+    const aturada = new AbortController();
+    const client = clientAmb((llocs) => {
+      aturada.abort();
+      return llocs.map(() => previsio());
+    });
+    const { deps } = setup({ client });
+    const alertes = jest.fn(async () => ({ notificacions: 1 }));
+
+    await expect(
+      recalculaIndex({ ...deps, alertes, senyal: aturada.signal }),
+    ).resolves.toMatchObject({ estat: 'ok', punts: 2 });
+    expect(alertes).not.toHaveBeenCalled();
+  });
+
+  it('sense el port, el recàlcul no en sap res', async () => {
+    const { deps, execucions } = setup();
+    await recalculaIndex(deps);
+    expect(execucions[0]).not.toHaveProperty('notificacions');
+    expect(execucions[0]).not.toHaveProperty('errorAlertes');
+  });
+});

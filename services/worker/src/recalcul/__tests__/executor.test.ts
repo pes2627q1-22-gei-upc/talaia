@@ -80,4 +80,18 @@ describe('createExecutor', () => {
     await executor.executa('hora');
     expect(recalcula).toHaveBeenCalledTimes(1);
   });
+
+  it("diu al log quantes notificacions d'alertes noves ha desat l'execució (TG-153)", async () => {
+    await createExecutor(async () => RESUM).executa('hora');
+    await createExecutor(async () => ({ ...RESUM, notificacions: 3 })).executa('hora');
+
+    expect(console.log).toHaveBeenNthCalledWith(
+      1,
+      '[worker] hora: índex de 32 punts (2720 hores) en 2 s',
+    );
+    expect(console.log).toHaveBeenNthCalledWith(
+      2,
+      "[worker] hora: índex de 32 punts (2720 hores) en 2 s; notificacions d'alertes noves: 3",
+    );
+  });
 });

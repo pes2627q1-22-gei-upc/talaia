@@ -60,6 +60,12 @@ describe('postgis', () => {
     );
     expect(q.parameters).toEqual([2.17, 41.38, 50_000]);
   });
+
+  it('dinsRadi accepta un radi que surt de la consulta (el de cada alerta)', () => {
+    const q = compila(dinsRadi(sql.ref('origen'), ubicacio, sql<number>`"radi_km" * 1000`));
+    expect(q.sql).toBe('select st_dwithin("origen", "ubicacio", "radi_km" * 1000) as "v"');
+    expect(q.parameters).toEqual([]);
+  });
 });
 
 describe('createDb', () => {
