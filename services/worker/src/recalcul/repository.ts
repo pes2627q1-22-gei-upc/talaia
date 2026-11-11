@@ -34,10 +34,19 @@ export function createKyselyRecalculRepositories(
       },
     },
     execucions: {
-      async registra({ iniciadaEl, acabadaEl, estat, punts, hores, error }) {
+      async registra(e) {
         await db
           .insertInto('execucionsWorker')
-          .values({ iniciadaEl, acabadaEl, estat, punts, hores, error: error ?? null })
+          .values({
+            iniciadaEl: e.iniciadaEl,
+            acabadaEl: e.acabadaEl,
+            estat: e.estat,
+            punts: e.punts,
+            hores: e.hores,
+            error: e.error ?? null,
+            notificacions: e.notificacions ?? null,
+            errorAlertes: e.errorAlertes ?? null,
+          })
           .execute();
       },
     },

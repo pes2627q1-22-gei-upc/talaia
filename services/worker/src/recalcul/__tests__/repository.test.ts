@@ -87,9 +87,18 @@ describe('createKyselyRecalculRepositories', () => {
     });
 
     expect(queries[0]?.sql).toBe(
-      'insert into "execucions_worker" ("iniciada_el", "acabada_el", "estat", "punts", "hores", "error") values ($1, $2, $3, $4, $5, $6)',
+      'insert into "execucions_worker" ("iniciada_el", "acabada_el", "estat", "punts", "hores", "error", "notificacions", "error_alertes") values ($1, $2, $3, $4, $5, $6, $7, $8)',
     );
-    expect(queries[0]?.parameters).toEqual([iniciadaEl, acabadaEl, 'ok', 32, 2720, null]);
+    expect(queries[0]?.parameters).toEqual([
+      iniciadaEl,
+      acabadaEl,
+      'ok',
+      32,
+      2720,
+      null,
+      null,
+      null,
+    ]);
     expect(queries[1]?.parameters).toEqual([
       iniciadaEl,
       acabadaEl,
@@ -97,6 +106,8 @@ describe('createKyselyRecalculRepositories', () => {
       0,
       0,
       'Open-Meteo 503',
+      null,
+      null,
     ]);
   });
 });
