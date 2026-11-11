@@ -49,5 +49,13 @@ export function createEsdevenimentsRouter(
     if (!service) throw missingDatabase();
     res.json(await service.list(des_de, fins_a, tipus));
   });
+  router.get('/:id', authenticate, async (req, res) => {
+    const id = req.params.id;
+    if (typeof id !== 'string') {
+      throw new ApiError(400, 'validation_error', 'id ha de ser un codi d’esdeveniment');
+    }
+    if (!service) throw missingDatabase();
+    res.json(await service.getById(id, req.get('Accept-Language')));
+  });
   return router;
 }
