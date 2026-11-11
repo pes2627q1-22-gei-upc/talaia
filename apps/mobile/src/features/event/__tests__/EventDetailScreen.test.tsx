@@ -70,7 +70,7 @@ it('mostra la fitxa: el nom, el tipus, la nit, l’horari i l’explicació', as
 
 it('torna al calendari amb el botó enrere', async () => {
   await renderScreen();
-  fireEvent.press(await screen.findByRole('button', { name: 'Torna al calendari' }));
+  await fireEvent.press(await screen.findByRole('button', { name: 'Torna al calendari' }));
   expect(router.back).toHaveBeenCalled();
 });
 
@@ -106,11 +106,11 @@ it('avisa si l’esdeveniment no existeix i deixa tornar-ho a provar si falla la
   const first = await renderScreen();
   expect(await screen.findByText('No hem trobat aquest esdeveniment')).toBeOnTheScreen();
   expect(screen.queryByRole('button', { name: 'Torna-ho a provar' })).toBeNull();
-  first.unmount();
+  await first.unmount();
 
   get.mockRejectedValueOnce(new ApiError(503, 'service_unavailable', 'Caigut'));
   get.mockResolvedValueOnce(eclipsi);
   await renderScreen();
-  fireEvent.press(await screen.findByRole('button', { name: 'Torna-ho a provar' }));
+  await fireEvent.press(await screen.findByRole('button', { name: 'Torna-ho a provar' }));
   expect(await screen.findByRole('header', { name: eclipsi.nom })).toBeOnTheScreen();
 });
