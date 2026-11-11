@@ -42,6 +42,16 @@ export type ConsultaRecomanacions = {
   limit?: number;
 };
 
+/**
+ * El que accepta `GET /api/v1/recomanacions`: una `ConsultaRecomanacions` on només l'origen és
+ * obligatori («A prop meu», HU02, TG-133). L'API omple la resta: `objectiu` `cel_estrellat`
+ * (l'índex v1 és el mateix per a tots), `tempsMaxim` 60 minuts, `data` la nit en curs (fins al
+ * migdia, la que s'acaba; després, la que ve) i, sense `desDe` ni `finsA`, la nit sencera (de les
+ * 12:00 a les 12:00 de l'endemà) des de l'hora en curs. `desDe` i `finsA` van junts.
+ */
+export type ParametresRecomanacions = Pick<ConsultaRecomanacions, 'origen'> &
+  Partial<Omit<ConsultaRecomanacions, 'origen'>>;
+
 /** Un punt del rànquing de `GET /api/v1/recomanacions`. */
 export type Recomanacio = PuntObservacio & {
   /** Distància en línia recta des de l'origen, en km (1 decimal). */
@@ -58,6 +68,10 @@ export type Recomanacio = PuntObservacio & {
 
 /** `GET /api/v1/recomanacions`: el rànquing de punts per a una consulta (HU01). */
 export type RecomanacionsResposta = {
+  /** La nit que s'ha fet servir (`YYYY-MM-DD`): la de la consulta o, si no n'hi havia, la que toca. */
+  data: string;
+  /** El temps en cotxe que s'ha fet servir, en minuts: el de la consulta o 60 per defecte. */
+  tempsMaxim: number;
   /** Radi en línia recta que s'ha fet servir per a `tempsMaxim`, en km (1 decimal). */
   radiKm: number;
   /**
