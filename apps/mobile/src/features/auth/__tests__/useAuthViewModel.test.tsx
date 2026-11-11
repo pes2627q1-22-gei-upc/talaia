@@ -2,11 +2,13 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook, waitFor } from '@testing-library/react-native';
 import type { PropsWithChildren } from 'react';
 
+import { accountBlocked } from '@/core/api/accountBlocked';
 import '@/core/i18n';
 import { pushRepository } from '@/features/notifications/pushRepository';
 
 import { AuthProvider } from '../AuthProvider';
 import { authRepository, type AuthUser } from '../authRepository';
+import { profileRepository } from '../profileRepository';
 import { useAuthViewModel } from '../useAuthViewModel';
 
 jest.mock('../authRepository', () => ({
@@ -20,6 +22,10 @@ jest.mock('../authRepository', () => ({
 
 jest.mock('@/features/notifications/pushRepository', () => ({
   pushRepository: { unregisterDevice: jest.fn(async () => undefined) },
+}));
+
+jest.mock('../profileRepository', () => ({
+  profileRepository: { ensure: jest.fn(async () => ({ created: false })) },
 }));
 
 const repository = jest.mocked(authRepository);
@@ -48,7 +54,10 @@ beforeEach(() => {
   repository.startAutoRefresh.mockReturnValue(stopRefresh);
 });
 
-afterEach(() => cache.clear());
+afterEach(() => {
+  cache.clear();
+  accountBlocked.clear();
+});
 
 it('restaura només les dades públiques de la sessió', async () => {
   repository.getUser.mockResolvedValue({ id: 'one', email: 'one@example.test' });
@@ -59,6 +68,36 @@ it('restaura només les dades públiques de la sessió', async () => {
   await unmount();
   expect(unsubscribe).toHaveBeenCalled();
   expect(stopRefresh).toHaveBeenCalled();
+});
+
+it('una sessió recuperada comprova el perfil, per si han bloquejat el compte', async () => {
+  repository.getUser.mockResolvedValue({ id: 'one' });
+  const { result } = await renderHook(useAuthViewModel, { wrapper });
+  await waitFor(() => expect(result.current.loading).toBe(false));
+  expect(profileRepository.ensure).toHaveBeenCalledTimes(1);
+});
+
+it('account_blocked activa l’avís i tancar la sessió el treu (TG-179)', async () => {
+  repository.getUser.mockResolvedValue({ id: 'one' });
+  const { result } = await renderHook(useAuthViewModel, { wrapper });
+  await waitFor(() => expect(result.current.loading).toBe(false));
+  expect(result.current.blocked).toBe(false);
+  await act(() => accountBlocked.report());
+  expect(result.current.blocked).toBe(true);
+  await act(() => result.current.signOut());
+  expect(result.current.isAuthenticated).toBe(false);
+  expect(result.current.blocked).toBe(false);
+});
+
+it('canviar de compte treu l’avís; entrar amb una sessió nova, no', async () => {
+  const { result } = await renderHook(useAuthViewModel, { wrapper });
+  await waitFor(() => expect(result.current.loading).toBe(false));
+  // El 403 del POST /perfil del login pot arribar abans que l'avís d'Auth.
+  await act(() => accountBlocked.report());
+  await act(() => change({ id: 'one' }));
+  expect(result.current.blocked).toBe(true);
+  await act(() => change({ id: 'two' }));
+  expect(result.current.blocked).toBe(false);
 });
 
 it('un resultat de restauració antic no sobreescriu un canvi de sessió', async () => {
