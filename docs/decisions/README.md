@@ -33,6 +33,7 @@ Format: **Context → Decisió → Conseqüències**. Estat: `Acceptada`, `Propo
 | [0025](0025-observacions-xema.md) | Observacions de la XEMA de Meteocat: les lectures d'ahir de l'estació més propera a cada punt, un cop al dia (unes 190 consultes al mes) | Acceptada |
 | [0026](0026-contracte-esdeveniments-aprop.md) | Contracte del calendari amb Aprop: sis tipus, dies civils de Catalunya, ubicació general i accés amb API key o JWT (P14) | Acceptada |
 | [0027](0027-index-per-objectiu.md) | Índex per objectiu: `100 × núvols × condició × qualitat`, amb un perfil per objectiu (posta, Lluna, pluja d'estels, eclipsi, Via Làctia…); el del cel estrellat és la v1 | Proposada |
+| [0028](0028-notificacions-push.md) | Notificacions push amb Expo Push Service: tokens a `dispositius_push` via l'API, el worker envia després de cada recàlcul (una per alerta i nit), `data: { puntId }` obre la fitxa; development build d'EAS per provar-les a Android | Proposada |
 | [0029](0029-rol-admin-i-bloqueig.md) | Rol d'administrador i bloqueig de comptes a `perfils`, llegits a cada petició autenticada: 403 `account_blocked` i `requireAdmin` | Acceptada |
 
 Decisions encara obertes: [pendents.md](pendents.md).
