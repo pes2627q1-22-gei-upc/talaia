@@ -14,9 +14,53 @@ import type {
   PuntReferencia,
 } from './esdevenimentsRepository';
 
-type TextosFenomen = { ca?: { nom?: unknown; descripcio?: unknown; consellGeneral?: unknown } };
+type Idioma = 'ca' | 'es' | 'en';
+type TextosFenomen = Partial<
+  Record<Idioma, { nom?: unknown; descripcio?: unknown; consellGeneral?: unknown }>
+>;
 // CamelCasePlugin de Kysely converteix també recursivament les claus dels JSONB.
-type TextosEsdeveniment = { ca?: { notaVisibilitat?: unknown; consellObservacio?: unknown } };
+type TextosEsdeveniment = Partial<
+  Record<Idioma, { notaVisibilitat?: unknown; consellObservacio?: unknown }>
+>;
+
+/** Tria una traducció disponible a partir d'Accept-Language; català és el fallback del producte. */
+function idiomesPreferits(acceptLanguage?: string): Idioma[] {
+  if (!acceptLanguage) return ['ca'];
+  const preferencies = acceptLanguage
+    .split(',')
+    .map((item, index) => {
+      const [rawLanguage, ...parameters] = item.trim().toLowerCase().split(';');
+      const language = rawLanguage?.split('-')[0];
+      const qualityParameter = parameters.find((parameter) => parameter.trim().startsWith('q='));
+      const quality = qualityParameter ? Number(qualityParameter.trim().slice(2)) : 1;
+      return { language, quality, index };
+    })
+    .filter(
+      (item): item is { language: string; quality: number; index: number } =>
+        Boolean(item.language) &&
+        Number.isFinite(item.quality) &&
+        item.quality > 0 &&
+        item.quality <= 1,
+    )
+    .sort((a, b) => b.quality - a.quality || a.index - b.index);
+  const result = preferencies
+    .map(({ language }) => language)
+    .filter(
+      (language): language is Idioma => language === 'ca' || language === 'es' || language === 'en',
+    );
+  return [...new Set<Idioma>([...result, 'ca'])];
+}
+
+function localized<T extends object>(
+  texts: Partial<Record<Idioma, T>>,
+  languages: Idioma[],
+): T | undefined {
+  const available = [...languages].reverse().flatMap((language) => {
+    const value = texts?.[language];
+    return value ? [value] : [];
+  });
+  return available.length ? (Object.assign({}, ...available) as T) : undefined;
+}
 
 function invalidData(codi: string): never {
   console.error('[esdeveniments] dades incompletes', codi);
@@ -57,15 +101,27 @@ function mapEsdeveniment(fila: FilaEsdeveniment, ubicacio: PuntReferencia): Esde
   };
 }
 
-function mapDetall(fila: FilaEsdeveniment, ubicacio: PuntReferencia): EsdevenimentDetall {
-  const event = mapEsdeveniment(fila, ubicacio);
+function mapDetall(
+  fila: FilaEsdeveniment,
+  ubicacio: PuntReferencia,
+  acceptLanguage?: string,
+): EsdevenimentDetall {
+  const languages = idiomesPreferits(acceptLanguage);
   const fenomen = fila.textosFenomen as TextosFenomen;
   const esdeveniment = fila.textosEsdeveniment as TextosEsdeveniment;
+  const textosFenomen = localized(fenomen, languages);
+  const textosEsdeveniment = localized(esdeveniment, languages);
+  const translatedRow: FilaEsdeveniment = {
+    ...fila,
+    textosFenomen: { ca: textosFenomen },
+    textosEsdeveniment: { ca: textosEsdeveniment },
+  };
+  const event = mapEsdeveniment(translatedRow, ubicacio);
   const precisio = fila.precisio as Record<string, unknown> | null;
-  const particularitat = text(esdeveniment?.ca?.notaVisibilitat);
-  const observacioGeneral = text(fenomen?.ca?.consellGeneral);
-  const observacioEsdeveniment = text(esdeveniment?.ca?.consellObservacio);
-  const explicacioFenomen = text(fenomen?.ca?.descripcio);
+  const particularitat = text(textosEsdeveniment?.notaVisibilitat);
+  const observacioGeneral = text(textosFenomen?.consellGeneral);
+  const observacioEsdeveniment = text(textosEsdeveniment?.consellObservacio);
+  const explicacioFenomen = text(textosFenomen?.descripcio);
   const precisioInici = precisio?.inici;
   const precisioFi = precisio?.fi;
   const precisioMaxim = precisio?.maxim;
@@ -102,14 +158,14 @@ function mapDetall(fila: FilaEsdeveniment, ubicacio: PuntReferencia): Esdevenime
 
 export type EsdevenimentsService = {
   list(desDe: string, finsA: string, tipus?: TipusFenomen): Promise<EsdevenimentsResponse>;
-  getById(id: string): Promise<EsdevenimentDetall>;
+  getById(id: string, acceptLanguage?: string): Promise<EsdevenimentDetall>;
 };
 
 export function createEsdevenimentsService(
   repository: EsdevenimentsRepository,
 ): EsdevenimentsService {
   return {
-    async getById(id) {
+    async getById(id, acceptLanguage) {
       let fila: FilaEsdeveniment | undefined;
       let ubicacio: PuntReferencia | undefined;
       try {
@@ -139,7 +195,7 @@ export function createEsdevenimentsService(
           'Falta el punt oficial de referència del calendari',
         );
       }
-      return mapDetall(fila, ubicacio);
+      return mapDetall(fila, ubicacio, acceptLanguage);
     },
     async list(desDe, finsA, tipus) {
       const { inici, fi } = intervalCatala(desDe, finsA);

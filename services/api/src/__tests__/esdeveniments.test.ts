@@ -106,6 +106,53 @@ describe('GET /api/v1/esdeveniments/{id}', () => {
     expect(res.body.horari.precisio.maxim).toBe('dia');
   });
 
+  it('tria el primer idioma disponible a Accept-Language i completa camps amb català', async () => {
+    const repo = fakeRepository({
+      findPublicById: async () => ({
+        ...FILA,
+        textosFenomen: {
+          ca: {
+            nom: 'Lluna plena',
+            descripcio: 'Disc lunar il·luminat.',
+            consellGeneral: 'Mireu el cel.',
+          },
+          es: { nom: 'Luna llena', descripcio: 'Disco lunar iluminado.' },
+        },
+        textosEsdeveniment: {
+          ca: {
+            notaVisibilitat: 'Visible des de Catalunya.',
+            consellObservacio: 'Observeu-la de nit.',
+          },
+          es: {
+            notaVisibilitat: 'Visible desde Cataluña.',
+            consellObservacio: 'Obsérvela de noche.',
+          },
+        },
+      }),
+    });
+    const res = await request(appWith(repo))
+      .get(detailPath)
+      .set('Accept-Language', 'es-ES,es;q=0.9,en;q=0.8')
+      .set('X-API-Key', 'clau-secreta');
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({
+      nom: 'Luna llena',
+      descripcio: 'Disco lunar iluminado. Visible desde Cataluña.',
+      explicacio: {
+        fenomen: 'Disco lunar iluminado.',
+        particularitat: 'Visible desde Cataluña.',
+        observacioGeneral: 'Mireu el cel.',
+        observacioEsdeveniment: 'Obsérvela de noche.',
+      },
+    });
+  });
+
+  it('manté el català per defecte si no es demana un idioma', async () => {
+    const res = await request(appWith()).get(detailPath).set('X-API-Key', 'clau-secreta');
+    expect(res.body.nom).toBe('Lluna plena');
+    expect(res.body.explicacio.fenomen).toBe('Disc lunar il·luminat.');
+  });
+
   it('permet un màxim absent sense inventar-ne la precisió', async () => {
     const repo = fakeRepository({
       findPublicById: async () => ({
