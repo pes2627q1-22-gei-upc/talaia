@@ -58,7 +58,7 @@ describe('POST /api/v1/perfil a l’OpenAPI', () => {
     expect(perfil.requestBody.content['application/json'].schema.$ref).toBe(
       '#/components/schemas/ProfileEnsureBody',
     );
-    expect(Object.keys(perfil.responses).sort()).toEqual(['200', '201', '401', '503']);
+    expect(Object.keys(perfil.responses).sort()).toEqual(['200', '201', '401', '403', '503']);
     expect(perfil.responses['201'].content['application/json'].schema.$ref).toBe(
       '#/components/schemas/ProfileEnsureResponse',
     );
@@ -70,6 +70,7 @@ describe('POST /api/v1/perfil a l’OpenAPI', () => {
     expect(ProfileEnsureResponse.properties.profile.$ref).toBe('#/components/schemas/Perfil');
     expect(Object.keys(Perfil.properties)).toEqual([
       'id',
+      'rol',
       'authUserId',
       'email',
       'nom',
@@ -84,11 +85,11 @@ describe('GET i PATCH /api/v1/perfil a l’OpenAPI', () => {
   it('documenten el perfil, el cos del PATCH i els errors', async () => {
     const res = await request(createApp()).get('/api/v1/openapi.json');
     const { get, patch } = res.body.paths['/perfil'];
-    expect(Object.keys(get.responses).sort()).toEqual(['200', '401', '404', '503']);
+    expect(Object.keys(get.responses).sort()).toEqual(['200', '401', '403', '404', '503']);
     expect(get.responses['200'].content['application/json'].schema.$ref).toBe(
       '#/components/schemas/Perfil',
     );
-    expect(Object.keys(patch.responses).sort()).toEqual(['200', '400', '401', '404', '503']);
+    expect(Object.keys(patch.responses).sort()).toEqual(['200', '400', '401', '403', '404', '503']);
     expect(patch.requestBody.required).toBe(true);
 
     const { PerfilCanvis } = res.body.components.schemas;

@@ -17,6 +17,9 @@ const FILA = {
   email: 'maria@example.com',
   nom: 'Maria Puig',
   avatar_url: 'https://example.com/maria.png',
+  rol: 'usuari',
+  bloquejat: false,
+  data_bloqueig: null,
   data_creacio: new Date('2026-10-14T12:00:00.000Z'),
   data_actualitzacio: new Date('2026-10-14T12:00:00.000Z'),
 };
@@ -27,6 +30,9 @@ const PERFIL = {
   email: 'maria@example.com',
   nom: 'Maria Puig',
   avatarUrl: 'https://example.com/maria.png',
+  rol: 'usuari',
+  bloquejat: false,
+  dataBloqueig: null,
   dataCreacio: new Date('2026-10-14T12:00:00.000Z'),
   dataActualitzacio: new Date('2026-10-14T12:00:00.000Z'),
 };
@@ -154,6 +160,9 @@ describe('createDatabaseProfileStore.ensureProfile', () => {
       email: null,
       nom: null,
       avatarUrl: null,
+      rol: 'usuari',
+      bloquejat: false,
+      dataBloqueig: null,
       dataCreacio: new Date('2026-10-14T12:00:00.000Z'),
       dataActualitzacio: new Date('2026-10-15T08:30:00.000Z'),
     });
@@ -193,5 +202,61 @@ describe('createDatabaseProfileStore.updateProfile', () => {
     await expect(
       createDatabaseProfileStore(db).updateProfile(MARIA.id, { nom: 'Maria' }),
     ).resolves.toBeNull();
+  });
+});
+
+describe('createDatabaseProfileStore.getAccountStatus', () => {
+  it('llegeix només el rol i el bloqueig', async () => {
+    const { db, queries } = fakeDb([{ id: 'perfil-1', rol: 'admin', bloquejat: true }]);
+
+    await expect(createDatabaseProfileStore(db).getAccountStatus(MARIA.id)).resolves.toEqual({
+      perfilId: 'perfil-1',
+      rol: 'admin',
+      bloquejat: true,
+    });
+    expect(queries[0]?.sql).toBe(
+      'select "id", "rol", "bloquejat" from "perfils" where "auth_user_id" = $1',
+    );
+  });
+
+  it('torna null si encara no té perfil', async () => {
+    const { db } = fakeDb([]);
+    await expect(createDatabaseProfileStore(db).getAccountStatus(MARIA.id)).resolves.toBeNull();
+  });
+});
+
+describe('createDatabaseProfileStore.listProfiles', () => {
+  it('torna tots els perfils, els més nous primer', async () => {
+    const { db, queries } = fakeDb([FILA]);
+    await expect(createDatabaseProfileStore(db).listProfiles()).resolves.toEqual([PERFIL]);
+    expect(queries[0]?.sql).toBe('select * from "perfils" order by "data_creacio" desc');
+  });
+});
+
+describe('createDatabaseProfileStore.setBlocked', () => {
+  it('bloqueja sense canviar la data si ja ho estava', async () => {
+    const dataBloqueig = new Date('2026-11-12T10:00:00.000Z');
+    const { db, queries } = fakeDb([{ ...FILA, bloquejat: true, data_bloqueig: dataBloqueig }]);
+
+    await expect(createDatabaseProfileStore(db).setBlocked('perfil-1', true)).resolves.toEqual({
+      ...PERFIL,
+      bloquejat: true,
+      dataBloqueig,
+    });
+    expect(queries[0]?.sql).toBe(
+      'update "perfils" set "bloquejat" = $1, "data_bloqueig" = coalesce(data_bloqueig, now()) where "id" = $2 returning *',
+    );
+    expect(queries[0]?.parameters).toEqual([true, 'perfil-1']);
+  });
+
+  it('desbloqueja i esborra la data', async () => {
+    const { db, queries } = fakeDb([FILA]);
+    await createDatabaseProfileStore(db).setBlocked('perfil-1', false);
+    expect(queries[0]?.parameters).toEqual([false, null, 'perfil-1']);
+  });
+
+  it('torna null si el perfil no existeix', async () => {
+    const { db } = fakeDb([]);
+    await expect(createDatabaseProfileStore(db).setBlocked('perfil-x', true)).resolves.toBeNull();
   });
 });
