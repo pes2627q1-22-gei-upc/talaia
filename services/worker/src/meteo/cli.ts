@@ -3,9 +3,10 @@
  *
  *   npm run meteo -w services/worker -- 42.0294,0.7112 41.3851,2.1734
  */
+import { createOpenMeteoClient } from '@talaia/index';
+
 import { loadEnv } from '../config/env';
 import { ingestaPrevisioMeteo, type PuntPerIngesta } from './ingesta';
-import { createOpenMeteoClient } from './openMeteo';
 import { createInMemoryPrevisioMeteoRepository } from './repository';
 
 const HORES_MOSTRADES = 24;

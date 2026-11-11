@@ -1,7 +1,7 @@
+import { OpenMeteoError, type Coordenades, type OpenMeteoClient } from '@talaia/index';
 import type { PrevisioMeteoHora } from '@talaia/shared';
 
 import { createInMemoryIndexRepository } from '../../index/repository';
-import { OpenMeteoError, type Coordenades, type OpenMeteoClient } from '../../meteo/openMeteo';
 import {
   HORES_PASSADES_GUARDADES,
   INTENTS_PER_LOT,

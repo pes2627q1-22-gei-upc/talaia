@@ -11,6 +11,7 @@
     "services/worker",
     "packages/shared",
     "packages/db",
+    "packages/index",
     "data"
   ],
   "scripts": {
