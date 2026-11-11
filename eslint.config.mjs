@@ -26,19 +26,6 @@ export default defineConfig([
       '@eslint-community/eslint-comments/require-description': 'error',
       // `_next`: Express només reconeix el handler d'errors si té els 4 paràmetres
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
-      // ponytail: @talaia/shared no té build; quan hi calgui codi en execució, cal un build i treure això
-      '@typescript-eslint/no-restricted-imports': [
-        'error',
-        {
-          paths: [
-            {
-              name: '@talaia/shared',
-              allowTypeImports: true,
-              message: '@talaia/shared només té tipus: `import type` (packages/shared/README.md).',
-            },
-          ],
-        },
-      ],
     },
   },
   {

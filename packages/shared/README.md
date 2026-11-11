@@ -1,6 +1,6 @@
 # @talaia/shared
 
-Tipus de domini compartits per l'app, l'admin, l'API i el worker. Cada tipus s'escriu **una sola vegada** aquí.
+Tipus de domini compartits per l'app, l'admin, l'API i el worker, i el codi pur que han de compartir (la nit, [ADR-0028](../../docs/decisions/0028-notificacions-push.md)). Cada tipus i cada funció s'escriu **una sola vegada** aquí.
 
 ## Què hi ha
 
@@ -13,20 +13,20 @@ Tipus de domini compartits per l'app, l'admin, l'API i el worker. Cada tipus s'e
 | `src/punts.ts` | `PuntObservacio`, `PuntsMapaGeoJson` (el GeoJSON del mapa, ADR-0012) | Metadades del punt pendents de P13 (TG-87) i del model de TG-86 |
 | `src/recomanacions.ts` | `ObjectiuObservacio`, `ConsultaRecomanacions` (el que es tria a «Què vols veure?», TG-101), `Recomanacio`, `RecomanacionsResposta` | Paràmetres i resposta de `GET /recomanacions` (TG-100) |
 | `src/esdeveniments.ts` | `Esdeveniment`, `TipusFenomen` | Contracte amb Aprop acordat a TG-109 |
+| `src/nit.ts` | **Codi:** `nightWindow`, `defaultNight`, `TIME_ZONE`, `NIGHT_START_HOUR`… Una nit va de les 12:00 locals d'un dia a les 12:00 de l'endemà (`Europe/Madrid`) | TG-104; la fan servir l'API i les alertes del worker (TG-153) |
 
 Un camp que depèn d'una decisió pendent porta un comentari que ho diu. No s'hi inventen valors: quan es decideixi, s'actualitza aquí i a l'ADR.
 
 ## Com es fa servir
 
-Ja és una dependència de l'app i de l'API (npm workspaces). Sempre amb **`import type`**:
+Ja és una dependència de l'app, de l'API i del worker (npm workspaces). Els tipus, sempre amb **`import type`**; el codi (`nit.ts`), amb un `import` normal:
 
 ```ts
 import type { PuntsMapaGeoJson } from '@talaia/shared';
+import { defaultNight, nightWindow } from '@talaia/shared';
 ```
 
-Per què només tipus: el paquet no té pas de build. Metro, Jest i el `tsc` de l'API llegeixen els `.ts` directament i els esborren en compilar, i així no cal compilar res abans de treballar. Un `import` normal fallaria a l'API compilada (`node dist/server.js`), i per això ESLint el rebutja (`@typescript-eslint/no-restricted-imports` a `eslint.config.mjs`).
-
-Quan calgui codi en temps d'execució (esquemes zod compartits, la fórmula de l'índex), s'haurà d'afegir un build a aquest paquet (`tsc` cap a `dist/`) i treure aquesta regla. Es decideix amb un ADR.
+El paquet no té pas de build: Metro, Jest i `tsx` llegeixen els `.ts` directament (`main` apunta a `src/index.ts`, com a `@talaia/db`), i el `tsup` de l'API i del worker n'inclou el codi dins del seu `dist/` (`noExternal: [/^@talaia\//]`). Per això només hi pot haver **codi pur i sense dependències** ([ADR-0028](../../docs/decisions/0028-notificacions-push.md)): res de zod, de Node ni de React Native. Un fitxer de codi s'exporta amb `export *` a `src/index.ts`; els de tipus, amb `export type *`.
 
 ## Afegir un tipus
 
