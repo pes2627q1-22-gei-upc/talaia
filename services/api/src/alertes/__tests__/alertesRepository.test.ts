@@ -1,5 +1,5 @@
 import { fakeDb } from '../../testing/fakeDb';
-import { createDatabaseAlertesStore } from '../alertesRepository';
+import { createDatabaseAlertesStore, MAX_ALERTES } from '../alertesRepository';
 
 const PERFIL = 'perfil-1';
 
@@ -35,20 +35,37 @@ const NOVA = {
 } as const;
 
 describe('createDatabaseAlertesStore.create', () => {
-  it('insereix l’alerta al perfil', async () => {
-    const { db, queries } = fakeDb([FILA]);
+  it('bloqueja el perfil, en compta les alertes i insereix la nova', async () => {
+    // pg torna count(*) com a text.
+    const { db, queries } = fakeDb([[{ id: PERFIL }], [{ total: '3' }], [FILA]]);
 
-    await expect(createDatabaseAlertesStore(db).create(PERFIL, NOVA)).resolves.toEqual(ALERTA);
+    await expect(createDatabaseAlertesStore(db).create(PERFIL, NOVA)).resolves.toEqual({
+      ok: true,
+      alerta: ALERTA,
+    });
 
-    expect(queries).toHaveLength(1);
-    expect(queries[0]?.sql).toBe(
+    expect(queries.map((q) => q.sql)).toEqual([
+      'select "id" from "perfils" where "id" = $1 for update',
+      'select count(*) as "total" from "alertes" where "perfil_id" = $1',
       'insert into "alertes" ("perfil_id", "objectiu", "origen", "distancia_max_km", "index_minim") ' +
         'values ($1, $2, st_setsrid(st_makepoint($3, $4), 4326)::geography, $5, $6) ' +
         'returning "id", "objectiu", st_y("origen"::geometry) as "lat", st_x("origen"::geometry) as "lon", ' +
         '"distancia_max_km", "index_minim", "activa", "data_creacio", "data_actualitzacio"',
-    );
+    ]);
+    expect(queries[0]?.parameters).toEqual([PERFIL]);
+    expect(queries[1]?.parameters).toEqual([PERFIL]);
     // L'ordre de st_makepoint és longitud, latitud.
-    expect(queries[0]?.parameters).toEqual([PERFIL, 'pluja_estels', 2.1686, 41.3874, 60, 70]);
+    expect(queries[2]?.parameters).toEqual([PERFIL, 'pluja_estels', 2.1686, 41.3874, 60, 70]);
+  });
+
+  it(`amb ${MAX_ALERTES} alertes no insereix res i torna el límit`, async () => {
+    const { db, queries } = fakeDb([[{ id: PERFIL }], [{ total: String(MAX_ALERTES) }]]);
+
+    await expect(createDatabaseAlertesStore(db).create(PERFIL, NOVA)).resolves.toEqual({
+      ok: false,
+      reason: 'limit',
+    });
+    expect(queries).toHaveLength(2);
   });
 });
 

@@ -8,7 +8,7 @@ import {
 } from 'express';
 import { z } from 'zod';
 
-import type { AlertesStore } from '../alertes/alertesRepository';
+import { MAX_ALERTES, type AlertesStore } from '../alertes/alertesRepository';
 import type { AuthenticatedRequest } from '../middleware/auth';
 import { ApiError } from '../middleware/errors';
 import { registry } from '../openapi';
@@ -91,7 +91,7 @@ registry.registerPath({
   path: '/alertes',
   tags: ['Alertes'],
   summary: 'Crea una alerta de l’usuari autenticat (HU16)',
-  description: 'L’alerta neix activa i només la veu qui l’ha creat.',
+  description: `L’alerta neix activa i només la veu qui l’ha creat. Com a molt ${MAX_ALERTES} per usuari.`,
   request: {
     body: { required: true, content: { 'application/json': { schema: AlertaNovaSchema } } },
   },
@@ -102,6 +102,9 @@ registry.registerPath({
     },
     400: errorResponse('El cos no és vàlid'),
     404: PROFILE_NOT_FOUND,
+    409: errorResponse(
+      `\`alert_limit_reached\`: l’usuari ja té ${MAX_ALERTES} alertes, n’ha d’esborrar alguna`,
+    ),
     ...ERRORS_AUTH,
   },
 });
@@ -124,6 +127,13 @@ registry.registerPath({
 const profileNotFound = () =>
   new ApiError(404, 'profile_not_found', "L'usuari encara no té perfil (cal POST /perfil)");
 
+const alertLimitReached = () =>
+  new ApiError(
+    409,
+    'alert_limit_reached',
+    `Ja tens ${MAX_ALERTES} alertes: n'has d'esborrar alguna per crear-ne una de nova`,
+  );
+
 /**
  * El perfil de l'usuari del JWT, que `requireUser` ja ha llegit (i ha rebutjat si està bloquejat).
  * `null` si encara no té perfil.
@@ -140,9 +150,10 @@ export function createAlertesRouter({ requireUser, store }: AlertesRouterOptions
       const perfilId = currentPerfilId(req);
       if (!perfilId) return next(profileNotFound());
       const alertaNova = AlertaNovaSchema.parse(req.body ?? {});
-      const alerta = await store.create(perfilId, alertaNova);
+      const result = await store.create(perfilId, alertaNova);
+      if (!result.ok) return next(alertLimitReached());
       // Dades personals: cap memòria cau (ni del mòbil ni d'un proxy) no les ha de desar.
-      res.set('Cache-Control', 'no-store').status(201).json(alerta);
+      res.set('Cache-Control', 'no-store').status(201).json(result.alerta);
       return undefined;
     } catch (error) {
       return next(error);

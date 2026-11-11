@@ -2,7 +2,7 @@ import type { Alerta, AlertaNova } from '@talaia/shared';
 import { createLocalJWKSet, exportJWK, generateKeyPair, SignJWT } from 'jose';
 import request from 'supertest';
 
-import type { AlertesStore } from '../alertes/alertesRepository';
+import { MAX_ALERTES, type AlertesStore } from '../alertes/alertesRepository';
 import { createApp } from '../app';
 import type { AccountStatus, ProfileStore } from '../services/profileService';
 
@@ -45,12 +45,15 @@ const NOVA: AlertaNova = {
   indexMinim: 70,
 };
 
-/** Com el de la base de dades: cada perfil només veu les seves. */
+/** Com el de la base de dades: cada perfil només veu les seves, i com a molt `MAX_ALERTES`. */
 function memoryStore() {
   const alertes: { perfilId: string; alerta: Alerta }[] = [];
   const store = {
     create: jest.fn<ReturnType<AlertesStore['create']>, Parameters<AlertesStore['create']>>(
       async (perfilId, nova) => {
+        if (alertes.filter((a) => a.perfilId === perfilId).length >= MAX_ALERTES) {
+          return { ok: false, reason: 'limit' };
+        }
         const alerta: Alerta = {
           ...nova,
           id: `alerta-${alertes.length + 1}`,
@@ -59,7 +62,7 @@ function memoryStore() {
           dataActualitzacio: '2026-11-10T18:00:00.000Z',
         };
         alertes.unshift({ perfilId, alerta });
-        return alerta;
+        return { ok: true, alerta };
       },
     ),
     list: jest.fn<ReturnType<AlertesStore['list']>, Parameters<AlertesStore['list']>>(
@@ -141,6 +144,33 @@ describe('POST /api/v1/alertes', () => {
     expect(res.status).toBe(400);
     expect(res.body.error.code).toBe('validation_error');
     expect(store.create).not.toHaveBeenCalled();
+  });
+
+  it(`amb ${MAX_ALERTES} alertes, la següent respon 409 alert_limit_reached`, async () => {
+    const app = appAmb(memoryStore());
+    for (let i = 0; i < MAX_ALERTES; i++) {
+      const ok = await request(app)
+        .post('/api/v1/alertes')
+        .set('Authorization', auth(MARIA.auth))
+        .send(NOVA);
+      expect(ok.status).toBe(201);
+    }
+
+    const res = await request(app)
+      .post('/api/v1/alertes')
+      .set('Authorization', auth(MARIA.auth))
+      .send(NOVA);
+    expect(res.status).toBe(409);
+    expect(res.body).toEqual({
+      error: { code: 'alert_limit_reached', message: expect.stringContaining(`${MAX_ALERTES}`) },
+    });
+
+    // El límit és per usuari: en Pere encara en pot crear.
+    const pere = await request(app)
+      .post('/api/v1/alertes')
+      .set('Authorization', auth(PERE.auth))
+      .send(NOVA);
+    expect(pere.status).toBe(201);
   });
 
   it("respon 404 profile_not_found si l'usuari no ha fet POST /perfil", async () => {
@@ -262,9 +292,18 @@ describe('/alertes a l’OpenAPI', () => {
     expect(post.requestBody.content['application/json'].schema.$ref).toBe(
       '#/components/schemas/AlertaNova',
     );
-    expect(Object.keys(post.responses).sort()).toEqual(['201', '400', '401', '403', '404', '503']);
+    expect(Object.keys(post.responses).sort()).toEqual([
+      '201',
+      '400',
+      '401',
+      '403',
+      '404',
+      '409',
+      '503',
+    ]);
     expect(Object.keys(get.responses).sort()).toEqual(['200', '401', '403', '404', '503']);
     expect(post.responses['403'].description).toContain('account_blocked');
+    expect(post.responses['409'].description).toContain('alert_limit_reached');
     expect(get.responses['200'].content['application/json'].schema.items.$ref).toBe(
       '#/components/schemas/Alerta',
     );

@@ -165,12 +165,12 @@ Errors: 401 `unauthorized`; 403 `forbidden` (no és admin) o `account_blocked`; 
 
 Les alertes de l'usuari autenticat (tipus `Alerta` i `AlertaNova` a `@talaia/shared`, taula `alertes`). Com `/perfil`, passen pel `requireUser` de `routes/index.ts` (JWT de Supabase i compte no bloquejat) i responen amb `Cache-Control: no-store`.
 
-- `POST /alertes`: crea una alerta (201), sempre activa. Cos: `{ "objectiu": "pluja_estels", "origen": { "lat": 41.3874, "lon": 2.1686 }, "distanciaMaxKm": 60, "indexMinim": 70 }`. `objectiu` és un `ObjectiuObservacio` (el selector de «Què vols veure?»), `distanciaMaxKm` un enter d'1 a 200 i `indexMinim` un enter de 0 a 100. El cos és estricte: un camp de més (per exemple `perfilId`) és un 400.
+- `POST /alertes`: crea una alerta (201), sempre activa. Com a molt **20 per usuari** (`MAX_ALERTES`), perquè el worker de notificacions (TG-153) les avalua totes cada hora; el comptatge i la inserció es fan en una transacció que bloqueja el perfil, de manera que dues peticions alhora no poden passar el límit. Cos: `{ "objectiu": "pluja_estels", "origen": { "lat": 41.3874, "lon": 2.1686 }, "distanciaMaxKm": 60, "indexMinim": 70 }`. `objectiu` és un `ObjectiuObservacio` (el selector de «Què vols veure?»), `distanciaMaxKm` un enter d'1 a 200 i `indexMinim` un enter de 0 a 100. El cos és estricte: un camp de més (per exemple `perfilId`) és un 400.
 - `GET /alertes`: les alertes de l'usuari, de la més nova a la més antiga (`[]` si no en té cap).
 
 **Només les de l'usuari:** el perfil surt sempre del JWT (`req.account.perfilId`, que llegeix `requireUser`), mai del cos, i les consultes filtren per ell a l'SQL. Esborrar el compte esborra les alertes (`on delete cascade`).
 
-Errors: JWT absent o invàlid → 401 `unauthorized`; compte bloquejat → 403 `account_blocked`; cos invàlid → 400 `validation_error`; usuari sense perfil (no ha fet `POST /perfil`) → 404 `profile_not_found`; sense `DATABASE_URL` → 503.
+Errors: JWT absent o invàlid → 401 `unauthorized`; compte bloquejat → 403 `account_blocked`; cos invàlid → 400 `validation_error`; usuari sense perfil (no ha fet `POST /perfil`) → 404 `profile_not_found`; ja en té 20 → 409 `alert_limit_reached`; sense `DATABASE_URL` → 503.
 
 ## Afegir una ruta
 
