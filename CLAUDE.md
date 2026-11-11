@@ -18,7 +18,7 @@ Més context: `docs/producte.md` (abast, MVP, NOT list), `docs/arquitectura.md`,
 ## Estat actual
 
 - **Sprint 1: 05/10/2026 – 28/10/2026.** Objectiu: base tècnica operativa + primer flux del MVP (login → mapa de punts amb índex v1 → recomanacions → fitxa del punt amb desglossament → calendari de fenòmens). Veure `docs/sprint-1.md`.
-- **Sprint 2: 09/11/2026 – 27/11/2026** (sprint master: Martina) i **Sprint 3: 30/11/2026 – 18/12/2026** (sprint master: Hugo). Veure `docs/sprint-2.md` i `docs/sprint-3.md`.
+- **Sprint 2: 09/11/2026 – 27/11/2026** (sprint master: Hugo) i **Sprint 3: 30/11/2026 – 18/12/2026** (sprint master: Martina). Veure `docs/sprint-2.md` i `docs/sprint-3.md`.
 - Les branques `snapshot`, `stable` i `prod` estan protegides (ruleset de GitHub).
 - **App:** scaffold fet (TG-66): Expo SDK 57 + Expo Router + MVVM + i18n + TanStack Query + Jest a `apps/mobile` (vegeu el seu `README.md` i `AGENTS.md`). Eines: ADR-0010.
 - **Qualitat:** ESLint, Prettier, `tsconfig.base.json` i hooks de commit (husky + lint-staged + commitlint) a l'arrel (TG-67, ADR-0010).
@@ -38,6 +38,7 @@ Més context: `docs/producte.md` (abast, MVP, NOT list), `docs/arquitectura.md`,
 - **Desglossament de l'índex** (TG-104): `GET /api/v1/punts/{id}/index?nit=YYYY-MM-DD` retorna l'índex d'un punt una nit hora a hora amb els factors (`DesglossamentIndex` a `@talaia/shared`), llegit de la taula `index_visibilitat`. Una nit va de les 12:00 locals del dia al migdia de l'endemà (`services/api/src/index/night.ts`). És el que consumeix el component de HU04 (TG-105).
 - **CI** (TG-70): lint, typecheck i tests de l'app, de l'API, del worker i de `@talaia/db` a cada PR; SonarCloud preparat (`docs/ci.md`).
 - **Inici de sessió** (TG-249): sense sessió l'app obre la benvinguda (`useSessionGate`). Google pel navegador (PKCE, `expo-web-browser`), Apple a iOS (ADR-0016): natiu (`expo-apple-authentication`) als builds natius i pel navegador a Expo Go, que no porta el mòdul (Services ID `cat.talaia.web`, secret que caduca el 2027-04-20) i correu a `/benvinguda-correu`, amb codi de 6 xifres o amb l'enllaç (`auth/correu`, PKCE); després de cada login, `POST /api/v1/perfil` (i `GET`/`PATCH /perfil` per llegir-lo i editar-ne el nom, TG-165). Supabase rebutja redirects amb IP: a Expo Go, `REACT_NATIVE_PACKAGER_HOSTNAME=<ip>.nip.io`. Vegeu `apps/mobile/README.md`. **Correu** (TG-252, P21): el codi s'envia pel Gmail de l'equip; `npm run supabase:correu` aplica al projecte del núvol l'SMTP, les plantilles de `supabase/templates/` i el límit de correus (`docs/onboarding.md` → secció 5).
+- **Admin i bloqueig** (TG-177, ADR-0029): `perfils.rol` (`usuari`|`admin`, es canvia amb SQL) i `perfils.bloquejat`. Totes les rutes d'usuari fan servir el `requireUser` de `services/api/src/routes/index.ts`, que respon 403 `account_blocked` als comptes bloquejats; les d'admin, a més, `requireAdmin` (403 `forbidden`). `GET /api/v1/admin/usuaris` i `PATCH /api/v1/admin/usuaris/{id}` amb `{ bloquejat }`.
 - **Explora** (TG-101): la pestanya d'inici és «Què vols veure?» (mockup 02): què, des d'on (ubicació actual amb `expo-location`), quan i fins a quant temps en cotxe. «Troba el millor lloc» obre el mapa a `/recomanacions` amb la consulta (`ConsultaRecomanacions` a `@talaia/shared`) com a paràmetres de la ruta.
 - **Rànquing sobre el mapa** (TG-102, mockup 03): amb una cerca, `/recomanacions` crida `GET /api/v1/recomanacions` i ensenya la cerca a dalt, només els punts del rànquing al mapa (amb l'índex de la millor hora) i els millors punts en un full fix a baix; cada fila obre la fitxa. Sense cerca («Mostra el mapa»), tot el catàleg amb l'índex de l'hora en curs; de dia (`index.deDia`), els punts surten en gris amb un avís. Codi a `apps/mobile/src/features/recommendations/`.
 - **Mapa** (TG-89): MapLibre GL JS 6 en una DOM component d'Expo (el *worker* es carrega d'un Blob, `apps/mobile/src/core/map/maplibreWorker.ts`), amb l'estil nocturn de l'ICGC, terreny 3D i cel de nit (ADR-0015). Tota l'app es prova a **Expo Go**; cap mòdul natiu que Expo Go no porti sense ADR (ADR-0014). Identificador: `cat.talaia.app`.
@@ -101,6 +102,7 @@ Regla: un tipus de domini s'escriu **una sola vegada** a `packages/shared` i el 
 - **API:** REST, recursos en català tal com estan acordats amb altres equips (`/punts`, `/recomanacions`, `/esdeveniments`). Errors amb format uniforme `{ error: { code, message } }`. Tota ruta nova es documenta a l'OpenAPI a la mateixa PR.
 - **Tests:** Jest. Cada ViewModel i cada servei de domini amb tests. La fórmula de l'índex és codi pur i 100 % testejable.
 - **Secrets:** mai al repositori (és **públic**). `.env.example` documenta les variables; els valors reals van a `.env` (ignorat) i als secrets de GitHub.
+- **Bugs:** segueix `docs/gestio-bugs.md`. Si detectes un defecte preexistent o fora de l'abast de la tasca, informa'n la persona responsable amb passos per reproduir-lo; no creïs una issue ni n'iniciïs la correcció sense confirmar-ho amb ella. Els errors d'una tasca en curs es resolen dins de la mateixa tasca.
 
 ## Flux de Git (obligatori): Gitflow + Conventional Commits 1.0.0
 
@@ -128,6 +130,7 @@ Especificada → implementada → provada (tests a la CI) → revisada (PR aprov
 3. Respecta el stack i les convencions; si una decisió no està presa, consulta `docs/decisions/pendents.md` i **pregunta** abans d'inventar-la.
 4. Escriu tests i actualitza l'OpenAPI / docs a la mateixa PR.
 5. Missatges de commit i descripció de PR seguint la convenció; plantilla a `.github/pull_request_template.md`.
+6. Estat de la tasca a Taiga des del commit (integració Taiga ↔ GitHub, `docs/git-workflow.md`): al peu, just abans de `Refs: TG-<ref>`, afegeix `TG-<ref> #in-progress` al primer commit de la tasca i `TG-<ref> #ready-for-test` al commit que la deixa llesta per revisar.
 
 ## Enllaços
 

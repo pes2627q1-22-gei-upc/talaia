@@ -55,6 +55,7 @@ src/
     punts.ts            GET /punts (bbox, ETag, Cache-Control i 304) i GET /punts/{id}
     esdeveniments.ts    GET /esdeveniments, autenticació API key o JWT
     auth.ts             GET, POST i PATCH /perfil (JWT de Supabase, ADR-0023)
+    admin.ts            GET /admin/usuaris i PATCH /admin/usuaris/{id}: bloqueig de comptes (ADR-0029)
     puntIndex.ts        GET /punts/{id}/index: desglossament de l'índex per hores i factors (HU04)
     recomanacions.ts    GET /recomanacions (validació de la consulta i OpenAPI)
   punts/
@@ -137,7 +138,24 @@ El perfil de l'usuari autenticat (tipus `Perfil` a `@talaia/shared`, taula `perf
 - `GET /perfil`: el perfil, o 404 `profile_not_found` si encara no s'ha fet el `POST`.
 - `PATCH /perfil`: de moment només es pot editar el nom: `{ "nom": "Martina" }` (1–100 caràcters, sense els espais dels extrems). Un camp que no es pot editar és un 400, no s'ignora. Torna el perfil amb el canvi; `data_actualitzacio` la posa el trigger de la taula.
 
-Errors: JWT absent o invàlid → 401 `unauthorized`; cos invàlid → 400 `validation_error`; sense `DATABASE_URL` o sense poder validar el JWT → 503.
+Errors: JWT absent o invàlid → 401 `unauthorized`; compte bloquejat → 403 `account_blocked`; cos invàlid → 400 `validation_error`; sense `DATABASE_URL` o sense poder validar el JWT → 503.
+
+## Rol d'administrador i comptes bloquejats (TG-177, HU41)
+
+`perfils.rol` (`usuari` o `admin`) i `perfils.bloquejat` (ADR-0029). `routes/index.ts` crea un sol `requireUser` (`requireAuth` amb `accountStatus`): valida el JWT i llegeix el perfil, i si el compte està bloquejat respon **403 `account_blocked`**. Totes les rutes d'usuari l'han de fer servir; les rutes públiques (`/health`, `/punts`, `/recomanacions`, `/esdeveniments`) no hi miren. `requireAdmin`, posat al darrere, només deixa passar els administradors: si no, 403 `forbidden`.
+
+Per fer administrador algú, al SQL Editor de Supabase:
+
+```sql
+update public.perfils set rol = 'admin' where email = '<correu>';
+```
+
+Rutes de `/admin` (tipus `UsuariAdmin` i `UsuariAdminCanvis` a `@talaia/shared`, `Cache-Control: no-store`):
+
+- `GET /admin/usuaris`: tots els perfils, els més nous primer, amb `rol`, `bloquejat` i `dataBloqueig`.
+- `PATCH /admin/usuaris/{id}` amb `{ "bloquejat": true | false }`: bloqueja o desbloqueja el compte. L'`id` és el del perfil (`perfils.id`). Torna el compte amb el canvi. Tornar a bloquejar un compte bloquejat no en canvia la data.
+
+Errors: 401 `unauthorized`; 403 `forbidden` (no és admin) o `account_blocked`; 400 `validation_error` (l'`id` no és un UUID o el cos no és vàlid) o `cannot_block_self` (un administrador no es pot bloquejar a si mateix); 404 `usuari_not_found`; 503 sense base de dades.
 
 ## Afegir una ruta
 
@@ -155,7 +173,12 @@ Tota resposta d'error té el format `{ error: { code, message } }`:
 | 400 | `validation_error` | Un esquema zod rebutja l'entrada |
 | 400 | `invalid_json` | El cos no és JSON vàlid |
 | 400 | `franja_passada` | `GET /recomanacions` amb una franja horària que ja ha acabat |
+| 400 | `cannot_block_self` | `PATCH /admin/usuaris/{id}`: un administrador es vol bloquejar a si mateix |
+| 401 | `unauthorized` | Falta el JWT o no és vàlid |
+| 403 | `account_blocked` | El compte està bloquejat (HU41): a qualsevol ruta amb `requireUser`. L'app hi mostra l'avís |
+| 403 | `forbidden` | Ruta de `/admin` amb un compte que no és administrador |
 | 404 | `not_found` | La ruta no existeix |
+| 404 | `usuari_not_found` | `PATCH /admin/usuaris/{id}`: cap perfil amb aquest `id` |
 | 404 | `punt_not_found` | `/punts/{id}` i `/punts/{id}/index`: cap punt publicat amb aquest `id` |
 | 503 | `database_unavailable` | No hi ha `DATABASE_URL` o no es pot llegir la base de dades |
 | 500 | `internal_error` | Error inesperat (es registra al log i no s'envia el detall) |

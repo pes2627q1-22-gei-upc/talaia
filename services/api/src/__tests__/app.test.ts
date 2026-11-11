@@ -37,6 +37,9 @@ describe('JWT auth i perfil en el primer accés', () => {
     email: 'maria@example.com',
     nom,
     avatarUrl: null,
+    rol: 'usuari' as const,
+    bloquejat: false,
+    dataBloqueig: null,
     dataCreacio: new Date('2026-10-14T12:00:00.000Z'),
     dataActualitzacio: new Date('2026-10-14T12:00:00.000Z'),
   });
@@ -53,6 +56,9 @@ describe('JWT auth i perfil en el primer accés', () => {
           nom: user.email?.split('@')[0] ?? null,
           avatarUrl:
             typeof user.userMetadata?.avatar_url === 'string' ? user.userMetadata.avatar_url : null,
+          rol: 'usuari' as const,
+          bloquejat: false,
+          dataBloqueig: null,
           dataCreacio: new Date('2026-10-14T12:00:00.000Z'),
           dataActualitzacio: new Date('2026-10-14T12:00:00.000Z'),
         },
@@ -64,6 +70,10 @@ describe('JWT auth i perfil en el primer accés', () => {
     updateProfile: jest.fn(async (authUserId: string, { nom }: { nom: string }) =>
       profileExists ? storedProfile(authUserId, nom) : null,
     ),
+    // El bloqueig i el rol es proven a `admin.test.ts`.
+    getAccountStatus: jest.fn(async () => null),
+    listProfiles: jest.fn(async () => []),
+    setBlocked: jest.fn(async () => null),
   };
 
   let privateKey: CryptoKey;
@@ -184,6 +194,7 @@ describe('JWT auth i perfil en el primer accés', () => {
       expect(res.headers['cache-control']).toBe('no-store');
       expect(res.body).toEqual({
         id: 'profile-1',
+        rol: 'usuari',
         authUserId: 'user-123',
         email: 'maria@example.com',
         nom: 'maria',
