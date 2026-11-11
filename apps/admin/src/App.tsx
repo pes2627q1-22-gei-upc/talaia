@@ -23,7 +23,13 @@ export function App() {
     const check = async (token: string | undefined) => {
       const id = ++checkId;
       if (!token) {
-        setAccess('signed-out');
+        if (active) {
+          setEmail('');
+          setCode('');
+          setCodeSent(false);
+          setMessage('');
+          setAccess('signed-out');
+        }
         return;
       }
       setAccess('checking');
