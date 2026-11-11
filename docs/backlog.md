@@ -136,7 +136,7 @@ Llegenda: ✅ = compromesa al Sprint 1.
 
 ## Requisits no funcionals
 
-A Taiga, amb l'etiqueta `rnf` i sense story points. Cadascun diu com es mesura.
+A Taiga, amb l'etiqueta `rnf` i sense story points. Cadascun diu com es mesura; les mesures són a [rnf.md](rnf.md).
 
 - [TG-122](https://tree.taiga.io/project/mohamed-dari-pes_22_c_talaia/us/122) RNF01 · Rendiment del mapa: punts de l'àrea visible en menys de 2 s
 - [TG-123](https://tree.taiga.io/project/mohamed-dari-pes_22_c_talaia/us/123) RNF02 · Temps de resposta de l'API: p95 per sota de 500 ms
