@@ -48,12 +48,45 @@ function mapEsdeveniment(fila: FilaEsdeveniment, ubicacio: PuntReferencia): Esde
 
 export type EsdevenimentsService = {
   list(desDe: string, finsA: string, tipus?: TipusFenomen): Promise<EsdevenimentsResponse>;
+  getById(id: string): Promise<Esdeveniment>;
 };
 
 export function createEsdevenimentsService(
   repository: EsdevenimentsRepository,
 ): EsdevenimentsService {
   return {
+    async getById(id) {
+      let fila: FilaEsdeveniment | undefined;
+      let ubicacio: PuntReferencia | undefined;
+      try {
+        [fila, ubicacio] = await Promise.all([
+          repository.findPublicById(id),
+          repository.puntReferencia(),
+        ]);
+      } catch (error) {
+        console.error(`[esdeveniments] no es pot consultar l'esdeveniment ${id}`, error);
+        throw new ApiError(
+          503,
+          'database_unavailable',
+          'Ara mateix no es pot llegir el calendari astronòmic',
+        );
+      }
+      if (!fila) {
+        throw new ApiError(
+          404,
+          'event_not_found',
+          `No hi ha cap esdeveniment publicable amb id ${id}`,
+        );
+      }
+      if (!ubicacio) {
+        throw new ApiError(
+          503,
+          'reference_point_unavailable',
+          'Falta el punt oficial de referència del calendari',
+        );
+      }
+      return mapEsdeveniment(fila, ubicacio);
+    },
     async list(desDe, finsA, tipus) {
       const { inici, fi } = intervalCatala(desDe, finsA);
       let files: FilaEsdeveniment[];

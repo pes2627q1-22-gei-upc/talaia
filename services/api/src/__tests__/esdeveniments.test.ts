@@ -34,6 +34,7 @@ function fakeRepository(overrides: Partial<EsdevenimentsRepository> = {}) {
       repo.rangs.push([inici, fi, tipus]);
       return [FILA];
     },
+    findPublicById: async (id) => (id === FILA.codi ? FILA : undefined),
     puntReferencia: async () => PUNT,
     ...overrides,
   };
@@ -61,6 +62,40 @@ describe('dies civils de Catalunya', () => {
 
   it('accepta l’offset històric de Madrid amb segons', () => {
     expect(iniciDiaCatala('1900-01-01')).toEqual(new Date('1900-01-01T00:14:44Z'));
+  });
+});
+
+describe('GET /api/v1/esdeveniments/{id}', () => {
+  const detailPath = `/api/v1/esdeveniments/${FILA.codi}`;
+
+  it('troba un esdeveniment publicable pel seu codi i conserva els camps del calendari', async () => {
+    const res = await request(appWith()).get(detailPath).set('X-API-Key', 'clau-secreta');
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({
+      id: FILA.codi,
+      nom: 'Lluna plena',
+      maxim: FILA.maxim?.toISOString(),
+      ubicacio: PUNT,
+    });
+  });
+
+  it('respon 404 si el codi no correspon a cap esdeveniment publicable', async () => {
+    const res = await request(appWith())
+      .get('/api/v1/esdeveniments/desconegut')
+      .set('X-API-Key', 'clau-secreta');
+    expect(res.status).toBe(404);
+    expect(res.body.error.code).toBe('event_not_found');
+  });
+
+  it('manté l’autenticació i informa si la base de dades no està disponible', async () => {
+    expect((await request(appWith()).get(detailPath)).status).toBe(401);
+    expect(
+      (
+        await request(createApp({ apropApiKey: 'clau-secreta' }))
+          .get(detailPath)
+          .set('X-API-Key', 'clau-secreta')
+      ).status,
+    ).toBe(503);
   });
 });
 
@@ -258,6 +293,15 @@ describe('GET /api/v1/esdeveniments', () => {
 });
 
 describe('consultes Kysely del calendari', () => {
+  it('cerca el detall per ID amb els mateixos filtres de publicació que el llistat', async () => {
+    const { db, queries } = fakeDb([]);
+    await createEsdevenimentsRepository(db).findPublicById(FILA.codi);
+    expect(queries[0]?.sql).toContain('"e"."codi" =');
+    expect(queries[0]?.sql).toContain('"e"."rellevant_catalunya" =');
+    expect(queries[0]?.sql).toContain('"f"."publicable_calendari" =');
+    expect(queries[0]?.sql).toContain('"f"."tipus_codi" in');
+    expect(queries[0]?.parameters).toEqual([true, true, ...TIPUS_FENOMEN, FILA.codi]);
+  });
   it('llegeix les notes JSONB amb les claus camelCase que retorna CamelCasePlugin', async () => {
     const { db } = fakeDb([
       {
@@ -283,19 +327,19 @@ describe('consultes Kysely del calendari', () => {
       new Date('2026-10-25T23:00:00Z'),
       'fase_llunar',
     );
-    expect(queries[0]?.sql).toMatch(/"e"\."inici" < \$1/);
-    expect(queries[0]?.sql).toMatch(/"e"\."fi" > \$2/);
+    expect(queries[0]?.sql).toMatch(/"e"\."inici" < \$9/);
+    expect(queries[0]?.sql).toMatch(/"e"\."fi" > \$10/);
     expect(queries[0]?.sql).toContain('"e"."rellevant_catalunya" =');
     expect(queries[0]?.sql).toContain('"f"."publicable_calendari" =');
     expect(queries[0]?.sql).toContain('"f"."tipus_codi" in');
     expect(queries[0]?.sql).toContain('"f"."tipus_codi" =');
     expect(queries[0]?.sql).toContain('order by "e"."inici", "e"."codi"');
     expect(queries[0]?.parameters).toEqual([
-      new Date('2026-10-25T23:00:00Z'),
-      new Date('2026-10-25T22:00:00Z'),
       true,
       true,
       ...TIPUS_FENOMEN,
+      new Date('2026-10-25T23:00:00Z'),
+      new Date('2026-10-25T22:00:00Z'),
       'fase_llunar',
     ]);
   });
