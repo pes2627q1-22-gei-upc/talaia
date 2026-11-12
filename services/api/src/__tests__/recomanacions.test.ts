@@ -182,15 +182,19 @@ describe('GET /api/v1/recomanacions', () => {
     expect(res.status).toBe(200);
     expect(res.body.punts).toEqual([]);
     expect(getRecomanacions).toHaveBeenCalledTimes(1);
-    expect(getRecomanacions).toHaveBeenCalledWith({
-      objectiu: 'cel_estrellat',
-      origen: { lat: 41.3874, lon: 2.1686 },
-      data: '2099-12-15',
-      desDe: 22,
-      finsA: 6,
-      tempsMaxim: 150,
-      limit: 3,
-    });
+    expect(getRecomanacions).toHaveBeenCalledWith(
+      {
+        objectiu: 'cel_estrellat',
+        origen: { lat: 41.3874, lon: 2.1686 },
+        data: '2099-12-15',
+        desDe: 22,
+        finsA: 6,
+        tempsMaxim: 150,
+        limit: 3,
+      },
+      undefined,
+      undefined,
+    );
   });
 
   it.each([

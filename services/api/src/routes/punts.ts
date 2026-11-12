@@ -220,7 +220,8 @@ export function createPuntsRouter(service: PuntsService | undefined): Router {
     const { id } = FitxaParamsSchema.parse(req.params);
     const { hores } = FitxaQuerySchema.parse(req.query);
     if (!service) throw databaseUnavailable();
-    const fitxa = await service.getFitxa(id, hores);
+    const fitxa = await service.getFitxa(id, hores, undefined, req.get('Accept-Language'));
+    res.set('Vary', 'Accept-Language');
     res.set('Cache-Control', `public, max-age=${secondsToNextHour()}`);
     res.json(fitxa);
   });

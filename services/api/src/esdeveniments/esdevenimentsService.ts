@@ -7,6 +7,8 @@ import type {
 } from '@talaia/shared';
 
 import { ApiError } from '../middleware/errors';
+import { idiomesPreferits, localized, type Idioma } from '../idioma';
+import { puntLocalitzat } from '../punts/localitzacio';
 import { intervalCatala } from './dates';
 import type {
   EsdevenimentsRepository,
@@ -14,7 +16,6 @@ import type {
   PuntReferencia,
 } from './esdevenimentsRepository';
 
-type Idioma = 'ca' | 'es' | 'en';
 type TextosFenomen = Partial<
   Record<Idioma, { nom?: unknown; descripcio?: unknown; consellGeneral?: unknown }>
 >;
@@ -22,45 +23,6 @@ type TextosFenomen = Partial<
 type TextosEsdeveniment = Partial<
   Record<Idioma, { notaVisibilitat?: unknown; consellObservacio?: unknown }>
 >;
-
-/** Tria una traducció disponible a partir d'Accept-Language; català és el fallback del producte. */
-function idiomesPreferits(acceptLanguage?: string): Idioma[] {
-  if (!acceptLanguage) return ['ca'];
-  const preferencies = acceptLanguage
-    .split(',')
-    .map((item, index) => {
-      const [rawLanguage, ...parameters] = item.trim().toLowerCase().split(';');
-      const language = rawLanguage?.split('-')[0];
-      const qualityParameter = parameters.find((parameter) => parameter.trim().startsWith('q='));
-      const quality = qualityParameter ? Number(qualityParameter.trim().slice(2)) : 1;
-      return { language, quality, index };
-    })
-    .filter(
-      (item): item is { language: string; quality: number; index: number } =>
-        Boolean(item.language) &&
-        Number.isFinite(item.quality) &&
-        item.quality > 0 &&
-        item.quality <= 1,
-    )
-    .sort((a, b) => b.quality - a.quality || a.index - b.index);
-  const result = preferencies
-    .map(({ language }) => language)
-    .filter(
-      (language): language is Idioma => language === 'ca' || language === 'es' || language === 'en',
-    );
-  return [...new Set<Idioma>([...result, 'ca'])];
-}
-
-function localized<T extends object>(
-  texts: Partial<Record<Idioma, T>>,
-  languages: Idioma[],
-): T | undefined {
-  const available = [...languages].reverse().flatMap((language) => {
-    const value = texts?.[language];
-    return value ? [value] : [];
-  });
-  return available.length ? (Object.assign({}, ...available) as T) : undefined;
-}
 
 function invalidData(codi: string): never {
   console.error('[esdeveniments] dades incompletes', codi);
@@ -75,12 +37,17 @@ function text(value: unknown): string | undefined {
   return typeof value === 'string' && value.trim() ? value.trim() : undefined;
 }
 
-function mapEsdeveniment(fila: FilaEsdeveniment, ubicacio: PuntReferencia): Esdeveniment {
+function mapEsdeveniment(
+  fila: FilaEsdeveniment,
+  ubicacio: PuntReferencia,
+  acceptLanguage?: string,
+): Esdeveniment {
+  const languages = idiomesPreferits(acceptLanguage);
   const fenomen = fila.textosFenomen as TextosFenomen;
   const esdeveniment = fila.textosEsdeveniment as TextosEsdeveniment;
-  const nom = text(fenomen?.ca?.nom);
-  const descripcioBase = text(fenomen?.ca?.descripcio);
-  const nota = text(esdeveniment?.ca?.notaVisibilitat);
+  const nom = text(localized(fenomen, languages)?.nom);
+  const descripcioBase = text(localized(fenomen, languages)?.descripcio);
+  const nota = text(localized(esdeveniment, languages)?.notaVisibilitat);
   const font = fila.organitzacio ?? fila.metodeCalcul;
   if (!nom || !descripcioBase || !font) {
     invalidData(fila.codi);
@@ -96,7 +63,7 @@ function mapEsdeveniment(fila: FilaEsdeveniment, ubicacio: PuntReferencia): Esde
     // però l'ubicació pública és Àger. No les afegim a la descripció genèrica;
     // el detall les identifica separadament com a particularitat de l'ocurrència.
     descripcio: nota && fila.tipus !== 'conjuncio' ? `${descripcioBase} ${nota}` : descripcioBase,
-    ubicacio,
+    ubicacio: puntLocalitzat(ubicacio, acceptLanguage),
     font,
   };
 }
@@ -116,7 +83,7 @@ function mapDetall(
     textosFenomen: { ca: textosFenomen },
     textosEsdeveniment: { ca: textosEsdeveniment },
   };
-  const event = mapEsdeveniment(translatedRow, ubicacio);
+  const event = mapEsdeveniment(translatedRow, ubicacio, acceptLanguage);
   const precisio = fila.precisio as Record<string, unknown> | null;
   const particularitat = text(textosEsdeveniment?.notaVisibilitat);
   const observacioGeneral = text(textosFenomen?.consellGeneral);
@@ -157,7 +124,12 @@ function mapDetall(
 }
 
 export type EsdevenimentsService = {
-  list(desDe: string, finsA: string, tipus?: TipusFenomen): Promise<EsdevenimentsResponse>;
+  list(
+    desDe: string,
+    finsA: string,
+    tipus?: TipusFenomen,
+    acceptLanguage?: string,
+  ): Promise<EsdevenimentsResponse>;
   getById(id: string, acceptLanguage?: string): Promise<EsdevenimentDetall>;
 };
 
@@ -197,7 +169,7 @@ export function createEsdevenimentsService(
       }
       return mapDetall(fila, ubicacio, acceptLanguage);
     },
-    async list(desDe, finsA, tipus) {
+    async list(desDe, finsA, tipus, acceptLanguage) {
       const { inici, fi } = intervalCatala(desDe, finsA);
       let files: FilaEsdeveniment[];
       let ubicacio: PuntReferencia | undefined;
@@ -221,7 +193,7 @@ export function createEsdevenimentsService(
           'Falta el punt oficial de referència del calendari',
         );
       }
-      return { data: files.map((fila) => mapEsdeveniment(fila, ubicacio)) };
+      return { data: files.map((fila) => mapEsdeveniment(fila, ubicacio, acceptLanguage)) };
     },
   };
 }

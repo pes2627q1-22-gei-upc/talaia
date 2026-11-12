@@ -8,14 +8,15 @@ import {
 } from './documentCache';
 import { buildMapDocument, filterByBbox, type Bbox } from './mapDocument';
 import type { PuntsRepository } from './puntsRepository';
+import { puntLocalitzat } from './localitzacio';
 
 const HORA_MS = 3_600_000;
 
 export type PuntsService = {
   /** El document del mapa, sencer o retallat per `bbox`. L'`ETag` és el de la col·lecció. */
-  getMapDocument(bbox?: Bbox): Promise<VersionedMapDocument>;
+  getMapDocument(bbox?: Bbox, acceptLanguage?: string): Promise<VersionedMapDocument>;
   /** La fitxa d'un punt publicat amb l'índex de l'hora en curs i de les `hores` següents. */
-  getFitxa(id: string, hores: number, now?: Date): Promise<PuntFitxa>;
+  getFitxa(id: string, hores: number, now?: Date, acceptLanguage?: string): Promise<PuntFitxa>;
 };
 
 /** Inici de l'hora en curs (UTC): és la `hora` amb què el worker desa l'índex. */
@@ -56,7 +57,7 @@ export function createPuntsService(
       return bbox ? { ...doc, geojson: filterByBbox(doc.geojson, bbox) } : doc;
     },
 
-    async getFitxa(id, hores, now = new Date()) {
+    async getFitxa(id, hores, now = new Date(), acceptLanguage) {
       const horaActual = iniciHora(now);
       const finsA = new Date(horaActual.getTime() + (hores + 1) * HORA_MS);
       const [punt, files] = await fromDatabase(`no s'ha pogut llegir el punt ${id}`, () =>
@@ -65,7 +66,7 @@ export function createPuntsService(
       if (!punt) {
         throw new ApiError(404, 'punt_not_found', `No hi ha cap punt publicat amb id ${id}`);
       }
-      return { ...punt, index: splitIndexHores(files, horaActual) };
+      return { ...puntLocalitzat(punt, acceptLanguage), index: splitIndexHores(files, horaActual) };
     },
   };
 }

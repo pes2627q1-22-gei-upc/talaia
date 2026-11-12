@@ -47,7 +47,15 @@ export function createEsdevenimentsRouter(
   router.get('/', authenticate, async (req, res) => {
     const { des_de, fins_a, tipus } = EsdevenimentsQuerySchema.parse(req.query);
     if (!service) throw missingDatabase();
-    res.json(await service.list(des_de, fins_a, tipus));
+    res.set('Vary', 'Accept-Language');
+    res.json(
+      await service.list(
+        des_de,
+        fins_a,
+        tipus,
+        req.get('authorization') ? req.get('Accept-Language') : undefined,
+      ),
+    );
   });
   router.get('/:id', authenticate, async (req, res) => {
     const id = req.params.id;
@@ -55,6 +63,7 @@ export function createEsdevenimentsRouter(
       throw new ApiError(400, 'validation_error', 'id ha de ser un codi d’esdeveniment');
     }
     if (!service) throw missingDatabase();
+    res.set('Vary', 'Accept-Language');
     res.json(await service.getById(id, req.get('Accept-Language')));
   });
   return router;
