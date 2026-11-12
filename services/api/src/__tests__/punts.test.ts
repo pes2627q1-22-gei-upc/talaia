@@ -335,11 +335,14 @@ describe('OpenAPI de GET /punts', () => {
     const res = await request(createApp()).get('/api/v1/openapi.json');
     const get = res.body.paths['/punts'].get;
     expect(Object.keys(get.responses).sort()).toEqual(['200', '304', '400', '503']);
-    expect(Object.keys(get.responses['200'].headers).sort()).toEqual(['Cache-Control', 'ETag']);
-    expect(get.responses['304'].content).toBeUndefined();
-    expect(get.parameters.map((p: { name: string }) => p.name).sort()).toEqual([
-      'If-None-Match',
-      'bbox',
+    expect(Object.keys(get.responses['200'].headers).sort()).toEqual([
+      'Cache-Control',
+      'ETag',
+      'Vary',
     ]);
+    expect(get.responses['304'].content).toBeUndefined();
+    expect(get.parameters.map((p: { name: string }) => p.name).sort()).toEqual(
+      ['If-None-Match', 'Accept-Language', 'bbox'].sort(),
+    );
   });
 });

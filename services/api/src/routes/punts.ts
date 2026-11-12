@@ -69,7 +69,7 @@ registry.registerPath({
   tags: ['Punts'],
   summary: 'Tots els punts publicats, en un sol GeoJSON per al mapa (ADR-0012)',
   description:
-    "Respon amb `ETag` i `Cache-Control` fins a la propera hora. Amb `If-None-Match` igual a l'`ETag`, respon 304 sense cos.",
+    "Els noms segueixen `Accept-Language` (ca, es, en; reserva ca). Respon amb `ETag`, `Vary: Accept-Language` i `Cache-Control` fins a la propera hora. Amb `If-None-Match` igual a l'`ETag` de la mateixa llengua, respon 304 sense cos.",
   request: {
     query: z.object({
       bbox: z.string().optional().meta({
@@ -78,7 +78,10 @@ registry.registerPath({
         example: '0.15,40.5,3.35,42.9',
       }),
     }),
-    headers: z.object({ 'If-None-Match': z.string().optional() }),
+    headers: z.object({
+      'If-None-Match': z.string().optional(),
+      'Accept-Language': z.string().optional().meta({ example: 'en-US,en;q=0.9' }),
+    }),
   },
   responses: {
     200: {
@@ -86,6 +89,7 @@ registry.registerPath({
       headers: z.object({
         ETag: z.string().meta({ description: 'Versió del document' }),
         'Cache-Control': z.string().meta({ example: 'public, max-age=1800' }),
+        Vary: z.string().meta({ example: 'Accept-Language' }),
       }),
       content: { 'application/json': { schema: PuntsMapaSchema } },
     },
@@ -158,8 +162,15 @@ registry.registerPath({
   path: '/punts/{id}',
   tags: ['Punts'],
   summary: "Fitxa d'un punt publicat amb l'índex actual i el de les properes hores (HU07)",
-  description: "`Cache-Control` fins a la propera hora: el worker recalcula l'índex cada hora.",
-  request: { params: FitxaParamsSchema, query: FitxaQuerySchema },
+  description:
+    "Nom, descripció i accessibilitat segueixen `Accept-Language` (ca, es, en; reserva ca). `Cache-Control` fins a la propera hora: el worker recalcula l'índex cada hora.",
+  request: {
+    params: FitxaParamsSchema,
+    query: FitxaQuerySchema,
+    headers: z.object({
+      'Accept-Language': z.string().optional().meta({ example: 'es-ES,es;q=0.9' }),
+    }),
+  },
   responses: {
     200: {
       description: 'La fitxa del punt',
@@ -207,8 +218,12 @@ export function createPuntsRouter(service: PuntsService | undefined): Router {
   router.get('/', async (req, res) => {
     const { bbox } = QuerySchema.parse(req.query);
     if (!service) throw databaseUnavailable();
-    const { geojson, etag } = await service.getMapDocument(bbox);
-    res.set({ ETag: etag, 'Cache-Control': `public, max-age=${secondsToNextHour()}` });
+    const { geojson, etag } = await service.getMapDocument(bbox, req.get('Accept-Language'));
+    res.set({
+      ETag: etag,
+      'Cache-Control': `public, max-age=${secondsToNextHour()}`,
+      Vary: 'Accept-Language',
+    });
     if (matchesIfNoneMatch(req.get('If-None-Match'), etag)) {
       res.status(304).end();
       return;

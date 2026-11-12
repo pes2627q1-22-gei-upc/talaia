@@ -41,6 +41,8 @@ UTC i dies de fases lunars definits en hora civil de Catalunya.
   `Accept-Language` permet seleccionar ca, es o en quan hi ha textos traduïts; el català és
   el valor per defecte i el fallback dels camps sense traducció. El llistat que consumeix Aprop
   continua en català, tal com es va acordar a P14.
+  Des de TG-164, el mateix llistat amb JWT sí que aplica `Accept-Language` (ca/es/en) als
+  textos de l'app; no s'afegeix `?idioma` ni es canvia la resposta amb API key d'Aprop.
 - Aprop entra amb `X-API-Key`, que només viu al seu backend. L'app entra a la **mateixa
   ruta** amb `Authorization: Bearer` i un JWT de Supabase verificat segons [ADR-0023](0023-validacio-jwt-jwks.md).
   Les dues alternatives s'expressen com a OR a OpenAPI. Una credencial absent o invàlida

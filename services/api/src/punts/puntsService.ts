@@ -1,6 +1,7 @@
 import type { IndexHora, PuntFitxa } from '@talaia/shared';
 
 import { ApiError } from '../middleware/errors';
+import { idiomaPreferit, type Idioma } from '../idioma';
 import {
   createContentHashCache,
   type MapDocumentCache,
@@ -52,8 +53,10 @@ export function createPuntsService(
   repository: PuntsRepository,
 ): PuntsService {
   return {
-    async getMapDocument(bbox) {
-      const doc = await fromDatabase("no s'ha pogut llegir el catàleg", () => cache.get());
+    async getMapDocument(bbox, acceptLanguage) {
+      const doc = await fromDatabase("no s'ha pogut llegir el catàleg", () =>
+        cache.get(acceptLanguage),
+      );
       return bbox ? { ...doc, geojson: filterByBbox(doc.geojson, bbox) } : doc;
     },
 
@@ -79,16 +82,26 @@ export function createDefaultPuntsService(
   repository: PuntsRepository,
   now: () => number = Date.now,
 ): PuntsService {
+  const caches = Object.fromEntries(
+    (['ca', 'es', 'en'] as const).map((idioma) => [
+      idioma,
+      createContentHashCache(
+        async (hora = iniciHora(new Date(now())).getTime()) =>
+          buildMapDocument(
+            (await repository.listPublished(new Date(hora))).map((punt) =>
+              puntLocalitzat(punt, idioma),
+            ),
+          ),
+        {
+          period: (t) => iniciHora(new Date(t)).getTime(),
+          version: async () => (await repository.indexVersion()) ?? 'cap',
+          now,
+        },
+      ),
+    ]),
+  ) as Record<Idioma, MapDocumentCache>;
   return createPuntsService(
-    createContentHashCache(
-      async (hora = iniciHora(new Date(now())).getTime()) =>
-        buildMapDocument(await repository.listPublished(new Date(hora))),
-      {
-        period: (t) => iniciHora(new Date(t)).getTime(),
-        version: async () => (await repository.indexVersion()) ?? 'cap',
-        now,
-      },
-    ),
+    { get: (acceptLanguage) => caches[idiomaPreferit(acceptLanguage)].get() },
     repository,
   );
 }
