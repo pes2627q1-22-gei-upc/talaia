@@ -1,8 +1,9 @@
-import { useTranslation } from 'react-i18next';
-
 import { colors } from '@/core/theme/tokens';
+import { Button } from '@/shared/ui/Button';
 import { Screen } from '@/shared/ui/Screen';
 import { StateMessage } from '@/shared/ui/StateMessage';
+
+import { useAlertsViewModel } from './useAlertsViewModel';
 
 const bellIcon = {
   uri: `data:image/svg+xml;utf8,${encodeURIComponent(
@@ -10,17 +11,13 @@ const bellIcon = {
   )}`,
 };
 
-/** Pestanya d'alertes (mockups 10 i 11): arriba en un altre sprint. */
+/** Pestanya d'alertes: de moment, només el camí a «Nova alerta» (la llista és TG-148). */
 export function AlertsScreen() {
-  const { t } = useTranslation();
+  const vm = useAlertsViewModel();
   return (
-    <Screen title={t('alerts.title')}>
-      <StateMessage
-        icon={bellIcon}
-        fill
-        title={t('alerts.soonTitle')}
-        message={t('alerts.soonMessage')}
-      />
+    <Screen title={vm.title}>
+      <StateMessage icon={bellIcon} fill title={vm.soonTitle} message={vm.soonMessage} />
+      <Button label={vm.create.label} onPress={vm.create.onPress} haptic />
     </Screen>
   );
 }

@@ -29,7 +29,11 @@
     "goToday": "Back to today",
     "events": "Events",
     "allMonth": "View whole month",
-    "relative": { "today": "Today", "tomorrow": "Tomorrow", "past": "Past" },
+    "relative": {
+      "today": "Today",
+      "tomorrow": "Tomorrow",
+      "past": "Past"
+    },
     "filterLabel": "Filter events: {{filter}}",
     "filterTitle": "Filter events",
     "closeFilter": "Close filters",
@@ -298,7 +302,29 @@
   "alerts": {
     "title": "Alerts",
     "soonTitle": "Coming soon",
-    "soonMessage": "Here you'll be able to create alerts so we can tell you when conditions are good for what you want to see."
+    "soonMessage": "Here you'll be able to create alerts so we can tell you when conditions are good for what you want to see.",
+    "create": "New alert",
+    "new": {
+      "title": "New alert",
+      "back": "Back",
+      "goalTitle": "What do you want to see",
+      "originTitle": "From where",
+      "distance": {
+        "title": "How far",
+        "value": "{{km}} km"
+      },
+      "minIndex": {
+        "title": "Minimum index",
+        "value": "{{index}} or more",
+        "hint": "We'll let you know when a spot reaches it."
+      },
+      "cta": "Create alert",
+      "saving": "Creating alert…",
+      "errors": {
+        "limit": "You already have the maximum number of alerts. Delete one to create a new one.",
+        "generic": "We couldn't create the alert. Please try again."
+      }
+    }
   },
   "auth": {
     "signOut": "Sign out",

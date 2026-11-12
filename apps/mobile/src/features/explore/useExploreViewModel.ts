@@ -2,7 +2,7 @@ import type { ConsultaRecomanacions, ObjectiuObservacio } from '@talaia/shared';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { AppState, Linking } from 'react-native';
+import { AppState } from 'react-native';
 
 import type { CalendarMonth } from '@/shared/ui/calendarGrid';
 
@@ -24,7 +24,7 @@ import {
   TRAVEL,
   travelParts,
 } from './exploreModel';
-import { useCurrentPlaceQuery } from './locationRepository';
+import { useOriginField } from './useOriginField';
 
 /** «Què vols veure?» (HU01, mockup 02): què, des d'on, quan i fins on. */
 export function useExploreViewModel() {
@@ -41,9 +41,8 @@ export function useExploreViewModel() {
   const [rangeOpen, setRangeOpen] = useState(false);
   const [travel, setTravel] = useState<number>(TRAVEL.initial);
 
-  const location = useCurrentPlaceQuery();
-  const { refetch } = location;
-  const placeReady = location.data?.status === 'ready';
+  const { origin, place, refetch } = useOriginField();
+  const placeReady = place !== null;
 
   // La pestanya es queda muntada hores: en tornar a l'app, «aquesta nit» i la salutació es
   // recalculen, i si faltava la ubicació (permís, GPS) es torna a provar.
@@ -59,36 +58,6 @@ export function useExploreViewModel() {
   // Una nit triada que ja ha passat (l'app ha estat oberta dies) torna a ser aquesta nit.
   const picked = pickedNight < tonight ? tonight : pickedNight;
   const night = day === 'tonight' ? tonight : day === 'tomorrow' ? addDays(tonight, 1) : picked;
-  const place = location.data?.status === 'ready' ? location.data.place : null;
-
-  const origin = (() => {
-    if (location.isPending) {
-      return { state: 'loading' as const, label: t('explore.origin.locating'), hint: '' };
-    }
-    if (location.isError) {
-      return {
-        state: 'error' as const,
-        label: t('explore.origin.error'),
-        hint: t('explore.origin.retry'),
-        onPress: () => void refetch(),
-      };
-    }
-    if (location.data.status === 'denied') {
-      const { canAskAgain } = location.data;
-      return {
-        state: 'denied' as const,
-        label: t('explore.origin.denied'),
-        hint: canAskAgain ? t('explore.origin.allow') : t('explore.origin.settings'),
-        // Si el sistema encara ho deixa, es torna a demanar el permís; si no, a la configuració.
-        onPress: () => void (canAskAgain ? refetch() : Linking.openSettings()),
-      };
-    }
-    return {
-      state: 'ready' as const,
-      label: location.data.place.name || t('explore.origin.here'),
-      hint: t('explore.origin.current'),
-    };
-  })();
 
   const { hours, minutes } = travelParts(travel);
   const travelLabel = !hours

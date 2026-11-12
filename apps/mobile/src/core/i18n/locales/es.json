@@ -29,7 +29,11 @@
     "goToday": "Volver a hoy",
     "events": "Fenómenos",
     "allMonth": "Ver todo el mes",
-    "relative": { "today": "Hoy", "tomorrow": "Mañana", "past": "Pasado" },
+    "relative": {
+      "today": "Hoy",
+      "tomorrow": "Mañana",
+      "past": "Pasado"
+    },
     "filterLabel": "Filtrar fenómenos: {{filter}}",
     "filterTitle": "Filtrar fenómenos",
     "closeFilter": "Cerrar filtros",
@@ -298,7 +302,29 @@
   "alerts": {
     "title": "Alertas",
     "soonTitle": "Pronto",
-    "soonMessage": "Aquí podrás crear alertas para que te avisemos cuando haya buenas condiciones para lo que quieres ver."
+    "soonMessage": "Aquí podrás crear alertas para que te avisemos cuando haya buenas condiciones para lo que quieres ver.",
+    "create": "Nueva alerta",
+    "new": {
+      "title": "Nueva alerta",
+      "back": "Atrás",
+      "goalTitle": "Qué quieres ver",
+      "originTitle": "Desde dónde",
+      "distance": {
+        "title": "Hasta qué distancia",
+        "value": "{{km}} km"
+      },
+      "minIndex": {
+        "title": "Índice mínimo",
+        "value": "{{index}} o más",
+        "hint": "Te avisaremos cuando algún punto lo alcance."
+      },
+      "cta": "Crear la alerta",
+      "saving": "Creando la alerta…",
+      "errors": {
+        "limit": "Ya tienes el máximo de alertas. Borra alguna para crear una nueva.",
+        "generic": "No hemos podido crear la alerta. Vuelve a intentarlo."
+      }
+    }
   },
   "auth": {
     "signOut": "Cerrar sesión",

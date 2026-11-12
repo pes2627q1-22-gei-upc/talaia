@@ -29,7 +29,11 @@
     "goToday": "Torna a avui",
     "events": "Fenòmens",
     "allMonth": "Mostra tot el mes",
-    "relative": { "today": "Avui", "tomorrow": "Demà", "past": "Passat" },
+    "relative": {
+      "today": "Avui",
+      "tomorrow": "Demà",
+      "past": "Passat"
+    },
     "filterLabel": "Filtra fenòmens: {{filter}}",
     "filterTitle": "Filtra fenòmens",
     "closeFilter": "Tanca els filtres",
@@ -298,7 +302,29 @@
   "alerts": {
     "title": "Alertes",
     "soonTitle": "Aviat",
-    "soonMessage": "Aquí podràs crear alertes perquè t'avisem quan hi hagi bones condicions per al que vols veure."
+    "soonMessage": "Aquí podràs crear alertes perquè t'avisem quan hi hagi bones condicions per al que vols veure.",
+    "create": "Nova alerta",
+    "new": {
+      "title": "Nova alerta",
+      "back": "Enrere",
+      "goalTitle": "Què vols veure",
+      "originTitle": "Des d'on",
+      "distance": {
+        "title": "Fins a quina distància",
+        "value": "{{km}} km"
+      },
+      "minIndex": {
+        "title": "Índex mínim",
+        "value": "{{index}} o més",
+        "hint": "T'avisarem quan algun punt hi arribi."
+      },
+      "cta": "Crea l'alerta",
+      "saving": "Creant l'alerta…",
+      "errors": {
+        "limit": "Ja tens el màxim d'alertes. Esborra'n alguna per crear-ne una de nova.",
+        "generic": "No hem pogut crear l'alerta. Torna-ho a provar."
+      }
+    }
   },
   "auth": {
     "signOut": "Tanca la sessió",

@@ -1,12 +1,18 @@
-import { render, screen } from '@testing-library/react-native';
+import { fireEvent, render, screen } from '@testing-library/react-native';
+import { useRouter } from 'expo-router';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import i18n from '@/core/i18n';
 
 import { AlertsScreen } from '../AlertsScreen';
 
+jest.mock('expo-router', () => ({ useRouter: jest.fn() }));
+
+const push = jest.fn();
+jest.mocked(useRouter).mockReturnValue({ push } as unknown as ReturnType<typeof useRouter>);
+
 describe('AlertsScreen', () => {
-  it('diu que les alertes arriben aviat', async () => {
+  it('diu que la llista arriba aviat i obre «Nova alerta»', async () => {
     await i18n.changeLanguage('ca');
     await render(
       <SafeAreaProvider
@@ -20,5 +26,8 @@ describe('AlertsScreen', () => {
     );
     expect(screen.getByRole('header', { name: 'Alertes' })).toBeOnTheScreen();
     expect(screen.getByText('Aviat')).toBeOnTheScreen();
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Nova alerta' }));
+    expect(push).toHaveBeenCalledWith('/nova-alerta');
   });
 });
