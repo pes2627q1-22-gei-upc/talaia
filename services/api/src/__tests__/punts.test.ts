@@ -82,6 +82,43 @@ describe('GET /api/v1/punts', () => {
     expect(maxAge).toBeLessThanOrEqual(3600);
   });
 
+  it('separa els noms i els ETag per idioma, sense retornar 304 amb un ETag català en anglès', async () => {
+    const repo = fakeRepository([
+      {
+        ...PUNTS[0]!,
+        textos: {
+          ca: { nom: 'Cap de Creus' },
+          es: { nom: 'Cabo de Creus' },
+          en: { nom: 'Cape Creus' },
+        },
+      },
+    ]);
+    const app = appWith(repo);
+    const ca = await request(app).get('/api/v1/punts').set('Accept-Language', 'ca');
+    const en = await request(app).get('/api/v1/punts').set('Accept-Language', 'en-US');
+    expect(ca.body.features[0].properties.nom).toBe('Cap de Creus');
+    expect(en.body.features[0].properties.nom).toBe('Cape Creus');
+    expect(ca.headers.vary).toContain('Accept-Language');
+    expect(ca.headers.etag).not.toBe(en.headers.etag);
+    expect(
+      (
+        await request(app)
+          .get('/api/v1/punts')
+          .set('Accept-Language', 'ca')
+          .set('If-None-Match', ca.headers.etag as string)
+      ).status,
+    ).toBe(304);
+    expect(
+      (
+        await request(app)
+          .get('/api/v1/punts')
+          .set('Accept-Language', 'en')
+          .set('If-None-Match', ca.headers.etag as string)
+      ).status,
+    ).toBe(200);
+    expect(repo.calls).toBe(2);
+  });
+
   it("respon 304 sense cos amb If-None-Match igual a l'ETag (també feble)", async () => {
     const app = appWith();
     const { headers } = await request(app).get('/api/v1/punts');

@@ -358,12 +358,39 @@ describe('GET /api/v1/esdeveniments', () => {
       .setAudience('authenticated')
       .setExpirationTime('1h')
       .sign(privateKey);
+    const traduccions = {
+      ...FILA,
+      textosFenomen: {
+        ...(FILA.textosFenomen as object),
+        es: { nom: 'Luna llena', descripcio: 'Disco lunar iluminado.' },
+      },
+      textosEsdeveniment: {
+        ...(FILA.textosEsdeveniment as object),
+        es: { notaVisibilitat: 'Visible desde Cataluña.' },
+      },
+    };
     const app = createApp({
-      esdeveniments: createEsdevenimentsService(fakeRepository()),
+      esdeveniments: createEsdevenimentsService(
+        fakeRepository({ list: async () => [traduccions] }),
+      ),
       supabaseUrl: 'https://example.supabase.co',
       jwks: createLocalJWKSet({ keys: [jwk] }),
+      apropApiKey: 'clau-secreta',
     });
-    expect((await request(app).get(PATH).set('Authorization', `Bearer ${token}`)).status).toBe(200);
+    const mobil = await request(app)
+      .get(PATH)
+      .set('Authorization', `Bearer ${token}`)
+      .set('Accept-Language', 'es-ES');
+    expect(mobil.status).toBe(200);
+    expect(mobil.body.data[0]).toMatchObject({
+      nom: 'Luna llena',
+      descripcio: 'Disco lunar iluminado. Visible desde Cataluña.',
+    });
+    const aprop = await request(app)
+      .get(PATH)
+      .set('X-API-Key', 'clau-secreta')
+      .set('Accept-Language', 'es-ES');
+    expect(aprop.body.data[0].nom).toBe('Lluna plena');
   });
 
   it('respon 503 sense BD, si falla o si manca el punt oficial publicat', async () => {
