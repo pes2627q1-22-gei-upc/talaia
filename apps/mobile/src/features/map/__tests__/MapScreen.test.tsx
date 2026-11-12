@@ -35,8 +35,11 @@ jest.mock('../useDeviceHeading', () => ({
   useDeviceHeading: () => ({ heading: null, active: true }),
 }));
 
+// Sense permís d'ubicació: «A prop meu» demana triar l'origen al mapa.
+const mockDenied = { status: 'denied' as const, canAskAgain: false };
+const mockRefetchLocation = jest.fn(async () => ({ data: mockDenied, isError: false }));
 jest.mock('../../explore/locationRepository', () => ({
-  useCurrentPlaceQuery: () => ({ data: undefined, isError: false }),
+  useCurrentPlaceQuery: () => ({ data: mockDenied, isError: false, refetch: mockRefetchLocation }),
 }));
 
 jest.mock(
@@ -170,6 +173,65 @@ describe('MapScreen', () => {
     await render(<MapScreen />);
     await fireEvent.press(screen.getByRole('button', { name: 'Enrere' }));
     expect(router.back).toHaveBeenCalledTimes(1);
+  });
+
+  it('«A prop meu» sense ubicació demana tocar el mapa, i el toc obre el rànquing', async () => {
+    await render(<MapScreen />);
+    const nearby = screen.getByRole('button', { name: 'A prop meu' });
+    expect(nearby).toHaveProp('accessibilityHint', 'Mostra els millors punts a prop teu');
+    expect(mockNightMap).toHaveBeenLastCalledWith(
+      expect.objectContaining({ onMapPress: undefined, origin: null }),
+    );
+    await fireEvent.press(nearby);
+    expect(
+      screen.getByRole('header', { name: "Toca el mapa per triar d'on surts" }),
+    ).toBeOnTheScreen();
+    expect(screen.queryByRole('button', { name: 'A prop meu' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Obre la configuració' })).toBeOnTheScreen();
+    const props = mockNightMap.mock.calls.at(-1)![0] as {
+      onMapPress: (lat: number, lon: number) => Promise<void>;
+    };
+    await props.onMapPress(41.5, 1.9);
+    expect(router.push).toHaveBeenCalledWith({
+      pathname: '/recomanacions',
+      params: { aprop: 'triat', lat: '41.5', lon: '1.9' },
+    });
+  });
+
+  it('es pot tancar sense triar res', async () => {
+    await render(<MapScreen />);
+    await fireEvent.press(screen.getByRole('button', { name: 'A prop meu' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Tanca' }));
+    expect(screen.queryByText("Toca el mapa per triar d'on surts")).toBeNull();
+    expect(screen.getByRole('button', { name: 'A prop meu' })).toBeOnTheScreen();
+  });
+});
+
+describe('MapScreen amb «A prop meu» (HU02)', () => {
+  beforeEach(async () => {
+    await i18n.changeLanguage('ca');
+    mockNightMap.mockClear();
+    mockRecommendations = {
+      data: undefined,
+      isPending: true,
+      isError: false,
+      isFetching: true,
+      refetch: mockRefetchRecommendations,
+    };
+  });
+
+  it('des d’un lloc triat: la capçalera ho diu i el mapa en marca el punt de sortida', async () => {
+    mockParams = { aprop: 'triat', lat: '41.5', lon: '1.9' };
+    await render(<MapScreen />);
+    expect(screen.getByRole('header', { name: /A prop meu/ })).toBeOnTheScreen();
+    expect(screen.getByText('Des del punt triat')).toBeOnTheScreen();
+    expect(screen.queryByRole('button', { name: 'A prop meu' })).toBeNull();
+    expect(mockNightMap).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        origin: expect.objectContaining({ lat: 41.5, lon: 1.9, label: 'Punt de sortida' }),
+        cluster: false,
+      }),
+    );
   });
 });
 
