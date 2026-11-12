@@ -82,7 +82,8 @@ src/
     recomanacionsRepository.ts  Punts dins del radi (PostGIS) i índex de la franja
     recomanacionsService.ts     Rànquing: millor hora, mitjana i distància; errors de la base de dades → 503
   visibilitat/
-    catalunya.ts        Polígon aproximat de Catalunya i `isInCatalonia` (codi pur)
+    catalunya.ts        `isInCatalonia`: dins del contorn o a 1,5 km o menys (codi pur)
+    contornCatalunya.ts Contorn oficial de l'ICGC simplificat (MultiPolygon). Generat: data/README.md
     lruCache.ts         Memòria cau amb caducitat, LRU i una sola càrrega per clau
     sqmRepository.ts    SQM del punt publicat més proper (PostGIS)
     visibilitatService.ts  Cel·la, previsió en memòria cau, efemèrides i fórmula de @talaia/index
@@ -199,7 +200,7 @@ L'índex de visibilitat d'**una ubicació qualsevol de Catalunya**, la que l'usu
 ```
 
 - **Paràmetres:** `lat` i `lon` (graus WGS84, obligatoris) i `hora` (opcional, per defecte ara): un instant ISO 8601 **amb zona** (`2026-11-12T21:00:00Z` o `…+01:00`), del qual compta l'hora UTC que el conté. Des de l'hora en curs fins a **72 hores** endavant.
-- **Dins de Catalunya:** un polígon aproximat amb un marge d'1 a 3 km per terra (`visibilitat/catalunya.ts`). Andorra, la Franja, la Catalunya Nord i el mar obert en queden fora.
+- **Dins de Catalunya:** el límit oficial de l'ICGC (la unió de les províncies, 1:50.000), simplificat a 200 m i generat per `data/scripts/build-contorn-catalunya.ts` (`visibilitat/contornCatalunya.ts`, no s'edita a mà), amb un marge d'**1,5 km**: un lloc és dins si és dins del contorn o a 1,5 km o menys de la ratlla. Inclou Llívia i deixa fora Andorra.
 - **La cel·la:** la ubicació s'arrodoneix a **0,01°** (~1 km). Hi surten `lat` i `lon`, i és on es demana la previsió i es calculen les efemèrides.
 - **La foscor:** l'SQM del punt publicat més proper, si n'hi ha un a **5 km** o menys; si no, `sqm: null` i `index.foscorEstimada: true` (la fórmula fa servir 0,6). Sense `DATABASE_URL`, o si la base de dades falla, també: la ruta no depèn de la base de dades.
 - **Memòria cau:** la previsió de cada cel·la (de l'hora en curs en endavant) i el seu SQM es guarden en memòria **fins al minut 5 de l'hora següent**, quan el worker també torna a demanar la previsió. Una segona consulta de la mateixa cel·la, de qualsevol hora, ja no crida Open-Meteo (`X-Cache: HIT`; la primera, `MISS`). Com a molt **500 cel·les**: en passar-se'n, surt la que fa més temps que no es fa servir. Les consultes simultànies de la mateixa cel·la comparteixen una sola crida, i els errors no es desen.
