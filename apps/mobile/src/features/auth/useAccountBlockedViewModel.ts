@@ -1,7 +1,9 @@
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Linking } from 'react-native';
 
 import { accountBlocked } from '@/core/api/accountBlocked';
+import { env } from '@/core/config/env';
 
 import { profileRepository } from './profileRepository';
 import { useAuthViewModel } from './useAuthViewModel';
@@ -38,5 +40,12 @@ export function useAccountBlockedViewModel() {
     retryLabel: t(checking ? 'accountBlocked.checking' : 'accountBlocked.retry'),
     checking,
     retry: () => void retry(),
+    /** Sense `EXPO_PUBLIC_CONTACT_EMAIL`, l'avís no ofereix escriure a l'equip. */
+    contact: env.contactEmail
+      ? {
+          label: t('accountBlocked.contact', { email: env.contactEmail }),
+          open: () => void Linking.openURL(`mailto:${env.contactEmail}`).catch(() => {}),
+        }
+      : null,
   };
 }

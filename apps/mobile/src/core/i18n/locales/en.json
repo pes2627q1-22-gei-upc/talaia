@@ -327,7 +327,8 @@
     "title": "Your account is blocked",
     "message": "You can't use Talaia with this account. If you think this is a mistake, contact the Talaia team.",
     "retry": "Check again",
-    "checking": "Checking…"
+    "checking": "Checking…",
+    "contact": "Email {{email}}"
   },
   "emailLogin": {
     "title": "Sign in with email",

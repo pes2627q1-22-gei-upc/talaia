@@ -21,4 +21,6 @@ export const env = {
     'http://localhost:3000/api/v1',
   supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL ?? '',
   supabaseAnonKey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '',
+  /** Correu de l'equip per a l'avís de compte bloquejat (TG-179). Al repo no hi va (és públic). */
+  contactEmail: process.env.EXPO_PUBLIC_CONTACT_EMAIL?.trim() || null,
 } as const;

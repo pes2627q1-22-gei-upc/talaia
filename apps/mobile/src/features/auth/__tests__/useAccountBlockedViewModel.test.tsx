@@ -9,6 +9,7 @@ import { useAccountBlockedViewModel } from '../useAccountBlockedViewModel';
 import { useAuthViewModel } from '../useAuthViewModel';
 
 jest.mock('../useAuthViewModel', () => ({ useAuthViewModel: jest.fn() }));
+jest.mock('@/core/config/env', () => ({ env: { contactEmail: null } }));
 jest.mock('../profileRepository', () => ({ profileRepository: { ensure: jest.fn() } }));
 
 const ensure = jest.mocked(profileRepository.ensure);
