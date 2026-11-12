@@ -205,6 +205,8 @@ describe('MapScreen amb una cerca (TG-102, mockup 03)', () => {
     horesAmbIndex: valor === null ? 0 : 8,
   });
   const resposta = (punts: Recomanacio[]): RecomanacionsResposta => ({
+    data: '2026-10-21',
+    tempsMaxim: 150,
     radiKm: 150,
     franja: { desDe: at(22), finsA: at(6) },
     total: punts.length,

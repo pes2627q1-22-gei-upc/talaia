@@ -40,6 +40,8 @@ describe('GET /api/v1/recomanacions', () => {
     const res = await request(appWith()).get('/api/v1/recomanacions').query(QUERY);
 
     expect(res.status).toBe(200);
+    expect(res.body.data).toBe('2099-12-15');
+    expect(res.body.tempsMaxim).toBe(150);
     expect(res.body.radiKm).toBe(115.4);
     expect(res.body.franja).toEqual({
       desDe: '2099-12-15T21:00:00.000Z',
@@ -77,6 +79,20 @@ describe('GET /api/v1/recomanacions', () => {
       desDe: '2099-12-16T00:00:00.000Z',
       finsA: '2099-12-16T04:00:00.000Z',
     });
+  });
+
+  it('«A prop meu»: només amb lat i lon, el radi per defecte i la nit en curs', async () => {
+    const res = await request(appWith())
+      .get('/api/v1/recomanacions')
+      .query({ lat: QUERY.lat, lon: QUERY.lon });
+
+    expect(res.status).toBe(200);
+    expect(res.body.tempsMaxim).toBe(60);
+    expect(res.body.radiKm).toBe(46.2);
+    expect(res.body.data).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    // La franja acaba a les 12:00 locals de l'endemà de la nit (10:00 o 11:00 UTC).
+    expect(res.body.franja.finsA).toMatch(/T1[01]:00:00\.000Z$/);
+    expect(res.body.total).toBe(2);
   });
 
   it('?limit= retalla el rànquing', async () => {
@@ -193,8 +209,26 @@ describe('GET /api/v1/recomanacions', () => {
     });
   });
 
+  it('sense la resta de paràmetres, al servei només hi arriba l’origen', async () => {
+    const getRecomanacions = jest.fn().mockResolvedValue({
+      data: '2099-12-15',
+      tempsMaxim: 60,
+      radiKm: 46.2,
+      franja: { desDe: '2099-12-15T21:00:00.000Z', finsA: '2099-12-16T11:00:00.000Z' },
+      total: 0,
+      punts: [],
+    });
+    const res = await request(createApp({ recomanacions: { getRecomanacions } }))
+      .get('/api/v1/recomanacions')
+      .query({ lat: QUERY.lat, lon: QUERY.lon, tempsMaxim: '' });
+
+    expect(res.status).toBe(200);
+    expect(getRecomanacions.mock.calls[0][0]).toStrictEqual({
+      origen: { lat: 41.3874, lon: 2.1686 },
+    });
+  });
+
   it.each([
-    ['sense objectiu', { objectiu: undefined }],
     ['objectiu desconegut', { objectiu: 'aurora_boreal' }],
     ['sense lat', { lat: undefined }],
     ['lat buida', { lat: '' }],
@@ -207,9 +241,11 @@ describe('GET /api/v1/recomanacions', () => {
     ['desDe > 23', { desDe: '24' }],
     ['finsA no enter', { finsA: '5.5' }],
     ['desDe = finsA', { desDe: '22', finsA: '22' }],
+    ['desDe sense finsA', { finsA: undefined }],
+    ['finsA sense desDe', { desDe: undefined }],
+    ['sense lon', { lon: undefined }],
     ['tempsMaxim 0', { tempsMaxim: '0' }],
     ['tempsMaxim massa gran', { tempsMaxim: '601' }],
-    ['tempsMaxim buit', { tempsMaxim: '' }],
     ['limit 0', { limit: '0' }],
     ['limit massa gran', { limit: '101' }],
   ])('%s → 400 validation_error', async (_cas, canvis) => {
@@ -304,9 +340,13 @@ describe('GET /api/v1/recomanacions', () => {
       'limit',
     ]);
     expect(params.lat).toMatchObject({ required: true, type: 'number', minimum: -90, maximum: 90 });
-    expect(params.data).toMatchObject({ required: true, type: 'string', format: 'date' });
+    expect(params.lon).toMatchObject({ required: true });
+    // «A prop meu» (TG-133): fora de l'origen, tot és opcional.
+    for (const nom of ['objectiu', 'data', 'desDe', 'finsA', 'tempsMaxim']) {
+      expect(params[nom]).toMatchObject({ required: false });
+    }
+    expect(params.data).toMatchObject({ type: 'string', format: 'date' });
     expect(params.desDe).toMatchObject({
-      required: true,
       type: 'integer',
       minimum: 0,
       maximum: 23,
@@ -314,7 +354,7 @@ describe('GET /api/v1/recomanacions', () => {
     expect(params.limit).toMatchObject({ required: false, type: 'integer', maximum: 100 });
     const recomanacions = res.body.components.schemas.Recomanacions;
     expect(recomanacions.required).toEqual(
-      expect.arrayContaining(['radiKm', 'franja', 'total', 'punts']),
+      expect.arrayContaining(['data', 'tempsMaxim', 'radiKm', 'franja', 'total', 'punts']),
     );
     expect(recomanacions.properties.punts.items.properties.millorHora.allOf[0].$ref).toBe(
       '#/components/schemas/IndexHora',

@@ -1,10 +1,12 @@
 import type {
-  ConsultaRecomanacions,
   IndexHora,
+  ObjectiuObservacio,
+  ParametresRecomanacions,
   Recomanacio,
   RecomanacionsResposta,
 } from '@talaia/shared';
 
+import { defaultNight, nightWindow } from '../index/night';
 import { ApiError } from '../middleware/errors';
 import { iniciHora } from '../punts/puntsService';
 import { franjaUtc } from './franja';
@@ -17,11 +19,51 @@ import { rutesEnLiniaRecta, type EstimadorRutes } from './rutes';
 
 /** Punts del rànquing si la consulta no en demana un altre nombre. */
 export const LIMIT_PER_DEFECTE = 20;
+/** Temps en cotxe de «A prop meu» (HU02, TG-133) si la consulta no en porta: ≈ 46 km en línia recta. */
+export const TEMPS_MAXIM_PER_DEFECTE = 60;
+/** Objectiu si la consulta no en porta. L'índex v1 és el mateix per a tots (ADR-0018). */
+export const OBJECTIU_PER_DEFECTE: ObjectiuObservacio = 'cel_estrellat';
 
 export type RecomanacionsService = {
-  /** El rànquing de punts per a la consulta. `now` decideix quines hores de la franja queden. */
-  getRecomanacions(consulta: ConsultaRecomanacions, now?: Date): Promise<RecomanacionsResposta>;
+  /**
+   * El rànquing de punts per a la consulta; el que no hi és pren el valor per defecte
+   * (`resolConsulta`). `now` decideix la nit per defecte i quines hores de la franja queden.
+   */
+  getRecomanacions(consulta: ParametresRecomanacions, now?: Date): Promise<RecomanacionsResposta>;
 };
+
+/** La consulta amb els valors per defecte omplerts i la franja ja en UTC, `[desDe, finsA)`. */
+export type ConsultaResolta = {
+  objectiu: ObjectiuObservacio;
+  data: string;
+  tempsMaxim: number;
+  limit: number;
+  franja: { desDe: Date; finsA: Date };
+};
+
+/**
+ * Omple el que falta de la consulta («A prop meu», TG-133): la nit en curs (`defaultNight`), la nit
+ * sencera si no hi ha franja, 60 minuts en cotxe, `cel_estrellat` i 20 punts. Amb només una de
+ * `desDe` i `finsA` no se sap quina franja es vol: la ruta ho rebutja abans d'arribar aquí.
+ */
+export function resolConsulta(consulta: ParametresRecomanacions, now: Date): ConsultaResolta {
+  const data = consulta.data ?? defaultNight(now);
+  const { desDe, finsA } = consulta;
+  let franja: ConsultaResolta['franja'];
+  if (desDe !== undefined && finsA !== undefined) {
+    franja = franjaUtc(data, desDe, finsA);
+  } else {
+    const nit = nightWindow(data);
+    franja = { desDe: nit.from, finsA: nit.to };
+  }
+  return {
+    objectiu: consulta.objectiu ?? OBJECTIU_PER_DEFECTE,
+    data,
+    tempsMaxim: consulta.tempsMaxim ?? TEMPS_MAXIM_PER_DEFECTE,
+    limit: consulta.limit ?? LIMIT_PER_DEFECTE,
+    franja,
+  };
+}
 
 /**
  * La millor hora (la primera, si n'hi ha d'empatades) i la mitjana arrodonida de l'índex d'un
@@ -92,8 +134,8 @@ export function createRecomanacionsService(
   rutes: EstimadorRutes = rutesEnLiniaRecta,
 ): RecomanacionsService {
   return {
-    async getRecomanacions(consulta, now = new Date()) {
-      const franja = franjaUtc(consulta.data, consulta.desDe, consulta.finsA);
+    async getRecomanacions(parametres, now = new Date()) {
+      const { franja, ...consulta } = resolConsulta(parametres, now);
       const horaActual = iniciHora(now);
       if (franja.finsA <= horaActual) {
         throw new ApiError(400, 'franja_passada', 'La franja horària demanada ja ha passat');
@@ -102,7 +144,7 @@ export function createRecomanacionsService(
       const radiKm = rutes.radiKm(consulta.tempsMaxim);
 
       const punts = await fromDatabase(() =>
-        repository.puntsDinsRadi(consulta.origen, radiKm * 1000),
+        repository.puntsDinsRadi(parametres.origen, radiKm * 1000),
       );
       const index = await fromDatabase(() =>
         repository.indexHores(
@@ -113,10 +155,12 @@ export function createRecomanacionsService(
       );
 
       return {
+        data: consulta.data,
+        tempsMaxim: consulta.tempsMaxim,
         radiKm,
         franja: { desDe: desDe.toISOString(), finsA: franja.finsA.toISOString() },
         total: punts.length,
-        punts: rankeja(punts, index, rutes).slice(0, consulta.limit ?? LIMIT_PER_DEFECTE),
+        punts: rankeja(punts, index, rutes).slice(0, consulta.limit),
       };
     },
   };
