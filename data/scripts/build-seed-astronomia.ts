@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 
 const arrel = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const entrada = resolve(arrel, 'data/astronomia/calendaris-2026-2027.json');
+const entradaTraduccions = resolve(arrel, 'data/astronomia/traduccions-importades.json');
 const sortida = resolve(arrel, 'supabase/seeds/02_calendari_astronomic.sql');
 const codiValid = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const formatDia = /^\d{4}-\d\d-\d\d$/;
@@ -61,6 +62,16 @@ type Esdeveniment = {
   radiant_maxim?: { ascensio_recta_graus: number; declinacio_graus: number };
   textos: { ca: { nota_visibilitat: string; consell_observacio: string } };
 };
+type Traduccions = {
+  fenomens: Record<
+    string,
+    Record<'es' | 'en', { nom: string; descripcio: string; consell_general: string }>
+  >;
+  esdeveniments: Record<
+    string,
+    Record<'es' | 'en', { nota_visibilitat: string; consell_observacio: string }>
+  >;
+};
 export type Calendari = {
   versio_esquema: number;
   periode: { des_de: string; fins_a: string };
@@ -68,6 +79,39 @@ export type Calendari = {
   fenomens: Fenomen[];
   esdeveniments: Esdeveniment[];
 };
+
+function completarTraduccions(dades: Calendari): Calendari {
+  const traduccions = JSON.parse(readFileSync(entradaTraduccions, 'utf8')) as Traduccions;
+  for (const [categoria, files, camps] of [
+    ['fenomens', dades.fenomens, ['nom', 'descripcio', 'consell_general']],
+    ['esdeveniments', dades.esdeveniments, ['nota_visibilitat', 'consell_observacio']],
+  ] as const) {
+    const codis = new Set(files.map((fila) => fila.codi));
+    for (const codi of Object.keys(traduccions[categoria])) {
+      if (!codis.has(codi)) throw new Error(`Traducció de ${categoria} desconeguda: ${codi}`);
+    }
+    for (const fila of files) {
+      const textos = traduccions[categoria][fila.codi];
+      for (const idioma of ['es', 'en'] as const) {
+        for (const camp of camps) {
+          const valor = (textos?.[idioma] as Record<string, string> | undefined)?.[camp];
+          if (!valor?.trim()) throw new Error(`Falta ${categoria}.${fila.codi}.${idioma}.${camp}`);
+        }
+      }
+    }
+  }
+  return {
+    ...dades,
+    fenomens: dades.fenomens.map((fila) => ({
+      ...fila,
+      textos: { ...fila.textos, ...traduccions.fenomens[fila.codi] },
+    })),
+    esdeveniments: dades.esdeveniments.map((fila) => ({
+      ...fila,
+      textos: { ...fila.textos, ...traduccions.esdeveniments[fila.codi] },
+    })),
+  };
+}
 
 function codiUnic<T extends { codi: string }>(
   entrades: T[],
@@ -201,6 +245,7 @@ function insercio(taula: string, columnes: string[], files: string[][]): string 
 export function generarSql(dades: Calendari): string {
   const errors = validarCalendari(dades);
   if (errors.length) throw new Error(errors.join('\n'));
+  dades = completarTraduccions(dades);
   const fonts = insercio(
     'fonts_astronomiques',
     ['codi', 'organitzacio', 'titol', 'url', 'any_publicacio', 'consultat_el'],

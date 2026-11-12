@@ -1,0 +1,386 @@
+{
+  "centre-observacio-univers": {
+    "es": {
+      "nom": "Centro de Observación del Universo",
+      "descripcio": "Instalación del Parque Astronómico del Montsec, en la vertiente sur de la sierra. El Montsec es Reserva y Destino Turístico Starlight y tiene uno de los cielos más oscuros de Cataluña.",
+      "accessibilitat": "Acceso en coche hasta la instalación"
+    },
+    "en": {
+      "nom": "Universe Observation Centre",
+      "descripcio": "Facility of the Montsec Astronomical Park on the southern slope of the range. Montsec is a Starlight Reserve and Tourist Destination and has one of the darkest skies in Catalonia.",
+      "accessibilitat": "Car access to the facility"
+    }
+  },
+  "port-d-ager": {
+    "es": {
+      "nom": "Puerto de Àger",
+      "descripcio": "Paso de la carretera C-12 que da acceso al valle de Àger. Buen lugar para detenerse en la zona protegida del Montsec, lejos de grandes poblaciones.",
+      "accessibilitat": "Acceso en coche por la C-12"
+    },
+    "en": {
+      "nom": "Port d'Àger Pass",
+      "descripcio": "Pass on the C-12 road leading into the Àger valley. A good stopping point in the protected Montsec area, far from large towns.",
+      "accessibilitat": "Car access via the C-12"
+    }
+  },
+  "prades": {
+    "es": {
+      "nom": "Prades",
+      "descripcio": "Villa en la meseta de las montañas de Prades, Destino Turístico Starlight junto con la sierra de Montsant. Alberga el Parque Astronómico de las Montañas de Prades; conviene alejarse del núcleo urbano para evitar el alumbrado.",
+      "accessibilitat": "Acceso en coche"
+    },
+    "en": {
+      "nom": "Prades",
+      "descripcio": "Town on the plateau of the Prades Mountains, a Starlight Tourist Destination together with the Montsant range. Home to the Prades Mountains Astronomical Park; move away from the town centre to avoid street lighting.",
+      "accessibilitat": "Car access"
+    }
+  },
+  "la-mussara": {
+    "es": {
+      "nom": "la Mussara",
+      "descripcio": "Pueblo abandonado al borde de los riscos de la sierra de la Mussara, con vistas abiertas al Camp de Tarragona. El cielo es oscuro hacia el norte, pero al sur se ve la luz del área urbana.",
+      "accessibilitat": "Acceso en coche por la carretera de la Mussara"
+    },
+    "en": {
+      "nom": "la Mussara",
+      "descripcio": "Abandoned village on the edge of the Mussara cliffs, with open views towards Camp de Tarragona. The sky is dark to the north, but urban light is visible to the south.",
+      "accessibilitat": "Car access via the Mussara road"
+    }
+  },
+  "siurana": {
+    "es": {
+      "nom": "Siurana",
+      "descripcio": "Pueblo elevado sobre un espolón rocoso junto al embalse de Siurana, cerca de la sierra de Montsant. Poca contaminación lumínica y horizonte abierto hacia el suroeste.",
+      "accessibilitat": "Acceso en coche"
+    },
+    "en": {
+      "nom": "Siurana",
+      "descripcio": "Village perched on a rocky spur above the Siurana reservoir, close to the Montsant range. Low light pollution and an open horizon to the southwest.",
+      "accessibilitat": "Car access"
+    }
+  },
+  "la-morera-de-montsant": {
+    "es": {
+      "nom": "la Morera de Montsant",
+      "descripcio": "Pueblo al pie de los riscos de la sierra de Montsant, dentro del Destino Turístico Starlight. Los riscos tapan el norte; hacia el sur la vista se abre sobre el Priorat.",
+      "accessibilitat": "Acceso en coche"
+    },
+    "en": {
+      "nom": "la Morera de Montsant",
+      "descripcio": "Village below the cliffs of the Montsant range, within the Starlight Tourist Destination. The cliffs block the northern horizon; to the south, the view opens over Priorat.",
+      "accessibilitat": "Car access"
+    }
+  },
+  "montgai": {
+    "es": {
+      "nom": "Montgai",
+      "descripcio": "Municipio de la llanura de la Noguera, certificado como Destino Turístico Starlight desde 2022. Terreno llano con pocas luces alrededor.",
+      "accessibilitat": "Acceso en coche"
+    },
+    "en": {
+      "nom": "Montgai",
+      "descripcio": "Town on the Noguera plain, certified as a Starlight Tourist Destination since 2022. Flat terrain with little nearby lighting.",
+      "accessibilitat": "Car access"
+    }
+  },
+  "observatori-castelltallat": {
+    "es": {
+      "nom": "Observatorio Astronómico de Castelltallat",
+      "descripcio": "Observatorio para aficionados en la sierra de Castelltallat, en el Bages. Lugar elevado y alejado de las poblaciones de la comarca.",
+      "accessibilitat": "Acceso en coche hasta el observatorio"
+    },
+    "en": {
+      "nom": "Castelltallat Astronomical Observatory",
+      "descripcio": "Amateur observatory in the Castelltallat hills, in Bages. An elevated site away from the towns of the region.",
+      "accessibilitat": "Car access to the observatory"
+    }
+  },
+  "observatori-pujalt": {
+    "es": {
+      "nom": "Observatorio de Pujalt",
+      "descripcio": "Observatorio astronómico en el pueblo de Pujalt, en la Alta Anoia, sobre una colina con vistas al cielo de la Cataluña central.",
+      "accessibilitat": "Acceso en coche"
+    },
+    "en": {
+      "nom": "Pujalt Observatory",
+      "descripcio": "Astronomical observatory in the village of Pujalt, in Alta Anoia, on a hill beneath the central Catalan sky.",
+      "accessibilitat": "Car access"
+    }
+  },
+  "santa-fe-de-montseny": {
+    "es": {
+      "nom": "Santa Fe de Montseny",
+      "descripcio": "Depresión en el corazón del Montseny rodeada de hayedos. Cielo oscuro en el cénit, pero las cumbres cercanas ocultan el horizonte.",
+      "accessibilitat": "Acceso en coche por la BV-5114"
+    },
+    "en": {
+      "nom": "Santa Fe de Montseny",
+      "descripcio": "Hollow in the heart of Montseny surrounded by beech woods. Dark sky overhead, although nearby peaks block the horizon.",
+      "accessibilitat": "Car access via the BV-5114"
+    }
+  },
+  "collformic": {
+    "es": {
+      "nom": "Collformic",
+      "descripcio": "Paso del Montseny entre Osona y el Vallès, con aparcamiento. Accesible y con vistas a la llanura de Vic, cuya luz se nota hacia el norte-noroeste.",
+      "accessibilitat": "Acceso en coche por la BV-5301"
+    },
+    "en": {
+      "nom": "Collformic",
+      "descripcio": "Montseny pass between Osona and Vallès, with parking. Accessible and overlooking the Vic plain, whose lights brighten the north-northwestern sky.",
+      "accessibilitat": "Car access via the BV-5301"
+    }
+  },
+  "coll-de-pal": {
+    "es": {
+      "nom": "Coll de Pal",
+      "descripcio": "Paso de alta montaña en el Parque Natural del Cadí-Moixeró, por encima de los 2.000 m. Cielo muy oscuro y aire seco; la carretera de montaña puede tener nieve en invierno.",
+      "accessibilitat": "Acceso en coche por la BV-4024"
+    },
+    "en": {
+      "nom": "Coll de Pal",
+      "descripcio": "High mountain pass in Cadí-Moixeró Natural Park, above 2,000 m. Very dark sky and dry air; the mountain road may be snowy in winter.",
+      "accessibilitat": "Car access via the BV-4024"
+    }
+  },
+  "rasos-de-peguera": {
+    "es": {
+      "nom": "Rasos de Peguera",
+      "descripcio": "Meseta de alta montaña al norte del Berguedà. Vistas abiertas al sur sobre la Cataluña central.",
+      "accessibilitat": "Acceso en coche por la carretera de los Rasos"
+    },
+    "en": {
+      "nom": "Rasos de Peguera",
+      "descripcio": "High mountain plateau north of Berguedà. Open views southwards over central Catalonia.",
+      "accessibilitat": "Car access via the Rasos road"
+    }
+  },
+  "port-del-comte": {
+    "es": {
+      "nom": "el Port del Comte",
+      "descripcio": "Zona de la estación de esquí de Port del Comte, en el Solsonès. Gran altitud y pocas luces cercanas fuera de temporada.",
+      "accessibilitat": "Acceso en coche hasta la estación de esquí"
+    },
+    "en": {
+      "nom": "el Port del Comte",
+      "descripcio": "Area around the Port del Comte ski resort in Solsonès. High elevation and few nearby lights outside the ski season.",
+      "accessibilitat": "Car access to the ski resort"
+    }
+  },
+  "bellmunt": {
+    "es": {
+      "nom": "Santuario de Bellmunt",
+      "descripcio": "Santuario en la cima de Bellmunt, sobre la llanura de Vic. Panorama de 360°; la luz de Osona se nota hacia el sur.",
+      "accessibilitat": "Acceso en coche hasta el santuario"
+    },
+    "en": {
+      "nom": "Bellmunt Sanctuary",
+      "descripcio": "Sanctuary on the summit of Bellmunt above the Vic plain. A 360° panorama; light from Osona is noticeable to the south.",
+      "accessibilitat": "Car access to the sanctuary"
+    }
+  },
+  "coll-d-ares": {
+    "es": {
+      "nom": "Coll d'Ares",
+      "descripcio": "Paso fronterizo del Ripollès, lejos de grandes poblaciones. Vistas abiertas al Vallespir y al valle de Camprodon.",
+      "accessibilitat": "Acceso en coche por la C-38"
+    },
+    "en": {
+      "nom": "Coll d'Ares",
+      "descripcio": "Border pass in Ripollès, far from large towns. Open views towards Vallespir and the Camprodon valley.",
+      "accessibilitat": "Car access via the C-38"
+    }
+  },
+  "vallter-2000": {
+    "es": {
+      "nom": "Vallter 2000",
+      "descripcio": "Circo glaciar en la cabecera del Ter, por encima de los 2.000 m. Cielo muy oscuro; las crestas cierran el horizonte norte y oeste.",
+      "accessibilitat": "Acceso en coche por la GIV-5264"
+    },
+    "en": {
+      "nom": "Vallter 2000",
+      "descripcio": "Glacial cirque near the source of the Ter, above 2,000 m. Very dark sky; ridges block the northern and western horizons.",
+      "accessibilitat": "Car access via the GIV-5264"
+    }
+  },
+  "mont-caro": {
+    "es": {
+      "nom": "Mont Caro",
+      "descripcio": "Cumbre del macizo de Els Ports, con vistas de 360° sobre el delta del Ebro y el Matarranya. Lejos de grandes poblaciones, bajo el cielo oscuro de Els Ports.",
+      "accessibilitat": "Carretera asfaltada desde Roquetes; el último tramo hasta la cima puede estar cerrado"
+    },
+    "en": {
+      "nom": "Mont Caro",
+      "descripcio": "Summit of the Els Ports massif, with 360° views over the Ebro Delta and Matarranya. Far from large towns, beneath the dark sky of Els Ports.",
+      "accessibilitat": "Paved road from Roquetes; the final section to the summit may be closed"
+    }
+  },
+  "platja-del-trabucador": {
+    "es": {
+      "nom": "Playa del Trabucador",
+      "descripcio": "Banco de arena del delta del Ebro con mar a ambos lados. Horizonte llano y despejado, ideal para observar astros cerca del agua al salir y ponerse.",
+      "accessibilitat": "Acceso en coche hasta el inicio del banco de arena"
+    },
+    "en": {
+      "nom": "Trabucador Beach",
+      "descripcio": "Sandbar in the Ebro Delta with sea on both sides. Flat, clear horizon, ideal for observing celestial bodies rising or setting near the water.",
+      "accessibilitat": "Car access to the start of the sandbar"
+    }
+  },
+  "el-cortalet": {
+    "es": {
+      "nom": "el Cortalet (Aiguamolls de l'Empordà)",
+      "descripcio": "Centro del Parque Natural de los Aiguamolls de l'Empordà. Terreno llano y abierto hacia el golfo de Roses; la costa aporta luz en temporada alta.",
+      "accessibilitat": "Acceso en coche hasta el centro de información"
+    },
+    "en": {
+      "nom": "el Cortalet (Aiguamolls de l'Empordà)",
+      "descripcio": "Centre of Aiguamolls de l'Empordà Natural Park. Flat terrain open towards the Gulf of Roses; coastal lights become more noticeable in the high season.",
+      "accessibilitat": "Car access to the information centre"
+    }
+  },
+  "cap-de-creus": {
+    "es": {
+      "nom": "Cap de Creus",
+      "descripcio": "Extremo más oriental de la península, en el Parque Natural del Cap de Creus. Amplio horizonte marino hacia el este, adecuado para ver salir la Luna y el Sol.",
+      "accessibilitat": "Acceso en coche hasta el faro"
+    },
+    "en": {
+      "nom": "Cap de Creus",
+      "descripcio": "Easternmost point of the peninsula, in Cap de Creus Natural Park. Wide sea horizon to the east, ideal for watching the Moon and Sun rise.",
+      "accessibilitat": "Car access to the lighthouse"
+    }
+  },
+  "port-de-la-bonaigua": {
+    "es": {
+      "nom": "Port de la Bonaigua",
+      "descripcio": "Puerto de montaña a más de 2.000 m entre el Pallars Sobirà y la Val d'Aran. Cielo de alta montaña; la carretera puede cerrarse por nieve.",
+      "accessibilitat": "Acceso en coche por la C-28"
+    },
+    "en": {
+      "nom": "Port de la Bonaigua",
+      "descripcio": "Mountain pass above 2,000 m between Pallars Sobirà and Val d'Aran. High mountain sky; the road may close because of snow.",
+      "accessibilitat": "Car access via the C-28"
+    }
+  },
+  "coll-de-comiols": {
+    "es": {
+      "nom": "Coll de Comiols",
+      "descripcio": "Paso entre la Noguera y el Pallars Jussà, en una zona muy poco poblada al noreste del Montsec.",
+      "accessibilitat": "Acceso en coche"
+    },
+    "en": {
+      "nom": "Coll de Comiols",
+      "descripcio": "Pass between Noguera and Pallars Jussà, in a sparsely populated area northeast of Montsec.",
+      "accessibilitat": "Car access"
+    }
+  },
+  "santuari-del-miracle": {
+    "es": {
+      "nom": "Santuario del Miracle",
+      "descripcio": "Santuario en una meseta agrícola del Solsonès con pocas luces, en la Cataluña central.",
+      "accessibilitat": "Acceso en coche hasta el santuario"
+    },
+    "en": {
+      "nom": "Miracle Sanctuary",
+      "descripcio": "Sanctuary on a farming plateau in Solsonès, central Catalonia, with little nearby lighting.",
+      "accessibilitat": "Car access to the sanctuary"
+    }
+  },
+  "collada-de-toses": {
+    "es": {
+      "nom": "Collada de Toses",
+      "descripcio": "Paso de la N-260 entre el Ripollès y la Cerdanya, a unos 1.800 m. Accesible todo el año, con aparcamientos cercanos.",
+      "accessibilitat": "Acceso en coche por la N-260"
+    },
+    "en": {
+      "nom": "Collada de Toses",
+      "descripcio": "Pass on the N-260 between Ripollès and Cerdanya, at about 1,800 m. Accessible year-round, with nearby parking.",
+      "accessibilitat": "Car access via the N-260"
+    }
+  },
+  "santuari-del-far": {
+    "es": {
+      "nom": "Santuario del Far",
+      "descripcio": "Santuario al borde de un risco de las Guilleries, con vistas al este sobre la Selva. Cielo oscuro hacia el oeste, en dirección al macizo.",
+      "accessibilitat": "Acceso en coche hasta el santuario"
+    },
+    "en": {
+      "nom": "Far Sanctuary",
+      "descripcio": "Sanctuary on the edge of a Guilleries cliff, with eastward views over La Selva. Dark sky towards the massif to the west.",
+      "accessibilitat": "Car access to the sanctuary"
+    }
+  },
+  "plan-de-beret": {
+    "es": {
+      "nom": "Plan de Beret",
+      "descripcio": "Meseta de alta montaña en la Val d'Aran, cerca de las fuentes del Garona y la Noguera Pallaresa. Espacio amplio y abierto, muy oscuro fuera de la temporada de esquí.",
+      "accessibilitat": "Acceso en coche por la carretera de Beret"
+    },
+    "en": {
+      "nom": "Plan de Beret",
+      "descripcio": "High mountain plateau in Val d'Aran, near the sources of the Garonne and Noguera Pallaresa. Wide, open area, very dark outside the ski season.",
+      "accessibilitat": "Car access via the Beret road"
+    }
+  },
+  "panta-de-cavallers": {
+    "es": {
+      "nom": "Embalse de Cavallers",
+      "descripcio": "Embalse de alta montaña a la entrada del Parque Nacional de Aigüestortes i Estany de Sant Maurici, Reserva Starlight. Cielo muy oscuro; las montañas limitan el horizonte.",
+      "accessibilitat": "Acceso en coche hasta la presa"
+    },
+    "en": {
+      "nom": "Cavallers Reservoir",
+      "descripcio": "High mountain reservoir at the entrance to Aigüestortes i Estany de Sant Maurici National Park, a Starlight Reserve. Very dark sky; mountains limit the horizon.",
+      "accessibilitat": "Car access to the dam"
+    }
+  },
+  "coll-del-moro": {
+    "es": {
+      "nom": "Coll del Moro",
+      "descripcio": "Colina de la Terra Alta con un poblado ibérico en la cima y vistas de 360° sobre la comarca, muy poco poblada.",
+      "accessibilitat": "Acceso en coche hasta el poblado ibérico"
+    },
+    "en": {
+      "nom": "Coll del Moro",
+      "descripcio": "Hill in Terra Alta with an Iberian settlement on its summit and 360° views over the sparsely populated region.",
+      "accessibilitat": "Car access to the Iberian settlement"
+    }
+  },
+  "mirador-coll-de-boixols": {
+    "es": {
+      "nom": "Mirador del Coll de Bóixols",
+      "descripcio": "Mirador en el collado de Bóixols, entre el Alt Urgell y el Pallars Jussà, en una de las zonas menos pobladas de Cataluña.",
+      "accessibilitat": "Acceso en coche por la L-511"
+    },
+    "en": {
+      "nom": "Coll de Bóixols Viewpoint",
+      "descripcio": "Viewpoint at the Bóixols pass, between Alt Urgell and Pallars Jussà, in one of the least populated areas of Catalonia.",
+      "accessibilitat": "Car access via the L-511"
+    }
+  },
+  "mare-de-deu-del-mont": {
+    "es": {
+      "nom": "Santuario de la Mare de Déu del Mont",
+      "descripcio": "Santuario en la cima del Mont, entre la Garrotxa y el Alt Empordà, con panorámica de 360° desde los Pirineos hasta el mar.",
+      "accessibilitat": "Acceso en coche por una carretera estrecha desde Beuda"
+    },
+    "en": {
+      "nom": "Mare de Déu del Mont Sanctuary",
+      "descripcio": "Sanctuary on the summit of Mont, between Garrotxa and Alt Empordà, with 360° views from the Pyrenees to the sea.",
+      "accessibilitat": "Car access via a narrow road from Beuda"
+    }
+  },
+  "sant-joan-de-l-erm": {
+    "es": {
+      "nom": "Sant Joan de l'Erm",
+      "descripcio": "Claro en un bosque del Alt Urgell, junto al Parque Natural del Alt Pirineu. Muy lejos de cualquier población grande.",
+      "accessibilitat": "Pista forestal desde Castellbò"
+    },
+    "en": {
+      "nom": "Sant Joan de l'Erm",
+      "descripcio": "Clearing in a forest in Alt Urgell, beside Alt Pirineu Natural Park. Very far from any large town.",
+      "accessibilitat": "Forest track from Castellbò"
+    }
+  }
+}

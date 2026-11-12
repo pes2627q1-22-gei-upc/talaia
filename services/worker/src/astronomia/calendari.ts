@@ -49,8 +49,27 @@ const CODIS: Record<string, string> = {
   [Body.Saturn]: 'saturn',
 };
 
-type TextosFenomen = { ca: { nom: string; descripcio: string; consell_general: string } };
-type TextosEsdeveniment = { ca: { nota_visibilitat: string; consell_observacio: string } };
+type Idioma = 'ca' | 'es' | 'en';
+type TextosFenomen = Record<Idioma, { nom: string; descripcio: string; consell_general: string }>;
+type TextosEsdeveniment = Record<Idioma, { nota_visibilitat: string; consell_observacio: string }>;
+const NOMS_TRADUITS: Record<'es' | 'en', Record<string, string>> = {
+  es: {
+    [Body.Moon]: 'la Luna',
+    [Body.Mercury]: 'Mercurio',
+    [Body.Venus]: 'Venus',
+    [Body.Mars]: 'Marte',
+    [Body.Jupiter]: 'Júpiter',
+    [Body.Saturn]: 'Saturno',
+  },
+  en: {
+    [Body.Moon]: 'the Moon',
+    [Body.Mercury]: 'Mercury',
+    [Body.Venus]: 'Venus',
+    [Body.Mars]: 'Mars',
+    [Body.Jupiter]: 'Jupiter',
+    [Body.Saturn]: 'Saturn',
+  },
+};
 export type FenomenCalculat = {
   codi: string;
   tipus_codi: 'fase_llunar' | 'superlluna' | 'conjuncio';
@@ -190,6 +209,20 @@ function fenomensBase(): FenomenCalculat[] {
           consell_general:
             'Aprofiteu la foscor per observar objectes febles; la meteorologia i la contaminació lumínica continuen sent determinants.',
         },
+        es: {
+          nom: 'Luna nueva',
+          descripcio:
+            'Fase en la que la cara iluminada de la Luna no mira hacia la Tierra. La Luna no es observable, pero el cielo está más oscuro.',
+          consell_general:
+            'Aprovecha la oscuridad para observar objetos tenues; el tiempo y la contaminación lumínica siguen siendo determinantes.',
+        },
+        en: {
+          nom: 'New Moon',
+          descripcio:
+            'The Moon’s illuminated side faces away from Earth. The Moon is not visible, but the sky is darker.',
+          consell_general:
+            'Use the darkness to observe faint objects; weather and light pollution still matter.',
+        },
       },
     },
     {
@@ -203,6 +236,18 @@ function fenomensBase(): FenomenCalculat[] {
           descripcio: 'Fase en què veiem gairebé tot el disc lunar il·luminat.',
           consell_general:
             'La Lluna plena és fàcil de veure, però la seva llum dificulta observar objectes febles.',
+        },
+        es: {
+          nom: 'Luna llena',
+          descripcio: 'Fase en la que vemos casi todo el disco lunar iluminado.',
+          consell_general:
+            'La Luna llena es fácil de ver, pero su luz dificulta observar objetos tenues.',
+        },
+        en: {
+          nom: 'Full Moon',
+          descripcio: 'A phase when almost the entire lunar disk appears illuminated.',
+          consell_general:
+            'The Full Moon is easy to see, but its light makes faint objects harder to observe.',
         },
       },
     },
@@ -218,6 +263,20 @@ function fenomensBase(): FenomenCalculat[] {
             'Lluna plena propera al perigeu segons el criteri del 90 % del recorregut entre apogeu i perigeu; la diferència aparent pot ser subtil.',
           consell_general:
             'Observeu-la a ull nu. No espereu un canvi de mida espectacular sense comparar fotografies preses amb el mateix equip.',
+        },
+        es: {
+          nom: 'Superluna llena',
+          descripcio:
+            'Luna llena cercana al perigeo según el criterio del 90 % del recorrido entre apogeo y perigeo; la diferencia aparente puede ser sutil.',
+          consell_general:
+            'Obsérvala a simple vista. No esperes un cambio de tamaño espectacular sin comparar fotografías tomadas con el mismo equipo.',
+        },
+        en: {
+          nom: 'Full Supermoon',
+          descripcio:
+            'A Full Moon near perigee under the 90% criterion along the apogee-to-perigee range; the apparent difference can be subtle.',
+          consell_general:
+            'Observe it with the naked eye. Do not expect a dramatic size difference without comparing photos taken with the same equipment.',
         },
       },
     },
@@ -240,6 +299,18 @@ function afegeixFases(desDe: number, finsA: number, events: EsdevenimentCalculat
                 consell_observacio:
                   'Trieu un indret amb poca llum artificial i consulteu la previsió de núvols.',
               },
+              es: {
+                nota_visibilitat:
+                  'La Luna nueva no se ve; su ausencia favorece un cielo oscuro en Cataluña.',
+                consell_observacio:
+                  'Elige un lugar con poca luz artificial y consulta la previsión de nubosidad.',
+              },
+              en: {
+                nota_visibilitat:
+                  'The New Moon is not visible; its absence makes for a darker sky in Catalonia.',
+                consell_observacio:
+                  'Choose a place with little artificial light and check the cloud forecast.',
+              },
             }),
           ),
         );
@@ -259,6 +330,22 @@ function afegeixFases(desDe: number, finsA: number, events: EsdevenimentCalculat
             consell_observacio: superlluna
               ? 'Observeu-la quan surti; compareu fotografies amb la mateixa escala si voleu apreciar la diferència.'
               : 'Mireu cap a la Lluna al vespre o durant la nit i tingueu en compte que il·lumina el cel.',
+          },
+          es: {
+            nota_visibilitat: superlluna
+              ? 'Luna llena cercana al perigeo y visible desde Cataluña si el cielo está despejado; su tamaño aparente solo cambia ligeramente.'
+              : 'Luna llena observable desde Cataluña si el cielo está despejado.',
+            consell_observacio: superlluna
+              ? 'Obsérvala al salir; compara fotografías a la misma escala si quieres apreciar la diferencia.'
+              : 'Mira hacia la Luna al anochecer o durante la noche y ten en cuenta que ilumina el cielo.',
+          },
+          en: {
+            nota_visibilitat: superlluna
+              ? 'A Full Moon near perigee, visible from Catalonia under clear skies; its apparent size changes only slightly.'
+              : 'A Full Moon visible from Catalonia under clear skies.',
+            consell_observacio: superlluna
+              ? 'Watch it rise; compare photos at the same scale to appreciate the difference.'
+              : 'Look for the Moon in the evening or at night and remember that it brightens the sky.',
           },
         });
         if (superlluna)
@@ -307,6 +394,18 @@ function afegeixConjuncions(
             consell_general:
               "Busqueu un horitzó clar i consulteu l'hora i les condicions locals; la proximitat és aparent.",
           },
+          es: {
+            nom: `Aproximación de ${NOMS_TRADUITS.es[a]} y ${NOMS_TRADUITS.es[b]}`,
+            descripcio: `Desde la Tierra, ${NOMS_TRADUITS.es[a]} y ${NOMS_TRADUITS.es[b]} parecen cercanos en el cielo, aunque están muy separados en el espacio.`,
+            consell_general:
+              'Busca un horizonte despejado y consulta la hora y las condiciones locales; la cercanía es aparente.',
+          },
+          en: {
+            nom: `Close approach of ${NOMS_TRADUITS.en[a]} and ${NOMS_TRADUITS.en[b]}`,
+            descripcio: `From Earth, ${NOMS_TRADUITS.en[a]} and ${NOMS_TRADUITS.en[b]} appear close in the sky, although they are far apart in space.`,
+            consell_general:
+              'Find a clear horizon and check the time and local conditions; the closeness is only apparent.',
+          },
         },
       });
     const event = instant(
@@ -317,6 +416,14 @@ function afegeixConjuncions(
         ca: {
           nota_visibilitat: `Separació aparent aproximada de ${angle.toFixed(1)}° des del Montseny, amb els dos astres a més de 10° d'altura i el Sol sota -6°. La franja inici-fi és orientativa (±30 minuts de la millor mostra horària), no la durada real de l'aproximació. La visibilitat real depèn del lloc i dels núvols.`,
           consell_observacio: `Observeu ${NOMS[a]} i ${NOMS[b]} al voltant de l'hora indicada des d'un lloc amb l'horitzó lliure.`,
+        },
+        es: {
+          nota_visibilitat: `Separación aparente aproximada de ${angle.toFixed(1)}° desde el Montseny, con ambos astros a más de 10° de altura y el Sol por debajo de -6°. La franja de inicio-fin es orientativa (±30 minutos de la mejor muestra horaria), no la duración real de la aproximación. La visibilidad depende del lugar y de las nubes.`,
+          consell_observacio: `Observa ${NOMS_TRADUITS.es[a]} y ${NOMS_TRADUITS.es[b]} cerca de la hora indicada desde un lugar con el horizonte despejado.`,
+        },
+        en: {
+          nota_visibilitat: `Approximate apparent separation of ${angle.toFixed(1)}° from Montseny, with both bodies more than 10° above the horizon and the Sun below -6°. The start-end window is indicative (±30 minutes around the best hourly sample), not the actual duration of the approach. Visibility depends on location and cloud cover.`,
+          consell_observacio: `Observe ${NOMS_TRADUITS.en[a]} and ${NOMS_TRADUITS.en[b]} around the indicated time from a place with a clear horizon.`,
         },
       },
       'secundari',
