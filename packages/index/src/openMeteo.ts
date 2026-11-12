@@ -209,7 +209,7 @@ export function createOpenMeteoClient(options: OpenMeteoClientOptions): OpenMete
 
   async function demana(llocs: Coordenades[]): Promise<PrevisioMeteoHora[][]> {
     // Un error de xarxa (DNS, connexió tallada) o el timeout surten de `fetch` com a TypeError o
-    // DOMException: es tradueixen a OpenMeteoError perquè el worker els tracti igual que la resta.
+    // DOMException: es tradueixen a OpenMeteoError perquè el worker i l'API els tractin igual que la resta.
     const resposta = await doFetch(urlPer(llocs), { signal: AbortSignal.timeout(timeoutMs) }).catch(
       (error: unknown) => {
         const motiu = error instanceof Error ? error.message : String(error);

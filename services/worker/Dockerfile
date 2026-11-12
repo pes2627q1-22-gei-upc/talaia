@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 # Imatge del worker (TG-71). Context de build: l'arrel del monorepo (vegeu deploy/compose.yaml).
 # Procés llarg que recalcula l'índex cada hora amb node-cron (TG-99, ADR-0024). tsup inclou
-# @talaia/db i @talaia/shared dins de dist/main.js, com a l'API.
+# @talaia/db, @talaia/index i @talaia/shared dins de dist/main.js, com a l'API.
 
 FROM node:22-alpine AS deps
 WORKDIR /app
@@ -9,12 +9,14 @@ COPY package.json package-lock.json ./
 COPY services/worker/package.json services/worker/
 COPY packages/shared/package.json packages/shared/
 COPY packages/db/package.json packages/db/
+COPY packages/index/package.json packages/index/
 RUN npm ci --workspace services/worker --include-workspace-root=false --ignore-scripts
 
 FROM deps AS build
 COPY tsconfig.base.json ./
 COPY packages/shared packages/shared
 COPY packages/db packages/db
+COPY packages/index packages/index
 COPY services/worker services/worker
 RUN npm run build --workspace services/worker
 
@@ -24,6 +26,7 @@ COPY --from=deps /app/package.json /app/package-lock.json ./
 COPY --from=deps /app/services/worker/package.json services/worker/
 COPY --from=deps /app/packages/shared/package.json packages/shared/
 COPY --from=deps /app/packages/db/package.json packages/db/
+COPY --from=deps /app/packages/index/package.json packages/index/
 RUN npm ci --workspace services/worker --include-workspace-root=false --ignore-scripts --omit=dev
 
 FROM node:22-alpine

@@ -77,6 +77,7 @@ npm run mobile                  # app: escaneja el QR amb Expo Go
 | ⚙️ | Worker: previsió d'Open-Meteo per punt, amb núvols per capes, humitat, visibilitat, temperatura i vent | [`services/worker`](services/worker) |
 | 🗄️ | Base de dades: 32 punts d'observació i el calendari astronòmic fins al 2027, amb PostGIS | [`supabase`](supabase) · [`packages/db`](packages/db) |
 | 🧩 | Tipus de domini compartits per l'app, l'API i el worker | [`packages/shared`](packages/shared) |
+| 🧮 | Càlcul de l'índex de visibilitat (Open-Meteo, Astronomy Engine i fórmula) compartit pel worker i l'API | [`packages/index`](packages/index) |
 | ✅ | CI a cada PR: lint, typecheck, tests i SonarCloud | [`docs/ci.md`](docs/ci.md) |
 
 El que ve ara, tasca a tasca: [Sprint 1](docs/sprint-1.md), [Sprint 2](docs/sprint-2.md), [Sprint 3](docs/sprint-3.md) i [Taiga](https://tree.taiga.io/project/mohamed-dari-pes_22_c_talaia).

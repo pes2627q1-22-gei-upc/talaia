@@ -5,10 +5,9 @@
  *   npm run index -w services/worker -- 42.0294,0.7112          # sense SQM: foscor estimada
  *   npm run index -w services/worker -- 42.0294,0.7112 21.6     # amb l'SQM del lloc
  */
-import { efemeridesHores } from '../astronomia/astronomia';
+import { calculaIndexHores, createOpenMeteoClient, efemeridesHores } from '@talaia/index';
+
 import { loadEnv } from '../config/env';
-import { createOpenMeteoClient } from '../meteo/openMeteo';
-import { calculaIndexHores } from './formula';
 
 const HORES_MOSTRADES = 36;
 
