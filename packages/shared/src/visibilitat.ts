@@ -19,7 +19,8 @@ export type VisibilitatUbicacio = {
   lon: number;
   /**
    * Foscor del cel que s'ha fet servir (SQM, mag/arcsec²): la del punt publicat més proper, si
-   * n'hi ha un a 5 km o menys. `null` si no: la foscor és estimada (`index.foscorEstimada`).
+   * n'hi ha un a 1 km o menys. Només és mesurada si el punt és a la mateixa cel·la; si és d'una
+   * de veïna, `index.foscorEstimada` és cert. `null`: cap punt prou a prop (foscor estimada).
    */
   sqm: number | null;
   /** L'índex de l'hora demanada (inici de l'hora, UTC), amb els factors. */

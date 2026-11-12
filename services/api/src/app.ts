@@ -37,6 +37,10 @@ export function createApp({ profileStore, ...apiDeps }: AppOptions = {}) {
 
   const app = express();
   app.disable('x-powered-by');
+  // Nginx és l'únic proxy davant de l'API (ADR-0019) i afegeix l'adreça del client al final de
+  // X-Forwarded-For: amb un salt de confiança, `req.ip` és aquesta adreça i no la que el client
+  // hagi pogut posar a la capçalera. La fa servir el límit per client de GET /visibilitat (TG-130).
+  app.set('trust proxy', 1);
   app.use(express.json());
   app.use(
     '/api/v1',

@@ -7,6 +7,8 @@ import { ApiError } from '../middleware/errors';
 import { ErrorSchema, registry } from '../openapi';
 import {
   HORES_CONSULTABLES,
+  MAX_ANTIGUITAT_STALE_MS,
+  MAX_PREVISIONS_PER_CLIENT,
   MAX_PREVISIONS_PER_HORA,
   RADI_SQM_M,
   type VisibilitatService,
@@ -59,7 +61,7 @@ const VisibilitatSchema: z.ZodType<VisibilitatUbicacio> = z
       .number()
       .nullable()
       .meta({
-        description: `Foscor del cel (SQM, mag/arcsec²) del punt publicat més proper, si n'hi ha un a ${RADI_SQM_M / 1000} km o menys. \`null\`: foscor estimada (\`index.foscorEstimada\`).`,
+        description: `Foscor del cel (SQM, mag/arcsec²) que s'ha fet servir: la del punt publicat més proper, si n'hi ha un a ${RADI_SQM_M / 1000} km o menys. Només es dona per mesurada si el punt és a la mateixa cel·la; si és d'una de veïna, \`index.foscorEstimada\` és cert. \`null\`: cap punt prou a prop, foscor estimada.`,
         example: null,
       }),
     index: IndexHoraSchema,
@@ -79,7 +81,8 @@ registry.registerPath({
     "Calcula al moment l'índex v1 (ADR-0018) d'un lloc del mapa que no és al catàleg (ADR-0031): la previsió d'Open-Meteo de la cel·la de 0,01°, " +
     "les efemèrides de l'hora i la foscor del punt publicat més proper. " +
     "La previsió de cada cel·la es guarda en memòria fins al minut 5 de l'hora següent: una segona consulta del mateix lloc, de qualsevol hora, surt de la memòria cau (`X-Cache: HIT`). " +
-    `Com a molt ${MAX_PREVISIONS_PER_HORA} consultes noves a Open-Meteo per hora. ` +
+    `Si Open-Meteo falla, se serveix la previsió caducada de la cel·la, si en fa menys de ${MAX_ANTIGUITAT_STALE_MS / 3_600_000} h (\`X-Cache: STALE\`). ` +
+    `Com a molt ${MAX_PREVISIONS_PER_CLIENT} consultes noves a Open-Meteo per client i hora, i ${MAX_PREVISIONS_PER_HORA} en total. ` +
     '`Cache-Control` privat fins a la propera hora: la consulta porta la ubicació de qui la fa.',
   request: { query: QueryDoc },
   responses: {
@@ -87,9 +90,9 @@ registry.registerPath({
       description: "L'índex de l'hora al lloc consultat",
       headers: z.object({
         'Cache-Control': z.string().meta({ example: 'private, max-age=1800' }),
-        'X-Cache': z.enum(['HIT', 'MISS']).meta({
+        'X-Cache': z.enum(['HIT', 'MISS', 'STALE']).meta({
           description:
-            '`HIT` si la previsió del lloc ja era a la memòria cau; `MISS` si s’ha demanat a Open-Meteo',
+            '`HIT`: aquesta petició no ha cridat Open-Meteo (la previsió ja hi era o l’ha portada una petició simultània); `MISS`: l’ha demanada; `STALE`: Open-Meteo ha fallat i és la caducada.',
         }),
       }),
       content: { 'application/json': { schema: VisibilitatSchema } },
@@ -102,9 +105,14 @@ registry.registerPath({
       description: `La ubicació és fora de Catalunya (\`fora_de_catalunya\`) o l'hora no és entre l'hora en curs i ${HORES_CONSULTABLES} hores endavant (\`hora_sense_previsio\`)`,
       content: { 'application/json': { schema: ErrorSchema } },
     },
+    429: {
+      description: `El client ja ha fet ${MAX_PREVISIONS_PER_CLIENT} consultes noves aquesta hora (\`too_many_requests\`). \`Retry-After\` diu quants segons falten per a l'hora següent.`,
+      headers: z.object({ 'Retry-After': z.string().meta({ example: '1800' }) }),
+      content: { 'application/json': { schema: ErrorSchema } },
+    },
     503: {
       description:
-        "Open-Meteo no respon o s'ha arribat al màxim de consultes d'aquesta hora (`meteo_unavailable`)",
+        "Open-Meteo no respon o s'ha arribat al màxim de consultes d'aquesta hora (`meteo_unavailable`), i no hi ha cap previsió caducada de la cel·la per servir",
       content: { 'application/json': { schema: ErrorSchema } },
     },
   },
@@ -123,7 +131,8 @@ export function createVisibilitatRouter(service: VisibilitatService | undefined)
         "L'API no té configurat el càlcul de la visibilitat al moment",
       );
     }
-    const { resposta, cache } = await service.getVisibilitat(consulta);
+    // `req.ip`: l'adreça del client que Nginx afegeix a X-Forwarded-For (`trust proxy` a app.ts).
+    const { resposta, cache } = await service.getVisibilitat(consulta, req.ip);
     // `private`: la URL porta la ubicació de l'usuari, i cap memòria cau compartida no l'ha de desar.
     res.set({ 'Cache-Control': `private, max-age=${secondsToNextHour()}`, 'X-Cache': cache });
     res.json(resposta);

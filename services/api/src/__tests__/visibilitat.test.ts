@@ -3,7 +3,7 @@ import type { PrevisioMeteoHora } from '@talaia/shared';
 import request from 'supertest';
 
 import { createApp } from '../app';
-import { createVisibilitatService } from '../visibilitat/visibilitatService';
+import { createVisibilitatService, type VisibilitatDeps } from '../visibilitat/visibilitatService';
 
 const HORA_MS = 3_600_000;
 /** L'hora en punt actual: la ruta compara `hora` amb el rellotge del servei, que aquí és el real. */
@@ -30,13 +30,24 @@ function previsio(): PrevisioMeteoHora[] {
   }));
 }
 
-/** L'app amb un Open-Meteo fals (sense xarxa) que compta les crides. */
-function appAmb(meteo?: OpenMeteoClient, sqm: number | null = null) {
+/**
+ * L'app amb un Open-Meteo fals (sense xarxa) que compta les crides. `sqm`: el d'un punt del
+ * catàleg a la mateixa cel·la que la consulta (mesurat), o cap.
+ */
+function appAmb(
+  meteo?: OpenMeteoClient,
+  sqm: number | null = null,
+  opcions: Partial<VisibilitatDeps> = {},
+) {
   const client: OpenMeteoClient = meteo ?? {
     previsio: jest.fn(async (llocs: Coordenades[]) => llocs.map(() => previsio())),
   };
   const app = createApp({
-    visibilitat: createVisibilitatService({ meteo: client, sqmProper: async () => sqm }),
+    visibilitat: createVisibilitatService({
+      meteo: client,
+      sqmProper: async (lloc) => (sqm === null ? null : { ...lloc, sqm }),
+      ...opcions,
+    }),
   });
   return { app, meteo: client };
 }
@@ -78,6 +89,39 @@ describe('GET /api/v1/visibilitat', () => {
     expect(segona.headers['x-cache']).toBe('HIT');
     expect(segona.body).toEqual(primera.body);
     expect(meteo.previsio).toHaveBeenCalledTimes(1);
+  });
+
+  it('les consultes simultànies del mateix lloc fan una sola crida: una és MISS i les altres HIT', async () => {
+    const { app, meteo } = appAmb();
+
+    const respostes = await Promise.all(
+      [1, 2, 3].map(() => request(app).get('/api/v1/visibilitat').query(LLOC)),
+    );
+
+    expect(respostes.map((r) => r.headers['x-cache']).sort()).toEqual(['HIT', 'HIT', 'MISS']);
+    expect(meteo.previsio).toHaveBeenCalledTimes(1);
+  });
+
+  it('si Open-Meteo falla, serveix la previsió caducada amb X-Cache: STALE', async () => {
+    jest.spyOn(console, 'error').mockImplementation(() => {});
+    let t = Date.now();
+    let falla = false;
+    const meteo: OpenMeteoClient = {
+      previsio: async (llocs) => {
+        if (falla) throw new OpenMeteoError('Open-Meteo ha respost 503: overloaded', 503);
+        return llocs.map(() => previsio());
+      },
+    };
+    const { app } = appAmb(meteo, null, { now: () => t });
+    await request(app).get('/api/v1/visibilitat').query(LLOC).expect(200);
+
+    t += 61 * 60_000; // Ha passat el minut 5 de l'hora següent: la previsió ha caducat.
+    falla = true;
+    const res = await request(app).get('/api/v1/visibilitat').query(LLOC);
+
+    expect(res.status).toBe(200);
+    expect(res.headers['x-cache']).toBe('STALE');
+    jest.restoreAllMocks();
   });
 
   it('respon en menys de 3 s, i de la memòria cau sense esperar Open-Meteo', async () => {
@@ -171,6 +215,31 @@ describe('GET /api/v1/visibilitat', () => {
     }
   });
 
+  it('massa consultes noves del mateix client: 429 too_many_requests amb Retry-After', async () => {
+    const { app } = appAmb(undefined, null, { maxPrevisionsPerClient: 1 });
+    // Nginx afegeix l'adreça del client al final de X-Forwarded-For: la de l'esquerra la pot
+    // haver posat el client i no compta.
+    const des = (ip: string, falsa = '192.0.2.1') => ({ 'X-Forwarded-For': `${falsa}, ${ip}` });
+
+    await request(app).get('/api/v1/visibilitat').query(LLOC).set(des('203.0.113.7')).expect(200);
+    const res = await request(app)
+      .get('/api/v1/visibilitat')
+      .query({ lat: '41.39', lon: '2.17' })
+      .set(des('203.0.113.7', '192.0.2.99'));
+
+    expect(res.status).toBe(429);
+    expect(res.body.error.code).toBe('too_many_requests');
+    expect(Number(res.headers['retry-after'])).toBeGreaterThan(0);
+    expect(Number(res.headers['retry-after'])).toBeLessThanOrEqual(3600);
+    // Un altre client, i el mateix amb un lloc que ja és a la memòria cau, sí que poden.
+    await request(app)
+      .get('/api/v1/visibilitat')
+      .query({ lat: '41.39', lon: '2.17' })
+      .set(des('198.51.100.4'))
+      .expect(200);
+    await request(app).get('/api/v1/visibilitat').query(LLOC).set(des('203.0.113.7')).expect(200);
+  });
+
   it('si Open-Meteo falla: 503 meteo_unavailable', async () => {
     jest.spyOn(console, 'error').mockImplementation(() => {});
     const { app } = appAmb({
@@ -202,8 +271,9 @@ describe('GET /api/v1/visibilitat', () => {
       'lat',
       'lon',
     ]);
-    expect(Object.keys(ruta.responses).sort()).toEqual(['200', '400', '422', '503']);
-    expect(ruta.responses['200'].headers['X-Cache'].schema.enum).toEqual(['HIT', 'MISS']);
+    expect(Object.keys(ruta.responses).sort()).toEqual(['200', '400', '422', '429', '503']);
+    expect(ruta.responses['200'].headers['X-Cache'].schema.enum).toEqual(['HIT', 'MISS', 'STALE']);
+    expect(ruta.responses['429'].headers['Retry-After']).toBeDefined();
     expect(ruta.responses['200'].content['application/json'].schema.$ref).toBe(
       '#/components/schemas/VisibilitatUbicacio',
     );

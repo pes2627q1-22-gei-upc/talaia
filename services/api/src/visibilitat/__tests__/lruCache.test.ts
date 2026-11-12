@@ -8,18 +8,22 @@ function rellotge(inici = 1_000_000) {
 
 /** Una `load` que compta les crides i torna el valor que se li diu, vàlid fins a `expiresAt`. */
 function carrega<V>(value: V, expiresAt: number) {
-  const load = jest.fn(async (): Promise<Loaded<V>> => ({ value, expiresAt }));
-  return load;
+  return jest.fn(async (): Promise<Loaded<V>> => ({ value, expiresAt }));
 }
 
+const falla = () =>
+  jest.fn(async (): Promise<Loaded<string>> => {
+    throw new Error('Open-Meteo caigut');
+  });
+
 describe('createLruCache', () => {
-  it('la primera vegada carrega (MISS) i la segona surt de la memòria (HIT)', async () => {
+  it('la primera vegada carrega (miss) i la segona surt de la memòria (hit)', async () => {
     const { now } = rellotge();
     const cache = createLruCache<string>({ maxEntries: 10, now });
     const load = carrega('a', now() + 1_000);
 
-    await expect(cache.get('k', load)).resolves.toEqual({ value: 'a', hit: false });
-    await expect(cache.get('k', load)).resolves.toEqual({ value: 'a', hit: true });
+    await expect(cache.get('k', load)).resolves.toEqual({ value: 'a', status: 'miss' });
+    await expect(cache.get('k', load)).resolves.toEqual({ value: 'a', status: 'hit' });
     expect(load).toHaveBeenCalledTimes(1);
   });
 
@@ -30,9 +34,9 @@ describe('createLruCache', () => {
 
     await cache.get('k', load);
     avanca(999);
-    await expect(cache.get('k', load)).resolves.toMatchObject({ hit: true });
+    await expect(cache.get('k', load)).resolves.toMatchObject({ status: 'hit' });
     avanca(1);
-    await expect(cache.get('k', load)).resolves.toMatchObject({ hit: false });
+    await expect(cache.get('k', load)).resolves.toMatchObject({ status: 'miss' });
     expect(load).toHaveBeenCalledTimes(2);
   });
 
@@ -44,11 +48,11 @@ describe('createLruCache', () => {
     const load = carrega([1, 2, 3], now() + 1_000);
     const result = await cache.get('k', load, (hores) => hores.includes(3));
 
-    expect(result).toEqual({ value: [1, 2, 3], hit: false });
+    expect(result).toEqual({ value: [1, 2, 3], status: 'miss' });
     expect(load).toHaveBeenCalledTimes(1);
     // El valor nou substitueix l'antic.
     await expect(cache.get('k', load, (hores) => hores.includes(3))).resolves.toMatchObject({
-      hit: true,
+      status: 'hit',
     });
   });
 
@@ -62,12 +66,21 @@ describe('createLruCache', () => {
     await cache.get('c', carrega('c', fins)); // Surt `b`.
 
     expect(cache.size).toBe(2);
-    await expect(cache.get('a', carrega('a2', fins))).resolves.toEqual({ value: 'a', hit: true });
-    await expect(cache.get('c', carrega('c2', fins))).resolves.toEqual({ value: 'c', hit: true });
-    await expect(cache.get('b', carrega('b2', fins))).resolves.toEqual({ value: 'b2', hit: false });
+    await expect(cache.get('a', carrega('a2', fins))).resolves.toEqual({
+      value: 'a',
+      status: 'hit',
+    });
+    await expect(cache.get('c', carrega('c2', fins))).resolves.toEqual({
+      value: 'c',
+      status: 'hit',
+    });
+    await expect(cache.get('b', carrega('b2', fins))).resolves.toEqual({
+      value: 'b2',
+      status: 'miss',
+    });
   });
 
-  it('les peticions simultànies de la mateixa clau comparteixen una sola càrrega', async () => {
+  it('les peticions simultànies comparteixen una sola càrrega: només la primera és un miss', async () => {
     const { now } = rellotge();
     const cache = createLruCache<string>({ maxEntries: 10, now });
     let resol: (loaded: Loaded<string>) => void = () => {};
@@ -77,8 +90,8 @@ describe('createLruCache', () => {
     resol({ value: 'a', expiresAt: now() + 1_000 });
 
     await expect(peticions).resolves.toEqual([
-      { value: 'a', hit: false },
-      { value: 'a', hit: false },
+      { value: 'a', status: 'miss' },
+      { value: 'a', status: 'hit' },
     ]);
     expect(load).toHaveBeenCalledTimes(1);
   });
@@ -95,21 +108,75 @@ describe('createLruCache', () => {
   it('els errors no es desen: arriben a tothom qui esperava i la següent ho torna a provar', async () => {
     const { now } = rellotge();
     const cache = createLruCache<string>({ maxEntries: 10, now });
-    const falla = jest.fn(async (): Promise<Loaded<string>> => {
-      throw new Error('Open-Meteo caigut');
-    });
+    const load = falla();
 
-    const resultats = await Promise.allSettled([cache.get('k', falla), cache.get('k', falla)]);
+    const resultats = await Promise.allSettled([cache.get('k', load), cache.get('k', load)]);
     expect(resultats).toEqual([
       { status: 'rejected', reason: new Error('Open-Meteo caigut') },
       { status: 'rejected', reason: new Error('Open-Meteo caigut') },
     ]);
-    expect(falla).toHaveBeenCalledTimes(1);
+    expect(load).toHaveBeenCalledTimes(1);
     expect(cache.size).toBe(0);
 
     await expect(cache.get('k', carrega('a', now() + 1_000))).resolves.toEqual({
       value: 'a',
-      hit: false,
+      status: 'miss',
+    });
+  });
+
+  describe('entrades caducades (stale)', () => {
+    it('si la càrrega falla, serveix la caducada mentre no passi de `maxStaleMs`', async () => {
+      const { now, avanca } = rellotge();
+      const cache = createLruCache<string>({ maxEntries: 10, maxStaleMs: 5_000, now });
+      await cache.get('k', carrega('vella', now() + 1_000));
+
+      avanca(1_000 + 4_999);
+      const resultats = await Promise.all([cache.get('k', falla()), cache.get('k', falla())]);
+      expect(resultats).toEqual([
+        { value: 'vella', status: 'stale' },
+        { value: 'vella', status: 'stale' },
+      ]);
+
+      avanca(1);
+      await expect(cache.get('k', falla())).rejects.toThrow('Open-Meteo caigut');
+    });
+
+    it('la caducada també ha de servir (`usable`)', async () => {
+      const { now, avanca } = rellotge();
+      const cache = createLruCache<number[]>({ maxEntries: 10, maxStaleMs: 5_000, now });
+      await cache.get('k', carrega([1, 2], now() + 1_000));
+      avanca(2_000);
+
+      const load = jest.fn(async (): Promise<Loaded<number[]>> => {
+        throw new Error('caigut');
+      });
+      await expect(cache.get('k', load, (hores) => hores.includes(3))).rejects.toThrow('caigut');
+      await expect(cache.get('k', load, (hores) => hores.includes(2))).resolves.toEqual({
+        value: [1, 2],
+        status: 'stale',
+      });
+    });
+
+    it('per defecte no serveix cap entrada caducada', async () => {
+      const { now, avanca } = rellotge();
+      const cache = createLruCache<string>({ maxEntries: 10, now });
+      await cache.get('k', carrega('vella', now() + 1_000));
+      avanca(1_000);
+
+      await expect(cache.get('k', falla())).rejects.toThrow('Open-Meteo caigut');
+    });
+
+    it('una càrrega correcta substitueix la caducada', async () => {
+      const { now, avanca } = rellotge();
+      const cache = createLruCache<string>({ maxEntries: 10, maxStaleMs: 5_000, now });
+      await cache.get('k', carrega('vella', now() + 1_000));
+      avanca(2_000);
+
+      await expect(cache.get('k', carrega('nova', now() + 1_000))).resolves.toEqual({
+        value: 'nova',
+        status: 'miss',
+      });
+      await expect(cache.get('k', falla())).resolves.toEqual({ value: 'nova', status: 'hit' });
     });
   });
 

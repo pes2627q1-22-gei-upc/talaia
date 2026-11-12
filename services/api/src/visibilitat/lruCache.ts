@@ -4,16 +4,24 @@
  *
  * - **LRU:** quan hi ha més de `maxEntries`, surt la que fa més temps que no es fa servir.
  * - **Una sola càrrega per clau:** les peticions simultànies d'una clau que no hi és comparteixen
- *   la mateixa `load`.
- * - **Els errors no es desen:** si `load` falla, l'error arriba a tothom qui l'esperava i la
- *   petició següent ho torna a provar.
+ *   la mateixa `load`. Només la que l'ha començada és un `miss`; les altres, un `hit`, perquè no
+ *   han carregat res (com el `proxy_cache_lock` de Nginx).
+ * - **Els errors no es desen:** si `load` falla, la petició següent ho torna a provar.
+ * - **Caducada però útil:** si `load` falla i l'entrada que hi havia va caducar fa menys de
+ *   `maxStaleMs`, es torna aquesta (`stale`) en lloc de l'error. Per defecte, mai.
  */
 
 /** El que torna `load`: el valor i fins quan és vàlid (mil·lisegons des de l'època). */
 export type Loaded<V> = { value: V; expiresAt: number };
 
-/** `hit`: el valor ja hi era i no s'ha hagut d'esperar cap càrrega. */
-export type CacheResult<V> = { value: V; hit: boolean };
+/**
+ * D'on surt el valor: `hit` si no s'ha hagut de carregar (ja hi era o l'ha carregat una petició
+ * simultània), `miss` si l'ha carregat aquesta petició i `stale` si és el caducat perquè la
+ * càrrega ha fallat.
+ */
+export type CacheStatus = 'hit' | 'miss' | 'stale';
+
+export type CacheResult<V> = { value: V; status: CacheStatus };
 
 export type LruCache<V> = {
   /**
@@ -31,10 +39,16 @@ export type LruCache<V> = {
 
 export type LruCacheOptions = {
   maxEntries: number;
+  /** Quant de temps després de caducar encara es pot servir una entrada si la càrrega falla. */
+  maxStaleMs?: number;
   now?: () => number;
 };
 
-export function createLruCache<V>({ maxEntries, now = Date.now }: LruCacheOptions): LruCache<V> {
+export function createLruCache<V>({
+  maxEntries,
+  maxStaleMs = 0,
+  now = Date.now,
+}: LruCacheOptions): LruCache<V> {
   if (!Number.isInteger(maxEntries) || maxEntries < 1) {
     throw new RangeError(`maxEntries ha de ser un enter positiu (rebut: ${maxEntries})`);
   }
@@ -57,9 +71,10 @@ export function createLruCache<V>({ maxEntries, now = Date.now }: LruCacheOption
       const entry = entries.get(key);
       if (entry && entry.expiresAt > now() && usable(entry.value)) {
         store(key, entry); // Passa al final: és la més recent.
-        return { value: entry.value, hit: true };
+        return { value: entry.value, status: 'hit' };
       }
       let pending = loading.get(key);
+      const shared = pending !== undefined;
       if (!pending) {
         pending = load()
           .then((loaded) => {
@@ -69,7 +84,15 @@ export function createLruCache<V>({ maxEntries, now = Date.now }: LruCacheOption
           .finally(() => loading.delete(key));
         loading.set(key, pending);
       }
-      return { value: (await pending).value, hit: false };
+      try {
+        return { value: (await pending).value, status: shared ? 'hit' : 'miss' };
+      } catch (err) {
+        const stale = entries.get(key);
+        if (stale && now() - stale.expiresAt < maxStaleMs && usable(stale.value)) {
+          return { value: stale.value, status: 'stale' };
+        }
+        throw err;
+      }
     },
     get size() {
       return entries.size;

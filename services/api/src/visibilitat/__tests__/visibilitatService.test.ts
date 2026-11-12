@@ -1,3 +1,6 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+
 import {
   OpenMeteoError,
   calculaIndex,
@@ -10,6 +13,7 @@ import type { PrevisioMeteoHora } from '@talaia/shared';
 import { ApiError } from '../../middleware/errors';
 import {
   HORES_CONSULTABLES,
+  MAX_ANTIGUITAT_STALE_MS,
   RADI_SQM_M,
   cellaDe,
   createVisibilitatService,
@@ -82,7 +86,46 @@ async function errorDe(promesa: Promise<unknown>): Promise<Pick<ApiError, 'statu
   return { status: err.status, code: err.code };
 }
 
+/** Els punts del catàleg amb SQM, per fer un `sqmProper` com el de la base de dades. */
+const CATALEG = (
+  JSON.parse(
+    readFileSync(resolve(__dirname, '../../../../../data/punts_observacio.geojson'), 'utf8'),
+  ) as {
+    features: { geometry: { coordinates: [number, number] }; properties: { sqm: number | null } }[];
+  }
+).features.flatMap(
+  ({
+    geometry: {
+      coordinates: [lon, lat],
+    },
+    properties: { sqm },
+  }) => (sqm === null ? [] : [{ lat, lon, sqm }]),
+);
+
+/** Distància en metres sobre l'esfera (com `st_distance` sobre `geography`, a uns metres). */
+function distanciaM(a: Coordenades, b: Coordenades): number {
+  const rad = (g: number) => (g * Math.PI) / 180;
+  const h =
+    Math.sin(rad(b.lat - a.lat) / 2) ** 2 +
+    Math.cos(rad(a.lat)) * Math.cos(rad(b.lat)) * Math.sin(rad(b.lon - a.lon) / 2) ** 2;
+  return 2 * 6_371_008.8 * Math.asin(Math.sqrt(h));
+}
+
+/** La consulta de `sqmRepository` sobre el catàleg: el punt amb SQM més proper dins del radi. */
+const sqmDelCataleg = jest.fn<ReturnType<SqmProper>, Parameters<SqmProper>>(
+  async (lloc, metres) => {
+    const proper = CATALEG.map((p) => ({ p, d: distanciaM(lloc, p) }))
+      .filter(({ d }) => d <= metres)
+      .sort((x, y) => x.d - y.d)[0];
+    return proper ? proper.p : null;
+  },
+);
+
+/** El Cortalet (Aiguamolls de l'Empordà), al catàleg amb SQM 20,58, a la cel·la (42,22, 3,09). */
+const CORTALET = { lat: 42.224568, lon: 3.092703 };
+
 beforeEach(() => {
+  sqmDelCataleg.mockClear();
   jest.spyOn(console, 'error').mockImplementation(() => {});
   jest.spyOn(console, 'warn').mockImplementation(() => {});
 });
@@ -215,7 +258,7 @@ describe('createVisibilitatService', () => {
       expect(crides()).toBe(2);
     });
 
-    it('les consultes simultànies de la mateixa cel·la fan una sola crida', async () => {
+    it('les consultes simultànies de la mateixa cel·la fan una sola crida, i les que esperen són un HIT', async () => {
       const { service, crides } = entorn();
 
       const respostes = await Promise.all([
@@ -230,6 +273,8 @@ describe('createVisibilitatService', () => {
         HORA_ACTUAL,
         '2026-12-16T01:00:00.000Z',
       ]);
+      // Només la primera ha cridat Open-Meteo: les altres l'han esperada, i són un HIT.
+      expect(respostes.map((r) => r.cache)).toEqual(['MISS', 'HIT', 'HIT']);
     });
 
     it('guarda com a molt `maxCelles` cel·les', async () => {
@@ -243,39 +288,86 @@ describe('createVisibilitatService', () => {
   });
 
   describe('foscor', () => {
-    it("fa servir l'SQM del punt publicat més proper dins del radi", async () => {
-      const sqmProper = jest.fn<ReturnType<SqmProper>, Parameters<SqmProper>>(async () => 21.56);
-      const { service } = entorn({ sqmProper });
+    it("amb un punt del catàleg a la mateixa cel·la, l'SQM és mesurat", async () => {
+      const { service } = entorn({ sqmProper: sqmDelCataleg });
 
-      const { resposta } = await service.getVisibilitat(LLOC);
+      const { resposta } = await service.getVisibilitat({ lat: 42.2236, lon: 3.0912 });
 
-      expect(sqmProper).toHaveBeenCalledWith({ lat: 41.95, lon: 1.52 }, RADI_SQM_M);
-      expect(resposta.sqm).toBe(21.56);
+      expect(sqmDelCataleg).toHaveBeenCalledWith({ lat: 42.22, lon: 3.09 }, RADI_SQM_M);
+      expect(resposta.sqm).toBe(20.58);
       expect(resposta.index.foscorEstimada).toBe(false);
-      expect(resposta.index.factors.foscor).toBe(1);
+      expect(resposta.index.factors.foscor).toBe(0.77);
+    });
+
+    it("l'SQM d'un punt d'una cel·la veïna es fa servir, però la foscor és estimada", async () => {
+      const { service } = entorn({ sqmProper: sqmDelCataleg });
+
+      // La cel·la (42,23, 3,09) és a uns 640 m del Cortalet, dins del radi.
+      const { resposta } = await service.getVisibilitat({ lat: 42.2306, lon: 3.0927 });
+
+      expect(distanciaM({ lat: 42.23, lon: 3.09 }, CORTALET)).toBeLessThan(RADI_SQM_M);
+      expect(resposta.sqm).toBe(20.58);
+      expect(resposta.index.factors.foscor).toBe(0.77);
+      expect(resposta.index.foscorEstimada).toBe(true);
+    });
+
+    it("Empuriabrava no pren l'SQM del Cortalet, a 3,6 km: la foscor és estimada", async () => {
+      const { service } = entorn({ sqmProper: sqmDelCataleg });
+
+      const { resposta } = await service.getVisibilitat({ lat: 42.25, lon: 3.12 });
+
+      expect(distanciaM({ lat: 42.25, lon: 3.12 }, CORTALET)).toBeGreaterThan(3_500);
+      expect(resposta.sqm).toBeNull();
+      expect(resposta.index.foscorEstimada).toBe(true);
+      expect(resposta.index.factors.foscor).toBe(0.6);
     });
 
     it("l'SQM també es desa a la memòria cau", async () => {
-      const sqmProper = jest.fn<ReturnType<SqmProper>, Parameters<SqmProper>>(async () => 20);
-      const { service } = entorn({ sqmProper });
+      const { service } = entorn({ sqmProper: sqmDelCataleg });
 
-      await service.getVisibilitat(LLOC);
-      await service.getVisibilitat(LLOC);
+      await service.getVisibilitat(CORTALET);
+      await service.getVisibilitat(CORTALET);
 
-      expect(sqmProper).toHaveBeenCalledTimes(1);
+      expect(sqmDelCataleg).toHaveBeenCalledTimes(1);
     });
 
-    it('si la base de dades falla, la foscor és estimada i l’índex surt igualment', async () => {
-      const { service } = entorn({
-        sqmProper: async () => {
-          throw new Error('connexió tancada');
-        },
+    it('si la base de dades falla, la foscor és estimada, no es desa i es torna a provar', async () => {
+      let falla = true;
+      const sqmProper = jest.fn<ReturnType<SqmProper>, Parameters<SqmProper>>(async (...args) => {
+        if (falla) throw new Error('connexió tancada');
+        return sqmDelCataleg(...args);
       });
+      const { service, crides } = entorn({ sqmProper });
 
-      const { resposta } = await service.getVisibilitat(LLOC);
+      const primera = await service.getVisibilitat(CORTALET);
+      falla = false;
+      const segona = await service.getVisibilitat(CORTALET);
 
+      expect(primera.resposta.sqm).toBeNull();
+      expect(primera.resposta.index.foscorEstimada).toBe(true);
+      expect(segona.resposta.sqm).toBe(20.58);
+      expect(segona.resposta.index.foscorEstimada).toBe(false);
+      expect(sqmProper).toHaveBeenCalledTimes(2);
+      // La previsió sí que s'ha desat: la segona no crida Open-Meteo.
+      expect(segona.cache).toBe('HIT');
+      expect(crides()).toBe(1);
+    });
+
+    it('una base de dades lenta no fa esperar la resposta més que el timeout', async () => {
+      const lenta = jest.fn<ReturnType<SqmProper>, Parameters<SqmProper>>(
+        () => new Promise((resolve) => setTimeout(() => resolve({ ...CORTALET, sqm: 20.58 }), 300)),
+      );
+      const { service } = entorn({ sqmProper: lenta, timeoutSqmMs: 20 });
+
+      const inici = Date.now();
+      const { resposta } = await service.getVisibilitat(CORTALET);
+
+      expect(Date.now() - inici).toBeLessThan(250);
       expect(resposta.sqm).toBeNull();
       expect(resposta.index.foscorEstimada).toBe(true);
+      // El timeout tampoc no es desa.
+      await service.getVisibilitat(CORTALET);
+      expect(lenta).toHaveBeenCalledTimes(2);
     });
   });
 
@@ -372,6 +464,134 @@ describe('createVisibilitatService', () => {
       await expect(service.getVisibilitat({ lat: 41.98, lon: 2.82 })).resolves.toMatchObject({
         cache: 'MISS',
       });
+    });
+  });
+
+  describe('previsió caducada (STALE)', () => {
+    /** Open-Meteo que respon fins que `falla` és cert. */
+    function meteoQueFalla() {
+      const estat = { falla: false, t: ARA };
+      const meteo: OpenMeteoClient = {
+        previsio: jest.fn(async (llocs: Coordenades[]) => {
+          if (estat.falla) throw new OpenMeteoError('Open-Meteo ha respost 503: overloaded', 503);
+          return llocs.map(() => previsioDe(estat.t));
+        }),
+      };
+      return { meteo, estat };
+    }
+
+    it('si Open-Meteo falla, serveix la previsió caducada de la cel·la amb X-Cache: STALE', async () => {
+      const { meteo, estat } = meteoQueFalla();
+      const { service, avanca } = entorn({ meteo });
+      await service.getVisibilitat(LLOC); // 21:20, caduca a les 22:05
+
+      avanca(HORA_MS); // 22:20
+      estat.falla = true;
+      const { resposta, cache } = await service.getVisibilitat(LLOC);
+
+      expect(cache).toBe('STALE');
+      expect(resposta.index.hora).toBe('2026-12-15T22:00:00.000Z');
+      expect(meteo.previsio).toHaveBeenCalledTimes(2);
+    });
+
+    it(`una previsió caducada fa més de ${MAX_ANTIGUITAT_STALE_MS / HORA_MS} h ja no es fa servir: 503`, async () => {
+      const { meteo, estat } = meteoQueFalla();
+      const { service, avanca } = entorn({ meteo });
+      await service.getVisibilitat(LLOC); // caduca a les 22:05
+
+      avanca(45 * 60_000 + MAX_ANTIGUITAT_STALE_MS - 60_000); // 04:04: encara no
+      estat.falla = true;
+      await expect(service.getVisibilitat(LLOC)).resolves.toMatchObject({ cache: 'STALE' });
+      avanca(60_000); // 04:05
+      await expect(errorDe(service.getVisibilitat(LLOC))).resolves.toEqual({
+        status: 503,
+        code: 'meteo_unavailable',
+      });
+    });
+
+    it('passat el sostre global, una cel·la caducada també surt com a STALE', async () => {
+      const { service, avanca } = entorn({ maxPrevisionsPerHora: 1 });
+      await service.getVisibilitat(LLOC); // 21:20, la primera de l'hora
+
+      avanca(50 * 60_000); // 22:10: ha caducat i és una hora nova
+      await service.getVisibilitat({ lat: 41.39, lon: 2.17 }); // gasta la de les 22
+      await expect(service.getVisibilitat(LLOC)).resolves.toMatchObject({ cache: 'STALE' });
+    });
+  });
+
+  describe('límit per client', () => {
+    it('un client pot fer com a molt `maxPrevisionsPerClient` consultes noves per hora: 429', async () => {
+      const { service, crides } = entorn({ maxPrevisionsPerClient: 2 });
+      await service.getVisibilitat(LLOC, '203.0.113.7');
+      await service.getVisibilitat({ lat: 41.39, lon: 2.17 }, '203.0.113.7');
+
+      const err = await service
+        .getVisibilitat({ lat: 41.98, lon: 2.82 }, '203.0.113.7')
+        .catch((e: unknown) => e);
+
+      expect(err).toBeInstanceOf(ApiError);
+      expect(err).toMatchObject({ status: 429, code: 'too_many_requests' });
+      // 21:20: falten 40 minuts per a l'hora següent.
+      expect((err as ApiError).headers).toEqual({ 'Retry-After': String(40 * 60) });
+      expect(crides()).toBe(2);
+    });
+
+    it('les cel·les ja desades i les dels altres clients no hi compten', async () => {
+      const { service, crides } = entorn({ maxPrevisionsPerClient: 1 });
+      await service.getVisibilitat(LLOC, '203.0.113.7');
+
+      // El mateix client torna a la mateixa cel·la: HIT, no és una consulta nova.
+      await expect(service.getVisibilitat(LLOC, '203.0.113.7')).resolves.toMatchObject({
+        cache: 'HIT',
+      });
+      // Un altre client pot fer la seva consulta nova.
+      await expect(
+        service.getVisibilitat({ lat: 41.39, lon: 2.17 }, '198.51.100.4'),
+      ).resolves.toMatchObject({ cache: 'MISS' });
+      // I el primer, la cel·la que ha portat l'altre.
+      await expect(
+        service.getVisibilitat({ lat: 41.39, lon: 2.17 }, '203.0.113.7'),
+      ).resolves.toMatchObject({ cache: 'HIT' });
+      expect(crides()).toBe(2);
+    });
+
+    it("esperar la càrrega d'un altre client no compta com a consulta nova", async () => {
+      const { service } = entorn({ maxPrevisionsPerClient: 1 });
+      await Promise.all([
+        service.getVisibilitat(LLOC, '198.51.100.4'),
+        service.getVisibilitat(LLOC, '203.0.113.7'),
+      ]);
+
+      await expect(
+        service.getVisibilitat({ lat: 41.39, lon: 2.17 }, '203.0.113.7'),
+      ).resolves.toMatchObject({ cache: 'MISS' });
+    });
+
+    it("a l'hora següent es torna a començar", async () => {
+      const { service, avanca } = entorn({ maxPrevisionsPerClient: 1 });
+      await service.getVisibilitat(LLOC, '203.0.113.7');
+      await expect(
+        errorDe(service.getVisibilitat({ lat: 41.39, lon: 2.17 }, '203.0.113.7')),
+      ).resolves.toEqual({ status: 429, code: 'too_many_requests' });
+
+      avanca(40 * 60_000); // 22:00
+      await expect(
+        service.getVisibilitat({ lat: 41.39, lon: 2.17 }, '203.0.113.7'),
+      ).resolves.toMatchObject({ cache: 'MISS' });
+    });
+
+    it('un 429 no gasta cap consulta del sostre global', async () => {
+      const { service } = entorn({ maxPrevisionsPerClient: 1, maxPrevisionsPerHora: 2 });
+      await service.getVisibilitat(LLOC, '203.0.113.7');
+      for (const lon of [2.17, 2.18, 2.19]) {
+        await expect(
+          errorDe(service.getVisibilitat({ lat: 41.39, lon }, '203.0.113.7')),
+        ).resolves.toMatchObject({ status: 429 });
+      }
+
+      await expect(
+        service.getVisibilitat({ lat: 41.39, lon: 2.17 }, '198.51.100.4'),
+      ).resolves.toMatchObject({ cache: 'MISS' });
     });
   });
 });

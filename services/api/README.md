@@ -84,9 +84,9 @@ src/
   visibilitat/
     catalunya.ts        `isInCatalonia`: dins del contorn o a 1,5 km o menys (codi pur)
     contornCatalunya.ts Contorn oficial de l'ICGC simplificat (MultiPolygon). Generat: data/README.md
-    lruCache.ts         Memòria cau amb caducitat, LRU i una sola càrrega per clau
-    sqmRepository.ts    SQM del punt publicat més proper (PostGIS)
-    visibilitatService.ts  Cel·la, previsió en memòria cau, efemèrides i fórmula de @talaia/index
+    lruCache.ts         Memòria cau amb caducitat, LRU, una sola càrrega per clau i la caducada si falla
+    sqmRepository.ts    El punt publicat amb SQM més proper i la seva posició (PostGIS)
+    visibilitatService.ts  Cel·la, previsió i SQM en memòria cau, límits d'Open-Meteo, efemèrides i fórmula
   middleware/errors.ts  ApiError, 404 i handler central d'errors
 ```
 
@@ -202,12 +202,15 @@ L'índex de visibilitat d'**una ubicació qualsevol de Catalunya**, la que l'usu
 - **Paràmetres:** `lat` i `lon` (graus WGS84, obligatoris) i `hora` (opcional, per defecte ara): un instant ISO 8601 **amb zona** (`2026-11-12T21:00:00Z` o `…+01:00`), del qual compta l'hora UTC que el conté. Des de l'hora en curs fins a **72 hores** endavant.
 - **Dins de Catalunya:** el límit oficial de l'ICGC (la unió de les províncies, 1:50.000), simplificat a 200 m i generat per `data/scripts/build-contorn-catalunya.ts` (`visibilitat/contornCatalunya.ts`, no s'edita a mà), amb un marge d'**1,5 km**: un lloc és dins si és dins del contorn o a 1,5 km o menys de la ratlla. Inclou Llívia i deixa fora Andorra.
 - **La cel·la:** la ubicació s'arrodoneix a **0,01°** (~1 km). Hi surten `lat` i `lon`, i és on es demana la previsió i es calculen les efemèrides.
-- **La foscor:** l'SQM del punt publicat més proper, si n'hi ha un a **5 km** o menys; si no, `sqm: null` i `index.foscorEstimada: true` (la fórmula fa servir 0,6). Sense `DATABASE_URL`, o si la base de dades falla, també: la ruta no depèn de la base de dades.
-- **Memòria cau:** la previsió de cada cel·la (de l'hora en curs en endavant) i el seu SQM es guarden en memòria **fins al minut 5 de l'hora següent**, quan el worker també torna a demanar la previsió. Una segona consulta de la mateixa cel·la, de qualsevol hora, ja no crida Open-Meteo (`X-Cache: HIT`; la primera, `MISS`). Com a molt **500 cel·les**: en passar-se'n, surt la que fa més temps que no es fa servir. Les consultes simultànies de la mateixa cel·la comparteixen una sola crida, i els errors no es desen.
-- **Quota d'Open-Meteo:** com a molt **250 crides noves per hora** (UTC) des de l'API, perquè la quota diària és compartida amb el worker. Passat el sostre, 503 fins a l'hora següent; les cel·les que ja són a la memòria cau es continuen servint. Timeout de 5 s.
+- **La foscor:** l'SQM del punt publicat més proper, si n'hi ha un a **1 km** o menys (la cel·la del mapa de foscor). Només compta com a **mesurada** si el punt és a la mateixa cel·la de 0,01°; si és d'una de veïna, el valor es fa servir però `index.foscorEstimada` és `true`. Sense cap punt prou a prop, `sqm: null` i la foscor estimada (0,6). La consulta té un timeout d'**1 s**: si la base de dades falla o tarda, la foscor és estimada, no es desa i la petició següent ho torna a provar. Sense `DATABASE_URL`, sempre estimada: la ruta no depèn de la base de dades.
+- **Memòria cau:** la previsió de cada cel·la (de l'hora en curs en endavant) i, a part, el seu SQM es guarden en memòria **fins al minut 5 de l'hora següent**, quan el worker també torna a demanar la previsió. Com a molt **500 cel·les**: en passar-se'n, surt la que fa més temps que no es fa servir. Les consultes simultànies de la mateixa cel·la comparteixen una sola crida, i els errors no es desen. La capçalera `X-Cache` diu d'on surt la previsió:
+  - `MISS`: aquesta petició ha cridat Open-Meteo.
+  - `HIT`: no l'ha cridat, perquè la previsió ja hi era o l'ha portada una petició simultània que esperava. Una segona consulta de la mateixa cel·la, de qualsevol hora, és un `HIT`.
+  - `STALE`: Open-Meteo ha fallat (o s'ha arribat a un dels límits) i és la previsió caducada de la cel·la, si en fa menys de **6 hores**. Si no n'hi ha cap, l'error.
+- **Quota d'Open-Meteo:** com a molt **20 consultes noves per client i hora** (UTC) i **250 en total**, perquè la quota diària és compartida amb el worker. Una consulta nova és una que crida Open-Meteo (`MISS`): les cel·les a la memòria cau no hi compten. Passat el límit del client, **429 `too_many_requests`** amb `Retry-After` (segons fins a l'hora següent); passat el total, 503 `meteo_unavailable`. El client és `req.ip`: amb `trust proxy` a un salt (`app.ts`), l'adreça que Nginx afegeix al final de `X-Forwarded-For`, que el client no pot falsejar. Timeout de 5 s per a Open-Meteo.
 - **HTTP:** `Cache-Control: private, max-age=<segons fins a la propera hora>`, com `/recomanacions`: la URL porta la ubicació de qui consulta. Per la mateixa raó, el log no en mostra mai les coordenades.
 
-Errors: `lat`, `lon` o `hora` mal formats → 400 `validation_error`; fora de Catalunya → 422 `fora_de_catalunya`; hora abans de l'actual o més enllà de 72 h → 422 `hora_sense_previsio`; Open-Meteo no respon o s'ha arribat al sostre → 503 `meteo_unavailable`. L'app (TG-131) mostra un missatge per a cada codi.
+Errors: `lat`, `lon` o `hora` mal formats → 400 `validation_error`; fora de Catalunya → 422 `fora_de_catalunya`; hora abans de l'actual o més enllà de 72 h → 422 `hora_sense_previsio`; massa consultes noves del client → 429 `too_many_requests`; Open-Meteo no respon o s'ha arribat al sostre, i no hi ha cap previsió caducada per servir → 503 `meteo_unavailable`. L'app (TG-131) mostra un missatge per a cada codi.
 
 ## `/perfil` (TG-84, HU36 · TG-165)
 
@@ -262,8 +265,9 @@ Tota resposta d'error té el format `{ error: { code, message } }`:
 | 404 | `punt_not_found` | `/punts/{id}` i `/punts/{id}/index`: cap punt publicat amb aquest `id` |
 | 422 | `fora_de_catalunya` | `GET /visibilitat`: la ubicació és fora de Catalunya |
 | 422 | `hora_sense_previsio` | `GET /visibilitat`: l'hora no és entre l'hora en curs i 72 hores endavant (o Open-Meteo no l'ha tornat) |
+| 429 | `too_many_requests` | `GET /visibilitat`: el client ja ha fet 20 consultes noves aquesta hora. Porta `Retry-After` |
 | 503 | `database_unavailable` | No hi ha `DATABASE_URL` o no es pot llegir la base de dades |
 | 503 | `meteo_unavailable` | `GET /visibilitat`: Open-Meteo no respon o s'ha arribat al màxim de consultes noves d'aquesta hora |
 | 500 | `internal_error` | Error inesperat (es registra al log i no s'envia el detall) |
 
-Per a un error controlat: `throw new ApiError(status, 'codi', 'missatge')`. Express 5 també captura els errors de les funcions `async`.
+Per a un error controlat: `throw new ApiError(status, 'codi', 'missatge')`, i un quart paràmetre opcional amb capçaleres (`{ 'Retry-After': '60' }`). Express 5 també captura els errors de les funcions `async`.
