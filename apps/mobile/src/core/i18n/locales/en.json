@@ -308,21 +308,48 @@
       "title": "New alert",
       "back": "Back",
       "goalTitle": "What do you want to see",
-      "originTitle": "From where",
-      "distance": {
-        "title": "How far",
-        "value": "{{km}} km"
-      },
+      "originTitle": "Where",
       "minIndex": {
         "title": "Minimum index",
-        "value": "{{index}} or more",
-        "hint": "We'll let you know when a spot reaches it."
+        "value": "{{index}}, {{level}}"
       },
       "cta": "Create alert",
       "saving": "Creating alert…",
       "errors": {
         "limit": "You already have the maximum number of alerts. Delete one to create a new one.",
         "generic": "We couldn't create the alert. Please try again."
+      },
+      "originModes": {
+        "current": "My location",
+        "zone": "A specific area"
+      },
+      "zone": {
+        "title": "Choose the area",
+        "hint": "Move the map until the pin is where you want it.",
+        "map": "Map to choose the area",
+        "confirm": "Choose this area",
+        "naming": "Looking up the name…",
+        "close": "Close",
+        "empty": "No area chosen",
+        "pick": "Choose",
+        "change": "Change",
+        "unnamed": "Chosen area"
+      },
+      "travel": {
+        "title": "Maximum distance",
+        "minutes": "{{minutes}} min",
+        "hours": "{{hours}} h",
+        "hoursMinutes": "{{hours}} h {{minutes}} min"
+      },
+      "notify": {
+        "title": "When we notify you",
+        "onReach": "When it's reached",
+        "atHour": "At a set time",
+        "hourValue": "Same day at {{hour}}",
+        "change": "Change",
+        "hourTitle": "Notification time",
+        "done": "Done",
+        "required": "Choose at least one way to be notified."
       }
     }
   },

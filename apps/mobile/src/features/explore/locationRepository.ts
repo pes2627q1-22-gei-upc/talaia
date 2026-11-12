@@ -28,12 +28,18 @@ export async function getCurrentPlace(): Promise<CurrentPlace> {
     (await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }));
   const { latitude: lat, longitude: lon } = position.coords;
 
-  // El nom és un extra: si el geocodificador falla, la posició continua servint.
+  return { status: 'ready', place: { name: await placeName(lat, lon), lat, lon } };
+}
+
+/**
+ * El municipi (o la comarca) d'un punt, amb el geocodificador del mòbil. El nom és un extra: si
+ * falla, és buit i la posició continua servint.
+ */
+export async function placeName(lat: number, lon: number): Promise<string> {
   const [address] = await Location.reverseGeocodeAsync({ latitude: lat, longitude: lon }).catch(
     () => [],
   );
-  const name = address?.city ?? address?.subregion ?? address?.region ?? '';
-  return { status: 'ready', place: { name, lat, lon } };
+  return address?.city ?? address?.subregion ?? address?.region ?? '';
 }
 
 /** Comparteix la ubicació entre Explora i el mapa, sense duplicar peticions. */

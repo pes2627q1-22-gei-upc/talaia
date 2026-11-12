@@ -111,7 +111,8 @@
           "/node_modules/",
           "/src/features/map/__tests__/NightMap\\.test\\.tsx",
           "/src/features/map/__tests__/pointMarkers\\.images\\.test\\.ts",
-          "/src/features/point/__tests__/PointLocationMap\\.test\\.tsx"
+          "/src/features/point/__tests__/PointLocationMap\\.test\\.tsx",
+          "/src/features/alerts/__tests__/ZonePickerMap\\.test\\.tsx"
         ]
       },
       {
@@ -120,7 +121,8 @@
         "testMatch": [
           "<rootDir>/src/features/map/__tests__/NightMap.test.tsx",
           "<rootDir>/src/features/map/__tests__/pointMarkers.images.test.ts",
-          "<rootDir>/src/features/point/__tests__/PointLocationMap.test.tsx"
+          "<rootDir>/src/features/point/__tests__/PointLocationMap.test.tsx",
+          "<rootDir>/src/features/alerts/__tests__/ZonePickerMap.test.tsx"
         ],
         "transformIgnorePatterns": [
           "/node_modules/(?!(.pnpm|react-native|@react-native|@react-native-community|expo|@expo|@expo-google-fonts|react-navigation|@react-navigation|@sentry/react-native|native-base|standard-navigation|@shopify/react-native-skia))",

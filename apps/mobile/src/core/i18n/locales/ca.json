@@ -308,21 +308,48 @@
       "title": "Nova alerta",
       "back": "Enrere",
       "goalTitle": "Què vols veure",
-      "originTitle": "Des d'on",
-      "distance": {
-        "title": "Fins a quina distància",
-        "value": "{{km}} km"
-      },
+      "originTitle": "On",
       "minIndex": {
         "title": "Índex mínim",
-        "value": "{{index}} o més",
-        "hint": "T'avisarem quan algun punt hi arribi."
+        "value": "{{index}}, {{level}}"
       },
       "cta": "Crea l'alerta",
       "saving": "Creant l'alerta…",
       "errors": {
         "limit": "Ja tens el màxim d'alertes. Esborra'n alguna per crear-ne una de nova.",
         "generic": "No hem pogut crear l'alerta. Torna-ho a provar."
+      },
+      "originModes": {
+        "current": "La meva ubicació",
+        "zone": "Una zona concreta"
+      },
+      "zone": {
+        "title": "Tria la zona",
+        "hint": "Mou el mapa fins que l'agulla quedi on vols.",
+        "map": "Mapa per triar la zona",
+        "confirm": "Tria aquesta zona",
+        "naming": "Buscant el nom…",
+        "close": "Tanca",
+        "empty": "Cap zona triada",
+        "pick": "Tria-la",
+        "change": "Canvia",
+        "unnamed": "Zona triada"
+      },
+      "travel": {
+        "title": "Distància màxima",
+        "minutes": "{{minutes}} min",
+        "hours": "{{hours}} h",
+        "hoursMinutes": "{{hours}} h {{minutes}} min"
+      },
+      "notify": {
+        "title": "Quan t'avisem",
+        "onReach": "Quan s'hi arribi",
+        "atHour": "A una hora",
+        "hourValue": "El mateix dia a les {{hour}}",
+        "change": "Canvia",
+        "hourTitle": "Hora de l'avís",
+        "done": "Fet",
+        "required": "Tria com a mínim una manera d'avisar-te."
       }
     }
   },

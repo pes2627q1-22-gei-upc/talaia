@@ -308,21 +308,48 @@
       "title": "Nueva alerta",
       "back": "Atrás",
       "goalTitle": "Qué quieres ver",
-      "originTitle": "Desde dónde",
-      "distance": {
-        "title": "Hasta qué distancia",
-        "value": "{{km}} km"
-      },
+      "originTitle": "Dónde",
       "minIndex": {
         "title": "Índice mínimo",
-        "value": "{{index}} o más",
-        "hint": "Te avisaremos cuando algún punto lo alcance."
+        "value": "{{index}}, {{level}}"
       },
       "cta": "Crear la alerta",
       "saving": "Creando la alerta…",
       "errors": {
         "limit": "Ya tienes el máximo de alertas. Borra alguna para crear una nueva.",
         "generic": "No hemos podido crear la alerta. Vuelve a intentarlo."
+      },
+      "originModes": {
+        "current": "Mi ubicación",
+        "zone": "Una zona concreta"
+      },
+      "zone": {
+        "title": "Elige la zona",
+        "hint": "Mueve el mapa hasta que la aguja quede donde quieres.",
+        "map": "Mapa para elegir la zona",
+        "confirm": "Elegir esta zona",
+        "naming": "Buscando el nombre…",
+        "close": "Cerrar",
+        "empty": "Ninguna zona elegida",
+        "pick": "Elígela",
+        "change": "Cambiar",
+        "unnamed": "Zona elegida"
+      },
+      "travel": {
+        "title": "Distancia máxima",
+        "minutes": "{{minutes}} min",
+        "hours": "{{hours}} h",
+        "hoursMinutes": "{{hours}} h {{minutes}} min"
+      },
+      "notify": {
+        "title": "Cuándo te avisamos",
+        "onReach": "Cuando se alcance",
+        "atHour": "A una hora",
+        "hourValue": "El mismo día a las {{hour}}",
+        "change": "Cambiar",
+        "hourTitle": "Hora del aviso",
+        "done": "Hecho",
+        "required": "Elige al menos una forma de avisarte."
       }
     }
   },

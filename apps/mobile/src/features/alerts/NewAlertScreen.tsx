@@ -4,16 +4,20 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { colors, motion, radii, sizes, spacing } from '@/core/theme/tokens';
+import { type ColorToken, colors, motion, radii, sizes, spacing } from '@/core/theme/tokens';
 import type { GRID_GOALS } from '@/features/explore/exploreModel';
 import { FieldRow } from '@/features/explore/FieldRow';
 import { GoalCard } from '@/features/explore/GoalCard';
 import { AppText } from '@/shared/ui/AppText';
 import { Button } from '@/shared/ui/Button';
+import { Chip } from '@/shared/ui/Chip';
 import { PressableScale } from '@/shared/ui/PressableScale';
+import { SegmentedControl } from '@/shared/ui/SegmentedControl';
 import { Slider } from '@/shared/ui/Slider';
 
+import { NotifyHourSheet } from './NotifyHourSheet';
 import { useNewAlertViewModel } from './useNewAlertViewModel';
+import { ZoneSheet } from './ZoneSheet';
 
 /** Les mateixes icones de fenomen que «Què vols veure?» (mockup 02). */
 const GOAL_ICONS: Record<(typeof GRID_GOALS)[number], number> = {
@@ -25,11 +29,9 @@ const GOAL_ICONS: Record<(typeof GRID_GOALS)[number], number> = {
   cel_estrellat: require('@/assets/images/explora/cel-estrellat.svg'),
 };
 const locationIcon = require('@/assets/images/explora/ubicacio.svg');
-const backIcon = {
-  uri: `data:image/svg+xml;utf8,${encodeURIComponent(
-    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="${colors.lluna}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 6L8.5 12L14.5 18"/></svg>`,
-  )}`,
-};
+const clockIcon = require('@/assets/images/explora/rellotge.svg');
+// Un fitxer, com les icones d'Explora: una `data:` URI amb l'SVG no es pintava a Android.
+const backIcon = require('@/assets/images/alerts/enrere.svg');
 
 /** Entrada en cascada, com a Explora: fosa i 6 pt, com a molt 6 blocs. */
 function Enter({ index, children }: PropsWithChildren<{ index: number }>) {
@@ -54,19 +56,23 @@ type SliderFieldProps = {
   step: number;
   minLabel: string;
   maxLabel: string;
-  hint?: string;
+  /** Color del valor (la franja de l'índex). */
+  color?: ColorToken;
+  segments?: readonly { until: number; color: ColorToken }[];
   onChange: (value: number) => void;
 };
 
 /** Títol i valor a dalt, barra i límits a sota (com «Fins a quina distància» d'Explora). */
-function SliderField({ title, label, minLabel, maxLabel, hint, ...slider }: SliderFieldProps) {
+function SliderField({ title, label, minLabel, maxLabel, color, ...slider }: SliderFieldProps) {
   return (
     <>
       <View style={[styles.sliderHeader, styles.sectionTitle]}>
         <AppText variant="link" color="boira" style={styles.shrink}>
           {title}
         </AppText>
-        <AppText variant="label">{label}</AppText>
+        <AppText variant="label" color={color}>
+          {label}
+        </AppText>
       </View>
       <Slider {...slider} accessibilityLabel={title} accessibilityValueText={label} />
       <View style={styles.limits}>
@@ -77,11 +83,6 @@ function SliderField({ title, label, minLabel, maxLabel, hint, ...slider }: Slid
           {maxLabel}
         </AppText>
       </View>
-      {hint ? (
-        <AppText variant="caption" color="boira" style={styles.hint}>
-          {hint}
-        </AppText>
-      ) : null}
     </>
   );
 }
@@ -94,11 +95,7 @@ export function NewAlertScreen() {
   return (
     <View style={styles.root}>
       <SafeAreaView edges={['top']} style={styles.safeArea} testID="new-alert-safe-area">
-        <ScrollView
-          contentContainerStyle={styles.content}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-        >
+        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           <Enter index={0}>
             <View style={styles.header}>
               <PressableScale
@@ -141,21 +138,57 @@ export function NewAlertScreen() {
             <AppText variant="link" color="boira" style={styles.sectionTitle}>
               {vm.originTitle}
             </AppText>
-            <FieldRow
-              icon={locationIcon}
-              label={vm.origin.label}
-              hint={vm.origin.hint}
-              loading={vm.origin.state === 'loading'}
-              onPress={vm.origin.onPress}
+            <SegmentedControl
+              options={vm.originModes.options}
+              selectedIndex={vm.originModes.selectedIndex}
+              onChange={vm.originModes.onChange}
+              onReselect={vm.originModes.onChange}
             />
+            <View style={styles.gap}>
+              <FieldRow
+                icon={locationIcon}
+                label={vm.origin.label}
+                hint={vm.origin.hint}
+                loading={vm.origin.state === 'loading'}
+                onPress={vm.origin.onPress}
+              />
+            </View>
           </Enter>
 
           <Enter index={3}>
-            <SliderField {...vm.distance} />
+            <SliderField {...vm.travel} />
+            <SliderField {...vm.minIndex} />
           </Enter>
 
           <Enter index={4}>
-            <SliderField {...vm.minIndex} />
+            <AppText variant="link" color="boira" style={styles.sectionTitle}>
+              {vm.notifyTitle}
+            </AppText>
+            <View style={styles.chips}>
+              {vm.notifyOptions.map((option) => (
+                <Chip
+                  key={option.id}
+                  label={option.label}
+                  selected={option.selected}
+                  onPress={option.onPress}
+                />
+              ))}
+            </View>
+            {vm.notifyHour ? (
+              <Animated.View entering={FadeIn.duration(motion.fast)} style={styles.gap}>
+                <FieldRow
+                  icon={clockIcon}
+                  label={vm.notifyHour.label}
+                  hint={vm.notifyHour.hint}
+                  onPress={vm.notifyHour.onPress}
+                />
+              </Animated.View>
+            ) : null}
+            {vm.notifyHint ? (
+              <AppText variant="caption" color="boira" style={styles.gap}>
+                {vm.notifyHint}
+              </AppText>
+            ) : null}
           </Enter>
 
           <Enter index={5}>
@@ -176,6 +209,9 @@ export function NewAlertScreen() {
           </Enter>
         </ScrollView>
       </SafeAreaView>
+
+      <ZoneSheet {...vm.zoneSheet} />
+      <NotifyHourSheet {...vm.hourSheet} />
     </View>
   );
 }
@@ -201,6 +237,8 @@ const styles = StyleSheet.create({
   sectionTitle: { marginTop: spacing.ml, marginBottom: spacing.sm },
   goals: { gap: spacing.sm },
   goalRow: { flexDirection: 'row', gap: spacing.sm },
+  gap: { marginTop: spacing.sm },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   sliderHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -208,7 +246,6 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   limits: { flexDirection: 'row', justifyContent: 'space-between' },
-  hint: { marginTop: spacing.xs },
   error: { marginTop: spacing.ml },
   cta: { marginTop: spacing.ml },
 });

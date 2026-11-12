@@ -9,6 +9,8 @@ const NEW_ALERT = {
   origen: { lat: 41.387, lon: 2.169 },
   distanciaMaxKm: 50,
   indexMinim: 70,
+  avisaEnArribar: false,
+  horaAvis: 18,
 } as const;
 
 describe('alertsRepository', () => {
