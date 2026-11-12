@@ -7,6 +7,7 @@
   },
   "workspaces": [
     "apps/mobile",
+    "apps/admin",
     "services/api",
     "services/worker",
     "packages/shared",
@@ -16,6 +17,7 @@
   ],
   "scripts": {
     "mobile": "npm run start --workspace apps/mobile",
+    "admin": "npm run dev --workspace apps/admin",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
     "lint": "eslint .",

@@ -35,6 +35,7 @@ Format: **Context → Decisió → Conseqüències**. Estat: `Acceptada`, `Propo
 | [0027](0027-index-per-objectiu.md) | Índex per objectiu: `100 × núvols × condició × qualitat`, amb un perfil per objectiu (posta, Lluna, pluja d'estels, eclipsi, Via Làctia…); el del cel estrellat és la v1 | Proposada |
 | [0028](0028-notificacions-push.md) | Notificacions push amb Expo Push Service: tokens a `dispositius_push` via l'API, el worker envia després de cada recàlcul (una per alerta i nit), `data: { puntId }` obre la fitxa; development build d'EAS per provar-les a Android | Proposada |
 | [0029](0029-rol-admin-i-bloqueig.md) | Rol d'administrador i bloqueig de comptes a `perfils`, llegits a cada petició autenticada: 403 `account_blocked` i `requireAdmin` | Acceptada |
+| [0030](0030-web-administracio-vite-react.md) | Web d'administració separada amb Vite + React + TypeScript, compilada com a fitxers estàtics per a Nginx (P11) | Acceptada |
 | [0031](0031-visibilitat-ubicacio-al-moment.md) | Índex d'una ubicació qualsevol de Catalunya calculat al moment a l'API (`GET /visibilitat`): previsió per cel·la de 0,01° en memòria cau LRU fins al minut 5 de l'hora següent, SQM del punt del catàleg a 5 km o menys, polígon aproximat de Catalunya i sostre de 250 consultes a Open-Meteo per hora; el càlcul (Open-Meteo, astronomia i fórmula) es comparteix amb el worker a `@talaia/index` | Proposada |
 
 Decisions encara obertes: [pendents.md](pendents.md).
