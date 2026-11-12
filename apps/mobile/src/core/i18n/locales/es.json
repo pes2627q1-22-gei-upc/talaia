@@ -19,7 +19,17 @@
     "retry": "Volver a intentar",
     "back": "Atrás",
     "daytime": "Es de día",
-    "daytimeHint": "El índice cuenta a partir del anochecer. Hasta entonces, los puntos salen en gris."
+    "daytimeHint": "El índice cuenta a partir del anochecer. Hasta entonces, los puntos salen en gris.",
+    "origin": "Punto de salida",
+    "nearby": "Muestra los mejores puntos cerca de ti",
+    "pick": {
+      "title": "Toca el mapa para elegir desde dónde sales",
+      "denied": "No tenemos tu ubicación: buscaremos los mejores puntos cerca del lugar que toques.",
+      "error": "No hemos encontrado dónde estás: buscaremos los mejores puntos cerca del lugar que toques.",
+      "allow": "Permitir la ubicación",
+      "settings": "Abrir Ajustes",
+      "close": "Cerrar"
+    }
   },
   "calendar": {
     "title": "Calendario",
@@ -356,7 +366,9 @@
       "tomorrow": "mañana por la noche"
     },
     "from": "Desde {{place}}, hasta {{travel}}",
+    "from_vowel": "Desde {{place}}, hasta {{travel}}",
     "fromHere": "Desde donde estás, hasta {{travel}}",
+    "fromPicked": "Desde el punto elegido, hasta {{travel}}",
     "duration": {
       "minutes": "{{minutes}} min",
       "hours": "{{hours}} h",
@@ -368,11 +380,22 @@
     "loading": "Buscando los mejores puntos…",
     "error": "No hemos podido cargar las recomendaciones",
     "empty": "No hay ningún punto a menos de {{travel}}",
+    "empty_vowel": "No hay ningún punto a menos de {{travel}}",
     "emptyHint": "Amplía la distancia o elige otra noche.",
     "noIndex": "Aún sin previsión",
     "bestHour": "Mejor hora: {{hour}}",
     "byCar": "{{travel}} en coche",
     "collapseSheet": "Plegar la lista",
-    "expandSheet": "Desplegar la lista"
+    "expandSheet": "Desplegar la lista",
+    "nearby": {
+      "label": "Cerca de mí",
+      "title": "Cerca de mí, {{when}}",
+      "best": "Mejores puntos cerca",
+      "here": "Desde donde estás",
+      "picked": "Desde el punto elegido",
+      "place": "Desde {{place}}",
+      "place_vowel": "Desde {{place}}",
+      "emptyHint": "Para ir más lejos, elige la distancia en «¿Qué quieres ver?»."
+    }
   }
 }

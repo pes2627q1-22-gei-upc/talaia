@@ -19,7 +19,17 @@
     "retry": "Try again",
     "back": "Back",
     "daytime": "It's daytime",
-    "daytimeHint": "The index counts from dusk onwards. Until then, points show in grey."
+    "daytimeHint": "The index counts from dusk onwards. Until then, points show in grey.",
+    "origin": "Starting point",
+    "nearby": "Show the best spots near you",
+    "pick": {
+      "title": "Tap the map to choose where you start from",
+      "denied": "We don't have your location: we'll find the best spots near the place you tap.",
+      "error": "We couldn't find where you are: we'll find the best spots near the place you tap.",
+      "allow": "Allow location",
+      "settings": "Open Settings",
+      "close": "Close"
+    }
   },
   "calendar": {
     "title": "Calendar",
@@ -356,7 +366,9 @@
       "tomorrow": "tomorrow night"
     },
     "from": "From {{place}}, up to {{travel}}",
+    "from_vowel": "From {{place}}, up to {{travel}}",
     "fromHere": "From where you are, up to {{travel}}",
+    "fromPicked": "From the chosen spot, up to {{travel}}",
     "duration": {
       "minutes": "{{minutes}} min",
       "hours": "{{hours}} h",
@@ -368,11 +380,22 @@
     "loading": "Finding the best spots…",
     "error": "We couldn't load the recommendations",
     "empty": "No spots within {{travel}}",
+    "empty_vowel": "No spots within {{travel}}",
     "emptyHint": "Try a longer distance or another night.",
     "noIndex": "No forecast yet",
     "bestHour": "Best time: {{hour}}",
     "byCar": "{{travel}} by car",
     "collapseSheet": "Collapse the list",
-    "expandSheet": "Expand the list"
+    "expandSheet": "Expand the list",
+    "nearby": {
+      "label": "Near me",
+      "title": "Near me, {{when}}",
+      "best": "Best spots nearby",
+      "here": "From where you are",
+      "picked": "From the chosen spot",
+      "place": "From {{place}}",
+      "place_vowel": "From {{place}}",
+      "emptyHint": "To go further, choose the distance in “What do you want to see?”."
+    }
   }
 }
