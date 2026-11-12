@@ -56,6 +56,18 @@ const ERRORS_ADMIN = {
 
 registry.registerPath({
   method: 'get',
+  path: '/admin/me',
+  tags: ['Admin'],
+  security: [{ BearerSupabase: [] }],
+  summary: 'Comprova si el compte actual pot accedir a la web d’administració',
+  responses: {
+    204: { description: 'Compte administrador actiu' },
+    ...ERRORS_ADMIN,
+  },
+});
+
+registry.registerPath({
+  method: 'get',
   path: '/admin/usuaris',
   tags: ['Admin'],
   security: [{ BearerSupabase: [] }],
@@ -110,6 +122,10 @@ export function createAdminRouter({
 }: AdminRouterOptions): Router {
   const router = Router();
   router.use(requireUser, requireAdmin);
+
+  router.get('/me', (_req: Request, res: Response) => {
+    res.set('Cache-Control', 'no-store').status(204).end();
+  });
 
   router.get('/usuaris', async (_req: Request, res: Response, next: NextFunction) => {
     try {

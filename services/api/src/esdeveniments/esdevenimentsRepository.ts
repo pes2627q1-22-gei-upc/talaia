@@ -16,6 +16,7 @@ export type FilaEsdeveniment = {
   inici: Date;
   fi: Date;
   maxim: Date | null;
+  precisio: unknown;
   textosFenomen: unknown;
   textosEsdeveniment: unknown;
   organitzacio: 'IMO' | 'NASA' | null;
@@ -30,36 +31,42 @@ export type PuntReferencia = {
 
 export type EsdevenimentsRepository = {
   list(inici: Date, fi: Date, tipus?: TipusFenomen): Promise<FilaEsdeveniment[]>;
+  findPublicById(id: string): Promise<FilaEsdeveniment | undefined>;
   puntReferencia(): Promise<PuntReferencia | undefined>;
 };
 
 /** Consultes del calendari i del punt oficial (ADR-0013 i ADR-0026). */
 export function createEsdevenimentsRepository(db: Db): EsdevenimentsRepository {
+  const publicEvents = () =>
+    db
+      .selectFrom('esdevenimentsAstronomics as e')
+      .innerJoin('fenomensAstronomics as f', 'f.codi', 'e.fenomenCodi')
+      .leftJoin('fontsAstronomiques as font', 'font.codi', 'e.fontCodi')
+      .select([
+        'e.codi',
+        'f.tipusCodi as tipus',
+        'e.inici',
+        'e.fi',
+        'e.maxim',
+        'e.precisio',
+        'f.textos as textosFenomen',
+        'e.textos as textosEsdeveniment',
+        'font.organitzacio',
+        'e.metodeCalcul',
+      ])
+      .where('e.rellevantCatalunya', '=', true)
+      .where('f.publicableCalendari', '=', true)
+      // La taula interna és extensible; el contracte públic només exposa els tipus acordats.
+      .where('f.tipusCodi', 'in', [...TIPUS_FENOMEN]);
+
   return {
     async list(inici, fi, tipus) {
-      let query = db
-        .selectFrom('esdevenimentsAstronomics as e')
-        .innerJoin('fenomensAstronomics as f', 'f.codi', 'e.fenomenCodi')
-        .leftJoin('fontsAstronomiques as font', 'font.codi', 'e.fontCodi')
-        .select([
-          'e.codi',
-          'f.tipusCodi as tipus',
-          'e.inici',
-          'e.fi',
-          'e.maxim',
-          'f.textos as textosFenomen',
-          'e.textos as textosEsdeveniment',
-          'font.organitzacio',
-          'e.metodeCalcul',
-        ])
-        .where('e.inici', '<', fi)
-        .where('e.fi', '>', inici)
-        .where('e.rellevantCatalunya', '=', true)
-        .where('f.publicableCalendari', '=', true)
-        // La taula interna és extensible; el contracte públic només exposa els tipus acordats.
-        .where('f.tipusCodi', 'in', [...TIPUS_FENOMEN]);
+      let query = publicEvents().where('e.inici', '<', fi).where('e.fi', '>', inici);
       if (tipus) query = query.where('f.tipusCodi', '=', tipus);
       return query.orderBy('e.inici').orderBy('e.codi').execute();
+    },
+    async findPublicById(id) {
+      return publicEvents().where('e.codi', '=', id).executeTakeFirst();
     },
     async puntReferencia() {
       const fila = await db
