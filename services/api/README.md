@@ -67,7 +67,7 @@ src/
     documentCache.ts    Document en memòria amb ETag del contingut (MapDocumentCache), amb invalidate()
     puntsService.ts     Memòria cau i bbox del mapa, i fitxa amb l'índex per hores; errors de la base de dades → 503
     puntsAdminRepository.ts  Consultes de l'administració: tots els punts, crear i editar (HU39)
-    puntsAdminService.ts     409 si l'slug existeix, 404, 503, i descarta el document del mapa a cada canvi
+    puntsAdminService.ts     Regles de l'estat, 409 si l'slug existeix, 404, 503, i descarta el document del mapa a cada canvi
   esdeveniments/
     dates.ts            Límits del dia civil de Catalunya convertits a UTC
     esdevenimentsRepository.ts  Consulta Kysely del calendari i el punt oficial
@@ -223,15 +223,19 @@ Rutes de `/admin/punts` per a la web d'administració (TG-175). Van darrere de `
 - respon 404 `punt_not_found` a `/punts/{id}` i `/punts/{id}/index`, i no surt a `/recomanacions`: aquestes consultes ja filtren `estat = 'PUBLICAT'` a la base de dades i no en guarden cap còpia;
 - el worker ja no en calcula l'índex: `listPublicats` només llegeix els `PUBLICAT`. Les files que ja tenia a `index_visibilitat` s'hi queden fins que el worker esborra les hores velles; si es torna a publicar, se'n recalcula l'índex a la propera execució.
 
+**Estats.** Aquestes rutes només passen un punt de `PUBLICAT` a `DESACTIVAT` i al revés. Un punt `PENDENT` o `REBUTJAT` (proposat per la comunitat, HU28) només canvia d'estat a la moderació (HU40, TG-220): un `PATCH` amb `estat` respon 409 `moderation_required`, i així no es pot publicar cap proposta sense moderar-la. Les seves dades sí que es poden corregir. Les regles es comproven dins de la mateixa transacció que el canvi, amb la fila bloquejada (`select … for update`).
+
 El punt de referència de `/esdeveniments` (`centre-observacio-univers`, ADR-0026) no es pot retirar: sense ell publicat, el calendari d'Aprop respondria 503. Es pot editar i moure, però `{ "estat": "DESACTIVAT" }` respon 409 `reference_point_required`.
 
-**Validació** (la mateixa que el catàleg, `data/scripts/punts.ts`, i els `check` de la taula): `slug` en `kebab-case` (minúscules sense accents, xifres i guions); `lat` 40,5–42,9 i `lon` 0,15–3,35 (la caixa de Catalunya amb marge, que també atura `lat` i `lon` intercanviades); `altitud` enter de 0 a 3.200 m; `horitzoObert` una llista no buida de direccions (`N`, `NE`… `NW`) sense repeticions, o `null`; `sqm` de 10 a 23 (es desa amb 2 decimals); textos sense els espais dels extrems, no buits i amb un màxim (`nom` i `municipi` 100, `descripcio` 1.000, `accessibilitat` 300). Per buidar un camp opcional, `null`. Un camp desconegut (`origen`, `horitzo`, `slug` al `PATCH`…) és un 400. `estat` només admet `PUBLICAT` i `DESACTIVAT`: `PENDENT` i `REBUTJAT` són de la moderació de punts proposats (HU28, HU40).
+**Validació** (la mateixa que el catàleg, `data/scripts/punts.ts`, i els `check` de la taula): `slug` en `kebab-case` (minúscules sense accents, xifres i guions); `lat` 40,5–42,9 i `lon` 0,15–3,35 (la caixa de Catalunya amb marge, que també atura `lat` i `lon` intercanviades); `altitud` enter de 0 a 3.200 m; `horitzoObert` una llista no buida de direccions (`N`, `NE`… `NW`) sense repeticions, o `null`; `sqm` de 10 a 23 (es desa amb 2 decimals); textos sense els espais dels extrems, no buits i amb un màxim (`nom` i `municipi` 100, `descripcio` 1.000, `accessibilitat` 300). Per buidar un camp opcional, `null`. Un camp desconegut (`origen`, `horitzo`, `slug` al `PATCH`…) és un 400. `estat` només admet `PUBLICAT` i `DESACTIVAT`. La caixa no és el contorn de Catalunya (hi caben Andorra i trossos de França i del mar); la PR #129 (TG-130) porta un polígon (`isInCatalonia`) per a `/visibilitat`, i quan totes dues siguin a `snapshot` aquesta validació ha de fer servir el mateix.
 
-**Foscor, horitzó i índex d'un punt nou.** Sense `sqm`, el punt té la foscor estimada (`foscorEstimada`, ADR-0020) fins que algú la hi posi; `horitzo` (el perfil de l'ICGC, ADR-0022) queda `null`, i l'estació XEMA més propera la hi posa el worker el dia 1 de cada mes. L'índex és `null` (marcador gris) fins a la propera execució horària del worker. Si un `PATCH` mou el punt més de 10 m (`MATEIX_LLOC_M`), `horitzo`, `estacio_xema` i, si el mateix `PATCH` no porta `sqm`, també `sqm` tornen a `null`, perquè eren del lloc d'abans.
+**Foscor, horitzó, estació i índex d'un punt nou.** Sense `sqm`, el punt té la foscor estimada (`foscorEstimada`, ADR-0020) fins que algú la hi posi, i `horitzo` (el perfil de l'ICGC, ADR-0022) queda `null`. L'estació XEMA (`estacio_xema`) és la més propera al moment, amb la mateixa subconsulta que fa servir el worker cada mes (`estacioXemaMesPropera` de `@talaia/db`); si encara no hi ha cap estació carregada, `null`. L'índex és `null` (marcador gris) fins a la propera execució horària del worker.
+
+**Moure un punt.** Si un `PATCH` mou el punt més de 10 m (`MATEIX_LLOC_M`), el que era del lloc d'abans no es conserva, tot en la mateixa transacció: s'esborra l'índex que el worker n'havia calculat (`index_visibilitat`), de manera que el mapa i la fitxa el mostren sense índex (gris) i no amb el d'un altre lloc fins a la propera hora del worker; `horitzo` torna a `null`; l'estació XEMA passa a ser la més propera al lloc nou, i `sqm` torna a `null` llevat que el `PATCH` en porti un de **diferent** del que hi havia. Així, si la web envia el punt sencer en moure'l, l'`sqm` antic que hi viatja no es conserva com si fos del lloc nou. Per desar el mateix `sqm` al lloc nou (la mateixa cel·la d'1 km), cal un segon `PATCH` sense moure'l. A menys de 10 m és el mateix lloc (l'arrodoniment del formulari): només canvien les coordenades. El document del mapa es descarta com a qualsevol canvi.
 
 **Punts del seed.** Els 32 punts del catàleg inicial surten de `data/punts_observacio.geojson` (ADR-0017). Si es torna a aplicar el seed (`supabase db reset` o `db push --include-seed`), en restaura les metadades i la ubicació, però no l'`estat`: un punt retirat continua retirat. Un canvi de metadades d'un punt del seed fet des de l'administració s'ha de copiar també al GeoJSON perquè no es perdi.
 
-Errors: 401 `unauthorized`; 403 `forbidden` o `account_blocked`; 400 `validation_error`; 404 `punt_not_found`; 409 `slug_already_exists` (`POST`) o `reference_point_required` (`PATCH`); 503 `database_unavailable`.
+Errors: 401 `unauthorized`; 403 `forbidden` o `account_blocked`; 400 `validation_error`; 404 `punt_not_found`; 409 `slug_already_exists` (`POST`), o `moderation_required` o `reference_point_required` (`PATCH`); 503 `database_unavailable`.
 
 ## Afegir una ruta
 
@@ -257,6 +261,7 @@ Tota resposta d'error té el format `{ error: { code, message } }`:
 | 404 | `usuari_not_found` | `PATCH /admin/usuaris/{id}`: cap perfil amb aquest `id` |
 | 404 | `punt_not_found` | `/punts/{id}` i `/punts/{id}/index`: cap punt publicat amb aquest `id`. `/admin/punts/{id}`: cap punt amb aquest `id` |
 | 409 | `slug_already_exists` | `POST /admin/punts`: ja hi ha un punt amb aquest `slug` |
+| 409 | `moderation_required` | `PATCH /admin/punts/{id}`: es vol canviar l'estat d'un punt `PENDENT` o `REBUTJAT`, que es fa des de la moderació |
 | 409 | `reference_point_required` | `PATCH /admin/punts/{id}`: es vol retirar el punt de referència de `/esdeveniments` (ADR-0026) |
 | 503 | `database_unavailable` | No hi ha `DATABASE_URL` o no es pot llegir la base de dades |
 | 500 | `internal_error` | Error inesperat (es registra al log i no s'envia el detall) |
