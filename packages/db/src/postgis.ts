@@ -49,3 +49,18 @@ export function dinsRadi(
 ): RawBuilder<boolean> {
   return sql<boolean>`st_dwithin(${a}, ${b}, ${metres})`;
 }
+
+/**
+ * Codi de l'estació operativa de la XEMA més propera a `ubicacio` (ADR-0025), o `null` si no n'hi
+ * ha cap de carregada. `<->` entre geographies ordena per distància amb l'índex GiST (KNN de
+ * PostGIS). La fan servir el worker, que les reassigna cada mes, i l'administració de punts, que
+ * l'assigna en crear o moure un punt (TG-174).
+ */
+export function estacioXemaMesPropera(ubicacio: Expression<string>): RawBuilder<string | null> {
+  return sql<string | null>`(
+    select e.codi from estacions_xema e
+    where e.operativa
+    order by e.ubicacio <-> ${ubicacio}
+    limit 1
+  )`;
+}

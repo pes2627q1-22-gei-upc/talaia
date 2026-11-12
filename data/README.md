@@ -32,6 +32,8 @@ Cada `Feature` és un `Point` amb aquestes propietats:
 
 Les coordenades venen del [geocodificador de l'ICGC](https://eines.icgc.cat/geocodificador) (consulta del 12/10/2026). Tots els punts són `origen = 'OFICIAL'` (sense creador) i `estat = 'PUBLICAT'`. L'índex **no** és aquí: el calcula el worker.
 
+Des de la web d'administració (TG-174) es poden crear, editar i retirar punts directament a la base de dades, sense passar per aquest fitxer. El seed no toca mai l'`estat`: un punt retirat continua retirat si es torna a aplicar. En canvi, sí que restaura les metadades i la ubicació dels punts que són aquí: un canvi fet des de l'administració a un d'aquests punts també s'ha de fer al GeoJSON perquè no es perdi en el pròxim `db reset` o `db push --include-seed`.
+
 ### Flux
 
 ```bash

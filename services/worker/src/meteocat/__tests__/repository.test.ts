@@ -64,7 +64,7 @@ describe('createKyselyXemaRepository', () => {
     await expect(createKyselyXemaRepository(db).assignaEstacionsProperes()).resolves.toBe(32);
 
     const mesPropera =
-      '( select e.codi from estacions_xema e where e.operativa order by e.ubicacio <-> punts_observacio.ubicacio limit 1 )';
+      '( select e.codi from estacions_xema e where e.operativa order by e.ubicacio <-> "punts_observacio"."ubicacio" limit 1 )';
     expect(pla(queries[0]?.sql)).toBe(
       `update "punts_observacio" set "estacio_xema" = ${mesPropera} where estacio_xema is distinct from ${mesPropera}`,
     );

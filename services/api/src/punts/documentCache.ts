@@ -8,6 +8,11 @@ export type VersionedMapDocument = { geojson: PuntsMapaGeoJson; etag: string };
 /** D'on surt el document i quan es regenera: `createContentHashCache`. */
 export type MapDocumentCache = {
   get(): Promise<VersionedMapDocument>;
+  /**
+   * Descarta el document: la petició següent el torna a construir. Es crida quan l'administració
+   * canvia el catàleg (TG-174), perquè un punt retirat deixi de sortir al mapa al moment.
+   */
+  invalidate(): void;
 };
 
 export type ContentHashCacheOptions = {
@@ -33,9 +38,10 @@ export function etagFor(geojson: PuntsMapaGeoJson): string {
 }
 
 /**
- * Document en memòria amb un `ETag` calculat del contingut, regenerat cada `ttlMs` o quan canvia
- * el `period` o la `version`.
- * - Les peticions simultànies comparteixen una sola regeneració.
+ * Document en memòria amb un `ETag` calculat del contingut, regenerat cada `ttlMs`, quan canvia
+ * el `period` o la `version`, o després d'`invalidate()`.
+ * - Les peticions simultànies comparteixen una sola regeneració. Una regeneració començada abans
+ *   d'`invalidate()` pot portar les dades d'abans del canvi: no compta, i se'n fa una altra.
  * - Si no es pot llegir la versió, se serveix el document que hi ha fins a `ttlMs`.
  * - Si la regeneració falla i ja hi havia un document, se serveix l'antic i es torna a provar
  *   al cap de `ttlMs`. Si no n'hi havia cap, l'error arriba a qui ha fet la petició.
@@ -57,9 +63,13 @@ export function createContentHashCache(
         checkedAt: number;
         period?: number;
         version?: string;
+        /** El valor de `generation` quan va començar la regeneració que l'ha construït. */
+        generation: number;
       }
     | undefined;
   let refreshing: Promise<VersionedMapDocument> | undefined;
+  /** Puja a cada `invalidate()`: un document d'una generació anterior ja no val. */
+  let generation = 0;
 
   const readVersion = async () => {
     try {
@@ -71,6 +81,7 @@ export function createContentHashCache(
   };
 
   const refresh = async () => {
+    const loadedGeneration = generation;
     const loadedPeriod = period?.(now());
     const loadedVersion = await readVersion();
     const geojson = await load(loadedPeriod);
@@ -81,6 +92,7 @@ export function createContentHashCache(
       checkedAt: now(),
       period: loadedPeriod,
       version: loadedVersion,
+      generation: loadedGeneration,
     };
     return doc;
   };
@@ -99,8 +111,10 @@ export function createContentHashCache(
         current &&
         now() - current.loadedAt < ttlMs &&
         !(await versionChanged()) &&
-        // Després de l'`await`: si l'hora ha canviat mentre es llegia la versió, també es regenera.
-        period?.(now()) === current.period
+        // Després de l'`await`: si l'hora ha canviat o s'ha invalidat mentre es llegia la versió,
+        // també es regenera.
+        period?.(now()) === current.period &&
+        current.generation === generation
       ) {
         return current.doc;
       }
@@ -110,16 +124,25 @@ export function createContentHashCache(
         }));
       try {
         const doc = await regenera();
-        // Una regeneració començada abans de canviar el període porta les dades de l'anterior: qui
-        // s'hi ha enganxat després en demana una de nova.
-        if (period && period(now()) !== current?.period) return await regenera();
+        // Una regeneració començada abans de canviar el període o d'invalidar el document porta
+        // les dades d'abans: qui s'hi ha enganxat després en demana una de nova.
+        if ((period && period(now()) !== current?.period) || current?.generation !== generation) {
+          return await regenera();
+        }
         return doc;
       } catch (err) {
         if (!current) throw err;
         console.error("[punts] no s'ha pogut regenerar el document; se serveix l'anterior", err);
+        // Com sempre que falla: l'anterior fins a `ttlMs`, també si s'havia invalidat, perquè cada
+        // petició no esperi una base de dades caiguda.
         current.loadedAt = now();
+        current.generation = generation;
         return current.doc;
       }
+    },
+
+    invalidate() {
+      generation += 1;
     },
   };
 }

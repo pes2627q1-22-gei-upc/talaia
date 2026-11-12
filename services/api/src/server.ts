@@ -5,6 +5,8 @@ import { loadEnv } from './config/env';
 import { createEsdevenimentsRepository } from './esdeveniments/esdevenimentsRepository';
 import { createEsdevenimentsService } from './esdeveniments/esdevenimentsService';
 import { createBreakdownService } from './index/breakdownService';
+import { createPuntsAdminRepository } from './punts/puntsAdminRepository';
+import { createPuntsAdminService } from './punts/puntsAdminService';
 import { createPuntsRepository } from './punts/puntsRepository';
 import { createDefaultPuntsService } from './punts/puntsService';
 import { createRecomanacionsRepository } from './recomanacions/recomanacionsRepository';
@@ -16,6 +18,7 @@ const env = loadEnv();
 let punts;
 let breakdown;
 let recomanacions;
+let puntsAdmin;
 let profileStore;
 let esdeveniments;
 if (env.DATABASE_URL) {
@@ -28,17 +31,19 @@ if (env.DATABASE_URL) {
   });
   const puntsRepository = createPuntsRepository(db);
   punts = createDefaultPuntsService(puntsRepository);
+  // Cada canvi de l'administració descarta el document del mapa (TG-174).
+  puntsAdmin = createPuntsAdminService(createPuntsAdminRepository(db), { mapa: punts });
   breakdown = createBreakdownService(puntsRepository);
   recomanacions = createRecomanacionsService(createRecomanacionsRepository(db));
   profileStore = createDatabaseProfileStore(db);
   esdeveniments = createEsdevenimentsService(createEsdevenimentsRepository(db));
 } else {
   console.warn(
-    'Avís: sense DATABASE_URL. /api/v1/health funciona, però /api/v1/punts, /api/v1/punts/{id}/index, /api/v1/recomanacions, /api/v1/perfil i /api/v1/esdeveniments responen 503.',
+    'Avís: sense DATABASE_URL. /api/v1/health funciona, però /api/v1/punts, /api/v1/punts/{id}/index, /api/v1/recomanacions, /api/v1/perfil, /api/v1/admin i /api/v1/esdeveniments responen 503.',
   );
 }
 
-createApp({ punts, breakdown, recomanacions, profileStore, esdeveniments }).listen(
+createApp({ punts, breakdown, recomanacions, puntsAdmin, profileStore, esdeveniments }).listen(
   env.API_PORT,
   (error) => {
     if (error) throw error;
