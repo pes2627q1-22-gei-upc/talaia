@@ -1,4 +1,4 @@
-import type { PuntAdmin } from '@talaia/shared';
+import type { EstatPunt, EstatPuntAdmin, PuntAdmin } from '@talaia/shared';
 
 import { SLUG_PUNT_REFERENCIA } from '../../esdeveniments/esdevenimentsRepository';
 import type { PuntsAdminRepository } from '../puntsAdminRepository';
@@ -24,12 +24,20 @@ const PUNT: PuntAdmin = {
   lon: 0.7364,
 };
 
-function setup(overrides: Partial<PuntsAdminRepository> = {}) {
+/**
+ * Repositori fals. `update` fa com el de debò: passa a `comprova` el punt d'abans (`actual`) i, si
+ * no llança, hi aplica els canvis.
+ */
+function setup(overrides: Partial<PuntsAdminRepository> = {}, actual: PuntAdmin = PUNT) {
   const repository: PuntsAdminRepository = {
     list: jest.fn(async () => [PUNT]),
     find: jest.fn(async (id: string) => (id === ID ? PUNT : undefined)),
     create: jest.fn(async (nou) => ({ ...PUNT, ...nou })),
-    update: jest.fn(async (id, canvis) => (id === ID ? { ...PUNT, ...canvis } : undefined)),
+    update: jest.fn(async (id, canvis, comprova) => {
+      if (id !== ID) return undefined;
+      comprova?.(actual);
+      return { ...actual, ...canvis };
+    }),
     ...overrides,
   };
   const mapa = { invalidateMapDocument: jest.fn() };
@@ -80,8 +88,46 @@ describe('puntsAdminService.update', () => {
       estat: 'DESACTIVAT',
     });
 
-    expect(repository.update).toHaveBeenCalledWith(ID, { estat: 'DESACTIVAT' });
+    expect(repository.update).toHaveBeenCalledWith(
+      ID,
+      { estat: 'DESACTIVAT' },
+      expect.any(Function),
+    );
     expect(mapa.invalidateMapDocument).toHaveBeenCalledTimes(1);
+  });
+
+  it.each<[EstatPunt, EstatPuntAdmin]>([
+    ['PUBLICAT', 'DESACTIVAT'],
+    ['DESACTIVAT', 'PUBLICAT'],
+    ['PUBLICAT', 'PUBLICAT'],
+  ])('deixa passar un punt de %s a %s', async (abans, estat) => {
+    const { service } = setup({}, { ...PUNT, estat: abans });
+    await expect(service.update(ID, { estat })).resolves.toMatchObject({ estat });
+  });
+
+  it.each<[EstatPunt, EstatPuntAdmin]>([
+    ['PENDENT', 'PUBLICAT'],
+    ['PENDENT', 'DESACTIVAT'],
+    ['REBUTJAT', 'PUBLICAT'],
+  ])(
+    '409 moderation_required: un punt %s no passa a %s des d’aquí (moderació, TG-220)',
+    async (abans, estat) => {
+      const { mapa, service } = setup({}, { ...PUNT, estat: abans, origen: 'COMUNITAT' });
+
+      await expect(service.update(ID, { estat, nom: 'x' })).rejects.toMatchObject({
+        status: 409,
+        code: 'moderation_required',
+      });
+      expect(mapa.invalidateMapDocument).not.toHaveBeenCalled();
+    },
+  );
+
+  it("d'un punt PENDENT se'n poden corregir les dades sense tocar-ne l'estat", async () => {
+    const { service } = setup({}, { ...PUNT, estat: 'PENDENT', origen: 'COMUNITAT' });
+    await expect(service.update(ID, { nom: 'Nom corregit' })).resolves.toMatchObject({
+      nom: 'Nom corregit',
+      estat: 'PENDENT',
+    });
   });
 
   it.each([{ nom: 'x' }, { estat: 'DESACTIVAT' as const }])(
@@ -97,19 +143,23 @@ describe('puntsAdminService.update', () => {
   );
 
   it("409 reference_point_required si es vol retirar el punt de referència d'Aprop (ADR-0026)", async () => {
+    const error = jest.spyOn(console, 'error').mockImplementation(() => {});
     const referencia = { ...PUNT, slug: SLUG_PUNT_REFERENCIA };
-    const { repository, mapa, service } = setup({ find: async () => referencia });
+    const { mapa, service } = setup({}, referencia);
 
     await expect(service.update(ID, { estat: 'DESACTIVAT' })).rejects.toMatchObject({
       status: 409,
       code: 'reference_point_required',
     });
-    expect(repository.update).not.toHaveBeenCalled();
     expect(mapa.invalidateMapDocument).not.toHaveBeenCalled();
+    // És una regla, no una caiguda de la base de dades: no surt al log com un 503.
+    expect(error).not.toHaveBeenCalled();
 
-    // La resta de canvis sí que s'hi poden fer (sense mirar-ne l'slug).
-    await service.update(ID, { nom: 'Centre d’Observació de l’Univers', estat: 'PUBLICAT' });
-    expect(repository.update).toHaveBeenCalledTimes(1);
+    // La resta de canvis sí que s'hi poden fer.
+    await expect(
+      service.update(ID, { nom: 'Centre d’Observació de l’Univers', estat: 'PUBLICAT' }),
+    ).resolves.toMatchObject({ estat: 'PUBLICAT' });
+    error.mockRestore();
   });
 });
 

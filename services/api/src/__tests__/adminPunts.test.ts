@@ -84,9 +84,10 @@ const adminRepository: PuntsAdminRepository = {
     cataleg.set(punt.id, punt);
     return punt;
   },
-  async update(id, canvis: PuntAdminCanvis) {
+  async update(id, canvis: PuntAdminCanvis, comprova) {
     const punt = cataleg.get(id);
     if (!punt) return undefined;
+    comprova?.(punt);
     const actualitzat = { ...punt, ...canvis, dataActualitzacio: new Date().toISOString() };
     cataleg.set(id, actualitzat);
     return actualitzat;
@@ -373,6 +374,33 @@ describe('PATCH /api/v1/admin/punts/{id}', () => {
     expect(res.status).toBe(200);
   });
 
+  it.each(['PENDENT', 'REBUTJAT'] as const)(
+    "409 moderation_required: un punt %s no es publica ni es retira des d'aquí",
+    async (estat) => {
+      const proposat: PuntAdmin = {
+        ...MONTSEC,
+        id: NO_EXISTEIX,
+        slug: 'mirador-proposat',
+        estat,
+        origen: 'COMUNITAT',
+      };
+      cataleg.set(proposat.id, proposat);
+
+      for (const nou of ['PUBLICAT', 'DESACTIVAT']) {
+        const res = await patch(proposat.id, { estat: nou });
+        expect(res.status).toBe(409);
+        expect(res.body.error.code).toBe('moderation_required');
+      }
+      expect(cataleg.get(proposat.id)?.estat).toBe(estat);
+      expect(await idsAlMapa()).toEqual([MONTSEC.id]);
+
+      // Sí que se'n poden corregir les dades.
+      const res = await patch(proposat.id, { nom: 'Mirador proposat' });
+      expect(res.status).toBe(200);
+      expect(res.body).toMatchObject({ nom: 'Mirador proposat', estat });
+    },
+  );
+
   it.each<[string, string, unknown]>([
     ['un id que no és un UUID', 'montsec', { estat: 'DESACTIVAT' }],
     ['un cos buit', MONTSEC.id, {}],
@@ -424,6 +452,8 @@ describe('/admin/punts a l’OpenAPI', () => {
       '#/components/schemas/PuntAdminCanvis',
     );
     expect(punt.patch.description).toContain('DESACTIVAT');
+    expect(punt.patch.responses['409'].description).toContain('moderation_required');
+    expect(punt.patch.responses['409'].description).toContain('reference_point_required');
 
     const { PuntAdmin, PuntAdminNou, PuntAdminCanvis } = res.body.components.schemas;
     expect(PuntAdmin.properties.estat.enum).toEqual([

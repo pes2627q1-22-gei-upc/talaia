@@ -132,6 +132,8 @@ export type PuntAdminNou = {
 /**
  * Cos de `PATCH /api/v1/admin/punts/{id}`: els camps que canvien (com a mínim un), sense `slug`.
  * `lat` i `lon` van junts. Per retirar un punt, `{ "estat": "DESACTIVAT" }`; per tornar-lo a
- * publicar, `{ "estat": "PUBLICAT" }`.
+ * publicar, `{ "estat": "PUBLICAT" }`. L'estat d'un punt `PENDENT` o `REBUTJAT` no es canvia des
+ * d'aquí (409 `moderation_required`). Si el punt es mou més de 10 m, l'`sqm` que tenia no es
+ * conserva, encara que es torni a enviar igual.
  */
 export type PuntAdminCanvis = Partial<Omit<PuntAdminNou, 'slug'>>;

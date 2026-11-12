@@ -149,7 +149,7 @@ registry.registerPath({
   security: [{ BearerSupabase: [] }],
   summary: 'Crea un punt oficial (només administradors, HU39)',
   description:
-    'El punt és `OFICIAL` i, si no es diu el contrari, `PUBLICAT`: surt a `/punts` a la petició següent, amb l’índex a `null` fins que el worker el calcula a la propera hora. Sense `sqm`, té la foscor estimada; el perfil d’horitzó (`horitzo`) queda per calcular.',
+    'El punt és `OFICIAL` i, si no es diu el contrari, `PUBLICAT`: surt a `/punts` a la petició següent, amb l’índex a `null` fins que el worker el calcula a la propera hora. Sense `sqm`, té la foscor estimada; el perfil d’horitzó (`horitzo`) queda per calcular, i l’estació XEMA és la més propera.',
   request: {
     body: { required: true, content: { 'application/json': { schema: PuntAdminNouSchema } } },
   },
@@ -191,7 +191,7 @@ registry.registerPath({
   tags: ['Admin'],
   security: [{ BearerSupabase: [] }],
   summary: 'Edita, retira o torna a publicar un punt (només administradors, HU39)',
-  description: `Només canvien els camps que s’envien; l’\`slug\` no es pot canviar. **Retirar** un punt és \`{ "estat": "DESACTIVAT" }\`: deixa de sortir a \`/punts\`, \`/punts/{id}\` (404) i \`/recomanacions\` a la petició següent, i el worker ja no en calcula l’índex. No s’esborra mai, perquè l’índex i els favorits hi apunten; \`{ "estat": "PUBLICAT" }\` el torna a publicar. Si \`lat\` i \`lon\` el mouen més de ${MATEIX_LLOC_M} m, \`sqm\` (si no s’envia), el perfil d’horitzó i l’estació XEMA tornen a \`null\`.`,
+  description: `Només canvien els camps que s’envien; l’\`slug\` no es pot canviar. **Retirar** un punt és \`{ "estat": "DESACTIVAT" }\`: deixa de sortir a \`/punts\`, \`/punts/{id}\` (404) i \`/recomanacions\` a la petició següent, i el worker ja no en calcula l’índex. No s’esborra mai, perquè l’índex i els favorits hi apunten; \`{ "estat": "PUBLICAT" }\` el torna a publicar. L’estat només passa de \`PUBLICAT\` a \`DESACTIVAT\` i al revés: el d’un punt \`PENDENT\` o \`REBUTJAT\` es canvia des de la moderació. **Moure** un punt més de ${MATEIX_LLOC_M} m esborra el que era del lloc d’abans: l’índex calculat (marcador gris fins a la propera hora del worker), el perfil d’horitzó i l’\`sqm\`, que torna a \`null\` si no se n’envia un de diferent del que hi havia; l’estació XEMA passa a ser la més propera.`,
   request: {
     params: PuntParamsSchema,
     body: { required: true, content: { 'application/json': { schema: PuntAdminCanvisSchema } } },
@@ -204,7 +204,7 @@ registry.registerPath({
     400: errorResponse('`validation_error`: l’`id` o el cos no són vàlids'),
     404: noTrobat,
     409: errorResponse(
-      `\`reference_point_required\`: el punt de referència del calendari d’Aprop (\`${SLUG_PUNT_REFERENCIA}\`, ADR-0026) no es pot retirar`,
+      `\`moderation_required\`: el punt és \`PENDENT\` o \`REBUTJAT\` i el seu estat es canvia des de la moderació; \`reference_point_required\`: el punt de referència del calendari d’Aprop (\`${SLUG_PUNT_REFERENCIA}\`, ADR-0026) no es pot retirar`,
     ),
     ...ERRORS_ADMIN,
   },

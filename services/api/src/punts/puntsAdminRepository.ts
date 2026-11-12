@@ -1,4 +1,12 @@
-import { dinsRadi, lat, lon, puntDesDeLonLat, type createDb, type DB } from '@talaia/db';
+import {
+  dinsRadi,
+  estacioXemaMesPropera,
+  lat,
+  lon,
+  puntDesDeLonLat,
+  type createDb,
+  type DB,
+} from '@talaia/db';
 import type {
   DireccioHoritzo,
   EstatPuntAdmin,
@@ -6,7 +14,7 @@ import type {
   PuntAdminCanvis,
   PuntAdminNou,
 } from '@talaia/shared';
-import { sql, type ExpressionBuilder, type Selectable, type UpdateObject } from 'kysely';
+import { sql, type ExpressionBuilder, type UpdateObject } from 'kysely';
 
 type Db = ReturnType<typeof createDb>;
 
@@ -23,14 +31,25 @@ export type PuntsAdminRepository = {
   list(): Promise<PuntAdmin[]>;
   /** Un punt en qualsevol estat, o `undefined` si no existeix. */
   find(id: string): Promise<PuntAdmin | undefined>;
-  /** Crea un punt `OFICIAL` sense creador; `undefined` si ja hi ha un punt amb aquest `slug`. */
+  /**
+   * Crea un punt `OFICIAL` sense creador, amb l'estació XEMA més propera; `undefined` si ja hi ha
+   * un punt amb aquest `slug`.
+   */
   create(punt: PuntAdminNou & { estat: EstatPuntAdmin }): Promise<PuntAdmin | undefined>;
   /**
-   * Aplica els canvis i torna el punt; `undefined` si no existeix. Si el punt es mou (més de
-   * `MATEIX_LLOC_M`), el que depèn del lloc torna a `null`: `horitzo`, `estacio_xema` i, si els
-   * canvis no en porten cap, `sqm`.
+   * Aplica els canvis en una transacció i torna el punt; `undefined` si no existeix. `comprova`
+   * rep el punt tal com és abans del canvi, amb la fila bloquejada: si llança, no es canvia res.
+   *
+   * Si el punt es mou més de `MATEIX_LLOC_M`, el que depenia del lloc d'abans no es conserva:
+   * `horitzo` torna a `null`, `estacio_xema` passa a ser la més propera al lloc nou, `sqm` torna a
+   * `null` si els canvis no en porten un de diferent del que hi havia, i s'esborra l'índex que el
+   * worker havia calculat (`index_visibilitat`) fins que el torni a calcular.
    */
-  update(id: string, canvis: PuntAdminCanvis): Promise<PuntAdmin | undefined>;
+  update(
+    id: string,
+    canvis: PuntAdminCanvis,
+    comprova?: (actual: PuntAdmin) => void,
+  ): Promise<PuntAdmin | undefined>;
 };
 
 /** Les columnes de `PuntAdmin`, iguals al `select` i al `returning`. */
@@ -70,6 +89,11 @@ type Fila = {
   lon: number;
   lat: number;
 };
+
+/** `numeric(4, 2)`: dos valors són el mateix si coincideixen amb 2 decimals. */
+function mateixSqm(a: number | null, b: number | null): boolean {
+  return a === null || b === null ? a === b : Math.round(a * 100) === Math.round(b * 100);
+}
 
 function toPuntAdmin(fila: Fila): PuntAdmin {
   return {
@@ -119,6 +143,8 @@ export function createPuntsAdminRepository(db: Db): PuntsAdminRepository {
           origen: 'OFICIAL',
           estat: punt.estat,
           ubicacio: puntDesDeLonLat(novaLon, novaLat),
+          // `null` si encara no hi ha estacions (el worker les carrega en arrencar, ADR-0025).
+          estacioXema: estacioXemaMesPropera(puntDesDeLonLat(novaLon, novaLat)),
         })
         .onConflict((oc) => oc.column('slug').doNothing())
         .returning(columnes)
@@ -126,29 +152,49 @@ export function createPuntsAdminRepository(db: Db): PuntsAdminRepository {
       return fila && toPuntAdmin(fila);
     },
 
-    async update(id, { lat: novaLat, lon: novaLon, ...canvis }) {
-      const fila = await db
-        .updateTable('puntsObservacio')
-        .set((eb) => {
-          const set: UpdateObject<DB, 'puntsObservacio'> = { ...canvis };
-          if (novaLat === undefined || novaLon === undefined) return set;
-          // A l'SQL, la dreta del `set` llegeix la fila d'abans del canvi.
-          const nova = puntDesDeLonLat(novaLon, novaLat);
-          const mateixLloc = dinsRadi(eb.ref('ubicacio'), nova, MATEIX_LLOC_M);
-          const siNoEsMou = <C extends 'horitzo' | 'estacioXema' | 'sqm'>(columna: C) =>
-            sql<
-              Selectable<DB['puntsObservacio']>[C]
-            >`case when ${mateixLloc} then ${eb.ref(columna)} else null end`;
-          set.ubicacio = nova;
-          set.horitzo = siNoEsMou('horitzo');
-          set.estacioXema = siNoEsMou('estacioXema');
-          if (canvis.sqm === undefined) set.sqm = siNoEsMou('sqm');
-          return set;
-        })
-        .where('id', '=', id)
-        .returning(columnes)
-        .executeTakeFirst();
-      return fila && toPuntAdmin(fila);
+    async update(id, { lat: novaLat, lon: novaLon, ...canvis }, comprova) {
+      const nova =
+        novaLat === undefined || novaLon === undefined
+          ? undefined
+          : puntDesDeLonLat(novaLon, novaLat);
+      return db.transaction().execute(async (trx) => {
+        const actual = await trx
+          .selectFrom('puntsObservacio')
+          .select((eb) => [
+            ...columnes(eb),
+            (nova ? dinsRadi(eb.ref('ubicacio'), nova, MATEIX_LLOC_M) : sql<boolean>`true`).as(
+              'mateixLloc',
+            ),
+          ])
+          .where('id', '=', id)
+          .forUpdate()
+          .executeTakeFirst();
+        if (!actual) return undefined;
+        const { mateixLloc, ...fila } = actual;
+        const abans = toPuntAdmin(fila);
+        comprova?.(abans);
+
+        const set: UpdateObject<DB, 'puntsObservacio'> = { ...canvis };
+        const esMou = nova !== undefined && !mateixLloc;
+        if (nova) set.ubicacio = nova;
+        if (nova && esMou) {
+          set.horitzo = null;
+          set.estacioXema = estacioXemaMesPropera(nova);
+          // Un formulari que envia el punt sencer hi torna a posar l'sqm del lloc d'abans: si és el
+          // mateix que hi havia, no compta com un valor nou.
+          if (canvis.sqm === undefined || mateixSqm(canvis.sqm, abans.sqm)) set.sqm = null;
+        }
+        const nou = await trx
+          .updateTable('puntsObservacio')
+          .set(set)
+          .where('id', '=', id)
+          .returning(columnes)
+          .executeTakeFirstOrThrow();
+        // L'índex era del lloc d'abans: millor cap (marcador gris) que un d'equivocat fins que el
+        // worker el torni a calcular, a la propera hora.
+        if (esMou) await trx.deleteFrom('indexVisibilitat').where('puntId', '=', id).execute();
+        return toPuntAdmin(nou);
+      });
     },
   };
 }
