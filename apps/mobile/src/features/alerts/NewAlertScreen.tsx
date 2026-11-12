@@ -5,7 +5,6 @@ import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { type ColorToken, colors, motion, radii, sizes, spacing } from '@/core/theme/tokens';
-import type { GRID_GOALS } from '@/features/explore/exploreModel';
 import { FieldRow } from '@/features/explore/FieldRow';
 import { GoalCard } from '@/features/explore/GoalCard';
 import { AppText } from '@/shared/ui/AppText';
@@ -15,19 +14,11 @@ import { PressableScale } from '@/shared/ui/PressableScale';
 import { SegmentedControl } from '@/shared/ui/SegmentedControl';
 import { Slider } from '@/shared/ui/Slider';
 
+import { GOAL_ICONS } from './goalIcons';
 import { NotifyHourSheet } from './NotifyHourSheet';
 import { useNewAlertViewModel } from './useNewAlertViewModel';
 import { ZoneSheet } from './ZoneSheet';
 
-/** Les mateixes icones de fenomen que «Què vols veure?» (mockup 02). */
-const GOAL_ICONS: Record<(typeof GRID_GOALS)[number], number> = {
-  pluja_estels: require('@/assets/images/explora/pluja-estels.svg'),
-  eclipsi: require('@/assets/images/explora/eclipsi.svg'),
-  via_lactia: require('@/assets/images/explora/via-lactia.svg'),
-  posta_sol: require('@/assets/images/explora/posta-sol.svg'),
-  sortida_sol: require('@/assets/images/explora/sortida-sol.svg'),
-  cel_estrellat: require('@/assets/images/explora/cel-estrellat.svg'),
-};
 const locationIcon = require('@/assets/images/explora/ubicacio.svg');
 const clockIcon = require('@/assets/images/explora/rellotge.svg');
 // Un fitxer, com les icones d'Explora: una `data:` URI amb l'SVG no es pintava a Android.

@@ -301,8 +301,6 @@
   },
   "alerts": {
     "title": "Alertes",
-    "soonTitle": "Aviat",
-    "soonMessage": "Aquí podràs crear alertes perquè t'avisem quan hi hagi bones condicions per al que vols veure.",
     "create": "Nova alerta",
     "new": {
       "title": "Nova alerta",
@@ -351,7 +349,15 @@
         "done": "Fet",
         "required": "Tria com a mínim una manera d'avisar-te."
       }
-    }
+    },
+    "subtitle": "T'avisem només quan el cel acompanya.",
+    "summary": "A menys de {{travel}}, índex de {{index}} o més",
+    "toggle": "Alerta de {{name}}",
+    "toggleError": "No hem pogut canviar l'alerta. Torna-ho a provar.",
+    "emptyTitle": "Encara no tens alertes",
+    "emptyMessage": "Crea'n una i t'avisarem quan hi hagi bones condicions per al que vols veure.",
+    "errorTitle": "No hem pogut carregar les alertes",
+    "retry": "Torna-ho a provar"
   },
   "auth": {
     "signOut": "Tanca la sessió",

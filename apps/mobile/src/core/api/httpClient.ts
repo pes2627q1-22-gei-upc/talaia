@@ -40,14 +40,23 @@ export async function apiGet<T>(path: string, query?: Query, init?: RequestInit)
 
 /** Per als endpoints amb cos JSON, inclòs el primer accés de TG-84. */
 export async function apiPost<T>(path: string, body?: unknown, init?: RequestInit): Promise<T> {
+  return apiRequest<T>(buildUrl(path), jsonInit('POST', body, init));
+}
+
+/** Canvis parcials d'un recurs (p. ex. activar o desactivar una alerta, TG-147). */
+export async function apiPatch<T>(path: string, body: unknown, init?: RequestInit): Promise<T> {
+  return apiRequest<T>(buildUrl(path), jsonInit('PATCH', body, init));
+}
+
+function jsonInit(method: string, body: unknown, init?: RequestInit): RequestInit {
   const headers = new Headers(init?.headers);
   headers.set('Content-Type', 'application/json');
-  return apiRequest<T>(buildUrl(path), {
+  return {
     ...init,
-    method: 'POST',
+    method,
     headers,
     body: body === undefined ? undefined : JSON.stringify(body),
-  });
+  };
 }
 
 async function apiRequest<T>(url: string, init: RequestInit): Promise<T> {

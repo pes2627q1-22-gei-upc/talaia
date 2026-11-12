@@ -1,6 +1,8 @@
 import type { Alerta, AlertaNova } from '@talaia/shared';
 
-import { apiGet, apiPost } from '@/core/api/httpClient';
+import { useQuery } from '@tanstack/react-query';
+
+import { apiGet, apiPatch, apiPost } from '@/core/api/httpClient';
 
 /** Clau de TanStack Query de la llista d'alertes de l'usuari: crear-ne una la invalida. */
 export const ALERTS_KEY = ['alertes'] as const;
@@ -17,4 +19,14 @@ export const alertsRepository = {
   create(alert: AlertaNova): Promise<Alerta> {
     return apiPost<Alerta>('/alertes', alert);
   },
+
+  /** Activa o desactiva una alerta (`PATCH /alertes/{id}`, TG-147). */
+  setActive(id: string, activa: boolean): Promise<Alerta> {
+    return apiPatch<Alerta>(`/alertes/${encodeURIComponent(id)}`, { activa });
+  },
 };
+
+/** Les alertes de l'usuari, la més nova primer (com les retorna l'API). */
+export function useAlertsQuery() {
+  return useQuery({ queryKey: ALERTS_KEY, queryFn: alertsRepository.list });
+}

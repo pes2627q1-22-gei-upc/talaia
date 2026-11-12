@@ -301,8 +301,6 @@
   },
   "alerts": {
     "title": "Alertas",
-    "soonTitle": "Pronto",
-    "soonMessage": "Aquí podrás crear alertas para que te avisemos cuando haya buenas condiciones para lo que quieres ver.",
     "create": "Nueva alerta",
     "new": {
       "title": "Nueva alerta",
@@ -351,7 +349,15 @@
         "done": "Hecho",
         "required": "Elige al menos una forma de avisarte."
       }
-    }
+    },
+    "subtitle": "Te avisamos solo cuando el cielo acompaña.",
+    "summary": "A menos de {{travel}}, índice de {{index}} o más",
+    "toggle": "Alerta de {{name}}",
+    "toggleError": "No hemos podido cambiar la alerta. Vuelve a intentarlo.",
+    "emptyTitle": "Aún no tienes alertas",
+    "emptyMessage": "Crea una y te avisaremos cuando haya buenas condiciones para lo que quieres ver.",
+    "errorTitle": "No hemos podido cargar las alertas",
+    "retry": "Volver a intentarlo"
   },
   "auth": {
     "signOut": "Cerrar sesión",

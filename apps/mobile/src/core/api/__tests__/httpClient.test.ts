@@ -1,7 +1,7 @@
 import { getAccessToken } from '@/core/auth/accessToken';
 
 import { accountBlocked } from '../accountBlocked';
-import { ApiError, apiGet, apiPost, buildUrl, REQUEST_TIMEOUT_MS } from '../httpClient';
+import { ApiError, apiGet, apiPatch, apiPost, buildUrl, REQUEST_TIMEOUT_MS } from '../httpClient';
 
 jest.mock('@/core/auth/accessToken', () => ({ getAccessToken: jest.fn() }));
 
@@ -152,6 +152,17 @@ describe('apiGet', () => {
     expect(init.method).toBe('POST');
     expect(init.body).toBe('{}');
     expect(new Headers(init.headers).get('Authorization')).toBe('Bearer jwt');
+    expect(new Headers(init.headers).get('Content-Type')).toBe('application/json');
+  });
+
+  it('envia els canvis parcials amb PATCH i cos JSON', async () => {
+    const request = jest.fn().mockResolvedValue(new Response('{"activa":false}', { status: 200 }));
+    globalThis.fetch = request;
+    await expect(apiPatch('/alertes/a1', { activa: false })).resolves.toEqual({ activa: false });
+    const [url, init] = request.mock.calls[0]! as [string, RequestInit];
+    expect(url).toMatch(/\/alertes\/a1$/);
+    expect(init.method).toBe('PATCH');
+    expect(init.body).toBe('{"activa":false}');
     expect(new Headers(init.headers).get('Content-Type')).toBe('application/json');
   });
 });

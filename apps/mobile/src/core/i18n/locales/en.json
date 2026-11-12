@@ -301,8 +301,6 @@
   },
   "alerts": {
     "title": "Alerts",
-    "soonTitle": "Coming soon",
-    "soonMessage": "Here you'll be able to create alerts so we can tell you when conditions are good for what you want to see.",
     "create": "New alert",
     "new": {
       "title": "New alert",
@@ -351,7 +349,15 @@
         "done": "Done",
         "required": "Choose at least one way to be notified."
       }
-    }
+    },
+    "subtitle": "We only notify you when the sky plays along.",
+    "summary": "Within {{travel}}, index {{index}} or higher",
+    "toggle": "{{name}} alert",
+    "toggleError": "We couldn't change the alert. Please try again.",
+    "emptyTitle": "No alerts yet",
+    "emptyMessage": "Create one and we'll let you know when conditions are good for what you want to see.",
+    "errorTitle": "We couldn't load your alerts",
+    "retry": "Try again"
   },
   "auth": {
     "signOut": "Sign out",

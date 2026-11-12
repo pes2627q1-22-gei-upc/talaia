@@ -1,5 +1,7 @@
 import type { FranjaIndex } from '@talaia/shared';
 
+import { TRAVEL } from '@/features/explore/exploreModel';
+
 /** Índex mínim per avisar. Per defecte, 75 (mockup 11): ja és «cel ras». */
 export const MIN_INDEX = { min: 0, max: 100, step: 5, initial: 75 } as const;
 
@@ -24,3 +26,12 @@ export function travelToKm(minutes: number): number {
 
 /** Hora per defecte de l'avís a una hora concreta (mockup 11: «El mateix dia a les 18:00»). */
 export const DEFAULT_NOTIFY_HOUR = 18;
+
+/**
+ * El contrari de `travelToKm`, per ensenyar una alerta desada en temps de cotxe, arrodonit als
+ * passos de 15 min de la barra.
+ */
+export function kmToTravel(km: number): number {
+  const step = TRAVEL.step;
+  return Math.min(TRAVEL.max, Math.max(TRAVEL.min, Math.round((km * 1.3) / step) * step));
+}
