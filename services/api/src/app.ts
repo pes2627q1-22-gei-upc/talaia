@@ -1,6 +1,7 @@
 import express from 'express';
 import { z } from 'zod';
 
+import type { AlertesStore } from './alertes/alertesRepository';
 import { loadEnv } from './config/env';
 import { ApiError, errorHandler, notFound } from './middleware/errors';
 import { createApiRouter, type ApiDeps } from './routes';
@@ -14,16 +15,14 @@ export type AppOptions = ApiDeps & {
 };
 
 /** L'app sense servidor: els tests la fan servir amb supertest sense obrir cap port. */
-export function createApp({ profileStore, ...apiDeps }: AppOptions = {}) {
+export function createApp({ profileStore, alertes, ...apiDeps }: AppOptions = {}) {
   const env = loadEnv();
   const resolvedSupabaseUrl = apiDeps.supabaseUrl ?? env.SUPABASE_URL;
-  const unavailable = async (): Promise<never> => {
-    throw new ApiError(
-      503,
-      'database_unavailable',
-      "L'API no té DATABASE_URL: el perfil d'usuari no està disponible",
-    );
+  const unavailableFor = (what: string) => async (): Promise<never> => {
+    throw new ApiError(503, 'database_unavailable', `L'API no té DATABASE_URL: ${what}`);
   };
+  const unavailable = unavailableFor("el perfil d'usuari no està disponible");
+  const alertesUnavailable = unavailableFor('les alertes no estan disponibles');
   const resolvedProfileStore =
     profileStore ??
     ({
@@ -34,6 +33,8 @@ export function createApp({ profileStore, ...apiDeps }: AppOptions = {}) {
       listProfiles: unavailable,
       setBlocked: unavailable,
     } satisfies ProfileStore);
+  const resolvedAlertes =
+    alertes ?? ({ create: alertesUnavailable, list: alertesUnavailable } satisfies AlertesStore);
 
   const app = express();
   app.disable('x-powered-by');
@@ -45,6 +46,7 @@ export function createApp({ profileStore, ...apiDeps }: AppOptions = {}) {
       supabaseUrl: resolvedSupabaseUrl,
       apropApiKey: apiDeps.apropApiKey ?? env.APROP_API_KEY,
       profileStore: resolvedProfileStore,
+      alertes: resolvedAlertes,
     }),
   );
   app.use(notFound);

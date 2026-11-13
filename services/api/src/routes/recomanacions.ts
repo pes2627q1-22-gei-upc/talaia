@@ -17,7 +17,8 @@ import {
 import { IndexHoraSchema } from '../index/indexSchemas';
 import { secondsToNextHour } from './punts';
 
-const OBJECTIUS = [
+/** Els valors d'`ObjectiuObservacio`; també els fan servir les alertes (TG-145). */
+export const OBJECTIUS = [
   'pluja_estels',
   'eclipsi',
   'via_lactia',
