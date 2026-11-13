@@ -1,12 +1,22 @@
-import { fireEvent, render, screen, within } from '@testing-library/react-native';
+import { act, fireEvent, render, screen, within } from '@testing-library/react-native';
+import { Linking } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import i18n from '@/core/i18n';
 
 import { AccountBlockedScreen } from '../AccountBlockedScreen';
+import { profileRepository } from '../profileRepository';
 import { useAuthViewModel } from '../useAuthViewModel';
 
 jest.mock('../useAuthViewModel', () => ({ useAuthViewModel: jest.fn() }));
+jest.mock('../profileRepository', () => ({ profileRepository: { ensure: jest.fn() } }));
+// El correu real és al .env de cadascú: els tests no en depenen.
+const mockEnv = { contactEmail: null as string | null };
+jest.mock('@/core/config/env', () => ({
+  get env() {
+    return mockEnv;
+  },
+}));
 
 const signOut = jest.fn(async () => {});
 
@@ -35,6 +45,7 @@ async function renderScreen() {
 
 beforeEach(async () => {
   jest.clearAllMocks();
+  mockEnv.contactEmail = null;
   await i18n.changeLanguage('ca');
   auth();
 });
@@ -48,8 +59,9 @@ it('explica que el compte està bloquejat i permet tancar la sessió', async () 
 });
 
 it.each(['ca', 'es', 'en'])(
-  'en %s, el text i el botó van en blocs separats i el text no es talla',
+  'en %s, el text i els botons van en blocs separats i el text no es talla',
   async (language) => {
+    mockEnv.contactEmail = 'equip@example.test';
     await i18n.changeLanguage(language);
     auth({ logoutLabel: i18n.t('auth.signOut') });
     await renderScreen();
@@ -60,7 +72,7 @@ it.each(['ca', 'es', 'en'])(
     // pot posar a sobre, ni en una pantalla petita (320 × 568) ni amb el text més llarg.
     const content = screen.getByTestId('account-blocked-text');
     expect(content).toHaveStyle({ flex: 1 });
-    expect(within(content).queryByRole('button')).toBeNull();
+    expect(within(content).queryByRole('button', { name: i18n.t('auth.signOut') })).toBeNull();
     expect(within(content).getByRole('header')).toBe(title);
     expect(within(content).getByText(i18n.t('accountBlocked.message'))).toBe(message);
     expect(button).toBeOnTheScreen();
@@ -81,4 +93,43 @@ it('si no ha pogut tancar la sessió, ho diu', async () => {
   auth({ error: 'logout' });
   await renderScreen();
   expect(screen.getByText("No s'ha pogut tancar la sessió. Torna-ho a provar.")).toBeOnTheScreen();
+});
+
+it('amb el correu de l’equip configurat, ofereix escriure-hi', async () => {
+  mockEnv.contactEmail = 'equip@example.test';
+  const openURL = jest.spyOn(Linking, 'openURL').mockResolvedValue(undefined);
+  await renderScreen();
+  await fireEvent.press(screen.getByRole('button', { name: 'Escriu a equip@example.test' }));
+  expect(openURL).toHaveBeenCalledWith('mailto:equip@example.test');
+});
+
+it('sense el correu configurat, no hi ha cap botó per escriure', async () => {
+  await renderScreen();
+  expect(screen.queryByRole('button', { name: /Escriu a/ })).toBeNull();
+});
+
+it('«Torna-ho a comprovar» torna a preguntar a l’API i, mentrestant, no es pot tornar a prémer', async () => {
+  let finish!: () => void;
+  jest.mocked(profileRepository.ensure).mockReturnValue(
+    new Promise((done) => {
+      finish = () => done({ created: false });
+    }),
+  );
+  await renderScreen();
+  await fireEvent.press(screen.getByRole('button', { name: 'Torna-ho a comprovar' }));
+  expect(profileRepository.ensure).toHaveBeenCalledTimes(1);
+  expect(screen.getByRole('button', { name: 'Comprovant…' })).toBeDisabled();
+  expect(screen.getByRole('button', { name: 'Tanca la sessió' })).toBeDisabled();
+  await act(async () => finish());
+  expect(screen.getByRole('button', { name: 'Torna-ho a comprovar' })).toBeEnabled();
+});
+
+it('si no es pot obrir el correu, avisa sota el botó', async () => {
+  mockEnv.contactEmail = 'equip@example.test';
+  jest.spyOn(Linking, 'openURL').mockRejectedValueOnce(new Error('no mail app'));
+  await renderScreen();
+  await fireEvent.press(screen.getByRole('button', { name: 'Escriu a equip@example.test' }));
+  expect(await screen.findByRole('alert')).toHaveTextContent(
+    "No s'ha pogut obrir el correu. Escriu-nos a equip@example.test.",
+  );
 });

@@ -53,3 +53,26 @@ describe('env.apiUrl', () => {
     expect(load(undefined, undefined)).toBe('http://localhost:3000/api/v1');
   });
 });
+
+describe('env.contactEmail', () => {
+  const original = process.env.EXPO_PUBLIC_CONTACT_EMAIL;
+  afterEach(() => {
+    process.env.EXPO_PUBLIC_CONTACT_EMAIL = original;
+  });
+
+  function load(value: string | undefined) {
+    if (value === undefined) delete process.env.EXPO_PUBLIC_CONTACT_EMAIL;
+    else process.env.EXPO_PUBLIC_CONTACT_EMAIL = value;
+    let env!: typeof import('../env').env;
+    jest.isolateModules(() => {
+      env = jest.requireActual<typeof import('../env')>('../env').env;
+    });
+    return env.contactEmail;
+  }
+
+  it('és el correu de la variable, o res si no hi és o és buida', () => {
+    expect(load(' equip@example.test ')).toBe('equip@example.test');
+    expect(load('')).toBeNull();
+    expect(load(undefined)).toBeNull();
+  });
+});
