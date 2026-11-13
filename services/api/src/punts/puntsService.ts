@@ -1,6 +1,7 @@
 import type { IndexHora, PuntFitxa } from '@talaia/shared';
 
 import { ApiError } from '../middleware/errors';
+import { idiomaPreferit, type Idioma } from '../idioma';
 import {
   createContentHashCache,
   type MapDocumentCache,
@@ -8,14 +9,15 @@ import {
 } from './documentCache';
 import { buildMapDocument, filterByBbox, type Bbox } from './mapDocument';
 import type { PuntsRepository } from './puntsRepository';
+import { puntLocalitzat } from './localitzacio';
 
 const HORA_MS = 3_600_000;
 
 export type PuntsService = {
   /** El document del mapa, sencer o retallat per `bbox`. L'`ETag` és el de la col·lecció. */
-  getMapDocument(bbox?: Bbox): Promise<VersionedMapDocument>;
+  getMapDocument(bbox?: Bbox, acceptLanguage?: string): Promise<VersionedMapDocument>;
   /** La fitxa d'un punt publicat amb l'índex de l'hora en curs i de les `hores` següents. */
-  getFitxa(id: string, hores: number, now?: Date): Promise<PuntFitxa>;
+  getFitxa(id: string, hores: number, now?: Date, acceptLanguage?: string): Promise<PuntFitxa>;
 };
 
 /** Inici de l'hora en curs (UTC): és la `hora` amb què el worker desa l'índex. */
@@ -51,12 +53,14 @@ export function createPuntsService(
   repository: PuntsRepository,
 ): PuntsService {
   return {
-    async getMapDocument(bbox) {
-      const doc = await fromDatabase("no s'ha pogut llegir el catàleg", () => cache.get());
+    async getMapDocument(bbox, acceptLanguage) {
+      const doc = await fromDatabase("no s'ha pogut llegir el catàleg", () =>
+        cache.get(acceptLanguage),
+      );
       return bbox ? { ...doc, geojson: filterByBbox(doc.geojson, bbox) } : doc;
     },
 
-    async getFitxa(id, hores, now = new Date()) {
+    async getFitxa(id, hores, now = new Date(), acceptLanguage) {
       const horaActual = iniciHora(now);
       const finsA = new Date(horaActual.getTime() + (hores + 1) * HORA_MS);
       const [punt, files] = await fromDatabase(`no s'ha pogut llegir el punt ${id}`, () =>
@@ -65,7 +69,7 @@ export function createPuntsService(
       if (!punt) {
         throw new ApiError(404, 'punt_not_found', `No hi ha cap punt publicat amb id ${id}`);
       }
-      return { ...punt, index: splitIndexHores(files, horaActual) };
+      return { ...puntLocalitzat(punt, acceptLanguage), index: splitIndexHores(files, horaActual) };
     },
   };
 }
@@ -78,16 +82,26 @@ export function createDefaultPuntsService(
   repository: PuntsRepository,
   now: () => number = Date.now,
 ): PuntsService {
+  const caches = Object.fromEntries(
+    (['ca', 'es', 'en'] as const).map((idioma) => [
+      idioma,
+      createContentHashCache(
+        async (hora = iniciHora(new Date(now())).getTime()) =>
+          buildMapDocument(
+            (await repository.listPublished(new Date(hora))).map((punt) =>
+              puntLocalitzat(punt, idioma),
+            ),
+          ),
+        {
+          period: (t) => iniciHora(new Date(t)).getTime(),
+          version: async () => (await repository.indexVersion()) ?? 'cap',
+          now,
+        },
+      ),
+    ]),
+  ) as Record<Idioma, MapDocumentCache>;
   return createPuntsService(
-    createContentHashCache(
-      async (hora = iniciHora(new Date(now())).getTime()) =>
-        buildMapDocument(await repository.listPublished(new Date(hora))),
-      {
-        period: (t) => iniciHora(new Date(t)).getTime(),
-        version: async () => (await repository.indexVersion()) ?? 'cap',
-        now,
-      },
-    ),
+    { get: (acceptLanguage) => caches[idiomaPreferit(acceptLanguage)].get() },
     repository,
   );
 }

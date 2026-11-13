@@ -4,6 +4,22 @@ import { generarSql } from '../calendari-cli';
 describe('calendari astronòmic calculat (TG-107)', () => {
   const dades = calcularCalendari();
 
+  test('tots els fenòmens i ocurrències calculats tenen els textos visibles en ca, es i en', () => {
+    for (const fenomen of dades.fenomens) {
+      for (const idioma of ['ca', 'es', 'en'] as const) {
+        expect(fenomen.textos[idioma].nom.trim()).not.toBe('');
+        expect(fenomen.textos[idioma].descripcio.trim()).not.toBe('');
+        expect(fenomen.textos[idioma].consell_general.trim()).not.toBe('');
+      }
+    }
+    for (const event of dades.esdeveniments) {
+      for (const idioma of ['ca', 'es', 'en'] as const) {
+        expect(event.textos[idioma].nota_visibilitat.trim()).not.toBe('');
+        expect(event.textos[idioma].consell_observacio.trim()).not.toBe('');
+      }
+    }
+  });
+
   test('fases noves i plenes de tot el període, sense quarts ni codis repetits', () => {
     const fases = dades.esdeveniments.filter((e) =>
       ['lluna-nova', 'lluna-plena', 'superlluna-plena'].includes(e.fenomen_codi),

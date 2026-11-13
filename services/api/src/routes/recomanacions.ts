@@ -206,7 +206,12 @@ export function createRecomanacionsRouter(service: RecomanacionsService | undefi
         "L'API no té DATABASE_URL: les recomanacions no estan disponibles",
       );
     }
-    const resposta = await service.getRecomanacions(consulta);
+    const resposta = await service.getRecomanacions(
+      consulta,
+      undefined,
+      req.get('Accept-Language'),
+    );
+    res.set('Vary', 'Accept-Language');
     // `private`: la URL porta la ubicació de l'usuari, i cap memòria cau compartida no l'ha de desar.
     res.set('Cache-Control', `private, max-age=${secondsToNextHour()}`);
     res.json(resposta);

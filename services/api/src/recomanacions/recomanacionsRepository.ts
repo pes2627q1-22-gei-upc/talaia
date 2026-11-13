@@ -4,7 +4,7 @@ import type { IndexHora, PuntObservacio } from '@talaia/shared';
 type Db = ReturnType<typeof createDb>;
 
 /** Un punt candidat amb la distància en línia recta a l'origen, en metres. */
-export type PuntCandidat = PuntObservacio & { distanciaM: number };
+export type PuntCandidat = PuntObservacio & { distanciaM: number; textos?: unknown };
 
 /** L'índex d'una hora d'un punt concret. */
 export type IndexHoraPunt = IndexHora & { puntId: string };
@@ -25,6 +25,7 @@ export function createRecomanacionsRepository(db: Db): RecomanacionsRepository {
         .select((eb) => [
           'id',
           'nom',
+          'textos',
           'municipi',
           lon(eb.ref('ubicacio')).as('lon'),
           lat(eb.ref('ubicacio')).as('lat'),

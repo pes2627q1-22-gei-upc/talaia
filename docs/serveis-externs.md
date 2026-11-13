@@ -37,6 +37,9 @@ en UTC; la conversió a hora local correspon al consumidor.
 Aprop s'autentica amb una API key al header `X-API-Key`, guardada al seu backend i mai a
 l'app mòbil. L'app de Talaia consulta la mateixa ruta amb `Authorization: Bearer <JWT>` de
 Supabase. És una alternativa, no calen les dues credencials alhora.
+Amb JWT, el llistat de l'app pot demanar `Accept-Language: ca|es|en` (també variants com
+`es-ES`); el català és el valor per defecte i la reserva per camp. Amb l'API key d'Aprop, el
+llistat conserva els textos en català independentment de la capçalera.
 
 `tipus` classifica les entrades per famílies estables; no identifica cada fenomen concret. El
 nom diferencia, per exemple, les Perseids de les Gemínids o la lluna plena de la lluna nova:

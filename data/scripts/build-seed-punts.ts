@@ -17,7 +17,34 @@ import { llegirPunts, validarPunts, type PuntFeature } from './punts.ts';
 
 const ARREL = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const ENTRADA = resolve(ARREL, 'data/punts_observacio.geojson');
+const TRADUCCIONS = resolve(ARREL, 'data/traduccions/punts.json');
 const SORTIDA = resolve(ARREL, 'supabase/seeds/01_punts_observacio.sql');
+
+type TextPunt = { nom: string; descripcio: string; accessibilitat: string | null };
+type TraduccionsPunt = Record<string, { es: TextPunt; en: TextPunt }>;
+
+function llegirTraduccions(features: PuntFeature[]): TraduccionsPunt {
+  const traduccions = JSON.parse(readFileSync(TRADUCCIONS, 'utf8')) as TraduccionsPunt;
+  const slugs = new Set(features.map((f) => f.properties.slug));
+  for (const slug of Object.keys(traduccions)) {
+    if (!slugs.has(slug)) throw new Error(`Traducció d'un punt desconegut: ${slug}`);
+  }
+  for (const { properties: punt } of features) {
+    const traduccio = traduccions[punt.slug];
+    if (!traduccio) throw new Error(`Falta la traducció del punt ${punt.slug}`);
+    for (const idioma of ['es', 'en'] as const) {
+      const text = traduccio[idioma];
+      if (
+        !text?.nom?.trim() ||
+        !text.descripcio?.trim() ||
+        (punt.accessibilitat !== null && !text.accessibilitat?.trim())
+      ) {
+        throw new Error(`Traducció incompleta del punt ${punt.slug} (${idioma})`);
+      }
+    }
+  }
+  return traduccions;
+}
 
 /** Literal SQL de text amb les cometes escapades. */
 const text = (v: string | null | undefined): string =>
@@ -31,7 +58,9 @@ const array = (v: string[] | null): string =>
 const reals = (v: number[] | null): string =>
   v === null ? 'null' : `array[${v.join(', ')}]::real[]`;
 
-function fila(f: PuntFeature): string {
+const json = (v: unknown): string => `${text(JSON.stringify(v))}::jsonb`;
+
+function fila(f: PuntFeature, traduccio: TraduccionsPunt[string]): string {
   const p = f.properties;
   const geom = JSON.stringify({ type: 'Point', coordinates: f.geometry.coordinates });
   return `  (${[
@@ -43,6 +72,11 @@ function fila(f: PuntFeature): string {
     num(p.sqm),
     array(p.horitzo_obert),
     text(p.accessibilitat),
+    json({
+      ca: { nom: p.nom, descripcio: p.descripcio, accessibilitat: p.accessibilitat },
+      es: traduccio.es,
+      en: traduccio.en,
+    }),
     reals(p.horitzo),
     `'OFICIAL'`,
     `'PUBLICAT'`,
@@ -51,16 +85,17 @@ function fila(f: PuntFeature): string {
 }
 
 export function generarSql(features: PuntFeature[]): string {
-  return `-- Generat per data/scripts/build-seed-punts.ts a partir de data/punts_observacio.geojson.
--- No l'editis a mà: canvia el GeoJSON i torna a executar el script. (TG-87)
+  const traduccions = llegirTraduccions(features);
+  return `-- Generat per data/scripts/build-seed-punts.ts a partir del GeoJSON i data/traduccions/punts.json.
+-- No l'editis a mà: canvia les fonts i torna a executar el script. (TG-87, TG-164)
 -- Coordenades: geocodificador de l'ICGC. Punts oficials (sense creador) i publicats.
 -- sqm: brillantor del cel (mag/arcsec²) del mapa de contaminació lumínica de la Generalitat (TG-97).
 -- horitzo: alçada aparent de l'horitzó per grau d'azimut, del model d'elevacions de l'ICGC (TG-116).
 
 insert into punts_observacio
-  (slug, nom, municipi, descripcio, altitud, sqm, horitzo_obert, accessibilitat, horitzo, origen, estat, ubicacio)
+  (slug, nom, municipi, descripcio, altitud, sqm, horitzo_obert, accessibilitat, textos, horitzo, origen, estat, ubicacio)
 values
-${features.map(fila).join(',\n')}
+${features.map((f) => fila(f, traduccions[f.properties.slug]!)).join(',\n')}
 on conflict (slug) do update set
   nom = excluded.nom,
   municipi = excluded.municipi,
@@ -69,6 +104,7 @@ on conflict (slug) do update set
   sqm = excluded.sqm,
   horitzo_obert = excluded.horitzo_obert,
   accessibilitat = excluded.accessibilitat,
+  textos = excluded.textos,
   horitzo = excluded.horitzo,
   ubicacio = excluded.ubicacio
 -- Un punt de la comunitat amb el mateix slug no se sobreescriu.

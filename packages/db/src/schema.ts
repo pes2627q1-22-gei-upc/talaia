@@ -137,6 +137,7 @@ export interface PuntsObservacio {
   origen: "OFICIAL" | "COMUNITAT";
   slug: string;
   sqm: Numeric | null;
+  textos: Json;
   ubicacio: string;
 }
 

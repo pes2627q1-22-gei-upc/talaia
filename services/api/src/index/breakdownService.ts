@@ -1,6 +1,7 @@
 import type { DesglossamentIndex } from '@talaia/shared';
 
 import { ApiError } from '../middleware/errors';
+import { puntLocalitzat } from '../punts/localitzacio';
 import type { PuntsRepository } from '../punts/puntsRepository';
 import { defaultNight, nightWindow } from './night';
 
@@ -9,7 +10,11 @@ export type BreakdownService = {
    * El desglossament d'un punt publicat per a una nit (`YYYY-MM-DD`; si no se'n dona cap, la
    * d'avui). 404 `punt_not_found` si el punt no existeix o no és públic; 503 si la base de dades falla.
    */
-  getBreakdown(puntId: string, night?: string): Promise<DesglossamentIndex>;
+  getBreakdown(
+    puntId: string,
+    night?: string,
+    acceptLanguage?: string,
+  ): Promise<DesglossamentIndex>;
 };
 
 export type BreakdownServiceOptions = {
@@ -22,7 +27,7 @@ export function createBreakdownService(
   { now = () => new Date() }: BreakdownServiceOptions = {},
 ): BreakdownService {
   return {
-    async getBreakdown(puntId, night = defaultNight(now())) {
+    async getBreakdown(puntId, night = defaultNight(now()), acceptLanguage) {
       const { from, to } = nightWindow(night);
       let punt: Awaited<ReturnType<PuntsRepository['findPublished']>>;
       let hores: DesglossamentIndex['hores'] = [];
@@ -41,7 +46,7 @@ export function createBreakdownService(
         throw new ApiError(404, 'punt_not_found', `No hi ha cap punt publicat amb id ${puntId}`);
       }
       // Només el que identifica el punt: la fitxa sencera (sqm, descripció, lat/lon…) és /punts/{id}.
-      const { id, nom, municipi } = punt;
+      const { id, nom, municipi } = puntLocalitzat(punt, acceptLanguage);
       return { punt: { id, nom, municipi }, nit: night, hores };
     },
   };
