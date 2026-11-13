@@ -3,6 +3,7 @@ import { NativeTabs } from 'expo-router/native-tabs';
 import { useTranslation } from 'react-i18next';
 
 import { colors } from '@/core/theme/tokens';
+import { AccountBlockedScreen } from '@/features/auth/AccountBlockedScreen';
 import { RestoreErrorScreen } from '@/features/auth/RestoreErrorScreen';
 import { useSessionGate } from '@/features/auth/useSessionGate';
 
@@ -16,6 +17,7 @@ export default function TabsLayout() {
   // Sense sessió no s'entra a l'app: la benvinguda és la porta (HU35). Mentre es restaura, res.
   if (gate === 'restoring') return null;
   if (gate === 'restoreFailed') return <RestoreErrorScreen />;
+  if (gate === 'blocked') return <AccountBlockedScreen />;
   if (gate === 'signedOut') return <Redirect href="/benvinguda" />;
 
   return (

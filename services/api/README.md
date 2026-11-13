@@ -13,6 +13,7 @@ npm run api                   # = npm run dev -w services/api, amb recàrrega
 - Punts del mapa: <http://localhost:3000/api/v1/punts> (cal `DATABASE_URL`)
 - Fitxa d'un punt: `http://localhost:3000/api/v1/punts/<id>?hores=24`
 - Calendari: `GET /api/v1/esdeveniments?des_de=2026-10-01&fins_a=2026-10-31` (JWT de Talaia o `X-API-Key` d'Aprop)
+- Detall del fenomen: `GET /api/v1/esdeveniments/{id}` (mateixa autenticació; `Accept-Language: ca|es|en`, amb fallback al català)
 - Desglossament de l'índex d'un punt: `http://localhost:3000/api/v1/punts/{id}/index?nit=2026-10-19` (cal `DATABASE_URL`)
 - Perfil: `GET`, `POST` i `PATCH /api/v1/perfil` (cal el JWT de Supabase a `Authorization: Bearer`)
 - Recomanacions: `http://localhost:3000/api/v1/recomanacions?objectiu=cel_estrellat&lat=41.39&lon=2.17&data=<YYYY-MM-DD>&desDe=22&finsA=6&tempsMaxim=150`; «a prop meu»: `…/recomanacions?lat=41.39&lon=2.17`
@@ -55,7 +56,7 @@ src/
     punts.ts            GET /punts (bbox, ETag, Cache-Control i 304) i GET /punts/{id}
     esdeveniments.ts    GET /esdeveniments, autenticació API key o JWT
     auth.ts             GET, POST i PATCH /perfil (JWT de Supabase, ADR-0023)
-    admin.ts            GET /admin/usuaris i PATCH /admin/usuaris/{id}: bloqueig de comptes (ADR-0029)
+    admin.ts            GET /admin/me, GET /admin/usuaris i PATCH /admin/usuaris/{id} (ADR-0029)
     puntIndex.ts        GET /punts/{id}/index: desglossament de l'índex per hores i factors (HU04)
     recomanacions.ts    GET /recomanacions (validació de la consulta i OpenAPI)
   punts/
@@ -78,6 +79,51 @@ src/
     recomanacionsService.ts     Rànquing: millor hora, mitjana i distància; errors de la base de dades → 503
   middleware/errors.ts  ApiError, 404 i handler central d'errors
 ```
+
+## `GET /esdeveniments/{id}` (HU10, TG-138)
+
+Retorna la fitxa completa d'un esdeveniment publicable: camps bàsics del calendari, punt
+general de referència, explicació del fenomen i de l'ocurrència i consells d'observació.
+`horari` repeteix els instants `inici`, `maxim` i `fi` en UTC i associa a cadascun la seva
+`precisio` (`dia`, `hora`, `minut` o `segon`). Per exemple, `maxim: 12:00Z` amb precisió
+`dia` representa el dia conegut del màxim, no pas una hora astronòmica exacta.
+
+`Accept-Language` admet preferències estàndard com `es-ES,es;q=0.9,en;q=0.8`; se selecciona
+la primera llengua disponible entre català, castellà i anglès. Els camps que encara no tenen
+traducció es completen en català, que també és l'idioma per defecte. El dataset actual conté
+textos en català; les traduccions s'incorporen a la tasca d'i18n del contingut. El llistat
+continua en català per al contracte acordat amb Aprop.
+
+Exemple de resposta resumit:
+
+```json
+{
+  "id": "orionids-2026",
+  "tipus": "pluja_estels",
+  "nom": "Oriònids",
+  "inici": "2026-10-02T00:00:00.000Z",
+  "maxim": "2026-10-21T12:00:00.000Z",
+  "fi": "2026-11-07T23:59:59.000Z",
+  "descripcio": "Pluja anual de meteors ràpids associada al cometa Halley.",
+  "ubicacio": { "nom": "Centre d'Observació de l'Univers", "latitud": 42.024603, "longitud": 0.73684 },
+  "font": "IMO",
+  "horari": {
+    "inici": "2026-10-02T00:00:00.000Z",
+    "maxim": "2026-10-21T12:00:00.000Z",
+    "fi": "2026-11-07T23:59:59.000Z",
+    "precisio": { "inici": "dia", "maxim": "dia", "fi": "dia" }
+  },
+  "explicacio": {
+    "fenomen": "Pluja anual de meteors ràpids associada al cometa Halley.",
+    "particularitat": "El màxim és prou ample perquè també siguin útils les nits pròximes.",
+    "observacioGeneral": "Busqueu un cel fosc durant la segona meitat de la nit.",
+    "observacioEsdeveniment": "Observeu la matinada del màxim, quan Orió sigui més alt."
+  }
+}
+```
+
+Respon 404 si l'identificador no correspon a cap esdeveniment publicable; manté 401 per
+credencial absent o invàlida i 503 quan no es pot consultar la base de dades o el punt oficial.
 
 ## `GET /punts` (ADR-0012)
 
@@ -162,6 +208,7 @@ update public.perfils set rol = 'admin' where email = '<correu>';
 
 Rutes de `/admin` (tipus `UsuariAdmin` i `UsuariAdminCanvis` a `@talaia/shared`, `Cache-Control: no-store`):
 
+- `GET /admin/me`: respon 204 sense cos si la sessió correspon a un administrador no bloquejat; la web el fa servir per comprovar l'accés sense descarregar la llista d'usuaris.
 - `GET /admin/usuaris`: tots els perfils, els més nous primer, amb `rol`, `bloquejat` i `dataBloqueig`.
 - `PATCH /admin/usuaris/{id}` amb `{ "bloquejat": true | false }`: bloqueja o desbloqueja el compte. L'`id` és el del perfil (`perfils.id`). Torna el compte amb el canvi. Tornar a bloquejar un compte bloquejat no en canvia la data.
 

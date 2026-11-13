@@ -35,6 +35,12 @@ UTC i dies de fases lunars definits en hora civil de Catalunya.
   fenomen requereix una decisió posterior.
 - `font` prové de l'organització de la font importada (`IMO` o `NASA`) o, si és un
   esdeveniment calculat, del valor de `metode_calcul` (p. ex. `Astronomy Engine 2.1.19`).
+- La fitxa de l'app `GET /api/v1/esdeveniments/{id}` (TG-138) comparteix l'autenticació i els
+  camps bàsics, i hi afegeix explicacions del fenomen i de l'ocurrència, consells d'observació
+  i `horari` amb instants UTC i la precisió publicada (`dia`, `hora`, `minut`, `segon`).
+  `Accept-Language` permet seleccionar ca, es o en quan hi ha textos traduïts; el català és
+  el valor per defecte i el fallback dels camps sense traducció. El llistat que consumeix Aprop
+  continua en català, tal com es va acordar a P14.
 - Aprop entra amb `X-API-Key`, que només viu al seu backend. L'app entra a la **mateixa
   ruta** amb `Authorization: Bearer` i un JWT de Supabase verificat segons [ADR-0023](0023-validacio-jwt-jwks.md).
   Les dues alternatives s'expressen com a OR a OpenAPI. Una credencial absent o invàlida
