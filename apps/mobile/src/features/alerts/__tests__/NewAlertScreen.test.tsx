@@ -226,4 +226,77 @@ describe('NewAlertScreen', () => {
     );
     expect(back).not.toHaveBeenCalled();
   });
+
+  describe('estats de la ubicació', () => {
+    it('mentre busca on ets, la fila és un esquelet i encara no es pot crear', async () => {
+      jest.mocked(getCurrentPlace).mockReturnValue(new Promise(() => undefined));
+      await renderScreen();
+      expect(screen.getByLabelText('Buscant on ets…')).toBeOnTheScreen();
+      expect(screen.getByRole('button', { name: "Crea l'alerta" })).toBeDisabled();
+    });
+
+    it('si no la troba, ho diu i en tornar-ho a provar la fila s’omple', async () => {
+      jest
+        .mocked(getCurrentPlace)
+        .mockRejectedValueOnce(new Error('gps'))
+        .mockResolvedValueOnce({ status: 'ready', place: { name: 'Vic', lat: 41.93, lon: 2.25 } });
+      await renderScreen();
+      const row = await screen.findByLabelText('No hem trobat on ets, Torna-ho a provar');
+      expect(screen.getByRole('button', { name: "Crea l'alerta" })).toBeDisabled();
+      await fireEvent.press(row);
+      expect(await screen.findByLabelText('Vic, Ubicació actual')).toBeOnTheScreen();
+      expect(screen.getByRole('button', { name: "Crea l'alerta" })).toBeEnabled();
+    });
+  });
+
+  describe('selectors', () => {
+    it('la roda de l’hora canvia l’hora i «Fet» torna al formulari amb la nova', async () => {
+      await renderScreen();
+      await fireEvent.press(screen.getByLabelText('El mateix dia a les 18:00, Canvia'));
+      const wheel = await screen.findByRole('adjustable', { name: "Hora de l'avís" });
+      await fireEvent(wheel, 'accessibilityAction', increment);
+      await fireEvent(wheel, 'accessibilityAction', increment);
+      expect(wheel).toHaveAccessibilityValue({ text: '20:00' });
+      await fireEvent.press(screen.getByRole('button', { name: 'Fet' }));
+      expect(await screen.findByLabelText('El mateix dia a les 20:00, Canvia')).toBeOnTheScreen();
+    });
+
+    it('si es tanca el mapa sense triar, no hi ha zona: no es pot crear i la fila el torna a obrir', async () => {
+      await renderScreen();
+      await ready();
+      await fireEvent.press(screen.getByRole('tab', { name: 'Una zona concreta' }));
+      await fireEvent.press(
+        await screen.findByRole('button', { name: 'Tanca', includeHiddenElements: true }),
+      );
+      const row = await screen.findByLabelText('Cap zona triada, Tria-la');
+      expect(screen.getByRole('tab', { name: 'Una zona concreta' })).toBeSelected();
+      expect(screen.getByRole('button', { name: "Crea l'alerta" })).toBeDisabled();
+
+      await fireEvent.press(row);
+      expect(await screen.findByRole('button', { name: 'Tria aquesta zona' })).toBeOnTheScreen();
+    });
+
+    it('tornar a «La meva ubicació» recupera on ets i torna a deixar crear', async () => {
+      await renderScreen();
+      await ready();
+      await fireEvent.press(screen.getByRole('tab', { name: 'Una zona concreta' }));
+      await fireEvent.press(
+        await screen.findByRole('button', { name: 'Tanca', includeHiddenElements: true }),
+      );
+      await fireEvent.press(screen.getByRole('tab', { name: 'La meva ubicació' }));
+      expect(await ready()).toBeOnTheScreen();
+      expect(screen.getByRole('button', { name: "Crea l'alerta" })).toBeEnabled();
+    });
+  });
+
+  it('qualsevol altre error de l’API demana tornar-ho a provar i deixa el botó actiu', async () => {
+    mockedCreate.mockRejectedValue(new Error('network'));
+    await renderScreen();
+    await ready();
+    await fireEvent.press(screen.getByRole('button', { name: "Crea l'alerta" }));
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      "No hem pogut crear l'alerta. Torna-ho a provar.",
+    );
+    expect(screen.getByRole('button', { name: "Crea l'alerta" })).toBeEnabled();
+  });
 });
