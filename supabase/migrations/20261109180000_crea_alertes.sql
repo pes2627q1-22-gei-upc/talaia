@@ -14,10 +14,15 @@ create table public.alertes (
   origen extensions.geography(Point, 4326) not null,
   distancia_max_km smallint not null check (distancia_max_km between 1 and 200),
   index_minim smallint not null check (index_minim between 0 and 100),
+  -- Quan s'avisa (TG-146, mockup 11): tan bon punt algun punt hi arriba i/o el mateix dia a
+  -- aquesta hora local (0–23) si la previsió de la nit hi arriba. Almenys una de les dues.
+  avisa_en_arribar boolean not null,
+  hora_avis smallint check (hora_avis between 0 and 23),
   -- TG-147 (HU19): una alerta desactivada no notifica.
   activa boolean not null default true,
   data_creacio timestamptz not null default now(),
-  data_actualitzacio timestamptz not null default now()
+  data_actualitzacio timestamptz not null default now(),
+  constraint alertes_quan_avisa check (avisa_en_arribar or hora_avis is not null)
 );
 
 -- `GET /alertes` sempre filtra per perfil.

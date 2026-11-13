@@ -48,9 +48,11 @@ const enter = (camp: string, min: number, max: number) => {
     .max(max, { error: missatge });
 };
 
+const QUAN_AVISA = 'cal triar quan avisar: avisaEnArribar, horaAvis o tots dos';
+
 /**
- * HU16: fenomen, distància màxima des d'un origen i índex mínim. Estricte: un camp desconegut
- * (per exemple un `perfilId`) és un 400. L'usuari surt sempre del JWT.
+ * HU16: fenomen, distància màxima des d'un origen, índex mínim i quan avisar (TG-146). Estricte:
+ * un camp desconegut (per exemple un `perfilId`) és un 400. L'usuari surt sempre del JWT.
  */
 const AlertaNovaSchema: z.ZodType<AlertaNova> = z
   .strictObject({
@@ -66,8 +68,23 @@ const AlertaNovaSchema: z.ZodType<AlertaNova> = z
       description: 'Índex de visibilitat mínim per avisar',
       example: 70,
     }),
+    avisaEnArribar: z
+      .boolean({ error: 'avisaEnArribar ha de ser un booleà' })
+      .meta({ description: "Avisa tan bon punt algun punt arriba a l'índex mínim", example: true }),
+    horaAvis: enter('horaAvis', 0, 23).nullable().meta({
+      description:
+        "Avisa el mateix dia a aquesta hora local si la previsió de la nit arriba a l'índex mínim; `null` si no",
+      example: 18,
+    }),
   })
-  .meta({ id: 'AlertaNova' });
+  .refine((alerta) => alerta.avisaEnArribar || alerta.horaAvis !== null, {
+    error: QUAN_AVISA,
+    path: ['avisaEnArribar'],
+  })
+  .meta({
+    id: 'AlertaNova',
+    description: 'Almenys un de `avisaEnArribar` (true) o `horaAvis` (no null) ha d’estar triat.',
+  });
 
 const AlertaSchema: z.ZodType<Alerta> = z
   .object({
@@ -76,6 +93,8 @@ const AlertaSchema: z.ZodType<Alerta> = z
     origen: z.object({ lat: z.number(), lon: z.number() }),
     distanciaMaxKm: z.number().int(),
     indexMinim: z.number().int(),
+    avisaEnArribar: z.boolean(),
+    horaAvis: z.number().int().nullable(),
     activa: z.boolean(),
     dataCreacio: z.string(),
     dataActualitzacio: z.string(),
@@ -100,7 +119,9 @@ registry.registerPath({
       description: 'L’alerta creada',
       content: { 'application/json': { schema: AlertaSchema } },
     },
-    400: errorResponse('El cos no és vàlid'),
+    400: errorResponse(
+      '`validation_error`: el cos no és vàlid (també si no s’ha triat quan avisar)',
+    ),
     404: PROFILE_NOT_FOUND,
     409: errorResponse(
       `\`alert_limit_reached\`: l’usuari ja té ${MAX_ALERTES} alertes, n’ha d’esborrar alguna`,

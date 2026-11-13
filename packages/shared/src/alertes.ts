@@ -15,6 +15,13 @@ export type Alerta = {
   distanciaMaxKm: number;
   /** Índex de visibilitat mínim per avisar (enter, 0–100). */
   indexMinim: number;
+  /** Avisa tan bon punt algun punt arriba a l'índex mínim. */
+  avisaEnArribar: boolean;
+  /**
+   * Avisa el mateix dia a aquesta hora local (enter, 0–23) si la previsió de la nit hi arriba;
+   * `null` si no. Almenys un dels dos, `avisaEnArribar` o `horaAvis`, és triat.
+   */
+  horaAvis: number | null;
   /** Una alerta desactivada no notifica (TG-147). Una de nova sempre és activa. */
   activa: boolean;
   dataCreacio: string;
@@ -22,4 +29,7 @@ export type Alerta = {
 };
 
 /** Cos de `POST /api/v1/alertes`. No porta cap usuari: l'API el treu del JWT. */
-export type AlertaNova = Pick<Alerta, 'objectiu' | 'origen' | 'distanciaMaxKm' | 'indexMinim'>;
+export type AlertaNova = Pick<
+  Alerta,
+  'objectiu' | 'origen' | 'distanciaMaxKm' | 'indexMinim' | 'avisaEnArribar' | 'horaAvis'
+>;

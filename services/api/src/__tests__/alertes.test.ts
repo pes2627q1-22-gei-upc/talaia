@@ -43,6 +43,8 @@ const NOVA: AlertaNova = {
   origen: { lat: 41.3874, lon: 2.1686 },
   distanciaMaxKm: 60,
   indexMinim: 70,
+  avisaEnArribar: true,
+  horaAvis: null,
 };
 
 /** Com el de la base de dades: cada perfil només veu les seves, i com a molt `MAX_ALERTES`. */
@@ -133,6 +135,13 @@ describe('POST /api/v1/alertes', () => {
     ['una latitud fora de rang', { ...NOVA, origen: { lat: 91, lon: 2 } }],
     ['una longitud com a text', { ...NOVA, origen: { lat: 41, lon: '2' } }],
     ['sense origen', { objectiu: 'eclipsi', distanciaMaxKm: 60, indexMinim: 70 }],
+    ['sense triar quan avisar', { ...NOVA, avisaEnArribar: false, horaAvis: null }],
+    ['sense avisaEnArribar', { ...NOVA, avisaEnArribar: undefined }],
+    ['sense horaAvis (ha de ser null si no es tria)', { ...NOVA, horaAvis: undefined }],
+    ['avisaEnArribar com a text', { ...NOVA, avisaEnArribar: 'true' }],
+    ['horaAvis 24', { ...NOVA, horaAvis: 24 }],
+    ['horaAvis negativa', { ...NOVA, horaAvis: -1 }],
+    ['horaAvis no entera', { ...NOVA, horaAvis: 18.5 }],
     ['un cos buit', undefined],
   ])('amb %s respon 400 validation_error', async (_cas, body) => {
     const store = memoryStore();
@@ -144,6 +153,31 @@ describe('POST /api/v1/alertes', () => {
     expect(res.status).toBe(400);
     expect(res.body.error.code).toBe('validation_error');
     expect(store.create).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['només en arribar-hi', { avisaEnArribar: true, horaAvis: null }],
+    ['només a una hora', { avisaEnArribar: false, horaAvis: 18 }],
+    ['de les dues maneres', { avisaEnArribar: true, horaAvis: 0 }],
+  ])('accepta avisar %s', async (_cas, quan) => {
+    const store = memoryStore();
+    const res = await request(appAmb(store))
+      .post('/api/v1/alertes')
+      .set('Authorization', auth(MARIA.auth))
+      .send({ ...NOVA, ...quan });
+
+    expect(res.status).toBe(201);
+    expect(res.body).toMatchObject(quan);
+    expect(store.create).toHaveBeenCalledWith(MARIA.perfil, { ...NOVA, ...quan });
+  });
+
+  it('sense triar quan avisar, el missatge ho explica', async () => {
+    const res = await request(appAmb(memoryStore()))
+      .post('/api/v1/alertes')
+      .set('Authorization', auth(MARIA.auth))
+      .send({ ...NOVA, avisaEnArribar: false, horaAvis: null });
+    expect(res.status).toBe(400);
+    expect(res.body.error.message).toContain('quan avisar');
   });
 
   it(`amb ${MAX_ALERTES} alertes, la següent respon 409 alert_limit_reached`, async () => {
@@ -309,16 +343,27 @@ describe('/alertes a l’OpenAPI', () => {
     );
 
     const { AlertaNova: nova, Alerta: alerta } = res.body.components.schemas;
-    expect(nova.required.sort()).toEqual(['distanciaMaxKm', 'indexMinim', 'objectiu', 'origen']);
+    expect(nova.required.sort()).toEqual([
+      'avisaEnArribar',
+      'distanciaMaxKm',
+      'horaAvis',
+      'indexMinim',
+      'objectiu',
+      'origen',
+    ]);
     expect(nova.additionalProperties).toBe(false);
     expect(nova.properties.indexMinim).toMatchObject({ type: 'integer', minimum: 0, maximum: 100 });
     expect(nova.properties.distanciaMaxKm).toMatchObject({ minimum: 1, maximum: 200 });
+    expect(nova.properties.avisaEnArribar).toMatchObject({ type: 'boolean' });
+    expect(nova.properties.horaAvis).toMatchObject({ minimum: 0, maximum: 23 });
     expect(Object.keys(alerta.properties)).toEqual([
       'id',
       'objectiu',
       'origen',
       'distanciaMaxKm',
       'indexMinim',
+      'avisaEnArribar',
+      'horaAvis',
       'activa',
       'dataCreacio',
       'dataActualitzacio',

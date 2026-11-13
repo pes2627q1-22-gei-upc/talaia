@@ -24,7 +24,10 @@ export type AlertesStore = {
 
 export function createDatabaseAlertesStore(db: Db): AlertesStore {
   return {
-    async create(perfilId, { objectiu, origen, distanciaMaxKm, indexMinim }) {
+    async create(
+      perfilId,
+      { objectiu, origen, distanciaMaxKm, indexMinim, avisaEnArribar, horaAvis },
+    ) {
       return db.transaction().execute(async (trx) => {
         // Bloqueja el perfil fins al final de la transacció: dues peticions alhora del mateix
         // usuari es fan una darrere l'altra i no poden passar totes dues el límit.
@@ -50,6 +53,8 @@ export function createDatabaseAlertesStore(db: Db): AlertesStore {
             origen: puntDesDeLonLat(origen.lon, origen.lat),
             distanciaMaxKm,
             indexMinim,
+            avisaEnArribar,
+            horaAvis,
           })
           .returning((eb) => [
             'id',
@@ -58,6 +63,8 @@ export function createDatabaseAlertesStore(db: Db): AlertesStore {
             lon(eb.ref('origen')).as('lon'),
             'distanciaMaxKm',
             'indexMinim',
+            'avisaEnArribar',
+            'horaAvis',
             'activa',
             'dataCreacio',
             'dataActualitzacio',
@@ -77,6 +84,8 @@ export function createDatabaseAlertesStore(db: Db): AlertesStore {
           lon(eb.ref('origen')).as('lon'),
           'distanciaMaxKm',
           'indexMinim',
+          'avisaEnArribar',
+          'horaAvis',
           'activa',
           'dataCreacio',
           'dataActualitzacio',
@@ -98,6 +107,8 @@ type AlertaRow = {
   lon: number;
   distanciaMaxKm: number;
   indexMinim: number;
+  avisaEnArribar: boolean;
+  horaAvis: number | null;
   activa: boolean;
   dataCreacio: Date | string;
   dataActualitzacio: Date | string;
@@ -111,6 +122,8 @@ function toAlerta(row: AlertaRow): Alerta {
     origen: { lat: Number(row.lat), lon: Number(row.lon) },
     distanciaMaxKm: Number(row.distanciaMaxKm),
     indexMinim: Number(row.indexMinim),
+    avisaEnArribar: row.avisaEnArribar,
+    horaAvis: row.horaAvis === null ? null : Number(row.horaAvis),
     activa: row.activa,
     dataCreacio: new Date(row.dataCreacio).toISOString(),
     dataActualitzacio: new Date(row.dataActualitzacio).toISOString(),

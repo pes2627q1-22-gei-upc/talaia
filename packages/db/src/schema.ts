@@ -29,9 +29,11 @@ export type Timestamp = ColumnType<Date, Date | string, Date | string>;
 
 export interface Alertes {
   activa: Generated<boolean>;
+  avisaEnArribar: boolean;
   dataActualitzacio: Generated<Timestamp>;
   dataCreacio: Generated<Timestamp>;
   distanciaMaxKm: number;
+  horaAvis: number | null;
   id: Generated<string>;
   indexMinim: number;
   objectiu: string;
