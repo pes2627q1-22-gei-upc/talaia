@@ -45,8 +45,8 @@ export type ConsultaRecomanacions = {
 /**
  * El que accepta `GET /api/v1/recomanacions`: una `ConsultaRecomanacions` on només l'origen és
  * obligatori («A prop meu», HU02, TG-133). L'API omple la resta: `objectiu` `cel_estrellat`
- * (l'índex v1 és el mateix per a tots), `tempsMaxim` 60 minuts, `data` la nit en curs (fins al
- * migdia, la que s'acaba; després, la que ve) i, sense `desDe` ni `finsA`, la nit sencera (de les
+ * (l'índex v1 és el mateix per a tots), `tempsMaxim` 60 minuts, `data` la nit que toca (fins a
+ * les 06:00, la que s'acaba; després, la que ve) i, sense `desDe` ni `finsA`, la nit sencera (de les
  * 12:00 a les 12:00 de l'endemà) des de l'hora en curs. `desDe` i `finsA` van junts.
  */
 export type ParametresRecomanacions = Pick<ConsultaRecomanacions, 'origen'> &

@@ -171,7 +171,7 @@ El rànquing de punts per a la consulta de «Què vols veure?» (`ParametresReco
 | Paràmetre | Valors | Per defecte |
 |---|---|---|
 | `objectiu` | `ObjectiuObservacio` | `cel_estrellat` (l'índex v1 és el mateix per a tots) |
-| `data` | la nit, `YYYY-MM-DD`, entre el 2000 i el 2100 | la nit en curs, com a `/punts/{id}/index`: fins a les 12:00, la que s'acaba; després, la que ve |
+| `data` | la nit, `YYYY-MM-DD`, entre el 2000 i el 2100 | la nit que toca (`upcomingNight`): fins a les 06:00, la que s'acaba; després, la que ve. No és com a `/punts/{id}/index` (12:00): al matí, la nit que s'acaba només té hores de dia |
 | `desDe`, `finsA` | hores locals de Catalunya, 0–23, diferents; **van juntes** (només una → 400) | la nit sencera, de 12:00 a 12:00 (des de l'hora en curs) |
 | `tempsMaxim` | minuts en cotxe, 1–600 | **60** (≈ 46,2 km) |
 | `limit` | 1–100 | 20 |

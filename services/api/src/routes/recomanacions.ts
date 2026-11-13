@@ -8,7 +8,11 @@ import { z } from 'zod';
 
 import { ApiError } from '../middleware/errors';
 import { ErrorSchema, registry } from '../openapi';
-import { NIGHT_YEAR_MAX as ANY_MAX, NIGHT_YEAR_MIN as ANY_MIN } from '../index/night';
+import {
+  NIGHT_YEAR_MAX as ANY_MAX,
+  NIGHT_YEAR_MIN as ANY_MIN,
+  UPCOMING_NIGHT_FROM_HOUR,
+} from '../index/night';
 import { INICI_NIT } from '../recomanacions/franja';
 import {
   LIMIT_PER_DEFECTE,
@@ -85,7 +89,7 @@ const queryShape = (numero: Numero) => {
       })
       .optional()
       .meta({
-        description: `Nit de l'observació, \`YYYY-MM-DD\` (el dia del vespre), entre el ${ANY_MIN} i el ${ANY_MAX}. La nit va de les ${INICI_NIT}:00 d'aquest dia a les ${INICI_NIT}:00 de l'endemà. Per defecte, la nit en curs: fins a les ${INICI_NIT}:00, la que s'acaba; després, la que ve`,
+        description: `Nit de l'observació, \`YYYY-MM-DD\` (el dia del vespre), entre el ${ANY_MIN} i el ${ANY_MAX}. La nit va de les ${INICI_NIT}:00 d'aquest dia a les ${INICI_NIT}:00 de l'endemà. Per defecte, la nit que toca: fins a les ${String(UPCOMING_NIGHT_FROM_HOUR).padStart(2, '0')}:00, la que s'acaba; després, la que ve`,
         example: '2026-10-21',
       }),
     desDe: hora('desDe')
@@ -136,7 +140,7 @@ const QuerySchema = z
 
 const RecomanacionsSchema: z.ZodType<RecomanacionsResposta> = z
   .object({
-    data: z.string().meta({
+    data: z.iso.date().meta({
       description: "La nit que s'ha fet servir (`YYYY-MM-DD`): la de la consulta o la que toca",
       example: '2026-10-21',
     }),

@@ -101,8 +101,14 @@ describe('resolConsulta («A prop meu», TG-133)', () => {
 
   it.each([
     ['de matinada, la nit que s’acaba', '2026-12-16T03:00:00Z', '2026-12-15'],
-    ['al matí, encara la nit que s’acaba', '2026-12-16T10:59:00Z', '2026-12-15'],
-    ['a partir del migdia, la nit que ve', '2026-12-16T11:00:00Z', '2026-12-16'],
+    ['a les 05:59, encara la nit que s’acaba', '2026-12-16T04:59:00Z', '2026-12-15'],
+    ['a partir de les 06:00, la nit que ve', '2026-12-16T05:00:00Z', '2026-12-16'],
+    [
+      'al matí, la nit que ve (la que s’acaba només té hores de dia)',
+      '2026-12-16T10:59:00Z',
+      '2026-12-16',
+    ],
+    ['a l’estiu (CEST), a les 06:00, la nit que ve', '2027-07-02T04:00:00Z', '2027-07-02'],
   ])('sense data, %s', (_cas, ara, nit) => {
     expect(resolConsulta(ORIGEN, new Date(ara)).data).toBe(nit);
   });

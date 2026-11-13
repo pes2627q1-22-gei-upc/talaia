@@ -6,7 +6,7 @@ import type {
   RecomanacionsResposta,
 } from '@talaia/shared';
 
-import { defaultNight, nightWindow } from '../index/night';
+import { nightWindow, upcomingNight } from '../index/night';
 import { ApiError } from '../middleware/errors';
 import { iniciHora } from '../punts/puntsService';
 import { franjaUtc } from './franja';
@@ -42,12 +42,13 @@ export type ConsultaResolta = {
 };
 
 /**
- * Omple el que falta de la consulta («A prop meu», TG-133): la nit en curs (`defaultNight`), la nit
- * sencera si no hi ha franja, 60 minuts en cotxe, `cel_estrellat` i 20 punts. Amb només una de
- * `desDe` i `finsA` no se sap quina franja es vol: la ruta ho rebutja abans d'arribar aquí.
+ * Omple el que falta de la consulta («A prop meu», TG-133): la nit que toca (`upcomingNight`: a
+ * partir de les 06:00, la que ve), la nit sencera si no hi ha franja, 60 minuts en cotxe,
+ * `cel_estrellat` i 20 punts. Amb només una de `desDe` i `finsA` no se sap quina franja es vol: la
+ * ruta ho rebutja abans d'arribar aquí.
  */
 export function resolConsulta(consulta: ParametresRecomanacions, now: Date): ConsultaResolta {
-  const data = consulta.data ?? defaultNight(now);
+  const data = consulta.data ?? upcomingNight(now);
   const { desDe, finsA } = consulta;
   let franja: ConsultaResolta['franja'];
   if (desDe !== undefined && finsA !== undefined) {
