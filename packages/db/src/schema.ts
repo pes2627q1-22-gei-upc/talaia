@@ -27,6 +27,15 @@ export type Numeric = ColumnType<string, number | string, number | string>;
 
 export type Timestamp = ColumnType<Date, Date | string, Date | string>;
 
+export interface DispositiusPush {
+  dataActualitzacio: Generated<Timestamp>;
+  dataCreacio: Generated<Timestamp>;
+  id: Generated<string>;
+  perfilId: string;
+  plataforma: string;
+  token: string;
+}
+
 export interface EsdevenimentsAstronomics {
   codi: string;
   dataActualitzacio: Generated<Timestamp>;
@@ -146,6 +155,7 @@ export interface TipusFenomen {
 }
 
 export interface DB {
+  dispositiusPush: DispositiusPush;
   esdevenimentsAstronomics: EsdevenimentsAstronomics;
   estacionsXema: EstacionsXema;
   execucionsWorker: ExecucionsWorker;

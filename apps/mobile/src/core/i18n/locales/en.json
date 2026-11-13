@@ -298,7 +298,10 @@
   "alerts": {
     "title": "Alerts",
     "soonTitle": "Coming soon",
-    "soonMessage": "Here you'll be able to create alerts so we can tell you when conditions are good for what you want to see."
+    "soonMessage": "Here you'll be able to create alerts so we can tell you when conditions are good for what you want to see.",
+    "pushDenied": "Notifications are turned off: we won't alert you on your phone when conditions are good. You can turn them on in Settings.",
+    "pushUnavailable": "This device can’t receive notifications. The rest of the app works as usual.",
+    "openSettings": "Open Settings"
   },
   "auth": {
     "signOut": "Sign out",
@@ -374,5 +377,8 @@
     "byCar": "{{travel}} by car",
     "collapseSheet": "Collapse the list",
     "expandSheet": "Expand the list"
+  },
+  "notifications": {
+    "channelName": "Sky alerts"
   }
 }

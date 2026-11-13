@@ -8,6 +8,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { queryClient } from '@/core/api/queryClient';
 import { AuthProvider } from '@/features/auth/AuthProvider';
+import { PushRegistrationProvider } from '@/features/notifications/PushRegistrationProvider';
 
 /** Tots els proveïdors globals de l'app, en un sol lloc. */
 export function AppProviders({ children }: PropsWithChildren) {
@@ -15,7 +16,9 @@ export function AppProviders({ children }: PropsWithChildren) {
     <GestureHandlerRootView style={styles.root}>
       <SafeAreaProvider>
         <QueryClientProvider client={queryClient}>
-          <AuthProvider>{children}</AuthProvider>
+          <AuthProvider>
+            <PushRegistrationProvider>{children}</PushRegistrationProvider>
+          </AuthProvider>
         </QueryClientProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>

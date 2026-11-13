@@ -298,7 +298,10 @@
   "alerts": {
     "title": "Alertas",
     "soonTitle": "Pronto",
-    "soonMessage": "Aquí podrás crear alertas para que te avisemos cuando haya buenas condiciones para lo que quieres ver."
+    "soonMessage": "Aquí podrás crear alertas para que te avisemos cuando haya buenas condiciones para lo que quieres ver.",
+    "pushDenied": "Las notificaciones están desactivadas: no te avisaremos en el móvil cuando haya buenas condiciones. Puedes activarlas en los ajustes.",
+    "pushUnavailable": "Este dispositivo no puede recibir notificaciones. El resto de la app funciona igual.",
+    "openSettings": "Abrir ajustes"
   },
   "auth": {
     "signOut": "Cerrar sesión",
@@ -374,5 +377,8 @@
     "byCar": "{{travel}} en coche",
     "collapseSheet": "Plegar la lista",
     "expandSheet": "Desplegar la lista"
+  },
+  "notifications": {
+    "channelName": "Alertas del cielo"
   }
 }

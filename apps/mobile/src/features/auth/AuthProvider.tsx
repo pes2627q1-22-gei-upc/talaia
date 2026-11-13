@@ -11,6 +11,7 @@ import {
 } from 'react';
 
 import { accountBlocked } from '@/core/api/accountBlocked';
+import { pushRepository } from '@/features/notifications/pushRepository';
 
 import { authRepository, type AuthUser } from './authRepository';
 import { profileRepository } from './profileRepository';
@@ -108,6 +109,8 @@ export function AuthProvider({ children }: PropsWithChildren) {
     // Un getSession anterior no pot restaurar l'usuari després del logout.
     const version = ++revision.current;
     try {
+      // Primer el token (amb el JWT encara vàlid), després la sessió (ADR-0028).
+      await pushRepository.unregisterDevice();
       await authRepository.signOut();
       if (mounted.current && revision.current === version) accept(null);
     } catch {

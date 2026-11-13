@@ -9,8 +9,10 @@ import { buildOpenApiDocument } from '../openapi';
 import type { PuntsService } from '../punts/puntsService';
 import type { RecomanacionsService } from '../recomanacions/recomanacionsService';
 import type { ProfileStore } from '../services/profileService';
+import type { PushDeviceStore } from '../services/pushDeviceService';
 import { createAdminRouter } from './admin';
 import { createAuthRouter } from './auth';
+import { createDispositiusRouter } from './dispositius';
 import { createEsdevenimentsRouter } from './esdeveniments';
 import './esdeveniments.contract';
 import { healthRouter } from './health';
@@ -27,6 +29,8 @@ export type ApiDeps = {
   supabaseUrl?: string;
   jwks?: JwksSource;
   profileStore?: ProfileStore;
+  /** Expo push tokens (`/perfil/dispositius`, TG-152). */
+  dispositius?: PushDeviceStore;
   esdeveniments?: EsdevenimentsService;
   apropApiKey?: string;
 };
@@ -39,6 +43,7 @@ export function createApiRouter({
   supabaseUrl,
   jwks,
   profileStore,
+  dispositius,
   esdeveniments,
   apropApiKey,
 }: ApiDeps & { profileStore: ProfileStore }): Router {
@@ -59,6 +64,7 @@ export function createApiRouter({
     accountStatus: (authUserId) => profileStore.getAccountStatus(authUserId),
   });
   router.use(createAuthRouter({ requireUser, profileStore }));
+  router.use(createDispositiusRouter({ requireUser, store: dispositius }));
   router.use('/admin', createAdminRouter({ requireUser, profileStore }));
 
   // Es genera quan ja s'han importat tots els routers, que són els que registren les rutes.
