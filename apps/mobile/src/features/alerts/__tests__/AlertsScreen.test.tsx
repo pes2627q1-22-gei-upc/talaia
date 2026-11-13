@@ -1,4 +1,5 @@
-import { render, screen } from '@testing-library/react-native';
+import { fireEvent, render, screen } from '@testing-library/react-native';
+import { Linking } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import i18n from '@/core/i18n';
@@ -23,7 +24,9 @@ const renderScreen = () =>
     </SafeAreaProvider>,
   );
 
-const withPermission = (permission: 'granted' | 'denied') =>
+type Permission = ReturnType<typeof usePushPermission>['permission'];
+
+const withPermission = (permission: Permission) =>
   jest.mocked(usePushPermission).mockReturnValue({
     permission,
     registered: permission === 'granted',
@@ -48,4 +51,35 @@ describe('AlertsScreen', () => {
     expect(screen.getByRole('button', { name: 'Obre la configuració' })).toBeOnTheScreen();
     expect(screen.getByText('Aviat')).toBeOnTheScreen();
   });
+
+  it("el botó de l'avís obre la configuració del sistema", async () => {
+    await i18n.changeLanguage('ca');
+    withPermission('denied');
+    const openSettings = jest.spyOn(Linking, 'openSettings').mockResolvedValue();
+    await renderScreen();
+    fireEvent.press(screen.getByRole('button', { name: 'Obre la configuració' }));
+    expect(openSettings).toHaveBeenCalledTimes(1);
+    openSettings.mockRestore();
+  });
+
+  it('a Expo Go o al simulador diu que no hi ha notificacions, sense botó', async () => {
+    await i18n.changeLanguage('ca');
+    withPermission('unavailable');
+    await renderScreen();
+    expect(screen.getByText(/no pot rebre notificacions/)).toBeOnTheScreen();
+    expect(screen.queryByRole('button', { name: 'Obre la configuració' })).toBeNull();
+    expect(screen.getByText('Aviat')).toBeOnTheScreen();
+  });
+
+  it.each([['undetermined' as const], [null]])(
+    'amb el permís %s no mostra cap avís',
+    async (permission) => {
+      await i18n.changeLanguage('ca');
+      withPermission(permission);
+      await renderScreen();
+      expect(screen.queryByText(/notificacions estan desactivades/)).toBeNull();
+      expect(screen.queryByText(/no pot rebre notificacions/)).toBeNull();
+      expect(screen.getByText('Aviat')).toBeOnTheScreen();
+    },
+  );
 });
