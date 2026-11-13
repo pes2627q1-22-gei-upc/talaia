@@ -1,4 +1,5 @@
 import { act, renderHook } from '@testing-library/react-native';
+import { Linking } from 'react-native';
 
 import { accountBlocked } from '@/core/api/accountBlocked';
 import { ApiError } from '@/core/api/httpClient';
@@ -9,13 +10,19 @@ import { useAccountBlockedViewModel } from '../useAccountBlockedViewModel';
 import { useAuthViewModel } from '../useAuthViewModel';
 
 jest.mock('../useAuthViewModel', () => ({ useAuthViewModel: jest.fn() }));
-jest.mock('@/core/config/env', () => ({ env: { contactEmail: null } }));
+const mockEnv = { contactEmail: null as string | null };
+jest.mock('@/core/config/env', () => ({
+  get env() {
+    return mockEnv;
+  },
+}));
 jest.mock('../profileRepository', () => ({ profileRepository: { ensure: jest.fn() } }));
 
 const ensure = jest.mocked(profileRepository.ensure);
 
 beforeEach(async () => {
   jest.clearAllMocks();
+  mockEnv.contactEmail = null;
   await i18n.changeLanguage('ca');
   accountBlocked.report();
   jest.mocked(useAuthViewModel).mockReturnValue({
@@ -60,4 +67,19 @@ it('mentre comprova, ho diu', async () => {
   expect(result.current.retryLabel).toBe('Comprovant…');
   await act(async () => finish());
   expect(result.current.checking).toBe(false);
+});
+
+it('si el mòbil no pot obrir el correu, ho diu amb l’adreça; tornar-ho a provar ho esborra', async () => {
+  mockEnv.contactEmail = 'equip@example.test';
+  const openURL = jest.spyOn(Linking, 'openURL').mockRejectedValueOnce(new Error('no mail app'));
+  const { result } = await renderHook(useAccountBlockedViewModel);
+  expect(result.current.contact?.error).toBeNull();
+  await act(async () => result.current.contact?.open());
+  expect(openURL).toHaveBeenCalledWith('mailto:equip@example.test');
+  expect(result.current.contact?.error).toBe(
+    "No s'ha pogut obrir el correu. Escriu-nos a equip@example.test.",
+  );
+  openURL.mockResolvedValueOnce(undefined);
+  await act(async () => result.current.contact?.open());
+  expect(result.current.contact?.error).toBeNull();
 });

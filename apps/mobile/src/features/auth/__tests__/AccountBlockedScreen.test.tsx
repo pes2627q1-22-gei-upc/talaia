@@ -123,3 +123,13 @@ it('«Torna-ho a comprovar» torna a preguntar a l’API i, mentrestant, no es p
   await act(async () => finish());
   expect(screen.getByRole('button', { name: 'Torna-ho a comprovar' })).toBeEnabled();
 });
+
+it('si no es pot obrir el correu, avisa sota el botó', async () => {
+  mockEnv.contactEmail = 'equip@example.test';
+  jest.spyOn(Linking, 'openURL').mockRejectedValueOnce(new Error('no mail app'));
+  await renderScreen();
+  await fireEvent.press(screen.getByRole('button', { name: 'Escriu a equip@example.test' }));
+  expect(await screen.findByRole('alert')).toHaveTextContent(
+    "No s'ha pogut obrir el correu. Escriu-nos a equip@example.test.",
+  );
+});

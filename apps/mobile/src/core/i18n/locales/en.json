@@ -328,7 +328,8 @@
     "message": "You can't use Talaia with this account. If you think this is a mistake, contact the Talaia team.",
     "retry": "Check again",
     "checking": "Checking…",
-    "contact": "Email {{email}}"
+    "contact": "Email {{email}}",
+    "contactError": "Couldn't open your email app. Write to us at {{email}}."
   },
   "emailLogin": {
     "title": "Sign in with email",

@@ -16,6 +16,7 @@ export function useAccountBlockedViewModel() {
   const auth = useAuthViewModel();
   const { t } = useTranslation();
   const [checking, setChecking] = useState(false);
+  const [contactFailed, setContactFailed] = useState(false);
 
   // Si encara està bloquejat, el client HTTP el torna a marcar; un error de xarxa no canvia res.
   const retry = useCallback(async () => {
@@ -44,7 +45,14 @@ export function useAccountBlockedViewModel() {
     contact: env.contactEmail
       ? {
           label: t('accountBlocked.contact', { email: env.contactEmail }),
-          open: () => void Linking.openURL(`mailto:${env.contactEmail}`).catch(() => {}),
+          // Sense app de correu, `mailto:` falla: es diu i l'adreça queda a la vista per copiar-la.
+          open: () => {
+            setContactFailed(false);
+            Linking.openURL(`mailto:${env.contactEmail}`).catch(() => setContactFailed(true));
+          },
+          error: contactFailed
+            ? t('accountBlocked.contactError', { email: env.contactEmail })
+            : null,
         }
       : null,
   };

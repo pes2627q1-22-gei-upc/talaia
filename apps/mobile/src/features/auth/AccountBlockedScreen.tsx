@@ -28,6 +28,11 @@ export function AccountBlockedScreen() {
         {vm.contact ? (
           <Button variant="text" label={vm.contact.label} onPress={vm.contact.open} />
         ) : null}
+        {vm.contact?.error ? (
+          <AppText variant="small" color="tap" accessibilityRole="alert" style={styles.center}>
+            {vm.contact.error}
+          </AppText>
+        ) : null}
       </Animated.View>
       <View style={styles.actions}>
         <Button
