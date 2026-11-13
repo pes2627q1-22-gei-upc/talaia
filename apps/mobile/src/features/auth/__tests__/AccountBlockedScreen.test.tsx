@@ -1,13 +1,15 @@
-import { fireEvent, render, screen, within } from '@testing-library/react-native';
+import { act, fireEvent, render, screen, within } from '@testing-library/react-native';
 import { Linking } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import i18n from '@/core/i18n';
 
 import { AccountBlockedScreen } from '../AccountBlockedScreen';
+import { profileRepository } from '../profileRepository';
 import { useAuthViewModel } from '../useAuthViewModel';
 
 jest.mock('../useAuthViewModel', () => ({ useAuthViewModel: jest.fn() }));
+jest.mock('../profileRepository', () => ({ profileRepository: { ensure: jest.fn() } }));
 // El correu real és al .env de cadascú: els tests no en depenen.
 const mockEnv = { contactEmail: null as string | null };
 jest.mock('@/core/config/env', () => ({
@@ -104,4 +106,20 @@ it('amb el correu de l’equip configurat, ofereix escriure-hi', async () => {
 it('sense el correu configurat, no hi ha cap botó per escriure', async () => {
   await renderScreen();
   expect(screen.queryByRole('button', { name: /Escriu a/ })).toBeNull();
+});
+
+it('«Torna-ho a comprovar» torna a preguntar a l’API i, mentrestant, no es pot tornar a prémer', async () => {
+  let finish!: () => void;
+  jest.mocked(profileRepository.ensure).mockReturnValue(
+    new Promise((done) => {
+      finish = () => done({ created: false });
+    }),
+  );
+  await renderScreen();
+  await fireEvent.press(screen.getByRole('button', { name: 'Torna-ho a comprovar' }));
+  expect(profileRepository.ensure).toHaveBeenCalledTimes(1);
+  expect(screen.getByRole('button', { name: 'Comprovant…' })).toBeDisabled();
+  expect(screen.getByRole('button', { name: 'Tanca la sessió' })).toBeDisabled();
+  await act(async () => finish());
+  expect(screen.getByRole('button', { name: 'Torna-ho a comprovar' })).toBeEnabled();
 });
