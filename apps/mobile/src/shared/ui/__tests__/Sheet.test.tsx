@@ -50,4 +50,18 @@ describe('Sheet', () => {
     expect(screen.queryByText('Contingut')).toBeNull();
     jest.useRealTimers();
   });
+
+  it('el botó enrere d’Android demana tancar el full', async () => {
+    const onClose = jest.fn();
+    await renderSheet(true, onClose);
+    await fireEvent(screen.getByText('Contingut'), 'requestClose');
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('el gest d’escapament del lector de pantalla demana tancar el full', async () => {
+    const onClose = jest.fn();
+    await renderSheet(true, onClose);
+    await fireEvent(screen.getByText('Contingut'), 'accessibilityEscape');
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
 });

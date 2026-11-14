@@ -1,12 +1,15 @@
-import { fireEvent, render, screen, within } from '@testing-library/react-native';
+import { act, fireEvent, render, screen, within } from '@testing-library/react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import i18n from '@/core/i18n';
+import { accountBlocked } from '@/core/api/accountBlocked';
 
 import { AccountBlockedScreen } from '../AccountBlockedScreen';
 import { useAuthViewModel } from '../useAuthViewModel';
+import { profileRepository } from '../profileRepository';
 
 jest.mock('../useAuthViewModel', () => ({ useAuthViewModel: jest.fn() }));
+jest.mock('../profileRepository', () => ({ profileRepository: { ensure: jest.fn() } }));
 
 const signOut = jest.fn(async () => {});
 
@@ -81,4 +84,31 @@ it('si no ha pogut tancar la sessió, ho diu', async () => {
   auth({ error: 'logout' });
   await renderScreen();
   expect(screen.getByText("No s'ha pogut tancar la sessió. Torna-ho a provar.")).toBeOnTheScreen();
+});
+
+it('reconsulta el bloqueig des del botó i impedeix repetir accions mentre comprova', async () => {
+  let finish!: () => void;
+  jest.mocked(profileRepository.ensure).mockReturnValue(
+    new Promise((resolve) => {
+      finish = () => resolve({ created: false });
+    }),
+  );
+  accountBlocked.report();
+  try {
+    await renderScreen();
+    await fireEvent.press(screen.getByRole('button', { name: 'Torna-ho a comprovar' }));
+    const checking = screen.getByRole('button', { name: 'Comprovant…' });
+    const logout = screen.getByRole('button', { name: 'Tanca la sessió' });
+    expect(checking).toBeDisabled();
+    expect(logout).toBeDisabled();
+    await fireEvent.press(checking);
+    await fireEvent.press(logout);
+    expect(profileRepository.ensure).toHaveBeenCalledTimes(1);
+    expect(signOut).not.toHaveBeenCalled();
+    await act(async () => finish());
+    expect(accountBlocked.get()).toBe(false);
+    expect(screen.getByRole('button', { name: 'Torna-ho a comprovar' })).toBeEnabled();
+  } finally {
+    accountBlocked.clear();
+  }
 });

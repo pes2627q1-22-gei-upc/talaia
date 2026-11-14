@@ -67,6 +67,9 @@ pendent: provar una configuració no valida automàticament les altres.
 
 ## Evidències a la PR i seguiment de la TG-260
 
+L’estat de les pantalles existents i les comprovacions pendents es recullen a
+[l’inventari de la TG-260](testing-ui-inventari.md).
+
 A «Com provar-ho» de la PR, indica els tests executats i el resultat. A «Captures
 i comprovacions d'UI», anota les pantalles i estats revisats, el dispositiu o
 emulador, la plataforma, els idiomes i la mida de text utilitzats. Adjunta captures

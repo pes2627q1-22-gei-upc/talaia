@@ -1,7 +1,8 @@
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-import i18n from '@/core/i18n';
+import i18n, { LANGUAGE_KEY } from '@/core/i18n';
 import { useAuthViewModel } from '@/features/auth/useAuthViewModel';
 
 import { ProfileScreen } from '../ProfileScreen';
@@ -52,6 +53,31 @@ describe('ProfileScreen · sessió (HU35)', () => {
     jest.clearAllMocks();
     await i18n.changeLanguage('ca');
   });
+
+  it.each(['es', 'en', 'ca'] as const)(
+    'canvia a %s amb els botons i tradueix la pantalla',
+    async (language) => {
+      // Per al català, comencem en un altre idioma per comprovar un canvi real.
+      const previous = language === 'ca' ? 'en' : 'ca';
+      await i18n.changeLanguage(previous);
+      await renderProfile(auth());
+      const targetLabel = i18n.t(`profile.languages.${language}`);
+      expect(
+        screen.getByRole('button', { name: i18n.t(`profile.languages.${previous}`) }),
+      ).toBeSelected();
+      await fireEvent.press(screen.getByRole('button', { name: targetLabel }));
+      await waitFor(() => expect(i18n.language).toBe(language));
+      expect(
+        screen.getByRole('header', { name: i18n.t('profile.title', { lng: language }) }),
+      ).toBeOnTheScreen();
+      expect(
+        screen.getByRole('button', {
+          name: i18n.t(`profile.languages.${language}`, { lng: language }),
+        }),
+      ).toBeSelected();
+      expect(AsyncStorage.setItem).toHaveBeenCalledWith(LANGUAGE_KEY, language);
+    },
+  );
 
   it('amb sessió, «Tanca la sessió» la tanca', async () => {
     await renderProfile(auth());

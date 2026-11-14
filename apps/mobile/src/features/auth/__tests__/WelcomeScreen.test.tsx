@@ -201,4 +201,47 @@ describe('WelcomeScreen', () => {
     jest.mocked(useReducedMotion).mockReturnValue(false);
     jest.useRealTimers();
   });
+
+  it.each(['google', 'apple'] as const)(
+    'el botó de %s executa el proveïdor corresponent',
+    async (provider) => {
+      jest.mocked(signInAndEnsureProfile).mockImplementation(async (signIn) => {
+        await signIn();
+        return { ok: false, reason: 'cancelled' };
+      });
+      await renderWelcome();
+      await fireEvent.press(
+        await screen.findByRole('button', {
+          name: provider === 'google' ? 'Continua amb Google' : 'Continua amb Apple',
+        }),
+      );
+      expect(authRepository.signInWithGoogle).toHaveBeenCalledTimes(provider === 'google' ? 1 : 0);
+      expect(authRepository.signInWithApple).toHaveBeenCalledTimes(provider === 'apple' ? 1 : 0);
+      expect(screen.queryByRole('alert')).toBeNull();
+      expect(replace).not.toHaveBeenCalled();
+    },
+  );
+
+  it('desactiva els tres botons mentre espera el proveïdor i els recupera si falla', async () => {
+    let finish!: (result: Awaited<ReturnType<typeof signInAndEnsureProfile>>) => void;
+    jest.mocked(signInAndEnsureProfile).mockReturnValue(
+      new Promise((resolve) => {
+        finish = resolve;
+      }),
+    );
+    await renderWelcome();
+    await screen.findByRole('button', { name: 'Continua amb Apple' });
+    await fireEvent.press(screen.getByRole('button', { name: 'Continua amb Google' }));
+    const buttons = screen.getAllByRole('button');
+    expect(buttons).toHaveLength(3);
+    for (const button of buttons) {
+      expect(button).toBeDisabled();
+      await fireEvent.press(button);
+    }
+    expect(signInAndEnsureProfile).toHaveBeenCalledTimes(1);
+    expect(push).not.toHaveBeenCalled();
+    await act(async () => finish({ ok: false, reason: 'network' }));
+    expect(screen.getByRole('alert')).toBeOnTheScreen();
+    for (const button of screen.getAllByRole('button')) expect(button).toBeEnabled();
+  });
 });
