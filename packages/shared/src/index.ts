@@ -1,3 +1,4 @@
+export type * from './alertes';
 export type * from './api';
 export type * from './astronomia';
 export type * from './esdeveniments';
