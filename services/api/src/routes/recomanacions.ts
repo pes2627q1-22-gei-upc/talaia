@@ -1,6 +1,6 @@
 import type {
-  ConsultaRecomanacions,
   ObjectiuObservacio,
+  ParametresRecomanacions,
   RecomanacionsResposta,
 } from '@talaia/shared';
 import { Router } from 'express';
@@ -8,10 +8,16 @@ import { z } from 'zod';
 
 import { ApiError } from '../middleware/errors';
 import { ErrorSchema, registry } from '../openapi';
-import { NIGHT_YEAR_MAX as ANY_MAX, NIGHT_YEAR_MIN as ANY_MIN } from '../index/night';
+import {
+  NIGHT_YEAR_MAX as ANY_MAX,
+  NIGHT_YEAR_MIN as ANY_MIN,
+  UPCOMING_NIGHT_FROM_HOUR,
+} from '../index/night';
 import { INICI_NIT } from '../recomanacions/franja';
 import {
   LIMIT_PER_DEFECTE,
+  OBJECTIU_PER_DEFECTE,
+  TEMPS_MAXIM_PER_DEFECTE,
   type RecomanacionsService,
 } from '../recomanacions/recomanacionsService';
 import { IndexHoraSchema } from '../index/indexSchemas';
@@ -54,15 +60,19 @@ const senseBuits = (query: unknown) =>
       )
     : query;
 
-/** La query de la ruta (ADR-0011): la mateixa definició valida (`z.coerce`) i documenta. */
+/**
+ * La query de la ruta (ADR-0011): la mateixa definició valida (`z.coerce`) i documenta. Només
+ * l'origen és obligatori («A prop meu», TG-133); la resta la completa el servei (`resolConsulta`).
+ */
 const queryShape = (numero: Numero) => {
   const hora = (camp: string) =>
     numero(`${camp} ha de ser una hora entera de 0 a 23`, { min: 0, max: 23, int: true });
   return z.object({
     objectiu: z
       .enum(OBJECTIUS, { error: `objectiu ha de ser un de: ${OBJECTIUS.join(', ')}` })
+      .optional()
       .meta({
-        description: "Què es vol veure. L'índex v1 encara és el mateix per a tots (ADR-0018)",
+        description: `Què es vol veure. L'índex v1 encara és el mateix per a tots (ADR-0018). Per defecte, \`${OBJECTIU_PER_DEFECTE}\``,
       }),
     lat: numero('lat ha de ser un número entre -90 i 90', { min: -90, max: 90 }).meta({
       description: "Latitud de l'origen (WGS84)",
@@ -77,24 +87,32 @@ const queryShape = (numero: Numero) => {
       .refine((d) => Number(d.slice(0, 4)) >= ANY_MIN && Number(d.slice(0, 4)) <= ANY_MAX, {
         error: `data ha de ser entre el ${ANY_MIN} i el ${ANY_MAX}`,
       })
+      .optional()
       .meta({
-        description: `Nit de l'observació, \`YYYY-MM-DD\` (el dia del vespre), entre el ${ANY_MIN} i el ${ANY_MAX}. La nit va de les ${INICI_NIT}:00 d'aquest dia a les ${INICI_NIT}:00 de l'endemà`,
+        description: `Nit de l'observació, \`YYYY-MM-DD\` (el dia del vespre), entre el ${ANY_MIN} i el ${ANY_MAX}. La nit va de les ${INICI_NIT}:00 d'aquest dia a les ${INICI_NIT}:00 de l'endemà. Per defecte, la nit que toca: fins a les ${String(UPCOMING_NIGHT_FROM_HOUR).padStart(2, '0')}:00, la que s'acaba; després, la que ve`,
         example: '2026-10-21',
       }),
-    desDe: hora('desDe').meta({
-      description: `Inici de la franja, hora local de Catalunya. Abans de les ${INICI_NIT}, és l'endemà de \`data\``,
-      example: 22,
-    }),
-    finsA: hora('finsA').meta({
+    desDe: hora('desDe')
+      .optional()
+      .meta({
+        description: `Inici de la franja, hora local de Catalunya. Abans de les ${INICI_NIT}, és l'endemà de \`data\`. Va amb \`finsA\`: sense totes dues, la nit sencera des de l'hora en curs`,
+        example: 22,
+      }),
+    finsA: hora('finsA').optional().meta({
       description:
-        "Fi de la franja (no inclosa), hora local. Diferent de `desDe`; si és més petita, l'endemà de `desDe`",
+        "Fi de la franja (no inclosa), hora local. Diferent de `desDe`; si és més petita, l'endemà de `desDe`. Va amb `desDe`",
       example: 6,
     }),
     tempsMaxim: numero(`tempsMaxim ha de ser un nombre enter de minuts de 1 a ${TEMPS_MAXIM}`, {
       min: 1,
       max: TEMPS_MAXIM,
       int: true,
-    }).meta({ description: 'Temps màxim en cotxe, en minuts', example: 150 }),
+    })
+      .optional()
+      .meta({
+        description: `Temps màxim en cotxe, en minuts. Per defecte, ${TEMPS_MAXIM_PER_DEFECTE} («A prop meu»)`,
+        example: 150,
+      }),
     limit: numero(`limit ha de ser un nombre enter de 1 a ${LIMIT_MAXIM}`, {
       min: 1,
       max: LIMIT_MAXIM,
@@ -112,13 +130,27 @@ const QueryDoc = queryShape(numeroAmb(z.number));
 
 const QuerySchema = z
   .preprocess(senseBuits, queryShape(numeroAmb(z.coerce.number)))
-  .refine((q) => q.desDe !== q.finsA, {
+  .refine((q) => (q.desDe === undefined) === (q.finsA === undefined), {
+    error: 'desDe i finsA van juntes: sense cap de les dues, la nit sencera',
+  })
+  .refine((q) => q.desDe === undefined || q.desDe !== q.finsA, {
     error: 'desDe i finsA no poden ser iguals: la franja dura almenys una hora',
   })
-  .transform(({ lat, lon, ...q }): ConsultaRecomanacions => ({ ...q, origen: { lat, lon } }));
+  .transform(({ lat, lon, ...q }): ParametresRecomanacions => ({ ...q, origen: { lat, lon } }));
 
 const RecomanacionsSchema: z.ZodType<RecomanacionsResposta> = z
   .object({
+    data: z.iso.date().meta({
+      description: "La nit que s'ha fet servir (`YYYY-MM-DD`): la de la consulta o la que toca",
+      example: '2026-10-21',
+    }),
+    tempsMaxim: z
+      .number()
+      .int()
+      .meta({
+        description: `Temps en cotxe que s'ha fet servir, en minuts: el de la consulta o ${TEMPS_MAXIM_PER_DEFECTE}`,
+        example: TEMPS_MAXIM_PER_DEFECTE,
+      }),
     radiKm: z.number().meta({
       description: 'Radi en línia recta que correspon a `tempsMaxim` (60 km/h, desviament ×1,3)',
       example: 115.4,
@@ -168,8 +200,11 @@ registry.registerPath({
   method: 'get',
   path: '/recomanacions',
   tags: ['Recomanacions'],
-  summary: 'Rànquing de punts per a un objectiu, un origen, una nit i un temps en cotxe (HU01)',
+  summary:
+    'Rànquing de punts per a un objectiu, un origen, una nit i un temps en cotxe (HU01, HU02)',
   description:
+    "Només l'origen (`lat`, `lon`) és obligatori: amb només la ubicació de l'usuari («A prop meu», HU02) es fa el rànquing de la nit en curs des de l'hora actual, " +
+    `a ${TEMPS_MAXIM_PER_DEFECTE} minuts en cotxe. ` +
     "Ordena els punts publicats dins del radi per l'índex de visibilitat v1 de la franja horària (ADR-0018). " +
     "L'índex és el mateix per a tots els objectius fins que s'adapti per fenomen. " +
     'El radi surt de `tempsMaxim` amb una estimació en línia recta fins que hi hagi el servei de rutes de Mobilicat. ' +
