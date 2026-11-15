@@ -171,6 +171,33 @@ describe('MapScreen', () => {
     await fireEvent.press(screen.getByRole('button', { name: 'Enrere' }));
     expect(router.back).toHaveBeenCalledTimes(1);
   });
+
+  it('mostra l’avís diürn amb els punts disponibles sense proposar un reintent', async () => {
+    mockQuery = {
+      ...mockQuery,
+      isPending: false,
+      isFetching: false,
+      data: {
+        type: 'FeatureCollection',
+        features: [
+          {
+            type: 'Feature',
+            geometry: { type: 'Point', coordinates: [0.75, 42.05] },
+            properties: {
+              id: 'montsec',
+              nom: 'Montsec',
+              municipi: 'Àger',
+              index: { valor: 0, franja: 'tap', deDia: true },
+            },
+          },
+        ],
+      },
+    };
+    await render(<MapScreen />);
+    expect(screen.getByText('És de dia')).toBeOnTheScreen();
+    expect(screen.queryByRole('button', { name: 'Torna-ho a provar' })).toBeNull();
+    expect(screen.getByTestId('night-map')).toBeOnTheScreen();
+  });
 });
 
 describe('MapScreen amb una cerca (TG-102, mockup 03)', () => {
@@ -302,6 +329,9 @@ describe('MapScreen amb una cerca (TG-102, mockup 03)', () => {
 
     await fireEvent.press(montsec);
     expect(router.push).toHaveBeenCalledWith({ pathname: '/punt/[id]', params: { id: 'montsec' } });
+    await fireEvent.press(screen.getByRole('button', { name: i18n.t('recommendations.showLess') }));
+    expect(screen.queryByRole('button', { name: /^4t: Serra del Cadí/ })).toBeNull();
+    expect(screen.getByRole('button', { name: /^1r: Serra del Montsec/ })).toBeOnTheScreen();
   });
 
   it('el full es plega per veure el mapa, i la càmera aprofita l’espai', async () => {
