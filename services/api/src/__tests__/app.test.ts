@@ -401,7 +401,7 @@ describe('OpenAPI', () => {
       res.body.paths['/esdeveniments'].get.parameters.map(
         (parameter: { name: string }) => parameter.name,
       ),
-    ).toEqual(['des_de', 'fins_a', 'tipus']);
+    ).toEqual(['des_de', 'fins_a', 'tipus', 'Accept-Language']);
     expect(res.body.paths['/esdeveniments'].get.operationId).toBe('listEsdeveniments');
     expect(res.body.paths['/esdeveniments'].get.security).toEqual([
       { ApiKeyAprop: [] },

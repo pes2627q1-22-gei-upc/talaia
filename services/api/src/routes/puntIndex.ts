@@ -84,7 +84,8 @@ export function createPuntIndexRouter(service: BreakdownService | undefined): Ro
         "L'API no té DATABASE_URL: l'índex de visibilitat no està disponible",
       );
     }
-    const breakdown = await service.getBreakdown(id, nit);
+    const breakdown = await service.getBreakdown(id, nit, req.get('Accept-Language'));
+    res.set('Vary', 'Accept-Language');
     res.set('Cache-Control', `public, max-age=${secondsToNextHour()}`);
     res.json(breakdown);
   });
