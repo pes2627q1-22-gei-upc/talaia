@@ -1,5 +1,4 @@
-import type { Alerta, AlertaNova } from '@talaia/shared';
-
+import type { Alerta, AlertaCanvis, AlertaNova } from '@talaia/shared';
 import { useQuery } from '@tanstack/react-query';
 
 import { apiGet, apiPatch, apiPost } from '@/core/api/httpClient';
@@ -20,9 +19,17 @@ export const alertsRepository = {
     return apiPost<Alerta>('/alertes', alert);
   },
 
-  /** Activa o desactiva una alerta (`PATCH /alertes/{id}`, TG-147). */
+  /**
+   * Canvia una alerta (`PATCH /alertes/{id}`, TG-147): només hi van els camps que canvien. Retorna
+   * l'alerta sencera ja desada.
+   */
+  update(id: string, canvis: AlertaCanvis): Promise<Alerta> {
+    return apiPatch<Alerta>(`/alertes/${encodeURIComponent(id)}`, canvis);
+  },
+
+  /** Activa o desactiva una alerta (HU19). */
   setActive(id: string, activa: boolean): Promise<Alerta> {
-    return apiPatch<Alerta>(`/alertes/${encodeURIComponent(id)}`, { activa });
+    return alertsRepository.update(id, { activa });
   },
 };
 
