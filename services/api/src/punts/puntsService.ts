@@ -1,7 +1,7 @@
 import type { IndexHora, PuntFitxa } from '@talaia/shared';
 
 import { ApiError } from '../middleware/errors';
-import { idiomaPreferit, type Idioma } from '../idioma';
+import { idiomesPreferits } from '../idioma';
 import {
   createContentHashCache,
   type MapDocumentCache,
@@ -82,26 +82,32 @@ export function createDefaultPuntsService(
   repository: PuntsRepository,
   now: () => number = Date.now,
 ): PuntsService {
-  const caches = Object.fromEntries(
-    (['ca', 'es', 'en'] as const).map((idioma) => [
-      idioma,
-      createContentHashCache(
-        async (hora = iniciHora(new Date(now())).getTime()) =>
-          buildMapDocument(
-            (await repository.listPublished(new Date(hora))).map((punt) =>
-              puntLocalitzat(punt, idioma),
-            ),
-          ),
-        {
-          period: (t) => iniciHora(new Date(t)).getTime(),
-          version: async () => (await repository.indexVersion()) ?? 'cap',
-          now,
-        },
-      ),
-    ]),
-  ) as Record<Idioma, MapDocumentCache>;
+  const caches = new Map<string, MapDocumentCache>();
   return createPuntsService(
-    { get: (acceptLanguage) => caches[idiomaPreferit(acceptLanguage)].get() },
+    {
+      get: (acceptLanguage) => {
+        // La llista normalitzada és finita (ca/es/en) i conserva les reserves per camp.
+        const preferencies = idiomesPreferits(acceptLanguage).join(',');
+        let cache = caches.get(preferencies);
+        if (!cache) {
+          cache = createContentHashCache(
+            async (hora = iniciHora(new Date(now())).getTime()) =>
+              buildMapDocument(
+                (await repository.listPublished(new Date(hora))).map((punt) =>
+                  puntLocalitzat(punt, preferencies),
+                ),
+              ),
+            {
+              period: (t) => iniciHora(new Date(t)).getTime(),
+              version: async () => (await repository.indexVersion()) ?? 'cap',
+              now,
+            },
+          );
+          caches.set(preferencies, cache);
+        }
+        return cache.get();
+      },
+    },
     repository,
   );
 }

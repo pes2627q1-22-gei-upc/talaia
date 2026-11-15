@@ -119,6 +119,23 @@ describe('GET /api/v1/punts', () => {
     expect(repo.calls).toBe(2);
   });
 
+  it('aplica les preferències secundàries al mapa igual que a la fitxa', async () => {
+    const repo = fakeRepository([
+      {
+        ...PUNTS[0]!,
+        textos: { ca: { nom: 'Cap de Creus' }, es: { nom: 'Cabo de Creus' } },
+      },
+    ]);
+    const app = appWith(repo);
+    const preferencies = 'en,es;q=0.9';
+    const mapa = await request(app).get('/api/v1/punts').set('Accept-Language', preferencies);
+    const catala = await request(app).get('/api/v1/punts').set('Accept-Language', 'ca');
+
+    expect(mapa.body.features[0].properties.nom).toBe('Cabo de Creus');
+    expect(mapa.headers.etag).not.toBe(catala.headers.etag);
+    expect(repo.calls).toBe(2);
+  });
+
   it("respon 304 sense cos amb If-None-Match igual a l'ETag (també feble)", async () => {
     const app = appWith();
     const { headers } = await request(app).get('/api/v1/punts');

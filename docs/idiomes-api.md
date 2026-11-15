@@ -7,7 +7,14 @@ els calculats els genera `services/worker/src/astronomia/calendari.ts`. Els punt
 `data/punts_observacio.geojson` i `data/traduccions/punts.json`. Els tres seeds SQL es
 regeneren a partir d'aquestes fonts: no s'editen a mà.
 
-La migració de TG-164 afegeix `punts_observacio.textos`. Les columnes catalanes originals
+La primera migració de TG-164 afegeix `punts_observacio.textos`. Una segona migració omple
+`es` i `en` als punts oficials i als fenòmens i esdeveniments coneguts que ja existeixin a la
+base de dades: els seeds, per si sols, no s'executen en un desplegament amb migracions.
+La migració conserva `ca`, els textos editats prèviament i els registres aliens al catàleg.
+Es regenera des dels JSON font amb
+`node --experimental-strip-types data/scripts/build-backfill-traduccions.ts --write` i es pot
+comprovar amb `--check` (Node 22).
+Les columnes catalanes originals
 continuen existint per compatibilitat amb l'administració i un trigger manté `textos.ca`
 sincronitzat quan s'editen. Els noms oficials de municipis, codis, dates i valors numèrics no es
 tradueixen. Els punts creats després de la migració sense traduccions es mostren en català.
@@ -20,7 +27,9 @@ la fitxa i les recomanacions de punts i el desglossament de l'índex. El llistat
 client enviï `Accept-Language`. Amb JWT sí que segueix la capçalera. No hi ha paràmetre
 `?idioma`.
 
-El GeoJSON del mapa té una memòria cau per idioma. Cada variant genera el seu propi ETag i
+El GeoJSON del mapa té una memòria cau per llista normalitzada de preferències d'idioma.
+Per exemple, `en,es;q=0.9` pot mostrar castellà si manca l'anglès, igual que la fitxa.
+Cada variant genera el seu propi ETag i
 respon `Vary: Accept-Language`; un `If-None-Match` només dona 304 si correspon al document
 de l'idioma demanat. La ruta continua acceptant `bbox`.
 
