@@ -231,3 +231,22 @@ describe('pushRepository.onTokenChange', () => {
     expect(remove).toHaveBeenCalled();
   });
 });
+
+describe('a Expo Go', () => {
+  it('no carrega expo-notifications, que a Android hi llança un error en importar-lo', async () => {
+    constants.executionEnvironment = ExecutionEnvironment.StoreClient;
+    let isolated!: typeof pushRepository;
+    jest.isolateModules(() => {
+      jest.doMock('expo-notifications', () => {
+        throw new Error('expo-notifications no s’ha de carregar a Expo Go');
+      });
+      ({ pushRepository: isolated } =
+        jest.requireActual<typeof import('../pushRepository')>('../pushRepository'));
+    });
+    await expect(isolated.getPermission()).resolves.toBe('unavailable');
+    await expect(isolated.requestPermission('Alertes')).resolves.toBe('unavailable');
+    expect(() => isolated.onTokenChange(jest.fn())()).not.toThrow();
+    await expect(isolated.registerDevice('Alertes')).rejects.toThrow('not supported');
+    await expect(isolated.unregisterDevice()).resolves.toBeUndefined();
+  });
+});

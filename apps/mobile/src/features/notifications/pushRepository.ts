@@ -1,8 +1,7 @@
 import type { DispositiuPush, PlataformaPush } from '@talaia/shared';
 import Constants, { ExecutionEnvironment } from 'expo-constants';
 import * as Device from 'expo-device';
-import * as Notifications from 'expo-notifications';
-import { AndroidImportance, IosAuthorizationStatus } from 'expo-notifications';
+import type * as NotificationsModule from 'expo-notifications';
 import { Platform } from 'react-native';
 
 import { apiDelete, apiPut } from '@/core/api/httpClient';
@@ -27,6 +26,19 @@ let pendingRegistration: Promise<unknown> | null = null;
 // Puja a cada logout: un registre que acaba després no deixa el token com a registrat.
 let generation = 0;
 
+let notificationsModule: typeof NotificationsModule | null = null;
+
+/**
+ * `expo-notifications` només es carrega on pot funcionar. A Expo Go d'Android, importar-lo ja
+ * llança un error: en carregar-se, el mòdul registra un listener del token, i Expo Go ja no en té
+ * des de l'SDK 53. Per això no s'importa a dalt del fitxer.
+ */
+function notifications(): typeof NotificationsModule {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports -- càrrega diferida (vegeu a dalt)
+  notificationsModule ??= require('expo-notifications') as typeof NotificationsModule;
+  return notificationsModule;
+}
+
 function platform(): PlataformaPush | null {
   return Platform.OS === 'ios' || Platform.OS === 'android' ? Platform.OS : null;
 }
@@ -37,7 +49,8 @@ function projectId(): string | undefined {
   return fromConfig ?? Constants.easConfig?.projectId;
 }
 
-function toPermission(response: Notifications.NotificationPermissionsStatus): PushPermission {
+function toPermission(response: NotificationsModule.NotificationPermissionsStatus): PushPermission {
+  const { IosAuthorizationStatus } = notifications();
   const iosStatus = response.ios?.status;
   if (
     response.granted ||
@@ -65,14 +78,14 @@ export const pushRepository = {
 
   async getPermission(): Promise<PushPermission> {
     if (!pushRepository.isSupported()) return 'unavailable';
-    return toPermission(await Notifications.getPermissionsAsync());
+    return toPermission(await notifications().getPermissionsAsync());
   },
 
   /** Demana el permís (el diàleg del sistema). A Android 13+, cal el canal abans. */
   async requestPermission(channelName: string): Promise<PushPermission> {
     if (!pushRepository.isSupported()) return 'unavailable';
     await ensureChannel(channelName);
-    return toPermission(await Notifications.requestPermissionsAsync());
+    return toPermission(await notifications().requestPermissionsAsync());
   },
 
   /**
@@ -82,11 +95,13 @@ export const pushRepository = {
    */
   async registerDevice(channelName: string): Promise<string> {
     const plataforma = platform();
-    if (!plataforma) throw new Error('Push notifications are not supported on this platform');
+    if (!plataforma || !pushRepository.isSupported()) {
+      throw new Error('Push notifications are not supported on this device');
+    }
     const started = generation;
     const registration = (async () => {
       await ensureChannel(channelName);
-      const { data: token } = await Notifications.getExpoPushTokenAsync({
+      const { data: token } = await notifications().getExpoPushTokenAsync({
         projectId: projectId(),
       });
       if (token === registeredToken) return token;
@@ -138,14 +153,15 @@ export const pushRepository = {
   /** Avisa quan el sistema canvia el token del dispositiu (ADR-0028). */
   onTokenChange(listener: () => void): () => void {
     if (!pushRepository.isSupported()) return () => {};
-    const subscription = Notifications.addPushTokenListener(() => listener());
+    const subscription = notifications().addPushTokenListener(() => listener());
     return () => subscription.remove();
   },
 };
 
 async function ensureChannel(name: string): Promise<void> {
   if (Platform.OS !== 'android') return;
-  await Notifications.setNotificationChannelAsync(ALERTS_CHANNEL_ID, {
+  const { AndroidImportance, setNotificationChannelAsync } = notifications();
+  await setNotificationChannelAsync(ALERTS_CHANNEL_ID, {
     name,
     importance: AndroidImportance.HIGH,
   });
