@@ -329,7 +329,9 @@
     "retry": "Check again",
     "checking": "Checking…",
     "contact": "Email {{email}}",
-    "contactError": "Couldn't open your email app. Write to us at {{email}}."
+    "contactError": "Couldn't open your email app. Write to us at {{email}}.",
+    "contactSubject": "Blocked Talaia account",
+    "contactBody": "My Talaia account is {{account}}."
   },
   "emailLogin": {
     "title": "Sign in with email",

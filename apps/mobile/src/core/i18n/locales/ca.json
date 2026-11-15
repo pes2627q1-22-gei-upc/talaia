@@ -329,7 +329,9 @@
     "retry": "Torna-ho a comprovar",
     "checking": "Comprovant…",
     "contact": "Escriu a {{email}}",
-    "contactError": "No s'ha pogut obrir el correu. Escriu-nos a {{email}}."
+    "contactError": "No s'ha pogut obrir el correu. Escriu-nos a {{email}}.",
+    "contactSubject": "Compte de Talaia bloquejat",
+    "contactBody": "El meu compte de Talaia és {{account}}."
   },
   "emailLogin": {
     "title": "Entra amb el correu",

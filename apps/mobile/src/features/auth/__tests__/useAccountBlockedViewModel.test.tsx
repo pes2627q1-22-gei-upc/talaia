@@ -29,6 +29,7 @@ beforeEach(async () => {
     error: null,
     signingOut: false,
     logoutLabel: 'Tanca la sessió',
+    user: { id: 'one', email: 'one@example.test' },
     signOut: jest.fn(),
   } as unknown as ReturnType<typeof useAuthViewModel>);
 });
@@ -75,11 +76,30 @@ it('si el mòbil no pot obrir el correu, ho diu amb l’adreça; tornar-ho a pro
   const { result } = await renderHook(useAccountBlockedViewModel);
   expect(result.current.contact?.error).toBeNull();
   await act(async () => result.current.contact?.open());
-  expect(openURL).toHaveBeenCalledWith('mailto:equip@example.test');
+  expect(openURL).toHaveBeenCalledWith(
+    'mailto:equip@example.test?subject=Compte%20de%20Talaia%20bloquejat&body=El%20meu%20compte%20de%20Talaia%20%C3%A9s%20one%40example.test.',
+  );
   expect(result.current.contact?.error).toBe(
     "No s'ha pogut obrir el correu. Escriu-nos a equip@example.test.",
   );
   openURL.mockResolvedValueOnce(undefined);
   await act(async () => result.current.contact?.open());
   expect(result.current.contact?.error).toBeNull();
+});
+
+it('sense correu a la sessió, el missatge porta l’assumpte però no el cos', async () => {
+  mockEnv.contactEmail = 'equip@example.test';
+  jest.mocked(useAuthViewModel).mockReturnValue({
+    error: null,
+    signingOut: false,
+    logoutLabel: 'Tanca la sessió',
+    user: { id: 'one', email: null },
+    signOut: jest.fn(),
+  } as unknown as ReturnType<typeof useAuthViewModel>);
+  const openURL = jest.spyOn(Linking, 'openURL').mockResolvedValueOnce(undefined);
+  const { result } = await renderHook(useAccountBlockedViewModel);
+  await act(async () => result.current.contact?.open());
+  expect(openURL).toHaveBeenCalledWith(
+    'mailto:equip@example.test?subject=Compte%20de%20Talaia%20bloquejat',
+  );
 });

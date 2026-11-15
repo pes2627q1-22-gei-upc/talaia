@@ -25,6 +25,7 @@ function auth(overrides: Partial<ReturnType<typeof useAuthViewModel>> = {}) {
     error: null,
     signingOut: false,
     logoutLabel: i18n.t('auth.signOut'),
+    user: { id: 'one', email: 'one@example.test' },
     signOut,
     ...overrides,
   } as unknown as ReturnType<typeof useAuthViewModel>);
@@ -100,7 +101,9 @@ it('amb el correu de l’equip configurat, ofereix escriure-hi', async () => {
   const openURL = jest.spyOn(Linking, 'openURL').mockResolvedValue(undefined);
   await renderScreen();
   await fireEvent.press(screen.getByRole('button', { name: 'Escriu a equip@example.test' }));
-  expect(openURL).toHaveBeenCalledWith('mailto:equip@example.test');
+  expect(openURL).toHaveBeenCalledWith(
+    'mailto:equip@example.test?subject=Compte%20de%20Talaia%20bloquejat&body=El%20meu%20compte%20de%20Talaia%20%C3%A9s%20one%40example.test.',
+  );
 });
 
 it('sense el correu configurat, no hi ha cap botó per escriure', async () => {
@@ -129,7 +132,10 @@ it('si no es pot obrir el correu, avisa sota el botó', async () => {
   jest.spyOn(Linking, 'openURL').mockRejectedValueOnce(new Error('no mail app'));
   await renderScreen();
   await fireEvent.press(screen.getByRole('button', { name: 'Escriu a equip@example.test' }));
-  expect(await screen.findByRole('alert')).toHaveTextContent(
+  const alert = await screen.findByRole('alert');
+  // L'adreça es pot seleccionar i copiar.
+  expect(alert.props.selectable).toBe(true);
+  expect(alert).toHaveTextContent(
     "No s'ha pogut obrir el correu. Escriu-nos a equip@example.test.",
   );
 });

@@ -17,6 +17,17 @@ export function useAccountBlockedViewModel() {
   const { t } = useTranslation();
   const [checking, setChecking] = useState(false);
   const [contactFailed, setContactFailed] = useState(false);
+  const account = auth.user?.email ?? null;
+  const team = env.contactEmail;
+
+  // L'assumpte i el cos diuen de quin compte es tracta, encara que s'escrigui des d'un altre correu.
+  const contactUrl = (to: string, email: string | null) => {
+    const subject = encodeURIComponent(t('accountBlocked.contactSubject'));
+    const body = email
+      ? `&body=${encodeURIComponent(t('accountBlocked.contactBody', { account: email }))}`
+      : '';
+    return `mailto:${to}?subject=${subject}${body}`;
+  };
 
   // Si encara està bloquejat, el client HTTP el torna a marcar; un error de xarxa no canvia res.
   const retry = useCallback(async () => {
@@ -42,17 +53,15 @@ export function useAccountBlockedViewModel() {
     checking,
     retry: () => void retry(),
     /** Sense `EXPO_PUBLIC_CONTACT_EMAIL`, l'avís no ofereix escriure a l'equip. */
-    contact: env.contactEmail
+    contact: team
       ? {
-          label: t('accountBlocked.contact', { email: env.contactEmail }),
-          // Sense app de correu, `mailto:` falla: es diu i l'adreça queda a la vista per copiar-la.
+          label: t('accountBlocked.contact', { email: team }),
+          // Sense app de correu, `mailto:` falla: es diu, i l'avís deixa seleccionar l'adreça.
           open: () => {
             setContactFailed(false);
-            Linking.openURL(`mailto:${env.contactEmail}`).catch(() => setContactFailed(true));
+            Linking.openURL(contactUrl(team, account)).catch(() => setContactFailed(true));
           },
-          error: contactFailed
-            ? t('accountBlocked.contactError', { email: env.contactEmail })
-            : null,
+          error: contactFailed ? t('accountBlocked.contactError', { email: team }) : null,
         }
       : null,
   };
