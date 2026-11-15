@@ -9,7 +9,7 @@ describe('recomanacionsRepository.puntsDinsRadi', () => {
 
     expect(queries).toHaveLength(1);
     expect(queries[0]?.sql).toBe(
-      'select "id", "nom", "municipi", st_x("ubicacio"::geometry) as "lon", st_y("ubicacio"::geometry) as "lat", st_distance("ubicacio", st_setsrid(st_makepoint($1, $2), 4326)::geography) as "distancia_m" from "punts_observacio" where "estat" = $3 and st_dwithin("ubicacio", st_setsrid(st_makepoint($4, $5), 4326)::geography, $6) order by "distancia_m"',
+      'select "id", "nom", "textos", "municipi", st_x("ubicacio"::geometry) as "lon", st_y("ubicacio"::geometry) as "lat", st_distance("ubicacio", st_setsrid(st_makepoint($1, $2), 4326)::geography) as "distancia_m" from "punts_observacio" where "estat" = $3 and st_dwithin("ubicacio", st_setsrid(st_makepoint($4, $5), 4326)::geography, $6) order by "distancia_m"',
     );
     expect(queries[0]?.parameters).toEqual([2.17, 41.38, 'PUBLICAT', 2.17, 41.38, 115_400]);
   });
