@@ -7,7 +7,7 @@ import { createApp } from '../app';
 import type { AccountStatus, ProfileStore } from '../services/profileService';
 
 /**
- * `POST` i `GET /api/v1/alertes` (HU16, TG-145) amb JWT locals, el `requireUser` comú (comptes
+ * `POST` i `GET /api/v1/alertes` (HU16, TG-145) i `PATCH /api/v1/alertes/{id}` (TG-147) amb JWT locals, el `requireUser` comú (comptes
  * bloquejats, TG-177) i les alertes en memòria.
  */
 const supabaseUrl = 'https://example.supabase.co';
@@ -47,6 +47,10 @@ const NOVA: AlertaNova = {
   horaAvis: null,
 };
 
+/** Un UUID previsible per a l'alerta número `n`. */
+const idAlerta = (n: number) => `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`;
+const NO_EXISTEIX = idAlerta(999);
+
 /** Com el de la base de dades: cada perfil només veu les seves, i com a molt `MAX_ALERTES`. */
 function memoryStore() {
   const alertes: { perfilId: string; alerta: Alerta }[] = [];
@@ -58,7 +62,7 @@ function memoryStore() {
         }
         const alerta: Alerta = {
           ...nova,
-          id: `alerta-${alertes.length + 1}`,
+          id: idAlerta(alertes.length + 1),
           activa: true,
           dataCreacio: '2026-11-10T18:00:00.000Z',
           dataActualitzacio: '2026-11-10T18:00:00.000Z',
@@ -69,6 +73,18 @@ function memoryStore() {
     ),
     list: jest.fn<ReturnType<AlertesStore['list']>, Parameters<AlertesStore['list']>>(
       async (perfilId) => alertes.filter((a) => a.perfilId === perfilId).map((a) => a.alerta),
+    ),
+    update: jest.fn<ReturnType<AlertesStore['update']>, Parameters<AlertesStore['update']>>(
+      async (perfilId, id, canvis) => {
+        const fila = alertes.find((a) => a.perfilId === perfilId && a.alerta.id === id);
+        if (!fila) return { ok: false, reason: 'not_found' };
+        const alerta = { ...fila.alerta, ...canvis, dataActualitzacio: '2026-11-15T10:00:00.000Z' };
+        if (!alerta.avisaEnArribar && alerta.horaAvis === null) {
+          return { ok: false, reason: 'quan_avisa' };
+        }
+        fila.alerta = alerta;
+        return { ok: true, alerta };
+      },
     ),
   } satisfies AlertesStore;
   return store;
@@ -114,7 +130,7 @@ describe('POST /api/v1/alertes', () => {
     expect(res.headers['cache-control']).toBe('no-store');
     expect(res.body).toEqual({
       ...NOVA,
-      id: 'alerta-1',
+      id: idAlerta(1),
       activa: true,
       dataCreacio: '2026-11-10T18:00:00.000Z',
       dataActualitzacio: '2026-11-10T18:00:00.000Z',
@@ -259,6 +275,186 @@ describe('GET /api/v1/alertes', () => {
   });
 });
 
+describe('PATCH /api/v1/alertes/{id}', () => {
+  /** Una app amb una alerta de la Maria (`idAlerta(1)`) ja creada. */
+  async function ambAlerta(nova: AlertaNova = NOVA) {
+    const store = memoryStore();
+    const app = appAmb(store);
+    const res = await request(app)
+      .post('/api/v1/alertes')
+      .set('Authorization', auth(MARIA.auth))
+      .send(nova);
+    expect(res.status).toBe(201);
+    return { store, app, id: res.body.id as string };
+  }
+
+  it('desactiva i torna a activar una alerta (HU19) sense memòria cau', async () => {
+    const { store, app, id } = await ambAlerta();
+
+    const off = await request(app)
+      .patch(`/api/v1/alertes/${id}`)
+      .set('Authorization', auth(MARIA.auth))
+      .send({ activa: false });
+    expect(off.status).toBe(200);
+    expect(off.headers['cache-control']).toBe('no-store');
+    expect(off.body).toMatchObject({ ...NOVA, id, activa: false });
+    expect(off.body.dataActualitzacio).toBe('2026-11-15T10:00:00.000Z');
+    expect(store.update).toHaveBeenCalledWith(MARIA.perfil, id, { activa: false });
+
+    const on = await request(app)
+      .patch(`/api/v1/alertes/${id}`)
+      .set('Authorization', auth(MARIA.auth))
+      .send({ activa: true });
+    expect(on.body.activa).toBe(true);
+
+    const llista = await request(app).get('/api/v1/alertes').set('Authorization', auth(MARIA.auth));
+    expect(llista.body[0].activa).toBe(true);
+  });
+
+  it('edita les preferències (HU18) i només canvia els camps del cos', async () => {
+    const { store, app, id } = await ambAlerta();
+    const canvis = {
+      objectiu: 'via_lactia',
+      origen: { lat: 42.1, lon: 1.8 },
+      distanciaMaxKm: 120,
+      indexMinim: 55,
+      avisaEnArribar: false,
+      horaAvis: 20,
+    };
+
+    const res = await request(app)
+      .patch(`/api/v1/alertes/${id}`)
+      .set('Authorization', auth(MARIA.auth))
+      .send(canvis);
+
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({ ...canvis, id, activa: true });
+    expect(store.update).toHaveBeenCalledWith(MARIA.perfil, id, canvis);
+  });
+
+  it('accepta treure l’hora si continua avisant en arribar-hi', async () => {
+    const { app, id } = await ambAlerta({ ...NOVA, avisaEnArribar: true, horaAvis: 18 });
+    const res = await request(app)
+      .patch(`/api/v1/alertes/${id}`)
+      .set('Authorization', auth(MARIA.auth))
+      .send({ horaAvis: null });
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({ avisaEnArribar: true, horaAvis: null });
+  });
+
+  it('respon 400 si amb els canvis l’alerta no avisaria mai', async () => {
+    const { app, id } = await ambAlerta({ ...NOVA, avisaEnArribar: true, horaAvis: null });
+    const res = await request(app)
+      .patch(`/api/v1/alertes/${id}`)
+      .set('Authorization', auth(MARIA.auth))
+      .send({ avisaEnArribar: false });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toEqual({
+      code: 'validation_error',
+      message: expect.stringContaining('quan avisar'),
+    });
+  });
+
+  it.each([
+    ['un cos buit', {}],
+    ['sense cos', undefined],
+    ['un perfilId (l’usuari només surt del JWT)', { perfilId: PERE.perfil }],
+    ['un camp desconegut', { activa: false, id: idAlerta(2) }],
+    ['activa com a text', { activa: 'false' }],
+    ['activa null', { activa: null }],
+    ['un objectiu que no existeix', { objectiu: 'aurora' }],
+    ['indexMinim > 100', { indexMinim: 101 }],
+    ['distanciaMaxKm 0', { distanciaMaxKm: 0 }],
+    ['horaAvis 24', { horaAvis: 24 }],
+    ['avisaEnArribar null', { avisaEnArribar: null }],
+    ['un origen sense longitud', { origen: { lat: 41 } }],
+  ])('amb %s respon 400 validation_error', async (_cas, body) => {
+    const { store, app, id } = await ambAlerta();
+    const res = await request(app)
+      .patch(`/api/v1/alertes/${id}`)
+      .set('Authorization', auth(MARIA.auth))
+      .send(body);
+
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe('validation_error');
+    expect(store.update).not.toHaveBeenCalled();
+  });
+
+  it('respon 400 validation_error si l’id no és un UUID', async () => {
+    const { store, app } = await ambAlerta();
+    const res = await request(app)
+      .patch('/api/v1/alertes/no-es-un-uuid')
+      .set('Authorization', auth(MARIA.auth))
+      .send({ activa: false });
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe('validation_error');
+    expect(store.update).not.toHaveBeenCalled();
+  });
+
+  it('respon 404 alert_not_found si l’alerta no existeix', async () => {
+    const { app } = await ambAlerta();
+    const res = await request(app)
+      .patch(`/api/v1/alertes/${NO_EXISTEIX}`)
+      .set('Authorization', auth(MARIA.auth))
+      .send({ activa: false });
+    expect(res.status).toBe(404);
+    expect(res.body.error.code).toBe('alert_not_found');
+  });
+
+  it('una alerta d’un altre usuari respon 404 com si no existís i no canvia', async () => {
+    const { store, app, id } = await ambAlerta();
+    const res = await request(app)
+      .patch(`/api/v1/alertes/${id}`)
+      .set('Authorization', auth(PERE.auth))
+      .send({ activa: false });
+
+    expect(res.status).toBe(404);
+    expect(res.body.error.code).toBe('alert_not_found');
+    expect(store.update).toHaveBeenCalledWith(PERE.perfil, id, { activa: false });
+
+    const maria = await request(app).get('/api/v1/alertes').set('Authorization', auth(MARIA.auth));
+    expect(maria.body[0].activa).toBe(true);
+  });
+
+  it("respon 404 profile_not_found si l'usuari no té perfil", async () => {
+    const { store, app, id } = await ambAlerta();
+    const res = await request(app)
+      .patch(`/api/v1/alertes/${id}`)
+      .set('Authorization', auth(SENSE_PERFIL))
+      .send({ activa: false });
+    expect(res.status).toBe(404);
+    expect(res.body.error.code).toBe('profile_not_found');
+    expect(store.update).not.toHaveBeenCalled();
+  });
+
+  it('amb un compte bloquejat respon 403 account_blocked', async () => {
+    const { store, app, id } = await ambAlerta();
+    const res = await request(app)
+      .patch(`/api/v1/alertes/${id}`)
+      .set('Authorization', auth(BLOQUEJAT.auth))
+      .send({ activa: false });
+    expect(res.status).toBe(403);
+    expect(res.body.error.code).toBe('account_blocked');
+    expect(store.update).not.toHaveBeenCalled();
+  });
+
+  it('sense Authorization respon 401', async () => {
+    const { store, app, id } = await ambAlerta();
+    const res = await request(app).patch(`/api/v1/alertes/${id}`).send({ activa: false });
+    expect(res.status).toBe(401);
+    expect(store.update).not.toHaveBeenCalled();
+  });
+
+  it('sense DATABASE_URL respon 503 database_unavailable', async () => {
+    const res = await request(createApp({ supabaseUrl, jwks }))
+      .patch(`/api/v1/alertes/${idAlerta(1)}`)
+      .set('Authorization', auth(MARIA.auth))
+      .send({ activa: false });
+    expect(res.status).toBe(503);
+    expect(res.body.error.code).toBe('database_unavailable');
+  });
+});
+
 describe('/api/v1/alertes amb un compte bloquejat (TG-177)', () => {
   it.each(['post', 'get'] as const)('%s respon 403 account_blocked', async (method) => {
     const store = memoryStore();
@@ -367,6 +563,36 @@ describe('/alertes a l’OpenAPI', () => {
       'activa',
       'dataCreacio',
       'dataActualitzacio',
+    ]);
+  });
+  it('documenta PATCH /alertes/{id} amb AlertaCanvis', async () => {
+    const res = await request(createApp()).get('/api/v1/openapi.json');
+    const { patch } = res.body.paths['/alertes/{id}'];
+
+    expect(patch.tags).toEqual(['Alertes']);
+    expect(patch.parameters).toEqual([
+      expect.objectContaining({ name: 'id', in: 'path', required: true }),
+    ]);
+    expect(patch.requestBody.content['application/json'].schema.$ref).toBe(
+      '#/components/schemas/AlertaCanvis',
+    );
+    expect(patch.responses['200'].content['application/json'].schema.$ref).toBe(
+      '#/components/schemas/Alerta',
+    );
+    expect(Object.keys(patch.responses).sort()).toEqual(['200', '400', '401', '403', '404', '503']);
+    expect(patch.responses['404'].description).toContain('alert_not_found');
+
+    const { AlertaCanvis: canvis } = res.body.components.schemas;
+    expect(canvis.required).toBeUndefined();
+    expect(canvis.additionalProperties).toBe(false);
+    expect(Object.keys(canvis.properties).sort()).toEqual([
+      'activa',
+      'avisaEnArribar',
+      'distanciaMaxKm',
+      'horaAvis',
+      'indexMinim',
+      'objectiu',
+      'origen',
     ]);
   });
 });
