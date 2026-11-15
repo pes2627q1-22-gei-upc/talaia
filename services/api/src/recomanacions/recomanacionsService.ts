@@ -7,6 +7,7 @@ import type {
 
 import { ApiError } from '../middleware/errors';
 import { iniciHora } from '../punts/puntsService';
+import { puntLocalitzat } from '../punts/localitzacio';
 import { franjaUtc } from './franja';
 import type {
   IndexHoraPunt,
@@ -20,7 +21,11 @@ export const LIMIT_PER_DEFECTE = 20;
 
 export type RecomanacionsService = {
   /** El rànquing de punts per a la consulta. `now` decideix quines hores de la franja queden. */
-  getRecomanacions(consulta: ConsultaRecomanacions, now?: Date): Promise<RecomanacionsResposta>;
+  getRecomanacions(
+    consulta: ConsultaRecomanacions,
+    now?: Date,
+    acceptLanguage?: string,
+  ): Promise<RecomanacionsResposta>;
 };
 
 /**
@@ -92,7 +97,7 @@ export function createRecomanacionsService(
   rutes: EstimadorRutes = rutesEnLiniaRecta,
 ): RecomanacionsService {
   return {
-    async getRecomanacions(consulta, now = new Date()) {
+    async getRecomanacions(consulta, now = new Date(), acceptLanguage) {
       const franja = franjaUtc(consulta.data, consulta.desDe, consulta.finsA);
       const horaActual = iniciHora(now);
       if (franja.finsA <= horaActual) {
@@ -116,7 +121,11 @@ export function createRecomanacionsService(
         radiKm,
         franja: { desDe: desDe.toISOString(), finsA: franja.finsA.toISOString() },
         total: punts.length,
-        punts: rankeja(punts, index, rutes).slice(0, consulta.limit ?? LIMIT_PER_DEFECTE),
+        punts: rankeja(
+          punts.map((p) => puntLocalitzat(p, acceptLanguage)),
+          index,
+          rutes,
+        ).slice(0, consulta.limit ?? LIMIT_PER_DEFECTE),
       };
     },
   };
