@@ -34,7 +34,7 @@ La imatge oficial del diagrama és a la incepció 2 (Drive).
 | Peça | Decisió | Descartat |
 |---|---|---|
 | App mòbil | React Native + TypeScript (Expo) | Flutter, Kotlin + Swift natius, Ionic/Capacitor, PWA |
-| Web admin | React + TypeScript | Angular, Vue, panell de Supabase |
+| Web admin | Vite + React + TypeScript, estàtica a Nginx ([ADR-0030](decisions/0030-web-administracio-vite-react.md)) | Next.js, Angular, Vue, panell de Supabase |
 | Lògica de negoci | Servidor propi Node.js + TypeScript (Express) | Només Supabase Edge Functions, Python/FastAPI, Java/Spring |
 | Dades i auth | Supabase (PostgreSQL + PostGIS, Auth, Storage) | Firebase, Postgres i login propis |
 | Índex | Precalculat cada hora | Calculat a cada petició |

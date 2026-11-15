@@ -30,3 +30,25 @@ export type Esdeveniment = {
 export type EsdevenimentsResponse = {
   data: Esdeveniment[];
 };
+
+export type PrecisioTemporal = 'dia' | 'hora' | 'minut' | 'segon';
+
+/** Fitxa de l'ocurrència; els instants són UTC i la precisió evita mostrar hores fictícies. */
+export type EsdevenimentDetall = Esdeveniment & {
+  horari: {
+    inici: string;
+    maxim: string | null;
+    fi: string;
+    precisio: {
+      inici: PrecisioTemporal;
+      maxim: PrecisioTemporal | null;
+      fi: PrecisioTemporal;
+    };
+  };
+  explicacio: {
+    fenomen: string;
+    particularitat: string;
+    observacioGeneral: string;
+    observacioEsdeveniment: string;
+  };
+};

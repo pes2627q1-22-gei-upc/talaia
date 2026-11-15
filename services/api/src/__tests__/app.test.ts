@@ -378,8 +378,11 @@ describe('OpenAPI', () => {
     expect(res.body.openapi).toBe('3.0.3');
     expect(res.body.paths).toHaveProperty('/health');
     expect(res.body.paths).toHaveProperty('/esdeveniments');
+    expect(res.body.paths).toHaveProperty('/esdeveniments/{id}');
     expect(res.body.components.schemas).toHaveProperty('Error');
     expect(res.body.components.schemas).toHaveProperty('Esdeveniment');
+    expect(res.body.components.schemas).toHaveProperty('EsdevenimentDetall');
+    expect(res.body.components.schemas).toHaveProperty('PrecisioTemporal');
     expect(res.body.components.securitySchemes).toHaveProperty('ApiKeyAprop');
     expect(res.body.components.securitySchemes).toHaveProperty('BearerSupabase');
 
@@ -398,12 +401,24 @@ describe('OpenAPI', () => {
       res.body.paths['/esdeveniments'].get.parameters.map(
         (parameter: { name: string }) => parameter.name,
       ),
-    ).toEqual(['des_de', 'fins_a', 'tipus']);
+    ).toEqual(['des_de', 'fins_a', 'tipus', 'Accept-Language']);
     expect(res.body.paths['/esdeveniments'].get.operationId).toBe('listEsdeveniments');
     expect(res.body.paths['/esdeveniments'].get.security).toEqual([
       { ApiKeyAprop: [] },
       { BearerSupabase: [] },
     ]);
+
+    const detail = res.body.paths['/esdeveniments/{id}'].get;
+    expect(detail.operationId).toBe('getEsdeveniment');
+    expect(detail.security).toEqual([{ ApiKeyAprop: [] }, { BearerSupabase: [] }]);
+    expect(detail.parameters.map((parameter: { name: string }) => parameter.name)).toEqual([
+      'id',
+      'Accept-Language',
+    ]);
+    expect(detail.responses).toHaveProperty('404');
+    expect(detail.responses['200'].content['application/json'].schema).toMatchObject({
+      $ref: '#/components/schemas/EsdevenimentDetall',
+    });
   });
 
   it('serveix la UI a /api/v1/docs/', async () => {

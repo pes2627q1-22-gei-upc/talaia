@@ -1,0 +1,406 @@
+{
+  "fenomens": {
+    "draconids": {
+      "es": {
+        "nom": "Dracónidas",
+        "descripcio": "Lluvia lenta de origen cometario que suele tener poca actividad, aunque algunos años puede presentar estallidos inesperados.",
+        "consell_general": "Obsérvala al anochecer desde un lugar oscuro con una vista amplia del cielo; no necesitas instrumentos."
+      },
+      "en": {
+        "nom": "Draconids",
+        "descripcio": "A slow cometary meteor shower that is usually quiet, although some years bring unexpected outbursts.",
+        "consell_general": "Watch in the evening from a dark place with a wide view of the sky; no equipment is needed."
+      }
+    },
+    "orionids": {
+      "es": {
+        "nom": "Oriónidas",
+        "descripcio": "Lluvia anual de meteoros rápidos asociada al cometa Halley, con un máximo habitualmente amplio.",
+        "consell_general": "Busca un cielo oscuro durante la segunda mitad de la noche y observa una zona amplia, lejos de la Luna."
+      },
+      "en": {
+        "nom": "Orionids",
+        "descripcio": "An annual shower of fast meteors associated with Halley's Comet, usually with a broad peak.",
+        "consell_general": "Find a dark sky in the second half of the night and watch a broad area away from the Moon."
+      }
+    },
+    "southern-taurids": {
+      "es": {
+        "nom": "Táuridas del Sur",
+        "descripcio": "Lluvia de baja frecuencia y actividad muy extendida en el tiempo, conocida por producir algunos meteoros especialmente brillantes.",
+        "consell_general": "Ten paciencia y busca un cielo oscuro; es más probable ver algún meteoro brillante que una sucesión intensa."
+      },
+      "en": {
+        "nom": "Southern Taurids",
+        "descripcio": "A low-rate shower spread over a long period, known for producing occasional exceptionally bright meteors.",
+        "consell_general": "Be patient under a dark sky; a bright meteor is more likely than a dense stream of meteors."
+      }
+    },
+    "northern-taurids": {
+      "es": {
+        "nom": "Táuridas del Norte",
+        "descripcio": "Componente septentrional del complejo de las Táuridas, de tasa baja y máximo amplio, pero con posibilidad de meteoros brillantes.",
+        "consell_general": "Observa a simple vista una zona amplia del cielo y cuenta con que pueden pasar bastantes minutos entre meteoros."
+      },
+      "en": {
+        "nom": "Northern Taurids",
+        "descripcio": "The northern branch of the Taurid complex, with a low rate and broad peak but a chance of bright meteors.",
+        "consell_general": "Watch a wide area of the sky with the naked eye and expect several minutes between meteors."
+      }
+    },
+    "leonids": {
+      "es": {
+        "nom": "Leónidas",
+        "descripcio": "Lluvia de meteoros muy rápidos cuya actividad puede variar cuando la Tierra cruza rastros de polvo del cometa que la origina.",
+        "consell_general": "La segunda mitad de la noche suele ser la más adecuada; deja que la vista se adapte a la oscuridad."
+      },
+      "en": {
+        "nom": "Leonids",
+        "descripcio": "A shower of very fast meteors whose activity can vary as Earth crosses dust trails from its parent comet.",
+        "consell_general": "The second half of the night is usually best; give your eyes time to adapt to the darkness."
+      }
+    },
+    "geminids": {
+      "es": {
+        "nom": "Gemínidas",
+        "descripcio": "Una de las lluvias anuales más abundantes y regulares, con meteoros de velocidad moderada visibles durante buena parte de la noche.",
+        "consell_general": "Observa a simple vista desde un lugar oscuro y protegido de luces directas; el radiante asciende durante la noche."
+      },
+      "en": {
+        "nom": "Geminids",
+        "descripcio": "One of the richest and most regular annual showers, with moderately fast meteors visible for much of the night.",
+        "consell_general": "Watch with the naked eye from a dark place sheltered from direct lights; the radiant rises during the night."
+      }
+    },
+    "ursids": {
+      "es": {
+        "nom": "Úrsidas",
+        "descripcio": "Lluvia boreal de finales de diciembre, normalmente modesta pero bien situada para observadores del hemisferio norte.",
+        "consell_general": "Abrígate, elige un horizonte con poca iluminación y reserva un buen rato para observar."
+      },
+      "en": {
+        "nom": "Ursids",
+        "descripcio": "A northern-hemisphere shower in late December, usually modest but well placed for northern observers.",
+        "consell_general": "Dress warmly, choose a dimly lit horizon and allow plenty of time to watch."
+      }
+    },
+    "quadrantids": {
+      "es": {
+        "nom": "Cuadrántidas",
+        "descripcio": "Lluvia intensa de comienzos de año con un máximo relativamente corto y un radiante favorable en latitudes septentrionales.",
+        "consell_general": "Conviene observar lo más cerca posible del máximo, porque la actividad alta dura menos que en otras lluvias."
+      },
+      "en": {
+        "nom": "Quadrantids",
+        "descripcio": "An intense early-year shower with a relatively short peak and a radiant well placed at northern latitudes.",
+        "consell_general": "Observe as close to the peak as possible, because high activity lasts less time than in other showers."
+      }
+    },
+    "lirids": {
+      "es": {
+        "nom": "Líridas",
+        "descripcio": "Lluvia anual de primavera de actividad moderada, con algún meteoro brillante ocasional.",
+        "consell_general": "Observa después de medianoche desde un lugar oscuro y evita tener la Luna o luces artificiales en el campo de visión."
+      },
+      "en": {
+        "nom": "Lyrids",
+        "descripcio": "An annual spring shower with moderate activity and occasional bright meteors.",
+        "consell_general": "Watch after midnight from a dark site and keep the Moon and artificial lights out of your field of view."
+      }
+    },
+    "eta-aquariids": {
+      "es": {
+        "nom": "Eta Acuáridas",
+        "descripcio": "Lluvia rápida asociada al cometa Halley, muy activa al sur pero con el radiante bajo vista desde Cataluña.",
+        "consell_general": "Observa poco antes del amanecer, con el horizonte este o sureste despejado y sin esperar la tasa ideal anunciada."
+      },
+      "en": {
+        "nom": "Eta Aquariids",
+        "descripcio": "A fast shower associated with Halley's Comet, very active farther south but with a low radiant as seen from Catalonia.",
+        "consell_general": "Watch shortly before dawn with a clear eastern or southeastern horizon; do not expect the advertised ideal rate."
+      }
+    },
+    "alpha-capricornids": {
+      "es": {
+        "nom": "Alfa Capricórnidas",
+        "descripcio": "Lluvia estival poco abundante de meteoros lentos que puede ofrecer bólidos vistosos pese a su tasa baja.",
+        "consell_general": "No esperes muchos meteoros: observa con paciencia una zona amplia del cielo para detectar los más brillantes."
+      },
+      "en": {
+        "nom": "Alpha Capricornids",
+        "descripcio": "A sparse summer shower of slow meteors that can produce striking fireballs despite its low rate.",
+        "consell_general": "Do not expect many meteors: patiently watch a broad area of the sky for the brightest ones."
+      }
+    },
+    "southern-delta-aquariids": {
+      "es": {
+        "nom": "Delta Acuáridas del Sur",
+        "descripcio": "Lluvia estival de larga duración, más favorable en el hemisferio sur pero parcialmente observable desde Cataluña.",
+        "consell_general": "Observa de madrugada hacia un cielo abierto al sur; la tasa real será inferior a la ZHR ideal por la baja altura del radiante."
+      },
+      "en": {
+        "nom": "Southern Delta Aquariids",
+        "descripcio": "A long-lasting summer shower better placed in the southern hemisphere but partly visible from Catalonia.",
+        "consell_general": "Watch before dawn with an open southern sky; the low radiant means the actual rate will be below the ideal ZHR."
+      }
+    },
+    "perseids": {
+      "es": {
+        "nom": "Perseidas",
+        "descripcio": "Lluvia estival muy activa y popular, con meteoros rápidos y un radiante bien situado desde latitudes medias del hemisferio norte.",
+        "consell_general": "Observa tumbado y a simple vista desde un lugar oscuro; mirar una zona amplia alejada del radiante ayuda a ver trazas largas."
+      },
+      "en": {
+        "nom": "Perseids",
+        "descripcio": "A very active and popular summer shower, with fast meteors and a radiant well placed at mid-northern latitudes.",
+        "consell_general": "Lie back and watch with the naked eye from a dark site; a wide area away from the radiant helps reveal long trails."
+      }
+    },
+    "eclipsi-lunar-penumbral": {
+      "es": {
+        "nom": "Eclipse lunar penumbral",
+        "descripcio": "La Luna atraviesa la penumbra terrestre y pierde luminosidad gradualmente sin entrar en la sombra central.",
+        "consell_general": "El cambio puede ser muy sutil; compara el aspecto de la Luna antes y durante el máximo o toma fotografías con la misma exposición."
+      },
+      "en": {
+        "nom": "Penumbral lunar eclipse",
+        "descripcio": "The Moon passes through Earth's penumbra and gradually dims without entering the central shadow.",
+        "consell_general": "The change may be very subtle; compare the Moon before and during the peak or take photos with the same exposure."
+      }
+    },
+    "eclipsi-solar-total": {
+      "es": {
+        "nom": "Eclipse solar total",
+        "descripcio": "Eclipse en el que la Luna cubre por completo el Sol dentro de la franja de totalidad; desde otros lugares solo se ve una fase parcial.",
+        "consell_general": "Fuera de la totalidad, observa el Sol solo con gafas o visores solares conformes con ISO 12312-2; los instrumentos necesitan un filtro solar frontal adecuado."
+      },
+      "en": {
+        "nom": "Total solar eclipse",
+        "descripcio": "An eclipse in which the Moon fully covers the Sun within the path of totality; elsewhere only a partial phase is visible.",
+        "consell_general": "Outside totality, view the Sun only through solar glasses or viewers compliant with ISO 12312-2; optical instruments need a suitable front solar filter."
+      }
+    }
+  },
+  "esdeveniments": {
+    "draconids-2026": {
+      "es": {
+        "nota_visibilitat": "Observable desde Cataluña, aunque su actividad habitual es baja y no se prevé ningún aumento para 2026.",
+        "consell_observacio": "Pruébalo al anochecer del 9 de octubre bajo un cielo oscuro y plantéalo como una observación paciente, no como una lluvia intensa."
+      },
+      "en": {
+        "nota_visibilitat": "Visible from Catalonia, but usually quiet, with no increase in activity predicted for 2026.",
+        "consell_observacio": "Try watching on the evening of 9 October under a dark sky; expect a patient observing session, not an intense shower."
+      }
+    },
+    "orionids-2026": {
+      "es": {
+        "nota_visibilitat": "El radiante es visible desde Cataluña y el máximo es suficientemente amplio para que también sirvan las noches cercanas.",
+        "consell_observacio": "Observa durante la madrugada del 21 de octubre, cuando Orión esté más alto, desde un lugar sin luz directa."
+      },
+      "en": {
+        "nota_visibilitat": "The radiant is visible from Catalonia, and the peak is broad enough for nearby nights to be worthwhile too.",
+        "consell_observacio": "Watch before dawn on 21 October, when Orion is higher, from a place without direct lighting."
+      }
+    },
+    "southern-taurids-2026": {
+      "es": {
+        "nota_visibilitat": "Visible desde Cataluña con una tasa baja, pero con posibilidad de meteoros brillantes.",
+        "consell_observacio": "Dedica una sesión larga alrededor del 5 de noviembre y no confundas la baja frecuencia con un fallo del servicio."
+      },
+      "en": {
+        "nota_visibilitat": "Visible from Catalonia at a low rate, but with a chance of bright meteors.",
+        "consell_observacio": "Allow a long session around 5 November; a low meteor rate does not mean the service is malfunctioning."
+      }
+    },
+    "northern-taurids-2026": {
+      "es": {
+        "nota_visibilitat": "Observable desde Cataluña, con actividad baja repartida a lo largo de muchas noches.",
+        "consell_observacio": "Busca un cielo oscuro alrededor del 12 de noviembre y espera algún meteoro brillante aislado."
+      },
+      "en": {
+        "nota_visibilitat": "Visible from Catalonia, with low activity spread over many nights.",
+        "consell_observacio": "Find a dark sky around 12 November and look for an occasional isolated bright meteor."
+      }
+    },
+    "leonids-2026": {
+      "es": {
+        "nota_visibilitat": "El radiante se puede observar desde Cataluña y gana altura durante la madrugada.",
+        "consell_observacio": "Prioriza la noche del 17 al 18 de noviembre, especialmente después de medianoche."
+      },
+      "en": {
+        "nota_visibilitat": "The radiant can be seen from Catalonia and climbs higher before dawn.",
+        "consell_observacio": "Prioritize the night of 17–18 November, especially after midnight."
+      }
+    },
+    "geminids-2026": {
+      "es": {
+        "nota_visibilitat": "Máximo muy activo, con condiciones lunares favorables durante la noche principal.",
+        "consell_observacio": "Observa las noches del 13 al 14 y del 14 al 15 de diciembre; la amplitud de la actividad compensa que el máximo ocurra de día."
+      },
+      "en": {
+        "nota_visibilitat": "A very active peak with favourable Moon conditions during the main night.",
+        "consell_observacio": "Watch on the nights of 13–14 and 14–15 December; the broad activity makes up for the daytime peak."
+      }
+    },
+    "ursids-2026": {
+      "es": {
+        "nota_visibilitat": "El radiante septentrional está bien situado, pero la luz de la Luna dificultará especialmente el máximo de 2026.",
+        "consell_observacio": "Sitúa la Luna detrás de un obstáculo y busca un lugar lo más oscuro posible la noche del 22 de diciembre."
+      },
+      "en": {
+        "nota_visibilitat": "The northern radiant is well placed, but moonlight will particularly hamper the 2026 peak.",
+        "consell_observacio": "Hide the Moon behind an obstacle and choose the darkest possible site on the night of 22 December."
+      }
+    },
+    "quadrantids-2027": {
+      "es": {
+        "nota_visibilitat": "Máximo favorable desde Cataluña, poco antes de la Luna nueva, pero concentrado en un intervalo corto.",
+        "consell_observacio": "Planea la madrugada del 4 de enero y empieza antes de las 03:25 UTC para no perder el pico."
+      },
+      "en": {
+        "nota_visibilitat": "A favourable peak from Catalonia shortly before new Moon, although concentrated in a short interval.",
+        "consell_observacio": "Plan for the early hours of 4 January and start before 03:25 UTC so you do not miss the peak."
+      }
+    },
+    "eclipsi-lunar-penumbral-2027-02-20": {
+      "es": {
+        "nota_visibilitat": "El eclipse es visible desde Europa y, por tanto, desde Cataluña, pero el oscurecimiento penumbral será sutil.",
+        "consell_observacio": "Compara la Luna antes del máximo y hacia las 23:13 UTC; una fotografía con exposición constante puede hacer más evidente el cambio."
+      },
+      "en": {
+        "nota_visibilitat": "The eclipse is visible from Europe, including Catalonia, but the penumbral darkening will be subtle.",
+        "consell_observacio": "Compare the Moon before the peak and around 23:13 UTC; photos taken with the same exposure may make the change clearer."
+      }
+    },
+    "lirids-2027": {
+      "es": {
+        "nota_visibilitat": "El radiante es observable, pero el máximo llega poco después de la Luna llena y se perderán los meteoros débiles.",
+        "consell_observacio": "Observa durante la madrugada del 23 de abril manteniendo la Luna fuera de tu campo de visión."
+      },
+      "en": {
+        "nota_visibilitat": "The radiant is observable, but the peak comes shortly after full Moon, hiding faint meteors.",
+        "consell_observacio": "Watch before dawn on 23 April while keeping the Moon out of your field of view."
+      }
+    },
+    "eta-aquariids-2027": {
+      "es": {
+        "nota_visibilitat": "Desde Cataluña el radiante queda bajo y solo ofrece una ventana breve antes del amanecer; la tasa real será muy inferior a la ZHR ideal.",
+        "consell_observacio": "Busca un horizonte este o sureste completamente despejado durante las madrugadas cercanas al 6 de mayo."
+      },
+      "en": {
+        "nota_visibilitat": "From Catalonia the radiant stays low, offering only a brief window before dawn; the actual rate will be far below the ideal ZHR.",
+        "consell_observacio": "Find a completely clear eastern or southeastern horizon on mornings around 6 May."
+      }
+    },
+    "alpha-capricornids-2027": {
+      "es": {
+        "nota_visibilitat": "Observable desde Cataluña con una tasa baja; el principal atractivo son los posibles bólidos.",
+        "consell_observacio": "Observa una zona amplia del cielo la noche del 30 al 31 de julio y ten en cuenta que pueden pasar muchos minutos sin actividad."
+      },
+      "en": {
+        "nota_visibilitat": "Visible from Catalonia at a low rate; possible fireballs are the main attraction.",
+        "consell_observacio": "Watch a broad area of sky on the night of 30–31 July and expect long gaps without activity."
+      }
+    },
+    "southern-delta-aquariids-2027": {
+      "es": {
+        "nota_visibilitat": "Solo una parte de la actividad ideal es visible desde Cataluña porque el radiante culmina bajo sobre el horizonte sur.",
+        "consell_observacio": "Prioriza las horas previas al amanecer del 31 de julio desde un lugar con el horizonte sur despejado."
+      },
+      "en": {
+        "nota_visibilitat": "Only part of the ideal activity is visible from Catalonia because the radiant reaches a low altitude above the southern horizon.",
+        "consell_observacio": "Prioritize the hours before dawn on 31 July from a site with a clear southern horizon."
+      }
+    },
+    "perseids-2027": {
+      "es": {
+        "nota_visibilitat": "Muy bien situada desde Cataluña, aunque la Luna creciente reducirá el contraste de los meteoros más débiles.",
+        "consell_observacio": "El máximo previsto es entre las 08:00 y las 10:00 UTC del 13 de agosto; observa las noches inmediatamente anterior y posterior ocultando la Luna de la vista."
+      },
+      "en": {
+        "nota_visibilitat": "Very well placed from Catalonia, although the waxing Moon will reduce the contrast of fainter meteors.",
+        "consell_observacio": "The predicted peak is between 08:00 and 10:00 UTC on 13 August; watch on the nights immediately before and after, keeping the Moon out of view."
+      }
+    },
+    "eclipsi-solar-total-2027-08-02": {
+      "es": {
+        "nota_visibilitat": "El eclipse es total a escala global, pero desde Cataluña solo se ve la fase parcial; las horas son las de los contactos globales, no las locales.",
+        "consell_observacio": "En Cataluña se necesita protección solar homologada ISO 12312-2 durante toda la observación. No uses gafas de sol y coloca un filtro solar adecuado delante de cualquier telescopio, prismático o cámara."
+      },
+      "en": {
+        "nota_visibilitat": "The eclipse is total elsewhere in the world, but only the partial phase is visible from Catalonia; the times are global contacts, not local ones.",
+        "consell_observacio": "In Catalonia, use ISO 12312-2 compliant solar protection throughout the observation. Do not use ordinary sunglasses; fit a suitable solar filter in front of any telescope, binoculars or camera."
+      }
+    },
+    "draconids-2027": {
+      "es": {
+        "nota_visibilitat": "Observable al anochecer, pero la tasa habitual baja y la Luna gibosa dificultarán la observación de 2027.",
+        "consell_observacio": "Oculta la Luna tras un edificio o el relieve y considera valioso cualquier meteoro que veas."
+      },
+      "en": {
+        "nota_visibilitat": "Visible in the evening, but the usually low rate and a gibbous Moon will make the 2027 shower harder to observe.",
+        "consell_observacio": "Block the Moon with a building or hillside and consider any meteor you see a worthwhile sighting."
+      }
+    },
+    "orionids-2027": {
+      "es": {
+        "nota_visibilitat": "El máximo amplio es observable desde Cataluña, pero una Luna menguante brillante ocultará parte de los meteoros.",
+        "consell_observacio": "Compara varias madrugadas alrededor del 22 de octubre y sitúate de forma que la Luna quede fuera de la vista."
+      },
+      "en": {
+        "nota_visibilitat": "The broad peak is visible from Catalonia, but a bright waning Moon will hide some meteors.",
+        "consell_observacio": "Compare several mornings around 22 October and position yourself so the Moon is out of view."
+      }
+    },
+    "southern-taurids-2027": {
+      "es": {
+        "nota_visibilitat": "Visible desde Cataluña con una frecuencia baja y un máximo poco concentrado.",
+        "consell_observacio": "Dedica una observación larga a las noches cercanas al 6 de noviembre y fíjate especialmente en los meteoros brillantes."
+      },
+      "en": {
+        "nota_visibilitat": "Visible from Catalonia at a low rate, with no sharply defined peak.",
+        "consell_observacio": "Allow a long observing session on nights around 6 November and pay particular attention to bright meteors."
+      }
+    },
+    "northern-taurids-2027": {
+      "es": {
+        "nota_visibilitat": "Observable desde Cataluña, pero la tasa es baja y la actividad se reparte durante un período largo.",
+        "consell_observacio": "Observa alrededor del 13 de noviembre sin esperar un pico repentino; lo más interesante son los meteoros brillantes."
+      },
+      "en": {
+        "nota_visibilitat": "Visible from Catalonia, but the rate is low and activity is spread over a long period.",
+        "consell_observacio": "Watch around 13 November without expecting a sudden peak; bright meteors are the main attraction."
+      }
+    },
+    "leonids-2027": {
+      "es": {
+        "nota_visibilitat": "El radiante está bien situado, pero la Luna gibosa interferirá y solo los meteoros más brillantes se detectarán fácilmente.",
+        "consell_observacio": "Prioriza la madrugada del 18 de noviembre y, si puedes, repite la observación los días siguientes por posibles rastros de polvo."
+      },
+      "en": {
+        "nota_visibilitat": "The radiant is well placed, but a gibbous Moon will interfere, so only brighter meteors will be easy to spot.",
+        "consell_observacio": "Prioritize the early hours of 18 November and, if possible, watch again on following days for possible dust trails."
+      }
+    },
+    "geminids-2027": {
+      "es": {
+        "nota_visibilitat": "La lluvia es intrínsecamente muy activa, pero la Luna llena perjudicará mucho el máximo de 2027.",
+        "consell_observacio": "Observa la noche del 14 de diciembre con la Luna detrás de un obstáculo y espera sobre todo los meteoros más luminosos."
+      },
+      "en": {
+        "nota_visibilitat": "The shower is naturally very active, but the full Moon will strongly hamper the 2027 peak.",
+        "consell_observacio": "Watch on the night of 14 December with the Moon behind an obstacle and expect mainly the brightest meteors."
+      }
+    },
+    "ursids-2027": {
+      "es": {
+        "nota_visibilitat": "El radiante está bien situado desde Cataluña, pero la IMO no prevé ningún aumento especial de actividad en 2027.",
+        "consell_observacio": "Observa durante la madrugada del 23 de diciembre desde un lugar oscuro y reserva al menos una hora para compensar la tasa moderada."
+      },
+      "en": {
+        "nota_visibilitat": "The radiant is well placed from Catalonia, but the IMO predicts no special increase in activity for 2027.",
+        "consell_observacio": "Watch before dawn on 23 December from a dark site and allow at least an hour to make up for the moderate rate."
+      }
+    }
+  }
+}

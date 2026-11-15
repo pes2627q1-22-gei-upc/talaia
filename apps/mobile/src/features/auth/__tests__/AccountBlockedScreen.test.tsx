@@ -2,6 +2,7 @@ import { act, fireEvent, render, screen, within } from '@testing-library/react-n
 import { Linking } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { accountBlocked } from '@/core/api/accountBlocked';
 import i18n from '@/core/i18n';
 
 import { AccountBlockedScreen } from '../AccountBlockedScreen';
@@ -111,22 +112,6 @@ it('sense el correu configurat, no hi ha cap botó per escriure', async () => {
   expect(screen.queryByRole('button', { name: /Escriu a/ })).toBeNull();
 });
 
-it('«Torna-ho a comprovar» torna a preguntar a l’API i, mentrestant, no es pot tornar a prémer', async () => {
-  let finish!: () => void;
-  jest.mocked(profileRepository.ensure).mockReturnValue(
-    new Promise((done) => {
-      finish = () => done({ created: false });
-    }),
-  );
-  await renderScreen();
-  await fireEvent.press(screen.getByRole('button', { name: 'Torna-ho a comprovar' }));
-  expect(profileRepository.ensure).toHaveBeenCalledTimes(1);
-  expect(screen.getByRole('button', { name: 'Comprovant…' })).toBeDisabled();
-  expect(screen.getByRole('button', { name: 'Tanca la sessió' })).toBeDisabled();
-  await act(async () => finish());
-  expect(screen.getByRole('button', { name: 'Torna-ho a comprovar' })).toBeEnabled();
-});
-
 it('si no es pot obrir el correu, avisa sota el botó', async () => {
   mockEnv.contactEmail = 'equip@example.test';
   jest.spyOn(Linking, 'openURL').mockRejectedValueOnce(new Error('no mail app'));
@@ -138,4 +123,31 @@ it('si no es pot obrir el correu, avisa sota el botó', async () => {
   expect(alert).toHaveTextContent(
     "No s'ha pogut obrir el correu. Escriu-nos a equip@example.test.",
   );
+});
+
+it('reconsulta el bloqueig des del botó i impedeix repetir accions mentre comprova', async () => {
+  let finish!: () => void;
+  jest.mocked(profileRepository.ensure).mockReturnValue(
+    new Promise((resolve) => {
+      finish = () => resolve({ created: false });
+    }),
+  );
+  accountBlocked.report();
+  try {
+    await renderScreen();
+    await fireEvent.press(screen.getByRole('button', { name: 'Torna-ho a comprovar' }));
+    const checking = screen.getByRole('button', { name: 'Comprovant…' });
+    const logout = screen.getByRole('button', { name: 'Tanca la sessió' });
+    expect(checking).toBeDisabled();
+    expect(logout).toBeDisabled();
+    await fireEvent.press(checking);
+    await fireEvent.press(logout);
+    expect(profileRepository.ensure).toHaveBeenCalledTimes(1);
+    expect(signOut).not.toHaveBeenCalled();
+    await act(async () => finish());
+    expect(accountBlocked.get()).toBe(false);
+    expect(screen.getByRole('button', { name: 'Torna-ho a comprovar' })).toBeEnabled();
+  } finally {
+    accountBlocked.clear();
+  }
 });
