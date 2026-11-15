@@ -26,7 +26,12 @@ export function AccountBlockedScreen() {
           {vm.message}
         </AppText>
         {vm.contact ? (
-          <Button variant="text" label={vm.contact.label} onPress={vm.contact.open} />
+          <Button
+            variant="text"
+            label={vm.contact.label}
+            onPress={vm.contact.open}
+            style={styles.contact}
+          />
         ) : null}
         {vm.contact?.error ? (
           <AppText
@@ -62,5 +67,7 @@ const styles = StyleSheet.create({
   // El text al centre i els botons a baix, a l'abast del polze: no es tapen mai.
   content: { flex: 1, justifyContent: 'center', gap: spacing.sm },
   center: { textAlign: 'center' },
+  // Un botó de text s'alinea a l'esquerra; aquí va centrat com el text de l'avís.
+  contact: { alignSelf: 'center' },
   actions: { gap: spacing.sm, marginBottom: spacing.lg },
 });

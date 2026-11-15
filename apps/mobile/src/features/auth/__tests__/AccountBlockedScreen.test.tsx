@@ -101,7 +101,10 @@ it('amb el correu de l’equip configurat, ofereix escriure-hi', async () => {
   mockEnv.contactEmail = 'equip@example.test';
   const openURL = jest.spyOn(Linking, 'openURL').mockResolvedValue(undefined);
   await renderScreen();
-  await fireEvent.press(screen.getByRole('button', { name: 'Escriu a equip@example.test' }));
+  const contact = screen.getByRole('button', { name: 'Escriu a equip@example.test' });
+  // Centrat com la resta del text de l'avís.
+  expect(contact).toHaveStyle({ alignSelf: 'center' });
+  await fireEvent.press(contact);
   expect(openURL).toHaveBeenCalledWith(
     'mailto:equip@example.test?subject=Compte%20de%20Talaia%20bloquejat&body=El%20meu%20compte%20de%20Talaia%20%C3%A9s%20one%40example.test.',
   );
