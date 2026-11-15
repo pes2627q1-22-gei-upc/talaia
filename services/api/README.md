@@ -16,7 +16,7 @@ npm run api                   # = npm run dev -w services/api, amb recàrrega
 - Detall del fenomen: `GET /api/v1/esdeveniments/{id}` (mateixa autenticació; `Accept-Language: ca|es|en`, amb fallback al català)
 - Desglossament de l'índex d'un punt: `http://localhost:3000/api/v1/punts/{id}/index?nit=2026-10-19` (cal `DATABASE_URL`)
 - Perfil: `GET`, `POST` i `PATCH /api/v1/perfil` (cal el JWT de Supabase a `Authorization: Bearer`)
-- Alertes: `GET` i `POST /api/v1/alertes` (cal el JWT de Supabase)
+- Alertes: `GET` i `POST /api/v1/alertes` i `PATCH /api/v1/alertes/{id}` (cal el JWT de Supabase)
 - Recomanacions: `http://localhost:3000/api/v1/recomanacions?objectiu=cel_estrellat&lat=41.39&lon=2.17&data=<YYYY-MM-DD>&desDe=22&finsA=6&tempsMaxim=150`
 - Documentació (Swagger UI): <http://localhost:3000/api/v1/docs>
 - OpenAPI: <http://localhost:3000/api/v1/openapi.json>
@@ -57,7 +57,7 @@ src/
     punts.ts            GET /punts (bbox, ETag, Cache-Control i 304) i GET /punts/{id}
     esdeveniments.ts    GET /esdeveniments, autenticació API key o JWT
     auth.ts             GET, POST i PATCH /perfil (JWT de Supabase, ADR-0023)
-    alertes.ts          GET i POST /alertes: les alertes de l'usuari del JWT (HU16)
+    alertes.ts          GET, POST i PATCH /alertes: les alertes de l'usuari del JWT (HU16, HU18, HU19)
     admin.ts            GET /admin/me, GET /admin/usuaris i PATCH /admin/usuaris/{id} (ADR-0029)
     puntIndex.ts        GET /punts/{id}/index: desglossament de l'índex per hores i factors (HU04)
     recomanacions.ts    GET /recomanacions (validació de la consulta i OpenAPI)
@@ -208,12 +208,13 @@ Rutes de `/admin` (tipus `UsuariAdmin` i `UsuariAdminCanvis` a `@talaia/shared`,
 
 Errors: 401 `unauthorized`; 403 `forbidden` (no és admin) o `account_blocked`; 400 `validation_error` (l'`id` no és un UUID o el cos no és vàlid) o `cannot_block_self` (un administrador no es pot bloquejar a si mateix); 404 `usuari_not_found`; 503 sense base de dades.
 
-## `/alertes` (HU16 · TG-145)
+## `/alertes` (HU16 · TG-145, HU18/HU19 · TG-147)
 
 Les alertes de l'usuari autenticat (tipus `Alerta` i `AlertaNova` a `@talaia/shared`, taula `alertes`). Com `/perfil`, passen pel `requireUser` de `routes/index.ts` (JWT de Supabase i compte no bloquejat) i responen amb `Cache-Control: no-store`.
 
 - `POST /alertes`: crea una alerta (201), sempre activa. Com a molt **20 per usuari** (`MAX_ALERTES`), perquè el worker de notificacions (TG-153) les avalua totes cada hora; el comptatge i la inserció es fan en una transacció que bloqueja el perfil, de manera que dues peticions alhora no poden passar el límit. Cos: `{ "objectiu": "pluja_estels", "origen": { "lat": 41.3874, "lon": 2.1686 }, "distanciaMaxKm": 60, "indexMinim": 70, "avisaEnArribar": true, "horaAvis": 18 }`. `objectiu` és un `ObjectiuObservacio` (el selector de «Què vols veure?»), `distanciaMaxKm` un enter d'1 a 200 i `indexMinim` un enter de 0 a 100. Quan s'avisa (TG-146): `avisaEnArribar` (tan bon punt algun punt arriba a l'índex mínim) i `horaAvis` (el mateix dia a aquesta hora local, enter de 0 a 23, si la previsió de la nit hi arriba; `null` si no). Tots dos són obligatoris al cos i almenys un ha d'estar triat (`true` o una hora); si no, 400. La taula ho garanteix amb el `check` `alertes_quan_avisa`. El cos és estricte: un camp de més (per exemple `perfilId`) és un 400.
 - `GET /alertes`: les alertes de l'usuari, de la més nova a la més antiga (`[]` si no en té cap).
+- `PATCH /alertes/{id}` (TG-147): activa o desactiva l'alerta (`{ "activa": false }`, HU19; una alerta desactivada no notifica) i n'edita les preferències (HU18). Cos `AlertaCanvis`: els mateixos camps que `POST` més `activa`, tots opcionals però almenys un, i estricte. Respon 200 amb l'`Alerta`. La regla de «quan avisa» es comprova amb els valors que quedaran després del canvi: treure l'hora d'una alerta que no avisa en arribar-hi és un 400 `validation_error`. Es fa en una transacció que bloqueja la fila. Un `id` que no és un UUID és un 400; una alerta que no és de l'usuari respon 404 `alert_not_found`, igual que una que no existeix.
 
 **Només les de l'usuari:** el perfil surt sempre del JWT (`req.account.perfilId`, que llegeix `requireUser`), mai del cos, i les consultes filtren per ell a l'SQL. Esborrar el compte esborra les alertes (`on delete cascade`).
 

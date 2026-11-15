@@ -1,4 +1,4 @@
-import type { Alerta, AlertaNova, ObjectiuObservacio } from '@talaia/shared';
+import type { Alerta, AlertaCanvis, AlertaNova, ObjectiuObservacio } from '@talaia/shared';
 import { lat, lon, puntDesDeLonLat, type createDb } from '@talaia/db';
 
 type Db = ReturnType<typeof createDb>;
@@ -12,6 +12,13 @@ export const MAX_ALERTES = 20;
 export type CreateAlertaResult = { ok: true; alerta: Alerta } | { ok: false; reason: 'limit' };
 
 /**
+ * `not_found`: cap alerta amb aquest `id` del perfil (tampoc si és d'un altre usuari).
+ * `quan_avisa`: amb els canvis, l'alerta no avisaria mai (`avisaEnArribar` fals i `horaAvis` null).
+ */
+export type UpdateAlertaResult =
+  { ok: true; alerta: Alerta } | { ok: false; reason: 'not_found' | 'quan_avisa' };
+
+/**
  * Alertes d'un perfil (HU16, TG-145). Reben el `perfilId` que `requireUser` llegeix del perfil de
  * l'usuari del JWT (`req.account`), mai un que vingui de la petició, i filtren per ell a l'SQL.
  */
@@ -20,7 +27,21 @@ export type AlertesStore = {
   create: (perfilId: string, alerta: AlertaNova) => Promise<CreateAlertaResult>;
   /** Les alertes del perfil, de la més nova a la més antiga. */
   list: (perfilId: string) => Promise<Alerta[]>;
+  /** Aplica els canvis a una alerta del perfil (TG-147). */
+  update: (perfilId: string, id: string, canvis: AlertaCanvis) => Promise<UpdateAlertaResult>;
 };
+
+const COLUMNES = [
+  'id',
+  'objectiu',
+  'distanciaMaxKm',
+  'indexMinim',
+  'avisaEnArribar',
+  'horaAvis',
+  'activa',
+  'dataCreacio',
+  'dataActualitzacio',
+] as const;
 
 export function createDatabaseAlertesStore(db: Db): AlertesStore {
   return {
@@ -57,17 +78,9 @@ export function createDatabaseAlertesStore(db: Db): AlertesStore {
             horaAvis,
           })
           .returning((eb) => [
-            'id',
-            'objectiu',
+            ...COLUMNES,
             lat(eb.ref('origen')).as('lat'),
             lon(eb.ref('origen')).as('lon'),
-            'distanciaMaxKm',
-            'indexMinim',
-            'avisaEnArribar',
-            'horaAvis',
-            'activa',
-            'dataCreacio',
-            'dataActualitzacio',
           ])
           .executeTakeFirstOrThrow();
         return { ok: true, alerta: toAlerta(row) } as const;
@@ -78,17 +91,9 @@ export function createDatabaseAlertesStore(db: Db): AlertesStore {
       const rows = await db
         .selectFrom('alertes')
         .select((eb) => [
-          'id',
-          'objectiu',
+          ...COLUMNES,
           lat(eb.ref('origen')).as('lat'),
           lon(eb.ref('origen')).as('lon'),
-          'distanciaMaxKm',
-          'indexMinim',
-          'avisaEnArribar',
-          'horaAvis',
-          'activa',
-          'dataCreacio',
-          'dataActualitzacio',
         ])
         .where('perfilId', '=', perfilId)
         // Amb `id` per desempatar: dues alertes creades en la mateixa transacció tenen la mateixa data.
@@ -96,6 +101,42 @@ export function createDatabaseAlertesStore(db: Db): AlertesStore {
         .orderBy('id')
         .execute();
       return rows.map(toAlerta);
+    },
+
+    async update(perfilId, id, { origen, ...canvis }) {
+      return db.transaction().execute(async (trx) => {
+        // Bloqueja la fila: la regla de «quan avisa» es comprova amb els valors que hi haurà
+        // després del canvi, i dues peticions alhora no la poden saltar.
+        const actual = await trx
+          .selectFrom('alertes')
+          .select(['avisaEnArribar', 'horaAvis'])
+          .where('id', '=', id)
+          .where('perfilId', '=', perfilId)
+          .forUpdate()
+          .executeTakeFirst();
+        if (!actual) return { ok: false, reason: 'not_found' } as const;
+
+        const avisaEnArribar = canvis.avisaEnArribar ?? actual.avisaEnArribar;
+        const horaAvis = canvis.horaAvis === undefined ? actual.horaAvis : canvis.horaAvis;
+        if (!avisaEnArribar && horaAvis === null)
+          return { ok: false, reason: 'quan_avisa' } as const;
+
+        const row = await trx
+          .updateTable('alertes')
+          .set({
+            ...canvis,
+            ...(origen ? { origen: puntDesDeLonLat(origen.lon, origen.lat) } : {}),
+          })
+          .where('id', '=', id)
+          .where('perfilId', '=', perfilId)
+          .returning((eb) => [
+            ...COLUMNES,
+            lat(eb.ref('origen')).as('lat'),
+            lon(eb.ref('origen')).as('lon'),
+          ])
+          .executeTakeFirstOrThrow();
+        return { ok: true, alerta: toAlerta(row) } as const;
+      });
     },
   };
 }
