@@ -9,6 +9,7 @@ import type {
 import { nightWindow, upcomingNight } from '../index/night';
 import { ApiError } from '../middleware/errors';
 import { iniciHora } from '../punts/puntsService';
+import { puntLocalitzat } from '../punts/localitzacio';
 import { franjaUtc } from './franja';
 import type {
   IndexHoraPunt,
@@ -29,7 +30,11 @@ export type RecomanacionsService = {
    * El rànquing de punts per a la consulta; el que no hi és pren el valor per defecte
    * (`resolConsulta`). `now` decideix la nit per defecte i quines hores de la franja queden.
    */
-  getRecomanacions(consulta: ParametresRecomanacions, now?: Date): Promise<RecomanacionsResposta>;
+  getRecomanacions(
+    consulta: ParametresRecomanacions,
+    now?: Date,
+    acceptLanguage?: string,
+  ): Promise<RecomanacionsResposta>;
 };
 
 /** La consulta amb els valors per defecte omplerts i la franja ja en UTC, `[desDe, finsA)`. */
@@ -135,7 +140,7 @@ export function createRecomanacionsService(
   rutes: EstimadorRutes = rutesEnLiniaRecta,
 ): RecomanacionsService {
   return {
-    async getRecomanacions(parametres, now = new Date()) {
+    async getRecomanacions(parametres, now = new Date(), acceptLanguage) {
       const { franja, ...consulta } = resolConsulta(parametres, now);
       const horaActual = iniciHora(now);
       if (franja.finsA <= horaActual) {
@@ -161,7 +166,11 @@ export function createRecomanacionsService(
         radiKm,
         franja: { desDe: desDe.toISOString(), finsA: franja.finsA.toISOString() },
         total: punts.length,
-        punts: rankeja(punts, index, rutes).slice(0, consulta.limit),
+        punts: rankeja(
+          punts.map((p) => puntLocalitzat(p, acceptLanguage)),
+          index,
+          rutes,
+        ).slice(0, consulta.limit),
       };
     },
   };

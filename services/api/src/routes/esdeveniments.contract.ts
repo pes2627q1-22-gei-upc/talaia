@@ -131,9 +131,18 @@ registry.registerPath({
     'Les dates són dies civils de Catalunya ' +
     '(Europe/Madrid): [des_de 00:00, fins_a + 1 dia 00:00). Hi entra un esdeveniment si ' +
     'inici < final i fi > començament. La ubicació és un punt general recomanat per situar ' +
-    "l'esdeveniment al mapa, no una garantia meteorològica.",
+    "l'esdeveniment al mapa, no una garantia meteorològica. Amb JWT, Accept-Language " +
+    'selecciona ca, es o en; amb API key el llistat acordat amb Aprop continua en català.',
   security: [{ ApiKeyAprop: [] }, { BearerSupabase: [] }],
-  request: { query: EsdevenimentsQuerySchema },
+  request: {
+    query: EsdevenimentsQuerySchema,
+    headers: z.object({
+      'Accept-Language': z.string().optional().meta({
+        example: 'es-ES,es;q=0.9,en;q=0.8',
+        description: 'Només s’aplica al llistat amb JWT. Amb API key, català.',
+      }),
+    }),
+  },
   responses: {
     200: {
       description: "Llista d'esdeveniments ordenada per inici ascendent.",
