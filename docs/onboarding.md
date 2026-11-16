@@ -319,6 +319,7 @@ A GitHub, obre la PR cap a **`snapshot`**:
   - Backend (API, worker, base de dades): **Mohamed** (és la seva tasca TG-78).
   - La resta: qualsevol company amb permís d'escriptura.
   - Ningú aprova la seva pròpia PR.
+- **Taiga**: passa la tasca a **«Ready for test»**. L'estat es canvia sempre a mà: els commits només porten el peu `Refs: TG-<ref>`, sense etiquetes com `#ready-for-test`.
 
 ### 5. CI en verd i 1 aprovació
 

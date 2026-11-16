@@ -132,7 +132,7 @@ Especificada → implementada → provada (tests a la CI) → revisada (PR aprov
 3. Respecta el stack i les convencions; si una decisió no està presa, consulta `docs/decisions/pendents.md` i **pregunta** abans d'inventar-la.
 4. Escriu tests i actualitza l'OpenAPI / docs a la mateixa PR.
 5. Missatges de commit i descripció de PR seguint la convenció; plantilla a `.github/pull_request_template.md`.
-6. Estat de la tasca a Taiga des del commit (integració Taiga ↔ GitHub, `docs/git-workflow.md`): al peu, just abans de `Refs: TG-<ref>`, afegeix `TG-<ref> #in-progress` al primer commit de la tasca i `TG-<ref> #ready-for-test` al commit que la deixa llesta per revisar.
+6. L'estat de la tasca a Taiga es canvia a mà (`docs/git-workflow.md` → «Integració Taiga ↔ GitHub»): «En curso» en començar, «Ready for test» en obrir la PR i tancada en fusionar. Els commits no porten etiquetes d'estat (`TG-<ref> #<estat>`): només el peu `Refs: TG-<ref>`.
 
 ## Enllaços
 
