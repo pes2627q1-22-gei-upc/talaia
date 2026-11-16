@@ -34,7 +34,12 @@ export function createApp({ profileStore, alertes, ...apiDeps }: AppOptions = {}
       setBlocked: unavailable,
     } satisfies ProfileStore);
   const resolvedAlertes =
-    alertes ?? ({ create: alertesUnavailable, list: alertesUnavailable } satisfies AlertesStore);
+    alertes ??
+    ({
+      create: alertesUnavailable,
+      list: alertesUnavailable,
+      update: alertesUnavailable,
+    } satisfies AlertesStore);
 
   const app = express();
   app.disable('x-powered-by');

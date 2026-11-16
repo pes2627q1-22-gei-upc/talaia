@@ -56,9 +56,9 @@ describe('createDatabaseAlertesStore.create', () => {
       'insert into "alertes" ("perfil_id", "objectiu", "origen", "distancia_max_km", "index_minim", ' +
         '"avisa_en_arribar", "hora_avis") ' +
         'values ($1, $2, st_setsrid(st_makepoint($3, $4), 4326)::geography, $5, $6, $7, $8) ' +
-        'returning "id", "objectiu", st_y("origen"::geometry) as "lat", st_x("origen"::geometry) as "lon", ' +
-        '"distancia_max_km", "index_minim", "avisa_en_arribar", "hora_avis", "activa", "data_creacio", ' +
-        '"data_actualitzacio"',
+        'returning "id", "objectiu", "distancia_max_km", "index_minim", "avisa_en_arribar", "hora_avis", ' +
+        '"activa", "data_creacio", "data_actualitzacio", st_y("origen"::geometry) as "lat", ' +
+        'st_x("origen"::geometry) as "lon"',
     ]);
     expect(queries[0]?.parameters).toEqual([PERFIL]);
     expect(queries[1]?.parameters).toEqual([PERFIL]);
@@ -115,5 +115,77 @@ describe('createDatabaseAlertesStore.list', () => {
     const { db } = fakeDb([{ ...FILA, avisa_en_arribar: true, hora_avis: null }]);
     const [alerta] = await createDatabaseAlertesStore(db).list(PERFIL);
     expect(alerta).toMatchObject({ avisaEnArribar: true, horaAvis: null });
+  });
+});
+
+describe('createDatabaseAlertesStore.update', () => {
+  const ID = '00000000-0000-4000-8000-000000000001';
+
+  it('bloqueja l’alerta del perfil, la mira i només canvia els camps donats', async () => {
+    const { db, queries } = fakeDb([
+      [{ avisa_en_arribar: false, hora_avis: 18 }],
+      [{ ...FILA, activa: false }],
+    ]);
+
+    await expect(
+      createDatabaseAlertesStore(db).update(PERFIL, ID, { activa: false, indexMinim: 80 }),
+    ).resolves.toEqual({ ok: true, alerta: { ...ALERTA, activa: false } });
+
+    expect(queries.map((q) => q.sql)).toEqual([
+      'select "avisa_en_arribar", "hora_avis" from "alertes" where "id" = $1 and "perfil_id" = $2 for update',
+      'update "alertes" set "activa" = $1, "index_minim" = $2 where "id" = $3 and "perfil_id" = $4 ' +
+        'returning "id", "objectiu", "distancia_max_km", "index_minim", "avisa_en_arribar", "hora_avis", ' +
+        '"activa", "data_creacio", "data_actualitzacio", st_y("origen"::geometry) as "lat", ' +
+        'st_x("origen"::geometry) as "lon"',
+    ]);
+    expect(queries[0]?.parameters).toEqual([ID, PERFIL]);
+    expect(queries[1]?.parameters).toEqual([false, 80, ID, PERFIL]);
+  });
+
+  it('desa l’origen com a punt (longitud, latitud)', async () => {
+    const { db, queries } = fakeDb([[{ avisa_en_arribar: true, hora_avis: null }], [FILA]]);
+    await createDatabaseAlertesStore(db).update(PERFIL, ID, { origen: { lat: 42.1, lon: 1.8 } });
+    expect(queries[1]?.sql).toMatch(
+      /^update "alertes" set "origen" = st_setsrid\(st_makepoint\(\$1, \$2\), 4326\)::geography where/,
+    );
+    expect(queries[1]?.parameters).toEqual([1.8, 42.1, ID, PERFIL]);
+  });
+
+  it('torna not_found sense actualitzar res si el perfil no té l’alerta', async () => {
+    const { db, queries } = fakeDb([[]]);
+    await expect(
+      createDatabaseAlertesStore(db).update(PERFIL, ID, { activa: false }),
+    ).resolves.toEqual({ ok: false, reason: 'not_found' });
+    expect(queries).toHaveLength(1);
+  });
+
+  it.each([
+    [
+      'treu l’hora i no avisa en arribar-hi',
+      { avisa_en_arribar: false, hora_avis: 18 },
+      { horaAvis: null },
+    ],
+    [
+      'deixa d’avisar en arribar-hi sense hora',
+      { avisa_en_arribar: true, hora_avis: null },
+      { avisaEnArribar: false },
+    ],
+  ])('torna quan_avisa si %s', async (_cas, actual, canvis) => {
+    const { db, queries } = fakeDb([[actual]]);
+    await expect(createDatabaseAlertesStore(db).update(PERFIL, ID, canvis)).resolves.toEqual({
+      ok: false,
+      reason: 'quan_avisa',
+    });
+    expect(queries).toHaveLength(1);
+  });
+
+  it('accepta canviar les dues maneres d’avisar alhora', async () => {
+    const { db, queries } = fakeDb([[{ avisa_en_arribar: true, hora_avis: null }], [FILA]]);
+    const result = await createDatabaseAlertesStore(db).update(PERFIL, ID, {
+      avisaEnArribar: false,
+      horaAvis: 18,
+    });
+    expect(result.ok).toBe(true);
+    expect(queries).toHaveLength(2);
   });
 });
