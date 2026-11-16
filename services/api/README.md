@@ -15,7 +15,7 @@ npm run api                   # = npm run dev -w services/api, amb recàrrega
 - Calendari: `GET /api/v1/esdeveniments?des_de=2026-10-01&fins_a=2026-10-31` (JWT de Talaia o `X-API-Key` d'Aprop)
 - Detall del fenomen: `GET /api/v1/esdeveniments/{id}` (mateixa autenticació; `Accept-Language: ca|es|en`, amb fallback al català)
 - Desglossament de l'índex d'un punt: `http://localhost:3000/api/v1/punts/{id}/index?nit=2026-10-19` (cal `DATABASE_URL`)
-- Perfil: `GET`, `POST` i `PATCH /api/v1/perfil` (cal el JWT de Supabase a `Authorization: Bearer`)
+- Perfil: `GET`, `POST`, `PATCH` i `DELETE /api/v1/perfil` (cal el JWT de Supabase a `Authorization: Bearer`)
 - Recomanacions: `http://localhost:3000/api/v1/recomanacions?objectiu=cel_estrellat&lat=41.39&lon=2.17&data=<YYYY-MM-DD>&desDe=22&finsA=6&tempsMaxim=150`; «a prop meu»: `…/recomanacions?lat=41.39&lon=2.17`
 - Visibilitat d'una ubicació qualsevol: `http://localhost:3000/api/v1/visibilitat?lat=41.95&lon=1.52` (no cal `DATABASE_URL`; amb `&hora=<ISO 8601>`, una altra hora)
 - Documentació (Swagger UI): <http://localhost:3000/api/v1/docs>
@@ -57,7 +57,7 @@ src/
     health.ts           GET /health
     punts.ts            GET /punts (bbox, ETag, Cache-Control i 304) i GET /punts/{id}
     esdeveniments.ts    GET /esdeveniments, autenticació API key o JWT
-    auth.ts             GET, POST i PATCH /perfil (JWT de Supabase, ADR-0023)
+    auth.ts             GET, POST, PATCH i DELETE /perfil (JWT de Supabase, ADR-0023)
     admin.ts            GET /admin/me, GET /admin/usuaris i PATCH /admin/usuaris/{id} (ADR-0029)
     puntIndex.ts        GET /punts/{id}/index: desglossament de l'índex per hores i factors (HU04)
     recomanacions.ts    GET /recomanacions (validació de la consulta i OpenAPI)
@@ -222,13 +222,16 @@ L'índex de visibilitat d'**una ubicació qualsevol de Catalunya**, la que l'usu
 
 Errors: `lat`, `lon` o `hora` mal formats → 400 `validation_error`; fora de Catalunya → 422 `fora_de_catalunya`; hora abans de l'actual o més enllà de 72 h → 422 `hora_sense_previsio`; massa consultes noves del client → 429 `too_many_requests`; Open-Meteo no respon o s'ha arribat al sostre, i no hi ha cap previsió caducada per servir → 503 `meteo_unavailable`. L'app (TG-131) mostra un missatge per a cada codi.
 
-## `/perfil` (TG-84, HU36 · TG-165)
+## `/perfil` (TG-84, HU36 · TG-165, HU38 · TG-167)
 
-El perfil de l'usuari autenticat (tipus `Perfil` a `@talaia/shared`, taula `perfils`). Les tres rutes demanen el JWT de Supabase (`requireAuth`, ADR-0023) i responen amb `Cache-Control: no-store`, perquè són dades personals.
+El perfil de l'usuari autenticat (tipus `Perfil` a `@talaia/shared`, taula `perfils`). Totes demanen el JWT de Supabase (`requireUser`, ADR-0023). Les que tornen el perfil responen amb `Cache-Control: no-store`, perquè són dades personals.
 
 - `POST /perfil`: el crea en el primer accés (201) o torna el que ja hi ha (200). L'app la crida després de cada login, amb `{ nom }` opcional (Apple no posa el nom al token).
 - `GET /perfil`: el perfil, o 404 `profile_not_found` si encara no s'ha fet el `POST`.
 - `PATCH /perfil`: de moment només es pot editar el nom: `{ "nom": "Martina" }` (1–100 caràcters, sense els espais dels extrems). Un camp que no es pot editar és un 400, no s'ignora. Torna el perfil amb el canvi; `data_actualitzacio` la posa el trigger de la taula.
+- `DELETE /perfil`: elimina el compte i totes les dades de l'usuari (RGPD) i respon **204** sense cos. Fa `delete from auth.users` amb la connexió de `DATABASE_URL` (l'usuari `postgres` hi té permís; l'API no fa servir la service role key) i la resta cau en cascada: sessions, refresh tokens i identitats d'Auth, i `perfils` amb tot el que en penja (alertes, dispositius push…). Els punts que hagi creat es queden al catàleg sense creador. Si l'usuari ja no hi era, també 204. Un compte bloquejat rep 403 i no es pot esborrar. El JWT que ja té l'app és vàlid fins que caduca: l'app ha de tancar la sessió en rebre el 204 (TG-168).
+
+**Taules noves amb dades d'un usuari** (plans, favorits, observacions…): han de penjar de `perfils(id)` amb `on delete cascade`, perquè `DELETE /perfil` les esborri. Les fotos de Storage no cauen en cascada: quan n'hi hagi, `deleteAccount` (`services/profileService.ts`) les haurà d'esborrar abans.
 
 Errors: JWT absent o invàlid → 401 `unauthorized`; compte bloquejat → 403 `account_blocked`; cos invàlid → 400 `validation_error`; sense `DATABASE_URL` o sense poder validar el JWT → 503.
 
