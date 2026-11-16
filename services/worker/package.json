@@ -30,6 +30,7 @@
   },
   "dependencies": {
     "@talaia/db": "*",
+    "@talaia/index": "*",
     "@talaia/shared": "*",
     "astronomy-engine": "^2.1.19",
     "kysely": "^0.28.17",
