@@ -260,3 +260,13 @@ describe('createDatabaseProfileStore.setBlocked', () => {
     await expect(createDatabaseProfileStore(db).setBlocked('perfil-x', true)).resolves.toBeNull();
   });
 });
+
+describe('createDatabaseProfileStore.deleteAccount', () => {
+  it("esborra l'usuari d'Auth: la resta cau en cascada", async () => {
+    const { db, queries } = fakeDb([]);
+    await expect(createDatabaseProfileStore(db).deleteAccount(MARIA.id)).resolves.toBeUndefined();
+    expect(queries).toHaveLength(1);
+    expect(queries[0]?.sql).toBe('delete from auth.users where id = $1');
+    expect(queries[0]?.parameters).toEqual([MARIA.id]);
+  });
+});

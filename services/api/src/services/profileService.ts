@@ -36,6 +36,11 @@ export type ProfileStore = {
   listProfiles: () => Promise<ProfileRecord[]>;
   /** Bloqueja o desbloqueja el perfil `perfilId` (`perfils.id`); `null` si no existeix. */
   setBlocked: (perfilId: string, bloquejat: boolean) => Promise<ProfileRecord | null>;
+  /**
+   * Esborra l'usuari de Supabase Auth i, en cascada, totes les seves dades (HU38, RGPD). No falla
+   * si l'usuari ja no hi era: el `DELETE` és idempotent.
+   */
+  deleteAccount: (authUserId: string) => Promise<void>;
 };
 
 type Db = ReturnType<typeof createDb>;
@@ -128,6 +133,15 @@ export function createDatabaseProfileStore(db: Db): ProfileStore {
         .returningAll()
         .executeTakeFirst();
       return row ? deserializeProfile(row) : null;
+    },
+
+    async deleteAccount(authUserId) {
+      // Sense service role key a l'API: l'usuari de `DATABASE_URL` (`postgres`) pot esborrar a
+      // `auth.users`. La resta cau en cascada: `auth.users` → sessions, refresh tokens i
+      // identitats; `perfils` → alertes, dispositius push… Els punts que hagi creat es queden al
+      // catàleg sense creador (`creador_id` → null). Una taula nova amb dades de l'usuari ha de
+      // penjar de `perfils` amb `on delete cascade`.
+      await sql`delete from auth.users where id = ${authUserId}`.execute(db);
     },
   };
 }

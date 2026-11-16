@@ -49,6 +49,10 @@ const profileStore: ProfileStore = {
     p.dataBloqueig = bloquejat ? (p.dataBloqueig ?? new Date('2026-11-12T10:00:00.000Z')) : null;
     return p;
   },
+  deleteAccount: async (authUserId) => {
+    // Com la cascada de `auth.users` → `perfils`.
+    perfils = perfils.filter((p) => p.authUserId !== authUserId);
+  },
 };
 
 let app: ReturnType<typeof createApp>;
@@ -221,7 +225,12 @@ describe('compte bloquejat', () => {
         .patch('/api/v1/perfil')
         .set('Authorization', `Bearer ${await tokenFor(MARIA.auth)}`)
         .send({ nom: 'Maria' }),
+      // Si es pogués esborrar, es podria tornar a registrar amb el mateix correu.
+      request(app)
+        .delete('/api/v1/perfil')
+        .set('Authorization', `Bearer ${await tokenFor(MARIA.auth)}`),
     ]);
+    expect(byAuth(MARIA.auth)).not.toBeNull();
     for (const res of responses) {
       expect(res.status).toBe(403);
       expect(res.body).toEqual({
