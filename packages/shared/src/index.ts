@@ -5,6 +5,7 @@ export type * from './favorits';
 export type * from './indexVisibilitat';
 export type * from './meteo';
 export type * from './perfil';
+export type * from './plans';
 export type * from './punts';
 export type * from './recomanacions';
 export type * from './visibilitat';
