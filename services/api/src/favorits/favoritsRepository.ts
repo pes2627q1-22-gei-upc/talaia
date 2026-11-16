@@ -5,6 +5,9 @@ import { indexMapa } from '../punts/puntsRepository';
 
 type Db = ReturnType<typeof createDb>;
 
+/** Un favorit amb els textos traduïts del punt (TG-164): el servei en tria el nom de l'idioma. */
+export type FavoritAmbTextos = Favorit & { textos?: unknown };
+
 /**
  * Favorits d'un usuari (HU25–HU27, TG-169). Totes les operacions reben el perfil de l'usuari del
  * JWT (`perfils.id`, el que deixa `requireUser`) i hi filtren a l'SQL: els favorits d'un altre
@@ -15,7 +18,7 @@ export type FavoritsRepository = {
    * Els favorits del perfil que encara són `PUBLICAT`, els més nous primer, amb l'índex de l'`hora`
    * (inici, en UTC). Els d'un punt retirat no hi surten, però la fila es conserva.
    */
-  list(perfilId: string, hora: Date): Promise<Favorit[]>;
+  list(perfilId: string, hora: Date): Promise<FavoritAmbTextos[]>;
   /**
    * Desa el punt als favorits si és `PUBLICAT`: `undefined` si no ho és o no existeix. Si ja hi
    * era, `created: false` i no en canvia la data.
@@ -24,7 +27,7 @@ export type FavoritsRepository = {
     perfilId: string,
     puntId: string,
     hora: Date,
-  ): Promise<{ created: boolean; favorit: Favorit } | undefined>;
+  ): Promise<{ created: boolean; favorit: FavoritAmbTextos } | undefined>;
   /** Treu el punt dels favorits. Si no hi era, no fa res. */
   remove(perfilId: string, puntId: string): Promise<void>;
 };
@@ -42,6 +45,7 @@ export function createFavoritsRepository(db: Db): FavoritsRepository {
         'p.id',
         'p.nom',
         'p.municipi',
+        'p.textos',
         lon(eb.ref('p.ubicacio')).as('lon'),
         lat(eb.ref('p.ubicacio')).as('lat'),
         'iv.valor',
@@ -98,6 +102,7 @@ type FilaFavorit = {
   id: string;
   nom: string;
   municipi: string;
+  textos: unknown;
   lon: number;
   lat: number;
   valor: number | null;
@@ -106,7 +111,13 @@ type FilaFavorit = {
   dataCreacio: Date | string;
 };
 
-function toFavorit({ valor, franja, factors, dataCreacio, ...punt }: FilaFavorit): Favorit {
+function toFavorit({
+  valor,
+  franja,
+  factors,
+  dataCreacio,
+  ...punt
+}: FilaFavorit): FavoritAmbTextos {
   return {
     ...punt,
     index: indexMapa({ valor, franja, factors }),

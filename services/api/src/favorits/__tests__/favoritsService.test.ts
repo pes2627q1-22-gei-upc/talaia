@@ -37,6 +37,26 @@ describe('favoritsService', () => {
     expect(repo.list).toHaveBeenCalledWith(PERFIL, HORA);
   });
 
+  it('el nom del punt segueix Accept-Language, amb el català de reserva', async () => {
+    const textos = {
+      ca: { nom: 'Observatori del Montsec' },
+      es: { nom: 'Observatorio del Montsec' },
+    };
+    const repo = repository({
+      list: jest.fn(async () => [{ ...FAVORIT, textos }]),
+      add: jest.fn(async () => ({ created: true, favorit: { ...FAVORIT, textos } })),
+    });
+
+    const [enCastella] = await service(repo).list(PERFIL, 'es-ES,es;q=0.9');
+    expect(enCastella).toEqual({ ...FAVORIT, nom: 'Observatorio del Montsec' });
+    // Sense traducció a l'anglès, el català; els textos no surten mai a la resposta.
+    await expect(service(repo).list(PERFIL, 'en')).resolves.toEqual([FAVORIT]);
+    await expect(service(repo).add(PERFIL, MONTSEC, 'es')).resolves.toEqual({
+      created: true,
+      favorit: { ...FAVORIT, nom: 'Observatorio del Montsec' },
+    });
+  });
+
   it('desa el favorit i diu si és nou', async () => {
     const repo = repository({ add: jest.fn(async () => ({ created: false, favorit: FAVORIT })) });
     await expect(service(repo).add(PERFIL, MONTSEC)).resolves.toEqual({

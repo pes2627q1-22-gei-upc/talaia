@@ -10,6 +10,7 @@ const FILA = {
   id: MONTSEC,
   nom: 'Observatori del Montsec',
   municipi: 'Àger',
+  textos: { ca: { nom: 'Observatori del Montsec' }, es: { nom: 'Observatorio del Montsec' } },
   lon: 0.7364,
   lat: 42.0244,
   valor: 82,
@@ -18,10 +19,12 @@ const FILA = {
   data_creacio: new Date('2026-11-11T18:00:00.000Z'),
 };
 
+/** Amb els textos traduïts: el servei en tria el nom de l'idioma. */
 const FAVORIT = {
   id: MONTSEC,
   nom: 'Observatori del Montsec',
   municipi: 'Àger',
+  textos: FILA.textos,
   lon: 0.7364,
   lat: 42.0244,
   index: { valor: 82, franja: 'ras', deDia: false },
@@ -30,7 +33,7 @@ const FAVORIT = {
 
 /** El punt publicat, amb l'índex de l'hora, dels favorits del perfil. */
 const SELECT_FAVORITS =
-  'select "p"."id", "p"."nom", "p"."municipi", st_x("p"."ubicacio"::geometry) as "lon", st_y("p"."ubicacio"::geometry) as "lat", "iv"."valor", "iv"."franja", "iv"."factors", "f"."data_creacio" ' +
+  'select "p"."id", "p"."nom", "p"."municipi", "p"."textos", st_x("p"."ubicacio"::geometry) as "lon", st_y("p"."ubicacio"::geometry) as "lat", "iv"."valor", "iv"."franja", "iv"."factors", "f"."data_creacio" ' +
   'from "favorits" as "f" inner join "punts_observacio" as "p" on "p"."id" = "f"."punt_id" ' +
   'left join "index_visibilitat" as "iv" on "iv"."punt_id" = "p"."id" and "iv"."hora" = $1 ' +
   'where "f"."perfil_id" = $2 and "p"."estat" = $3';

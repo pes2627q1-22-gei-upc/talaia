@@ -3,7 +3,7 @@ import { createLocalJWKSet, exportJWK, generateKeyPair, SignJWT } from 'jose';
 import request from 'supertest';
 
 import { createApp } from '../app';
-import type { FavoritsRepository } from '../favorits/favoritsRepository';
+import type { FavoritAmbTextos, FavoritsRepository } from '../favorits/favoritsRepository';
 import { createFavoritsService } from '../favorits/favoritsService';
 import type { ProfileStore } from '../services/profileService';
 
@@ -23,11 +23,12 @@ const PRADES = '7a2d3c8f-2b3c-4d4e-9f0a-1b2c3d4e5f60';
 const RETIRAT = '8b3e4d90-3c4d-4e5f-a01b-2c3d4e5f6071';
 const NO_EXISTEIX = '9c4f5ea1-4d5e-4f60-b12c-3d4e5f607182';
 
-const PUNTS: Omit<Favorit, 'dataCreacio'>[] = [
+const PUNTS: (Omit<Favorit, 'dataCreacio'> & { textos?: unknown })[] = [
   {
     id: MONTSEC,
     nom: 'Observatori del Montsec',
     municipi: 'Àger',
+    textos: { ca: { nom: 'Observatori del Montsec' }, es: { nom: 'Observatorio del Montsec' } },
     lat: 42.0244,
     lon: 0.7364,
     index: { valor: 82, franja: 'ras', deDia: false },
@@ -68,7 +69,10 @@ const profileStore = {
 function memoryRepository() {
   const files: { perfilId: string; puntId: string; dataCreacio: string }[] = [];
   let rellotge = Date.parse('2026-11-11T18:00:00.000Z');
-  const favorit = ({ puntId, dataCreacio }: (typeof files)[number]): Favorit | undefined => {
+  const favorit = ({
+    puntId,
+    dataCreacio,
+  }: (typeof files)[number]): FavoritAmbTextos | undefined => {
     const punt = publicat(puntId);
     return punt && { ...punt, dataCreacio };
   };
@@ -78,7 +82,7 @@ function memoryRepository() {
         .filter((f) => f.perfilId === perfilId)
         .sort((a, b) => b.dataCreacio.localeCompare(a.dataCreacio))
         .map(favorit)
-        .filter((f): f is Favorit => f !== undefined),
+        .filter((f): f is FavoritAmbTextos => f !== undefined),
     ),
     add: jest.fn(async (perfilId: string, puntId: string, _hora: Date) => {
       if (!publicat(puntId)) return undefined;
@@ -134,10 +138,12 @@ const desa = async (com: string, body: unknown) =>
     .set('Authorization', `Bearer ${await tokenFor(com)}`)
     .send(body as object);
 
-const llista = async (com: string) =>
-  request(app)
+const llista = async (com: string, acceptLanguage?: string) => {
+  const req = request(app)
     .get('/api/v1/favorits')
     .set('Authorization', `Bearer ${await tokenFor(com)}`);
+  return acceptLanguage ? req.set('Accept-Language', acceptLanguage) : req;
+};
 
 const treu = async (com: string, puntId: string) =>
   request(app)
@@ -222,6 +228,25 @@ describe('GET /api/v1/favorits', () => {
 
     retirats.delete(MONTSEC);
     expect(noms(await llista(MARIA.auth))).toEqual(['Prades', 'Observatori del Montsec']);
+  });
+
+  it('els noms segueixen Accept-Language, com a /punts, i la resposta no porta els textos', async () => {
+    await desa(MARIA.auth, { puntId: MONTSEC });
+    await desa(MARIA.auth, { puntId: PRADES });
+
+    const res = await llista(MARIA.auth, 'es-ES,es;q=0.9');
+    expect(res.headers.vary).toBe('Accept-Language');
+    // Prades no té traducció: es queda amb el català.
+    expect(noms(res)).toEqual(['Prades', 'Observatorio del Montsec']);
+    expect(res.body[1]).not.toHaveProperty('textos');
+    expect(noms(await llista(MARIA.auth))).toEqual(['Prades', 'Observatori del Montsec']);
+
+    const desat = await request(app)
+      .post('/api/v1/favorits')
+      .set('Authorization', `Bearer ${await tokenFor(MARIA.auth)}`)
+      .set('Accept-Language', 'es')
+      .send({ puntId: MONTSEC });
+    expect(desat.body.nom).toBe('Observatorio del Montsec');
   });
 
   it('torna una llista buida si no en té cap', async () => {
@@ -384,6 +409,11 @@ describe('/favorits a l’OpenAPI', () => {
       '#/components/schemas/Favorit',
     );
     expect(del.parameters[0]).toMatchObject({ name: 'puntId', in: 'path', required: true });
+    for (const operacio of [post, get]) {
+      expect(operacio.parameters).toContainEqual(
+        expect.objectContaining({ name: 'Accept-Language', in: 'header', required: false }),
+      );
+    }
 
     const { Favorit: favorit, FavoritNou: nou } = res.body.components.schemas;
     expect(nou).toMatchObject({ required: ['puntId'], additionalProperties: false });

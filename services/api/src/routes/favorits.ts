@@ -45,6 +45,11 @@ const FavoritSchema: z.ZodType<Favorit> = z
   })
   .meta({ id: 'Favorit' });
 
+/** El nom del punt segueix `Accept-Language`, com a `/punts` (TG-164). */
+const AcceptLanguageHeaders = z.object({
+  'Accept-Language': z.string().optional().meta({ example: 'es-ES,es;q=0.9' }),
+});
+
 const NO_PROFILE = '`profile_not_found`: l’usuari encara no té perfil (cal `POST /perfil`)';
 
 registry.registerPath({
@@ -54,8 +59,9 @@ registry.registerPath({
   security: [{ BearerSupabase: [] }],
   summary: 'Desa un punt publicat als favorits de l’usuari autenticat (HU25)',
   description:
-    'Idempotent: si el punt ja hi era, respon 200 amb el mateix favorit (no en canvia `dataCreacio`). Només es poden desar punts publicats.',
+    'Idempotent: si el punt ja hi era, respon 200 amb el mateix favorit (no en canvia `dataCreacio`). Només es poden desar punts publicats. El nom segueix `Accept-Language` (ca, es, en; reserva ca).',
   request: {
+    headers: AcceptLanguageHeaders,
     body: { required: true, content: { 'application/json': { schema: FavoritNouSchema } } },
   },
   responses: {
@@ -80,7 +86,8 @@ registry.registerPath({
   security: [{ BearerSupabase: [] }],
   summary: 'Els punts favorits de l’usuari autenticat, els més nous primer (HU26)',
   description:
-    'Només els punts que encara són publicats: un punt retirat no hi surt, i hi torna si es torna a publicar. L’app hi mira si un punt és favorit (la fitxa és pública i no ho diu).',
+    'Només els punts que encara són publicats: un punt retirat no hi surt, i hi torna si es torna a publicar. L’app hi mira si un punt és favorit (la fitxa és pública i no ho diu). Els noms segueixen `Accept-Language` (ca, es, en; reserva ca).',
+  request: { headers: AcceptLanguageHeaders },
   responses: {
     200: {
       description: 'Els favorits (una llista buida si no en té cap)',
@@ -134,10 +141,10 @@ export function createFavoritsRouter({ requireUser, service }: FavoritsRouterOpt
     const { puntId } = FavoritNouSchema.parse(req.body ?? {});
     const perfilId = currentPerfilId(req);
     if (!service) throw databaseUnavailable();
-    const { created, favorit } = await service.add(perfilId, puntId);
+    const { created, favorit } = await service.add(perfilId, puntId, req.get('Accept-Language'));
     // Dades personals: cap memòria cau (ni del mòbil ni d'un proxy) no les ha de desar.
     res
-      .set('Cache-Control', 'no-store')
+      .set({ 'Cache-Control': 'no-store', Vary: 'Accept-Language' })
       .status(created ? 201 : 200)
       .json(favorit);
   });
@@ -145,7 +152,9 @@ export function createFavoritsRouter({ requireUser, service }: FavoritsRouterOpt
   router.get('/', async (req, res) => {
     const perfilId = currentPerfilId(req);
     if (!service) throw databaseUnavailable();
-    res.set('Cache-Control', 'no-store').json(await service.list(perfilId));
+    res
+      .set({ 'Cache-Control': 'no-store', Vary: 'Accept-Language' })
+      .json(await service.list(perfilId, req.get('Accept-Language')));
   });
 
   router.delete('/:puntId', async (req, res) => {

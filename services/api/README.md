@@ -242,7 +242,7 @@ Errors: JWT absent o invàlid → 401 `unauthorized`; compte bloquejat → 403 `
 Els punts favorits de l'usuari autenticat (tipus `Favorit` i `FavoritNou` a `@talaia/shared`, taula `favorits`). Com `/perfil`, les tres rutes passen per `requireUser` (JWT de Supabase i compte no bloquejat) i responen amb `Cache-Control: no-store`.
 
 - `POST /favorits` amb `{ "puntId": "<uuid>" }`: desa el punt. És idempotent: 201 amb el favorit si és nou i 200 amb el mateix favorit si ja hi era (no en canvia la data). Només es poden desar punts `PUBLICAT`. El cos és estricte: un camp de més (per exemple `perfilId`) és un 400.
-- `GET /favorits`: els favorits, els més nous primer (`[]` si no en té cap). Cada un és el punt (`id`, `nom`, `municipi`, `lat`, `lon`) amb l'`index` de l'hora en curs, com a `/punts` (`null` si el worker encara no l'ha calculat), i `dataCreacio`, quan es va desar. L'`id` és el del punt: el que obre la fitxa (`/punts/{id}`) i el que es passa al `DELETE`.
+- `GET /favorits`: els favorits, els més nous primer (`[]` si no en té cap). Cada un és el punt (`id`, `nom`, `municipi`, `lat`, `lon`) amb l'`index` de l'hora en curs, com a `/punts` (`null` si el worker encara no l'ha calculat), i `dataCreacio`, quan es va desar. L'`id` és el del punt: el que obre la fitxa (`/punts/{id}`) i el que es passa al `DELETE`. El `nom` segueix `Accept-Language` (ca, es, en; reserva ca) com a `/punts` (TG-164), també a la resposta del `POST`.
 - `DELETE /favorits/{puntId}`: treu el punt dels favorits. També és idempotent: 204 encara que no hi fos.
 
 ```json

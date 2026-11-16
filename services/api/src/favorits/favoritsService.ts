@@ -1,6 +1,7 @@
 import type { Favorit } from '@talaia/shared';
 
 import { ApiError } from '../middleware/errors';
+import { puntLocalitzat } from '../punts/localitzacio';
 import { iniciHora } from '../punts/puntsService';
 import type { FavoritsRepository } from './favoritsRepository';
 
@@ -9,13 +10,20 @@ import type { FavoritsRepository } from './favoritsRepository';
  * el pren de `requireUser`, mai de la petició.
  */
 export type FavoritsService = {
-  /** Els favorits amb punts publicats, els més nous primer, amb l'índex de l'hora en curs. */
-  list(perfilId: string): Promise<Favorit[]>;
+  /**
+   * Els favorits amb punts publicats, els més nous primer, amb l'índex de l'hora en curs. El nom
+   * del punt segueix `acceptLanguage`, com a `/punts` (ca, es, en; reserva ca).
+   */
+  list(perfilId: string, acceptLanguage?: string): Promise<Favorit[]>;
   /**
    * Desa el punt (idempotent): `created` diu si és nou. 404 `punt_not_found` si el punt no existeix
    * o no és `PUBLICAT`.
    */
-  add(perfilId: string, puntId: string): Promise<{ created: boolean; favorit: Favorit }>;
+  add(
+    perfilId: string,
+    puntId: string,
+    acceptLanguage?: string,
+  ): Promise<{ created: boolean; favorit: Favorit }>;
   /** Treu el punt dels favorits (idempotent: si no hi era, no passa res). */
   remove(perfilId: string, puntId: string): Promise<void>;
 };
@@ -40,20 +48,21 @@ export function createFavoritsService(
   { now = () => new Date() }: FavoritsServiceOptions = {},
 ): FavoritsService {
   return {
-    list(perfilId) {
-      return fromDatabase("no s'han pogut llegir els favorits", () =>
+    async list(perfilId, acceptLanguage) {
+      const favorits = await fromDatabase("no s'han pogut llegir els favorits", () =>
         repository.list(perfilId, iniciHora(now())),
       );
+      return favorits.map((favorit) => puntLocalitzat(favorit, acceptLanguage));
     },
 
-    async add(perfilId, puntId) {
+    async add(perfilId, puntId, acceptLanguage) {
       const result = await fromDatabase(`no s'ha pogut desar el favorit ${puntId}`, () =>
         repository.add(perfilId, puntId, iniciHora(now())),
       );
       if (!result) {
         throw new ApiError(404, 'punt_not_found', `No hi ha cap punt publicat amb id ${puntId}`);
       }
-      return result;
+      return { created: result.created, favorit: puntLocalitzat(result.favorit, acceptLanguage) };
     },
 
     remove(perfilId, puntId) {
