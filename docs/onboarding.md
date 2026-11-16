@@ -244,7 +244,7 @@ Regles completes: [`git-workflow.md`](git-workflow.md). Aquí, el camí pràctic
 
 ### 1. Agafa-la a Taiga
 
-Obre la teva tasca al [taulell de Taiga](https://tree.taiga.io/project/mohamed-dari-pes_22_c_talaia), passa-la a **«En curso»** i mira'n la *Data d'inici*, la data límit i les hores estimades. Els criteris d'acceptació de la història són a [`sprint-1.md`](sprint-1.md).
+Obre la teva tasca al [taulell de Taiga](https://tree.taiga.io/project/mohamed-dari-pes_22_c_talaia), passa-la a **«In progress»** i mira'n la *Data d'inici*, la data límit i les hores estimades. Els criteris d'acceptació de la història són a [`sprint-1.md`](sprint-1.md).
 
 ### 2. Crea la branca des de `snapshot`
 

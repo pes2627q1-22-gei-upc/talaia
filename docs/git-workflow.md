@@ -73,7 +73,7 @@ El webhook de Taiga només **enllaça** cada commit amb la seva tasca: llegeix e
 
 L'**estat de la tasca es canvia a mà a Taiga**, no des dels commits:
 
-1. **«En curso»** en començar-la.
+1. **«In progress»** en començar-la.
 2. **«Ready for test»** en obrir la PR.
 3. **Tancada** en fusionar-la, amb les **Hores reals** (el merge commit de GitHub només porta el títol de la PR).
 

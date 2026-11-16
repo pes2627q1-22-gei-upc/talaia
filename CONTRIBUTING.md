@@ -4,7 +4,7 @@ Primera vegada? Prepara l'entorn amb la **[guia d'onboarding](docs/onboarding.md
 
 Resum del flux:
 
-1. **Agafa una tasca a Taiga** que tinguis assignada i mou-la a «En curso». Mira'n la *Data d'inici*, la data límit i les hores estimades.
+1. **Agafa una tasca a Taiga** que tinguis assignada i mou-la a «In progress». Mira'n la *Data d'inici*, la data límit i les hores estimades.
 2. **Crea la branca** des de `snapshot`:
    ```bash
    git switch snapshot && git pull
