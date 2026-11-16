@@ -27,6 +27,7 @@ export type PuntReferencia = {
   nom: string;
   latitud: number;
   longitud: number;
+  textos?: unknown;
 };
 
 export type EsdevenimentsRepository = {
@@ -73,6 +74,7 @@ export function createEsdevenimentsRepository(db: Db): EsdevenimentsRepository {
         .selectFrom('puntsObservacio as p')
         .select((eb) => [
           'p.nom',
+          'p.textos',
           lon(eb.ref('p.ubicacio')).as('longitud'),
           lat(eb.ref('p.ubicacio')).as('latitud'),
         ])

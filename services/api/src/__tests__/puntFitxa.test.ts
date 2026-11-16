@@ -66,6 +66,30 @@ const appWith = (repository: PuntsRepository = fakeRepository()) =>
 describe('GET /api/v1/punts/{id}', () => {
   afterEach(() => jest.restoreAllMocks());
 
+  it('tradueix els textos de la fitxa sense alterar municipi ni índex', async () => {
+    const punt = {
+      ...PUNT,
+      textos: {
+        es: {
+          nom: 'Observatorio del Montsec',
+          descripcio: 'Parque astronómico.',
+          accessibilitat: 'Aparcamiento cercano',
+        },
+      },
+    };
+    const res = await request(appWith(fakeRepository({ punt })))
+      .get(`/api/v1/punts/${ID}`)
+      .set('Accept-Language', 'es-ES');
+    expect(res.body).toMatchObject({
+      nom: 'Observatorio del Montsec',
+      municipi: 'Àger',
+      descripcio: 'Parque astronómico.',
+      accessibilitat: 'Aparcamiento cercano',
+    });
+    expect(res.body.textos).toBeUndefined();
+    expect(res.body.index.actual).not.toBeNull();
+  });
+
   it("respon 200 amb la fitxa, la foscor i l'índex actual i de les 24 hores següents", async () => {
     const res = await request(appWith()).get(`/api/v1/punts/${ID}`);
     expect(res.status).toBe(200);

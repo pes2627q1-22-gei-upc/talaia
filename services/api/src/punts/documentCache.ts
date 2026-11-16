@@ -7,7 +7,7 @@ export type VersionedMapDocument = { geojson: PuntsMapaGeoJson; etag: string };
 
 /** D'on surt el document i quan es regenera: `createContentHashCache`. */
 export type MapDocumentCache = {
-  get(): Promise<VersionedMapDocument>;
+  get(acceptLanguage?: string): Promise<VersionedMapDocument>;
   /**
    * Descarta el document: la petició següent el torna a construir. Es crida quan l'administració
    * canvia el catàleg (TG-174), perquè un punt retirat deixi de sortir al mapa al moment.

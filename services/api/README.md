@@ -17,7 +17,8 @@ npm run api                   # = npm run dev -w services/api, amb recàrrega
 - Desglossament de l'índex d'un punt: `http://localhost:3000/api/v1/punts/{id}/index?nit=2026-10-19` (cal `DATABASE_URL`)
 - Perfil: `GET`, `POST` i `PATCH /api/v1/perfil` (cal el JWT de Supabase a `Authorization: Bearer`)
 - Administració: `/api/v1/admin/usuaris` i `/api/v1/admin/punts` (JWT d'un compte amb `rol = 'admin'`)
-- Recomanacions: `http://localhost:3000/api/v1/recomanacions?objectiu=cel_estrellat&lat=41.39&lon=2.17&data=<YYYY-MM-DD>&desDe=22&finsA=6&tempsMaxim=150`
+- Recomanacions: `http://localhost:3000/api/v1/recomanacions?objectiu=cel_estrellat&lat=41.39&lon=2.17&data=<YYYY-MM-DD>&desDe=22&finsA=6&tempsMaxim=150`; «a prop meu»: `…/recomanacions?lat=41.39&lon=2.17`
+- Visibilitat d'una ubicació qualsevol: `http://localhost:3000/api/v1/visibilitat?lat=41.95&lon=1.52` (no cal `DATABASE_URL`; amb `&hora=<ISO 8601>`, una altra hora)
 - Documentació (Swagger UI): <http://localhost:3000/api/v1/docs>
 - OpenAPI: <http://localhost:3000/api/v1/openapi.json>
 
@@ -37,8 +38,9 @@ Es llegeixen del `.env` de l'**arrel** del repo (`dev` i `start` el carreguen am
 | Variable | Per defecte | Què és |
 |---|---|---|
 | `API_PORT` | `3000` | Port on escolta l'API |
-| `DATABASE_URL` | — | Postgres (`postgresql://…`). **Opcional:** sense ella l'API arrenca amb un avís, `/health` funciona i `/punts`, `/punts/{id}`, `/punts/{id}/index`, `/recomanacions`, `/perfil` i `/admin` responen 503 `database_unavailable`. Amb Supabase local: `postgresql://postgres:postgres@127.0.0.1:54322/postgres` |
+| `DATABASE_URL` | — | Postgres (`postgresql://…`). **Opcional:** sense ella l'API arrenca amb un avís, `/health` funciona i `/punts`, `/punts/{id}`, `/punts/{id}/index`, `/recomanacions`, `/perfil` i `/admin` responen 503 `database_unavailable`, i `/visibilitat` funciona amb la foscor estimada. Amb Supabase local: `postgresql://postgres:postgres@127.0.0.1:54322/postgres` |
 | `SUPABASE_URL` | `http://127.0.0.1:54321` | URL del projecte de Supabase. `requireAuth` hi valida els JWT amb el JWKS (`/auth/v1/.well-known/jwks.json`, ADR-0023): 401 si el token és dolent, 503 si Supabase no respon. Al compose de la VM és obligatòria |
+| `OPEN_METEO_BASE_URL` | `https://api.open-meteo.com/v1` | URL base d'Open-Meteo, la mateixa que fa servir el worker: `GET /visibilitat` hi demana la previsió de les ubicacions que no són al catàleg |
 | `APROP_API_KEY` | — | Secret de l'API assignat a Aprop. No s'inclou al repositori ni a l'app; sense configurar-lo, l'accés amb API key retorna 503, però l'accés JWT continua disponible. |
 
 Una variable nova s'afegeix a l'esquema de `src/config/env.ts` i a `.env.example`. Cap secret al repo.
@@ -61,6 +63,8 @@ src/
     puntIndex.ts        GET /punts/{id}/index: desglossament de l'índex per hores i factors (HU04)
     recomanacions.ts    GET /recomanacions (validació de la consulta i OpenAPI)
     adminPunts.ts       /admin/punts: crear, editar i retirar punts (HU39), muntat a admin.ts
+    visibilitat.ts      GET /visibilitat: índex d'una ubicació qualsevol (X-Cache i OpenAPI)
+    query.ts            Helpers de query compartits: números amb missatge en català i paràmetres buits
   punts/
     puntsRepository.ts  Consultes dels punts publicats i del seu índex amb @talaia/db (ADR-0013)
     mapDocument.ts      GeoJSON del mapa i retall per bbox
@@ -81,6 +85,12 @@ src/
     rutes.ts            Temps en cotxe ↔ radi en línia recta, fins que hi hagi Mobilicat
     recomanacionsRepository.ts  Punts dins del radi (PostGIS) i índex de la franja
     recomanacionsService.ts     Rànquing: millor hora, mitjana i distància; errors de la base de dades → 503
+  visibilitat/
+    catalunya.ts        `isInCatalonia`: dins del contorn o a 1,5 km o menys (codi pur)
+    contornCatalunya.ts Contorn oficial de l'ICGC simplificat (MultiPolygon). Generat: data/README.md
+    lruCache.ts         Memòria cau amb caducitat, LRU, una sola càrrega per clau i la caducada si falla
+    sqmRepository.ts    El punt publicat amb SQM més proper i la seva posició (PostGIS)
+    visibilitatService.ts  Cel·la, previsió i SQM en memòria cau, límits d'Open-Meteo, efemèrides i fórmula
   middleware/errors.ts  ApiError, 404 i handler central d'errors
 ```
 
@@ -168,9 +178,19 @@ El desglossament de l'índex d'un punt per a una nit: una entrada per hora amb e
 - **HTTP:** `Cache-Control: public, max-age=<segons fins a la propera hora>`, com `/punts`: l'índex només canvia quan el worker recalcula.
 - **Comparteix amb `/punts/{id}`** les consultes del repositori (`findPublished`, `indexHores`) i l'esquema `IndexHora` de l'OpenAPI (`src/index/indexSchemas.ts`); la ruta és un router a part (`routes/puntIndex.ts`).
 
-## `GET /recomanacions` (HU01, TG-100)
+## `GET /recomanacions` (HU01, TG-100; HU02, TG-133)
 
-El rànquing de punts per a la consulta de «Què vols veure?» (`ConsultaRecomanacions` → `RecomanacionsResposta` a `@talaia/shared`). Paràmetres obligatoris: `objectiu`, `lat`, `lon` (l'origen), `data` (la nit, `YYYY-MM-DD`, entre el 2000 i el 2100), `desDe` i `finsA` (hores locals de Catalunya, 0–23, diferents) i `tempsMaxim` (minuts en cotxe, 1–600). Opcional: `limit` (1–100, per defecte 20). La mateixa definició valida i documenta la query (ADR-0011).
+El rànquing de punts per a la consulta de «Què vols veure?» (`ParametresRecomanacions` → `RecomanacionsResposta` a `@talaia/shared`). Només l'origen és obligatori: `lat` i `lon`. La resta és opcional, i el servei l'omple (`resolConsulta`):
+
+| Paràmetre | Valors | Per defecte |
+|---|---|---|
+| `objectiu` | `ObjectiuObservacio` | `cel_estrellat` (l'índex v1 és el mateix per a tots) |
+| `data` | la nit, `YYYY-MM-DD`, entre el 2000 i el 2100 | la nit que toca (`upcomingNight`): fins a les 06:00, la que s'acaba; després, la que ve. No és com a `/punts/{id}/index` (12:00): al matí, la nit que s'acaba només té hores de dia |
+| `desDe`, `finsA` | hores locals de Catalunya, 0–23, diferents; **van juntes** (només una → 400) | la nit sencera, de 12:00 a 12:00 (des de l'hora en curs) |
+| `tempsMaxim` | minuts en cotxe, 1–600 | **60** (≈ 46,2 km) |
+| `limit` | 1–100 | 20 |
+
+**«A prop meu»** (HU02): amb només la ubicació de l'usuari, `?lat=41.39&lon=2.17` torna el rànquing de la nit en curs a 60 minuts en cotxe. La resposta porta la `data` i el `tempsMaxim` que s'han fet servir, perquè l'app ensenyi la consulta resolta. La mateixa definició valida i documenta la query (ADR-0011).
 
 - **Radi:** fins que hi hagi el servei de rutes de Mobilicat (`docs/serveis-externs.md`), el temps en cotxe es converteix en un radi en línia recta amb **60 km/h** i un **desviament ×1,3** per les carreteres (`rutes.ts`): 150 min → 115,4 km. El `tempsEstimat` de cada punt surt de la mateixa fórmula a la inversa.
 - **Nit i franja:** una nit va de les 12:00 locals de `data` a les 12:00 de l'endemà, com a `GET /punts/{id}/index` (`INICI_NIT` a `franja.ts`). Una hora d'abans de les 12 és la de l'endemà: de 01 a 05 amb `data=2026-10-21` és la matinada del 22. Si `finsA` < `desDe`, la franja acaba l'endemà de `desDe`. Es passa a UTC amb el canvi d'hora. Si ja ha començat, només compten les hores des de l'hora en curs; si ja ha acabat, 400 `franja_passada`.
@@ -179,6 +199,32 @@ El rànquing de punts per a la consulta de «Què vols veure?» (`ConsultaRecoma
 - **Objectiu:** es valida, però l'índex v1 és el mateix per a tots (ADR-0018). Per a `posta_sol` i `sortida_sol` surt baix, perquè el factor Sol val 0 de dia: l'adaptació per fenomen és d'un sprint posterior.
 
 Errors: paràmetres invàlids → 400 `validation_error`; franja passada → 400 `franja_passada`; sense base de dades → 503. `Cache-Control` fins a la propera hora.
+
+## `GET /visibilitat` (HU05, TG-130)
+
+L'índex de visibilitat d'**una ubicació qualsevol de Catalunya**, la que l'usuari toca al mapa, per a una hora (tipus `ConsultaVisibilitat` → `VisibilitatUbicacio` a `@talaia/shared`). Els punts del catàleg tenen l'índex precalculat pel worker; aquest es calcula **al moment**, amb el mateix codi (`@talaia/index`: Open-Meteo, Astronomy Engine i la fórmula v1). Per què així: [ADR-0031](../../docs/decisions/0031-visibilitat-ubicacio-al-moment.md).
+
+```json
+{
+  "lat": 41.95, "lon": 1.52, "sqm": null,
+  "index": { "hora": "2026-11-12T21:00:00.000Z", "valor": 68, "franja": "jus",
+             "factors": { "nuvols": 0.9, "sol": 1, "foscor": 0.6, "lluna": 1 }, "foscorEstimada": true },
+  "deDia": false
+}
+```
+
+- **Paràmetres:** `lat` i `lon` (graus WGS84, obligatoris) i `hora` (opcional, per defecte ara): un instant ISO 8601 **amb zona** (`2026-11-12T21:00:00Z` o `…+01:00`), del qual compta l'hora UTC que el conté. Des de l'hora en curs fins a **72 hores** endavant.
+- **Dins de Catalunya:** el límit oficial de l'ICGC (la unió de les províncies, 1:50.000), simplificat a 200 m i generat per `data/scripts/build-contorn-catalunya.ts` (`visibilitat/contornCatalunya.ts`, no s'edita a mà), amb un marge d'**1,5 km**: un lloc és dins si és dins del contorn o a 1,5 km o menys de la ratlla. Inclou Llívia i deixa fora Andorra.
+- **La cel·la:** la ubicació s'arrodoneix a **0,01°** (~1 km). Hi surten `lat` i `lon`, i és on es demana la previsió i es calculen les efemèrides.
+- **La foscor:** l'SQM del punt publicat més proper, si n'hi ha un a **1 km** o menys (la cel·la del mapa de foscor). Només compta com a **mesurada** si el punt és a la mateixa cel·la de 0,01°; si és d'una de veïna, el valor es fa servir però `index.foscorEstimada` és `true`. Sense cap punt prou a prop, `sqm: null` i la foscor estimada (0,6). La consulta té un timeout d'**1 s**: si la base de dades falla o tarda, la foscor és estimada, no es desa i la petició següent ho torna a provar. Sense `DATABASE_URL`, sempre estimada: la ruta no depèn de la base de dades.
+- **Memòria cau:** la previsió de cada cel·la (de l'hora en curs en endavant) i, a part, el seu SQM es guarden en memòria **fins al minut 5 de l'hora següent**, quan el worker també torna a demanar la previsió. Com a molt **500 cel·les**: en passar-se'n, surt la que fa més temps que no es fa servir. Les consultes simultànies de la mateixa cel·la comparteixen una sola crida, i els errors no es desen. La capçalera `X-Cache` diu d'on surt la previsió:
+  - `MISS`: aquesta petició ha cridat Open-Meteo.
+  - `HIT`: no l'ha cridat, perquè la previsió ja hi era o l'ha portada una petició simultània que esperava. Una segona consulta de la mateixa cel·la, de qualsevol hora, és un `HIT`.
+  - `STALE`: Open-Meteo ha fallat (o s'ha arribat a un dels límits) i és la previsió caducada de la cel·la, si en fa menys de **6 hores**. Si no n'hi ha cap, l'error.
+- **Quota d'Open-Meteo:** com a molt **20 consultes noves per client i hora** (UTC) i **250 en total**, perquè la quota diària és compartida amb el worker. Una consulta nova és una que crida Open-Meteo (`MISS`): les cel·les a la memòria cau no hi compten. Passat el límit del client, **429 `too_many_requests`** amb `Retry-After` (segons fins a l'hora següent); passat el total, 503 `meteo_unavailable`. El client és `req.ip`: amb `trust proxy` a un salt (`app.ts`), l'adreça que Nginx afegeix al final de `X-Forwarded-For`, que el client no pot falsejar. Timeout de 5 s per a Open-Meteo.
+- **HTTP:** `Cache-Control: private, max-age=<segons fins a la propera hora>`, com `/recomanacions`: la URL porta la ubicació de qui consulta. Per la mateixa raó, el log no en mostra mai les coordenades.
+
+Errors: `lat`, `lon` o `hora` mal formats → 400 `validation_error`; fora de Catalunya → 422 `fora_de_catalunya`; hora abans de l'actual o més enllà de 72 h → 422 `hora_sense_previsio`; massa consultes noves del client → 429 `too_many_requests`; Open-Meteo no respon o s'ha arribat al sostre, i no hi ha cap previsió caducada per servir → 503 `meteo_unavailable`. L'app (TG-131) mostra un missatge per a cada codi.
 
 ## `/perfil` (TG-84, HU36 · TG-165)
 
@@ -192,7 +238,7 @@ Errors: JWT absent o invàlid → 401 `unauthorized`; compte bloquejat → 403 `
 
 ## Rol d'administrador i comptes bloquejats (TG-177, HU41)
 
-`perfils.rol` (`usuari` o `admin`) i `perfils.bloquejat` (ADR-0029). `routes/index.ts` crea un sol `requireUser` (`requireAuth` amb `accountStatus`): valida el JWT i llegeix el perfil, i si el compte està bloquejat respon **403 `account_blocked`**. Totes les rutes d'usuari l'han de fer servir; les rutes públiques (`/health`, `/punts`, `/recomanacions`, `/esdeveniments`) no hi miren. `requireAdmin`, posat al darrere, només deixa passar els administradors: si no, 403 `forbidden`.
+`perfils.rol` (`usuari` o `admin`) i `perfils.bloquejat` (ADR-0029). `routes/index.ts` crea un sol `requireUser` (`requireAuth` amb `accountStatus`): valida el JWT i llegeix el perfil, i si el compte està bloquejat respon **403 `account_blocked`**. Totes les rutes d'usuari l'han de fer servir; les rutes públiques (`/health`, `/punts`, `/recomanacions`, `/visibilitat`, `/esdeveniments`) no hi miren. `requireAdmin`, posat al darrere, només deixa passar els administradors: si no, 403 `forbidden`.
 
 Per fer administrador algú, al SQL Editor de Supabase:
 
@@ -263,7 +309,11 @@ Tota resposta d'error té el format `{ error: { code, message } }`:
 | 409 | `slug_already_exists` | `POST /admin/punts`: ja hi ha un punt amb aquest `slug` |
 | 409 | `moderation_required` | `PATCH /admin/punts/{id}`: es vol canviar l'estat d'un punt `PENDENT` o `REBUTJAT`, que es fa des de la moderació |
 | 409 | `reference_point_required` | `PATCH /admin/punts/{id}`: es vol retirar el punt de referència de `/esdeveniments` (ADR-0026) |
+| 422 | `fora_de_catalunya` | `GET /visibilitat`: la ubicació és fora de Catalunya |
+| 422 | `hora_sense_previsio` | `GET /visibilitat`: l'hora no és entre l'hora en curs i 72 hores endavant (o Open-Meteo no l'ha tornat) |
+| 429 | `too_many_requests` | `GET /visibilitat`: el client ja ha fet 20 consultes noves aquesta hora. Porta `Retry-After` |
 | 503 | `database_unavailable` | No hi ha `DATABASE_URL` o no es pot llegir la base de dades |
+| 503 | `meteo_unavailable` | `GET /visibilitat`: Open-Meteo no respon o s'ha arribat al màxim de consultes noves d'aquesta hora |
 | 500 | `internal_error` | Error inesperat (es registra al log i no s'envia el detall) |
 
-Per a un error controlat: `throw new ApiError(status, 'codi', 'missatge')`. Express 5 també captura els errors de les funcions `async`.
+Per a un error controlat: `throw new ApiError(status, 'codi', 'missatge')`, i un quart paràmetre opcional amb capçaleres (`{ 'Retry-After': '60' }`). Express 5 també captura els errors de les funcions `async`.

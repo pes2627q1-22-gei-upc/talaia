@@ -46,6 +46,15 @@ export const gradients = {
     colors: [colors.nit, 'transparent'],
     locations: [0.55, 1],
   },
+  /** Cel de la fitxa d'un esdeveniment (mockup 09) i l'horitzó fosc que el tanca per sota. */
+  eventSky: {
+    colors: ['#1C2560', '#0B1030'],
+    locations: [0, 1],
+  },
+  eventHorizon: {
+    colors: ['#06091A00', '#06091A'],
+    locations: [0, 0.72],
+  },
 } as const;
 
 /** Colors amb transparència del marcador i de l'atribució del mapa DOM. */
@@ -108,6 +117,10 @@ export const sizes = {
   calendarEvent: 82,
   calendarDateWidth: 46,
   calendarDateHeight: 54,
+  /** Fitxa de l'esdeveniment (mockup 09): targeta del cel, el seu horitzó i l'anell del radiant. */
+  eventSky: 106,
+  eventHorizon: 28,
+  eventRadiant: 34,
 } as const;
 
 /** Noms amb què `_layout.tsx` registra les fonts (`useFonts`). Cada pes és una família. */
