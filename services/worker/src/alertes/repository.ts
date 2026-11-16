@@ -8,14 +8,16 @@ import type { AlertesRepository } from './avaluacio';
 export function createKyselyAlertesRepository(db: Kysely<DB>): AlertesRepository {
   return {
     /**
-     * Una sola consulta per a totes les alertes: el radi es compara amb `st_dwithin` sobre
+     * Una sola consulta per a totes les alertes del pla: el radi es compara amb `st_dwithin` sobre
      * `geography` (l'índex GIST de `punts_observacio`) i l'hora, amb la clau d'`index_visibilitat`.
-     * Ja deixa fora el que no pot notificar (alertes inactives o ja notificades aquesta nit, hores
-     * fora de la finestra, índex per sota del mínim o 0); la decisió és de `pickNotifications`.
+     * Ja deixa fora el que no pot notificar (alertes inactives, d'un altre pla, de comptes
+     * bloquejats o ja notificades aquesta nit, hores fora de la finestra, índex per sota del mínim
+     * o 0); la decisió és de `pickNotifications`.
      */
-    async candidates({ nit, from, to }) {
+    async candidates({ nit, from, to, enArribar, horaAvis }) {
       const files = await db
         .selectFrom('alertes as a')
+        .innerJoin('perfils as pf', 'pf.id', 'a.perfilId')
         .innerJoin('puntsObservacio as p', (join) =>
           join
             .on('p.estat', '=', 'PUBLICAT')
@@ -36,6 +38,9 @@ export function createKyselyAlertesRepository(db: Kysely<DB>): AlertesRepository
           'a.perfilId',
           'a.objectiu',
           'a.activa',
+          'a.avisaEnArribar',
+          'a.horaAvis',
+          'pf.bloquejat as perfilBloquejat',
           'a.indexMinim',
           'a.distanciaMaxKm',
           'p.id as puntId',
@@ -45,6 +50,14 @@ export function createKyselyAlertesRepository(db: Kysely<DB>): AlertesRepository
           'iv.valor as index',
         ])
         .where('a.activa', '=', true)
+        .where((eb) =>
+          eb.or([
+            ...(enArribar ? [eb('a.avisaEnArribar', '=', true)] : []),
+            ...(horaAvis !== null ? [eb('a.horaAvis', '=', horaAvis)] : []),
+          ]),
+        )
+        // Un compte bloquejat no rep notificacions (ADR-0028, ADR-0029).
+        .where('pf.bloquejat', '=', false)
         .where('iv.hora', '>=', from)
         .where('iv.hora', '<', to)
         .where('iv.valor', '>', 0)
@@ -66,6 +79,9 @@ export function createKyselyAlertesRepository(db: Kysely<DB>): AlertesRepository
         // El `check` d'`alertes` només deixa els valors d'`ObjectiuObservacio`.
         objectiu: f.objectiu as ObjectiuObservacio,
         activa: f.activa,
+        avisaEnArribar: f.avisaEnArribar,
+        horaAvis: f.horaAvis,
+        perfilBloquejat: f.perfilBloquejat,
         indexMinim: f.indexMinim,
         distanciaMaxKm: f.distanciaMaxKm,
         puntId: f.puntId,
@@ -80,7 +96,9 @@ export function createKyselyAlertesRepository(db: Kysely<DB>): AlertesRepository
     async saveNotifications(notificacions) {
       if (notificacions.length === 0) return [];
       // La clau primària (alerta_id, nit) fa la feina: si una altra execució ja n'ha desat una
-      // per a la mateixa alerta i nit, aquesta no s'insereix i no torna.
+      // per a la mateixa alerta i nit, aquesta no s'insereix i no torna. Es compara pel parell:
+      // abans del migdia, una alerta pot tenir notificació de dues nits (`alertsPlans`). La `nit`
+      // torna com a text: `pg` llegeix un `date` a la mitjanit local del procés.
       const noves = await db
         .insertInto('notificacionsAlertes')
         .values(
@@ -93,10 +111,10 @@ export function createKyselyAlertesRepository(db: Kysely<DB>): AlertesRepository
           })),
         )
         .onConflict((oc) => oc.columns(['alertaId', 'nit']).doNothing())
-        .returning('alertaId')
+        .returning(['alertaId', sql<string>`nit::text`.as('nit')])
         .execute();
-      const ids = new Set(noves.map((f) => f.alertaId));
-      return notificacions.filter((n) => ids.has(n.alertaId));
+      const claus = new Set(noves.map((f) => `${f.alertaId}|${f.nit}`));
+      return notificacions.filter((n) => claus.has(`${n.alertaId}|${n.nit}`));
     },
   };
 }

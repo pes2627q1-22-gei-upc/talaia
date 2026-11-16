@@ -1,10 +1,12 @@
 import {
+  alertsPlans,
   alertsWindow,
   createAlertsStep,
   evaluateAlerts,
   pickNotifications,
   type AlertCandidate,
   type AlertesRepository,
+  type AlertsPlan,
   type AlertsWindow,
   type NotificacioAlerta,
 } from '../avaluacio';
@@ -17,12 +19,17 @@ const FINESTRA: AlertsWindow = {
   from: new Date('2026-11-11T19:00:00.000Z'),
   to: new Date('2026-11-12T11:00:00.000Z'),
 };
+/** El pla de les 20:05: les alertes que avisen en arribar-hi i les de les 20 h, la nit de l'11. */
+const PLA: AlertsPlan = { ...FINESTRA, enArribar: true, horaAvis: 20 };
 
 const candidat = (canvis: Partial<AlertCandidate> = {}): AlertCandidate => ({
   alertaId: 'alerta-1',
   perfilId: 'perfil-1',
   objectiu: 'cel_estrellat',
   activa: true,
+  avisaEnArribar: true,
+  horaAvis: null,
+  perfilBloquejat: false,
   indexMinim: 60,
   distanciaMaxKm: 50,
   puntId: 'montsec',
@@ -116,9 +123,62 @@ describe('alertsWindow', () => {
   });
 });
 
+const plaIso = (plan: AlertsPlan) => ({
+  ...plan,
+  from: plan.from.toISOString(),
+  to: plan.to.toISOString(),
+});
+
+describe('alertsPlans', () => {
+  it("a partir del migdia, un sol pla: les que avisen en arribar-hi i les de l'hora local", () => {
+    expect(alertsPlans(ARA)).toEqual([PLA]);
+    // 12:00 locals: la nit nova, sencera, i les alertes de les 12 h.
+    expect(alertsPlans(new Date('2026-11-11T11:00:00.000Z')).map(plaIso)).toEqual([
+      {
+        nit: '2026-11-11',
+        from: '2026-11-11T11:00:00.000Z',
+        to: '2026-11-12T11:00:00.000Z',
+        enArribar: true,
+        horaAvis: 12,
+      },
+    ]);
+  });
+
+  it("abans del migdia, la nit que s'acaba per a les que avisen en arribar-hi i la d'avui per a les de l'hora", () => {
+    // Dijous a les 09:05 locals: de la nit de l'11 en queden les 09:00–12:00; una alerta de les 9
+    // avisa de la nit del 12, la del vespre d'avui.
+    expect(alertsPlans(new Date('2026-11-12T08:05:00.000Z')).map(plaIso)).toEqual([
+      {
+        nit: '2026-11-11',
+        from: '2026-11-12T08:00:00.000Z',
+        to: '2026-11-12T11:00:00.000Z',
+        enArribar: true,
+        horaAvis: null,
+      },
+      {
+        nit: '2026-11-12',
+        from: '2026-11-12T11:00:00.000Z',
+        to: '2026-11-13T11:00:00.000Z',
+        enArribar: false,
+        horaAvis: 9,
+      },
+    ]);
+  });
+
+  it("l'hora és la local: a l'estiu (UTC+2) les 18:05 són les 16:05Z, i les 00:30 encara són de la nit d'ahir", () => {
+    expect(alertsPlans(new Date('2026-07-15T16:05:00.000Z'))).toEqual([
+      expect.objectContaining({ nit: '2026-07-15', enArribar: true, horaAvis: 18 }),
+    ]);
+    expect(alertsPlans(new Date('2026-12-31T23:30:00.000Z'))).toEqual([
+      expect.objectContaining({ nit: '2026-12-31', enArribar: true, horaAvis: null }),
+      expect.objectContaining({ nit: '2027-01-01', enArribar: false, horaAvis: 0 }),
+    ]);
+  });
+});
+
 describe('pickNotifications', () => {
   it("dona el punt, l'hora i l'índex d'una alerta que arriba al mínim", () => {
-    expect(pickNotifications([candidat()], FINESTRA)).toEqual<NotificacioAlerta[]>([
+    expect(pickNotifications([candidat()], PLA)).toEqual<NotificacioAlerta[]>([
       {
         alertaId: 'alerta-1',
         perfilId: 'perfil-1',
@@ -134,29 +194,46 @@ describe('pickNotifications', () => {
   });
 
   it("l'índex just al mínim compta; un per sota, no", () => {
-    expect(pickNotifications([candidat({ index: 60 })], FINESTRA)).toHaveLength(1);
-    expect(pickNotifications([candidat({ index: 59 })], FINESTRA)).toEqual([]);
-    expect(pickNotifications([candidat({ indexMinim: 100, index: 100 })], FINESTRA)).toHaveLength(
-      1,
-    );
+    expect(pickNotifications([candidat({ index: 60 })], PLA)).toHaveLength(1);
+    expect(pickNotifications([candidat({ index: 59 })], PLA)).toEqual([]);
+    expect(pickNotifications([candidat({ indexMinim: 100, index: 100 })], PLA)).toHaveLength(1);
   });
 
   it('un índex 0 no notifica mai, tampoc amb el mínim a 0', () => {
-    expect(pickNotifications([candidat({ indexMinim: 0, index: 0 })], FINESTRA)).toEqual([]);
-    expect(pickNotifications([candidat({ indexMinim: 0, index: 1 })], FINESTRA)).toHaveLength(1);
+    expect(pickNotifications([candidat({ indexMinim: 0, index: 0 })], PLA)).toEqual([]);
+    expect(pickNotifications([candidat({ indexMinim: 0, index: 1 })], PLA)).toHaveLength(1);
   });
 
   it('un punt fora del radi no compta; just a la vora, sí', () => {
-    expect(pickNotifications([candidat({ distanciaKm: 50.001 })], FINESTRA)).toEqual([]);
-    expect(pickNotifications([candidat({ distanciaKm: 50 })], FINESTRA)).toHaveLength(1);
+    expect(pickNotifications([candidat({ distanciaKm: 50.001 })], PLA)).toEqual([]);
+    expect(pickNotifications([candidat({ distanciaKm: 50 })], PLA)).toHaveLength(1);
   });
 
   it('una alerta inactiva no notifica, encara que tingui el millor punt', () => {
-    expect(pickNotifications([candidat({ activa: false, index: 100 })], FINESTRA)).toEqual([]);
+    expect(pickNotifications([candidat({ activa: false, index: 100 })], PLA)).toEqual([]);
+  });
+
+  it('un compte bloquejat no rep notificacions (ADR-0029)', () => {
+    expect(pickNotifications([candidat({ perfilBloquejat: true, index: 100 })], PLA)).toEqual([]);
+  });
+
+  it("quan avisa: en arribar-hi, a cada execució; a una hora, només a l'execució d'aquella hora", () => {
+    const nomesHora = (horaAvis: number) => candidat({ avisaEnArribar: false, horaAvis });
+    expect(pickNotifications([nomesHora(20)], PLA)).toHaveLength(1);
+    expect(pickNotifications([nomesHora(18)], PLA)).toEqual([]);
+    expect(pickNotifications([nomesHora(21)], PLA)).toEqual([]);
+    // Totes dues: en arribar-hi ja la fa avisar, sigui l'hora que sigui.
+    expect(pickNotifications([candidat({ horaAvis: 18 })], PLA)).toHaveLength(1);
+
+    // El pla de la nit d'avui abans del migdia només és per a les de l'hora.
+    const plaDelMati: AlertsPlan = { ...PLA, enArribar: false, horaAvis: 9 };
+    expect(pickNotifications([candidat()], plaDelMati)).toEqual([]);
+    expect(pickNotifications([nomesHora(9)], plaDelMati)).toHaveLength(1);
+    expect(pickNotifications([candidat({ horaAvis: 9 })], plaDelMati)).toHaveLength(1);
   });
 
   it("només compten les hores que queden de la nit: l'hora en curs sí, les passades i la del migdia no", () => {
-    const hores = (hora: string) => pickNotifications([candidat({ hora })], FINESTRA);
+    const hores = (hora: string) => pickNotifications([candidat({ hora })], PLA);
     expect(hores('2026-11-11T18:00:00.000Z')).toEqual([]); // ja ha passat
     expect(hores('2026-11-11T19:00:00.000Z')).toHaveLength(1); // l'hora en curs
     expect(hores('2026-11-12T10:00:00.000Z')).toHaveLength(1); // la darrera de la nit
@@ -169,7 +246,7 @@ describe('pickNotifications', () => {
         candidat({ puntId: 'a-prop', distanciaKm: 5, hora: '2026-11-11T20:00:00.000Z', index: 80 }),
         candidat({ puntId: 'lluny', distanciaKm: 45, hora: '2026-11-12T03:00:00.000Z', index: 81 }),
       ],
-      FINESTRA,
+      PLA,
     );
     expect(notificacio).toMatchObject({ puntId: 'lluny', index: 81 });
   });
@@ -180,7 +257,7 @@ describe('pickNotifications', () => {
         candidat({ puntId: 'lluny', distanciaKm: 30, hora: '2026-11-11T20:00:00.000Z' }),
         candidat({ puntId: 'a-prop', distanciaKm: 10, hora: '2026-11-12T02:00:00.000Z' }),
       ],
-      FINESTRA,
+      PLA,
     );
     expect(proper).toMatchObject({ puntId: 'a-prop', hora: '2026-11-12T02:00:00.000Z' });
 
@@ -190,7 +267,7 @@ describe('pickNotifications', () => {
         candidat({ hora: '2026-11-11T23:00:00.000Z' }),
         candidat({ hora: '2026-11-12T00:00:00.000Z' }),
       ],
-      FINESTRA,
+      PLA,
     );
     expect(dHora?.hora).toBe('2026-11-11T23:00:00.000Z');
   });
@@ -201,10 +278,8 @@ describe('pickNotifications', () => {
       candidat({ puntId: 'a' }),
       candidat({ puntId: 'c', index: 70 }),
     ];
-    expect(pickNotifications(files, FINESTRA)).toEqual(
-      pickNotifications([...files].reverse(), FINESTRA),
-    );
-    expect(pickNotifications(files, FINESTRA)[0]?.puntId).toBe('a');
+    expect(pickNotifications(files, PLA)).toEqual(pickNotifications([...files].reverse(), PLA));
+    expect(pickNotifications(files, PLA)[0]?.puntId).toBe('a');
   });
 
   it('dona com a molt una notificació per alerta, ordenades per alerta', () => {
@@ -217,7 +292,7 @@ describe('pickNotifications', () => {
         // Cap candidat de l'alerta 3 arriba al seu mínim.
         candidat({ alertaId: 'alerta-3', indexMinim: 95, index: 94 }),
       ],
-      FINESTRA,
+      PLA,
     );
     expect(notificacions.map((n) => [n.alertaId, n.perfilId, n.puntId, n.index])).toEqual([
       ['alerta-1', 'perfil-1', 'boixols', 72],
@@ -226,12 +301,12 @@ describe('pickNotifications', () => {
   });
 
   it("porta l'objectiu de l'alerta: a la v1 tots fan servir el mateix índex", () => {
-    const [notificacio] = pickNotifications([candidat({ objectiu: 'via_lactia' })], FINESTRA);
+    const [notificacio] = pickNotifications([candidat({ objectiu: 'via_lactia' })], PLA);
     expect(notificacio).toMatchObject({ objectiu: 'via_lactia', index: 75 });
   });
 
   it('sense candidats, cap notificació', () => {
-    expect(pickNotifications([], FINESTRA)).toEqual([]);
+    expect(pickNotifications([], PLA)).toEqual([]);
   });
 });
 
@@ -265,8 +340,9 @@ describe('evaluateAlerts', () => {
 
     const avaluacio = await evaluateAlerts(repository, ARA);
 
-    expect(repository.candidates).toHaveBeenCalledWith(FINESTRA);
-    expect(avaluacio.nit).toBe('2026-11-11');
+    expect(repository.candidates).toHaveBeenCalledTimes(1);
+    expect(repository.candidates).toHaveBeenCalledWith(PLA);
+    expect(avaluacio.plans).toEqual([PLA]);
     expect(avaluacio.notificacions).toEqual([
       expect.objectContaining({ alertaId: 'alerta-1', puntId: 'boixols', index: 82 }),
     ]);
@@ -325,12 +401,46 @@ describe('evaluateAlerts', () => {
     ]);
     // Una altra execució ja ha notificat l'alerta 2 aquesta nit.
     await repository.saveNotifications(
-      pickNotifications([candidat({ alertaId: 'alerta-2' })], FINESTRA),
+      pickNotifications([candidat({ alertaId: 'alerta-2' })], PLA),
     );
 
     const { notificacions } = await evaluateAlerts(repository, ARA);
 
     expect(notificacions.map((n) => n.alertaId)).toEqual(['alerta-1']);
+  });
+
+  it("abans del migdia avalua dues nits: la que s'acaba (en arribar-hi) i la d'avui (les de l'hora)", async () => {
+    // Dijous a les 05:05 locals (04:05Z).
+    const ara = new Date('2026-11-12T04:05:00.000Z');
+    const deMatinada = '2026-11-12T05:00:00.000Z'; // nit de l'11
+    const delVespre = '2026-11-12T21:00:00.000Z'; // nit del 12
+    const { repository, desades } = repositoriEnMemoria([
+      // En arribar-hi: només la nit que s'acaba.
+      candidat({ alertaId: 'en-arribar', hora: deMatinada }),
+      candidat({ alertaId: 'en-arribar', hora: delVespre, index: 99 }),
+      // De les 5: només la nit d'avui, sencera.
+      candidat({ alertaId: 'de-les-5', avisaEnArribar: false, horaAvis: 5, hora: deMatinada }),
+      candidat({ alertaId: 'de-les-5', avisaEnArribar: false, horaAvis: 5, hora: delVespre }),
+      // Totes dues: una notificació per a cada nit, que són files diferents.
+      candidat({ alertaId: 'totes-dues', horaAvis: 5, hora: deMatinada }),
+      candidat({ alertaId: 'totes-dues', horaAvis: 5, hora: delVespre }),
+    ]);
+
+    const { plans, notificacions } = await evaluateAlerts(repository, ara);
+
+    expect(plans.map((p) => [p.nit, p.enArribar, p.horaAvis])).toEqual([
+      ['2026-11-11', true, null],
+      ['2026-11-12', false, 5],
+    ]);
+    expect(repository.candidates).toHaveBeenCalledTimes(2);
+    expect(repository.saveNotifications).toHaveBeenCalledTimes(1);
+    expect(notificacions.map((n) => [n.alertaId, n.nit, n.hora])).toEqual([
+      ['en-arribar', '2026-11-11', deMatinada],
+      ['totes-dues', '2026-11-11', deMatinada],
+      ['de-les-5', '2026-11-12', delVespre],
+      ['totes-dues', '2026-11-12', delVespre],
+    ]);
+    expect(desades.size).toBe(4);
   });
 
   it('un error de la base de dades es propaga: el recàlcul el recull sense fallar', async () => {

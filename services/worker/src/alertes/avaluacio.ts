@@ -1,4 +1,10 @@
-import { defaultNight, nightWindow, type ObjectiuObservacio } from '@talaia/shared';
+import {
+  defaultNight,
+  localDate,
+  localHour,
+  nightWindow,
+  type ObjectiuObservacio,
+} from '@talaia/shared';
 
 import { iniciHora, type ResumAlertes } from '../recalcul/recalcul';
 
@@ -12,6 +18,12 @@ export type AlertCandidate = {
   perfilId: string;
   objectiu: ObjectiuObservacio;
   activa: boolean;
+  /** Avisa tan bon punt algun punt arriba al mínim (TG-146). */
+  avisaEnArribar: boolean;
+  /** Avisa el mateix dia a aquesta hora local (0–23) si la previsió de la nit hi arriba; o `null`. */
+  horaAvis: number | null;
+  /** Un compte bloquejat no rep notificacions (ADR-0029). */
+  perfilBloquejat: boolean;
   indexMinim: number;
   distanciaMaxKm: number;
   puntId: string;
@@ -39,26 +51,36 @@ export type NotificacioAlerta = Pick<
   nit: string;
 };
 
-/** Les hores que compten en una avaluació: les que queden de la nit en curs, `[from, to)`. */
+/** Les hores que compten en una avaluació: les que queden d'una nit, `[from, to)`. */
 export type AlertsWindow = { nit: string; from: Date; to: Date };
+
+/**
+ * Una finestra i quines alertes s'hi avaluen (TG-146): les que avisen en arribar-hi
+ * (`enArribar`) i/o les que avisen a l'hora local `horaAvis`, la de l'execució.
+ */
+export type AlertsPlan = AlertsWindow & { enArribar: boolean; horaAvis: number | null };
 
 /** Accés a la base de dades de l'avaluació (ADR-0013): Kysely a `repository.ts`, falsos als tests. */
 export type AlertesRepository = {
   /**
-   * Els candidats de les alertes actives que encara no tenen notificació per a `window.nit`:
-   * punts publicats dins del radi, hores de la finestra i índex que arriba al mínim.
+   * Els candidats de les alertes actives del pla (les que avisen en arribar-hi si
+   * `plan.enArribar`, i les de l'hora `plan.horaAvis`), de comptes no bloquejats i que encara no
+   * tenen notificació per a `plan.nit`: punts publicats dins del radi, hores de la finestra i
+   * índex que arriba al mínim.
    */
-  candidates(window: AlertsWindow): Promise<AlertCandidate[]>;
+  candidates(plan: AlertsPlan): Promise<AlertCandidate[]>;
   /**
    * Desa les notificacions sense repetir cap alerta i nit (`on conflict do nothing`) i torna
-   * només les noves: les que la TG-154 ha d'enviar.
+   * només les noves: les que la TG-154 ha d'enviar. Pot rebre dues nits diferents de la mateixa
+   * alerta (vegeu `alertsPlans`).
    */
   saveNotifications(notificacions: NotificacioAlerta[]): Promise<NotificacioAlerta[]>;
 };
 
 export type AvaluacioAlertes = {
-  nit: string;
-  /** Les notificacions noves d'aquesta avaluació. */
+  /** Les finestres que s'han avaluat. */
+  plans: AlertsPlan[];
+  /** Les notificacions noves d'aquesta avaluació. Cadascuna porta la seva `nit`. */
   notificacions: NotificacioAlerta[];
 };
 
@@ -76,20 +98,40 @@ export function alertsWindow(now: Date): AlertsWindow {
 }
 
 /**
+ * Què s'avalua en una execució (TG-146, ADR-0033), segons quan avisa cada alerta:
+ * - **En arribar-hi** (`avisa_en_arribar`): les hores que queden de la nit en curs
+ *   (`alertsWindow`), a cada execució.
+ * - **A una hora** (`hora_avis`): les alertes de l'hora local de l'execució, amb la nit del dia
+ *   d'avui (la del vespre). A partir del migdia és la nit en curs i va en el mateix pla; abans
+ *   (una alerta de les 9), la nit en curs encara és la d'ahir i la d'avui va en un pla a part,
+ *   sencera.
+ */
+export function alertsPlans(now: Date): AlertsPlan[] {
+  const enCurs = alertsWindow(now);
+  const horaAvis = localHour(now);
+  const avui = localDate(now);
+  if (avui === enCurs.nit) return [{ ...enCurs, enArribar: true, horaAvis }];
+  return [
+    { ...enCurs, enArribar: true, horaAvis: null },
+    { nit: avui, ...nightWindow(avui), enArribar: false, horaAvis },
+  ];
+}
+
+/**
  * La decisió (ADR-0033), pura: per a cada alerta, el millor candidat que compleix totes les
- * condicions, o cap. Compleix si l'alerta és activa, el punt és dins del radi, l'hora és a la
- * finestra i l'índex arriba al mínim i no és 0 (amb un 0 no hi ha res a veure, sigui quin sigui
- * el mínim). El millor és el de més índex; si empaten, el punt més proper, i després l'hora més
+ * condicions, o cap. Compleix si l'alerta és activa i del pla (avisa en arribar-hi, o a l'hora
+ * del pla), el compte no està bloquejat, el punt és dins del radi, l'hora és a la finestra i
+ * l'índex arriba al mínim i no és 0 (amb un 0 no hi ha res a veure, sigui quin sigui el mínim). El millor és el de més índex; si empaten, el punt més proper, i després l'hora més
  * d'hora. L'identificador del punt desempata la resta, perquè el resultat no depengui de l'ordre
  * de les files. Torna les notificacions ordenades per alerta.
  */
 export function pickNotifications(
   candidates: readonly AlertCandidate[],
-  window: AlertsWindow,
+  plan: AlertsPlan,
 ): NotificacioAlerta[] {
   const best = new Map<string, AlertCandidate>();
   for (const candidate of candidates) {
-    if (!qualifies(candidate, window)) continue;
+    if (!qualifies(candidate, plan)) continue;
     const current = best.get(candidate.alertaId);
     if (!current || compareCandidates(candidate, current) < 0) {
       best.set(candidate.alertaId, candidate);
@@ -101,7 +143,7 @@ export function pickNotifications(
       alertaId: c.alertaId,
       perfilId: c.perfilId,
       objectiu: c.objectiu,
-      nit: window.nit,
+      nit: plan.nit,
       puntId: c.puntId,
       puntNom: c.puntNom,
       distanciaKm: c.distanciaKm,
@@ -110,10 +152,13 @@ export function pickNotifications(
     }));
 }
 
-function qualifies(c: AlertCandidate, { from, to }: AlertsWindow): boolean {
+function qualifies(c: AlertCandidate, { from, to, enArribar, horaAvis }: AlertsPlan): boolean {
   const hora = Date.parse(c.hora);
+  const delPla = (enArribar && c.avisaEnArribar) || (horaAvis !== null && c.horaAvis === horaAvis);
   return (
     c.activa &&
+    delPla &&
+    !c.perfilBloquejat &&
     c.index > 0 &&
     c.index >= c.indexMinim &&
     c.distanciaKm <= c.distanciaMaxKm &&
@@ -135,18 +180,21 @@ function compareCandidates(a: AlertCandidate, b: AlertCandidate): number {
 const compareText = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
 
 /**
- * Una avaluació (TG-153): la finestra de la nit en curs, els candidats en una sola consulta, la
- * decisió i les notificacions desades. Una segona avaluació de la mateixa nit no en desa cap més
- * per a les alertes que ja en tenen.
+ * Una avaluació (TG-153): els plans de l'execució (un, o dos abans del migdia), els candidats de
+ * cada un en una sola consulta, la decisió i les notificacions desades totes alhora. Una segona
+ * avaluació de la mateixa nit no en desa cap més per a les alertes que ja en tenen.
  */
 export async function evaluateAlerts(
   repository: AlertesRepository,
   now: Date,
 ): Promise<AvaluacioAlertes> {
-  const window = alertsWindow(now);
-  const candidates = await repository.candidates(window);
-  const notificacions = await repository.saveNotifications(pickNotifications(candidates, window));
-  return { nit: window.nit, notificacions };
+  const plans = alertsPlans(now);
+  const decidides: NotificacioAlerta[] = [];
+  for (const plan of plans) {
+    decidides.push(...pickNotifications(await repository.candidates(plan), plan));
+  }
+  const notificacions = await repository.saveNotifications(decidides);
+  return { plans, notificacions };
 }
 
 /**
