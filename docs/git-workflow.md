@@ -44,7 +44,7 @@ Refs: TG-<ref>
 - **Àmbit** (opcional, recomanat): `mobile`, `admin`, `api`, `worker`, `shared`, `data`, `infra`, `deps`.
 - **Descripció:** en català, en imperatiu o present, començant en minúscula, sense punt final, ≤ 72 caràcters amb el prefix.
 - **Canvi incompatible:** `!` després del tipus/àmbit i/o un peu `BREAKING CHANGE: …` (→ versió *major*).
-- **Peu `Refs: TG-<ref>` obligatori** a cada commit (l'assignatura exigeix lligar-los a Taiga). Diverses tasques: `Refs: TG-88, TG-91`. Per canviar l'estat de la tasca des del commit, vegeu «Integració Taiga ↔ GitHub».
+- **Peu `Refs: TG-<ref>` obligatori** a cada commit (l'assignatura exigeix lligar-los a Taiga). Diverses tasques: `Refs: TG-88, TG-91`. L'estat de la tasca no es canvia des dels commits, sinó a mà a Taiga: vegeu «Integració Taiga ↔ GitHub».
 
 Exemples:
 
@@ -69,16 +69,17 @@ Refs: TG-68
 
 ### Integració Taiga ↔ GitHub
 
-Quan està activa, Taiga llegeix els commits que arriben a GitHub (només els *push*: no mira ni el títol ni la descripció de les PR) i, si el missatge porta `TG-<ref> #<estat>`, canvia l'estat de la tasca. Estats: `#new`, `#in-progress`, `#ready-for-test`, `#closed` i `#needs-info`. La línia va al peu, just abans de `Refs`, que commitlint continua exigint tal qual:
+El webhook de Taiga només **enllaça** cada commit amb la seva tasca: llegeix els commits que arriben a GitHub (només els *push*: no mira ni el títol ni la descripció de les PR) i, si el missatge porta `TG-<ref>`, hi deixa el comentari «mentioned in commit» amb l'enllaç al commit. Per això serveix el peu `Refs: TG-<ref>`, que commitlint exigeix a cada commit.
 
-```
-feat(api): afegeix GET /visibilitat
+L'**estat de la tasca es canvia a mà a Taiga**, no des dels commits:
 
-TG-130 #ready-for-test
-Refs: TG-130
-```
+1. **«In progress»** en començar-la.
+2. **«Ready for test»** en obrir la PR.
+3. **Tancada** en fusionar-la, amb les **Hores reals** (el merge commit de GitHub només porta el títol de la PR).
 
-Conveni: `#in-progress` al primer commit de la tasca i `#ready-for-test` al darrer abans d'obrir la PR. En fusionar, la tasca es tanca a mà a Taiga amb les hores reals (el merge commit de GitHub només porta el títol de la PR).
+No escriguis `TG-<ref> #<estat>` als commits: Taiga encara l'aplicaria.
+
+**Per què sense etiquetes d'estat.** Taiga aplica les etiquetes de tots els commits de cada *push* sense mirar l'estat actual de la tasca ni l'edat del commit, i la integració només té URL i *secret*: no es pot demanar que ignori els commits ja vistos. En fusionar `snapshot` en una branca i fer-hi *push*, els commits antics entren al *payload* i les seves etiquetes desfan els canvis manuals. El 15/11/2026, la TG-138 (tancada a mà a les 17:08) es va reobrir a les 21:24 amb el *push* de `feature/TG-179-avis-compte-bloquejat`, que repetia `97800b1` (`#in-progress`) i `1fb24d6` (`#ready-for-test`); la TG-181 es va reobrir 4 cops per `30212bd`, i la TG-260 (tancada a les 10:19 del 16/11) es va reobrir a les 10:24 amb `5e33d80`.
 
 Configuració, un cop (cal ser administrador del projecte de Taiga i del repositori):
 
