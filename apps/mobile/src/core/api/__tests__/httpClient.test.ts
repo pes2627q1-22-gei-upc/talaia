@@ -1,5 +1,6 @@
 import { getAccessToken } from '@/core/auth/accessToken';
 
+import { accountBlocked } from '../accountBlocked';
 import { ApiError, apiGet, apiPost, buildUrl, REQUEST_TIMEOUT_MS } from '../httpClient';
 
 jest.mock('@/core/auth/accessToken', () => ({ getAccessToken: jest.fn() }));
@@ -40,6 +41,32 @@ describe('apiGet', () => {
       }),
     );
     await expect(apiGet('/punts/x')).rejects.toEqual(new ApiError(404, 'not_found', 'No existeix'));
+  });
+
+  it('un 403 account_blocked marca el compte com a bloquejat; un altre 403, no', async () => {
+    accountBlocked.clear();
+    const forbidden = (code: string) =>
+      new Response(JSON.stringify({ error: { code, message: 'No' } }), { status: 403 });
+    globalThis.fetch = jest.fn().mockResolvedValue(forbidden('forbidden'));
+    await expect(apiGet('/admin/usuaris')).rejects.toEqual(new ApiError(403, 'forbidden', 'No'));
+    expect(accountBlocked.get()).toBe(false);
+    jest.mocked(getAccessToken).mockResolvedValue('token');
+    globalThis.fetch = jest.fn().mockResolvedValue(forbidden('account_blocked'));
+    await expect(apiPost('/perfil')).rejects.toEqual(new ApiError(403, 'account_blocked', 'No'));
+    expect(accountBlocked.get()).toBe(true);
+    accountBlocked.clear();
+  });
+
+  it('una resposta account_blocked d’una sessió que ja ha sortit no bloqueja la següent', async () => {
+    accountBlocked.clear();
+    jest.mocked(getAccessToken).mockResolvedValueOnce('old').mockResolvedValue(null);
+    globalThis.fetch = jest.fn().mockResolvedValue(
+      new Response(JSON.stringify({ error: { code: 'account_blocked', message: 'No' } }), {
+        status: 403,
+      }),
+    );
+    await expect(apiGet('/perfil')).rejects.toBeInstanceOf(ApiError);
+    expect(accountBlocked.get()).toBe(false);
   });
 
   it('envia el JWT actual i conserva Headers i la cancel·lació', async () => {

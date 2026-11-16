@@ -10,6 +10,7 @@ import { buildOpenApiDocument } from '../openapi';
 import type { PuntsService } from '../punts/puntsService';
 import type { RecomanacionsService } from '../recomanacions/recomanacionsService';
 import type { ProfileStore } from '../services/profileService';
+import type { VisibilitatService } from '../visibilitat/visibilitatService';
 import { createAdminRouter } from './admin';
 import { createAuthRouter } from './auth';
 import { createEsdevenimentsRouter } from './esdeveniments';
@@ -19,6 +20,7 @@ import { healthRouter } from './health';
 import { createPuntIndexRouter } from './puntIndex';
 import { createPuntsRouter } from './punts';
 import { createRecomanacionsRouter } from './recomanacions';
+import { createVisibilitatRouter } from './visibilitat';
 
 /**
  * Dependències dels routers. Sense `punts`, `breakdown` o `favorits` (no hi ha `DATABASE_URL`), les
@@ -29,6 +31,8 @@ export type ApiDeps = {
   /** `GET /punts/{id}/index` (TG-104). */
   breakdown?: BreakdownService;
   recomanacions?: RecomanacionsService;
+  /** `GET /visibilitat` (TG-130): l'índex d'una ubicació qualsevol, calculat al moment. Sense, 503. */
+  visibilitat?: VisibilitatService;
   supabaseUrl?: string;
   jwks?: JwksSource;
   profileStore?: ProfileStore;
@@ -38,11 +42,12 @@ export type ApiDeps = {
   favorits?: FavoritsService;
 };
 
-/** Router de `/api/v1`: un router per recurs (punts, recomanacions, esdeveniments…). */
+/** Router de `/api/v1`: un router per recurs (punts, recomanacions, visibilitat, esdeveniments…). */
 export function createApiRouter({
   punts,
   breakdown,
   recomanacions,
+  visibilitat,
   supabaseUrl,
   jwks,
   profileStore,
@@ -55,6 +60,7 @@ export function createApiRouter({
   router.use('/punts', createPuntsRouter(punts));
   router.use('/punts', createPuntIndexRouter(breakdown));
   router.use('/recomanacions', createRecomanacionsRouter(recomanacions));
+  router.use('/visibilitat', createVisibilitatRouter(visibilitat));
   router.use(
     '/esdeveniments',
     createEsdevenimentsRouter(esdeveniments, apropApiKey, { supabaseUrl, jwks }),

@@ -14,6 +14,11 @@ const EnvSchema = z.object({
     (v) => (v === '' ? undefined : v),
     z.string().url().default('http://127.0.0.1:54321'),
   ),
+  // Previsió per a `GET /visibilitat` (TG-130), la mateixa font que el worker. Buida compta com a absent.
+  OPEN_METEO_BASE_URL: z.preprocess(
+    (v) => (v === '' ? undefined : v),
+    z.url().default('https://api.open-meteo.com/v1'),
+  ),
   APROP_API_KEY: z.preprocess(
     (v) => (v === '' ? undefined : v),
     z

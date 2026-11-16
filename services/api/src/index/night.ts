@@ -39,6 +39,28 @@ export function defaultNight(now: Date = new Date(), timeZone = TIME_ZONE): stri
   return now < nightWindow(today, timeZone).from ? previousDay(today) : today;
 }
 
+/** Hora local a partir de la qual «aquesta nit» de les recomanacions ja és la que ve (TG-133). */
+export const UPCOMING_NIGHT_FROM_HOUR = 6;
+
+/**
+ * La nit que toca per a les recomanacions sense `data` («A prop meu», TG-133): de les 06:00 locals
+ * endavant, la que ve, com «Aquesta nit» de l'app (`NIGHT_ENDS_AT`); abans, la que s'acaba. Al
+ * matí, la nit que s'acaba només té hores de dia (índex 0), així que no serveix per recomanar.
+ * `defaultNight` (desglossament) no canvia: allà, al matí, es vol veure la nit que s'acaba.
+ */
+export function upcomingNight(now: Date = new Date(), timeZone = TIME_ZONE): string {
+  const today = localDate(now, timeZone);
+  return localHour(now, timeZone) < UPCOMING_NIGHT_FROM_HOUR ? previousDay(today) : today;
+}
+
+/** L'hora (0–23) que és en una zona horària en un instant. */
+function localHour(instant: Date, timeZone: string): number {
+  const hour = new Intl.DateTimeFormat('en-GB', { timeZone, hour: '2-digit', hourCycle: 'h23' })
+    .formatToParts(instant)
+    .find((part) => part.type === 'hour')?.value;
+  return Number(hour);
+}
+
 /** Les 12:00 locals d'un dia, en UTC. El canvi d'hora és de matinada, així que el migdia no hi cau mai. */
 function localNoon(date: string, timeZone: string): Date {
   const [y = NaN, m = NaN, d = NaN] = date.split('-').map(Number);
