@@ -1,4 +1,5 @@
 import { createDb } from '@talaia/db';
+import { createOpenMeteoClient } from '@talaia/index';
 
 import { createApp } from './app';
 import { loadEnv } from './config/env';
@@ -11,6 +12,8 @@ import { createRecomanacionsRepository } from './recomanacions/recomanacionsRepo
 import { createRecomanacionsService } from './recomanacions/recomanacionsService';
 import { createDatabaseProfileStore } from './services/profileService';
 import { createDatabasePushDeviceStore } from './services/pushDeviceService';
+import { createSqmRepository } from './visibilitat/sqmRepository';
+import { createVisibilitatService } from './visibilitat/visibilitatService';
 
 const env = loadEnv();
 
@@ -20,6 +23,7 @@ let recomanacions;
 let profileStore;
 let dispositius;
 let esdeveniments;
+let sqm;
 if (env.DATABASE_URL) {
   // Un sol pool per a tota l'API.
   // Per sota del timeout de 15 s de l'app: la ruta respon un error abans que l'app talli.
@@ -35,16 +39,30 @@ if (env.DATABASE_URL) {
   profileStore = createDatabaseProfileStore(db);
   dispositius = createDatabasePushDeviceStore(db);
   esdeveniments = createEsdevenimentsService(createEsdevenimentsRepository(db));
+  sqm = createSqmRepository(db);
 } else {
   console.warn(
-    'Avís: sense DATABASE_URL. /api/v1/health funciona, però /api/v1/punts, /api/v1/punts/{id}/index, /api/v1/recomanacions, /api/v1/perfil (i /perfil/dispositius) i /api/v1/esdeveniments responen 503.',
+    'Avís: sense DATABASE_URL. /api/v1/health funciona, però /api/v1/punts, /api/v1/punts/{id}/index, /api/v1/recomanacions, /api/v1/perfil (i /perfil/dispositius) i /api/v1/esdeveniments responen 503. /api/v1/visibilitat funciona amb la foscor estimada.',
   );
 }
 
-createApp({ punts, breakdown, recomanacions, profileStore, dispositius, esdeveniments }).listen(
-  env.API_PORT,
-  (error) => {
-    if (error) throw error;
-    console.log(`Talaia API a http://localhost:${env.API_PORT}/api/v1 (docs: /api/v1/docs)`);
-  },
-);
+// No necessita la base de dades: sense, la foscor de qualsevol ubicació és estimada (ADR-0031).
+// Timeout de 5 s: la resposta ha d'arribar en menys de 3 s (HU05), però una d'Open-Meteo lenta és
+// millor que un error.
+const visibilitat = createVisibilitatService({
+  meteo: createOpenMeteoClient({ baseUrl: env.OPEN_METEO_BASE_URL, timeoutMs: 5_000 }),
+  sqmProper: sqm?.sqmProper,
+});
+
+createApp({
+  punts,
+  breakdown,
+  recomanacions,
+  visibilitat,
+  profileStore,
+  dispositius,
+  esdeveniments,
+}).listen(env.API_PORT, (error) => {
+  if (error) throw error;
+  console.log(`Talaia API a http://localhost:${env.API_PORT}/api/v1 (docs: /api/v1/docs)`);
+});

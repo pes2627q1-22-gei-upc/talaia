@@ -14,3 +14,6 @@ apps/mobile/src/features/map/style/icgc-mapa-base-fosc.json
 
 # Generat per kysely-codegen (npm run db:types): db:types:verify el compara byte a byte
 packages/db/src/schema.ts
+
+# Generat per data/scripts/build-contorn-catalunya.ts (ADR-0031): sis punts per línia
+services/api/src/visibilitat/contornCatalunya.ts

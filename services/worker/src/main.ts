@@ -6,10 +6,10 @@
  *   npm run start -w services/worker          # cal DATABASE_URL al .env de l'arrel
  */
 import { createDb } from '@talaia/db';
+import { createOpenMeteoClient } from '@talaia/index';
 import cron from 'node-cron';
 
 import { loadEnv } from './config/env';
-import { createOpenMeteoClient } from './meteo/openMeteo';
 import { planificaXema } from './meteocat/planificacio';
 import { createKyselyXemaRepository } from './meteocat/repository';
 import { createXemaClient } from './meteocat/xema';
