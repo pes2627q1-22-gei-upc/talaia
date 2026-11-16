@@ -133,7 +133,7 @@ registry.registerPath({
     ),
     404: errorResponse(NO_PROFILE),
     422: errorResponse(
-      '`punt_not_found`: cap punt publicat amb aquest id; `esdeveniment_not_found`: cap esdeveniment amb aquest id',
+      '`punt_not_found`: cap punt publicat amb aquest id; `event_not_found`: cap esdeveniment amb aquest id',
     ),
     ...ERRORS_AUTH,
   },

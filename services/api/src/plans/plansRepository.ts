@@ -7,12 +7,11 @@ type Db = ReturnType<typeof createDb>;
 export type PlaAmbTextos = Omit<Pla, 'punt'> & { punt: Pla['punt'] & { textos?: unknown } };
 
 /**
- * `punt_not_found`: el punt no existeix o no és `PUBLICAT`. `esdeveniment_not_found`: s'ha enviat un
+ * `punt_not_found`: el punt no existeix o no és `PUBLICAT`. `event_not_found`: s'ha enviat un
  * `esdevenimentId` que no existeix.
  */
 export type CreatePlaResult =
-  | { ok: true; pla: PlaAmbTextos }
-  | { ok: false; reason: 'punt_not_found' | 'esdeveniment_not_found' };
+  { ok: true; pla: PlaAmbTextos } | { ok: false; reason: 'punt_not_found' | 'event_not_found' };
 
 /**
  * Plans d'un usuari (HU12, TG-156). Totes les operacions reben el perfil de l'usuari del JWT
@@ -78,7 +77,7 @@ export function createPlansRepository(db: Db): PlansRepository {
             .where('codi', '=', pla.esdevenimentId)
             .forShare()
             .executeTakeFirst();
-          if (!esdeveniment) return { ok: false, reason: 'esdeveniment_not_found' } as const;
+          if (!esdeveniment) return { ok: false, reason: 'event_not_found' } as const;
         }
 
         const { id } = await trx

@@ -192,12 +192,12 @@ describe('plansRepository.create', () => {
     expect(sqls(queries).some((sql) => sql.startsWith('insert'))).toBe(false);
   });
 
-  it('amb un esdeveniment que no existeix, esdeveniment_not_found i no insereix', async () => {
+  it('amb un esdeveniment que no existeix, event_not_found i no insereix', async () => {
     const { db, queries } = fakeDb([[{ id: MONTSEC }], []]);
 
     await expect(createPlansRepository(db).create(PERFIL, NOU)).resolves.toEqual({
       ok: false,
-      reason: 'esdeveniment_not_found',
+      reason: 'event_not_found',
     });
     expect(sqls(queries).some((sql) => sql.startsWith('insert'))).toBe(false);
   });

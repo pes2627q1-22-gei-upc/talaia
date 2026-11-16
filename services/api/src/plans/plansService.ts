@@ -9,7 +9,7 @@ import type { PlaAmbTextos, PlansRepository } from './plansRepository';
  * `requireUser`, mai de la petició. El nom del punt segueix `acceptLanguage` (ca, es, en; reserva ca).
  */
 export type PlansService = {
-  /** 422 `punt_not_found` o `esdeveniment_not_found` si les referències no són vàlides. */
+  /** 422 `punt_not_found` o `event_not_found` si les referències no són vàlides. */
   create(perfilId: string, pla: PlaNou, acceptLanguage?: string): Promise<Pla>;
   list(perfilId: string, quan?: QuanPlans, acceptLanguage?: string): Promise<Pla[]>;
   /** 404 `plan_not_found` si no existeix o és d'un altre usuari (no se'n revela l'existència). */
@@ -49,7 +49,7 @@ export function createPlansService(
           ? new ApiError(422, 'punt_not_found', `No hi ha cap punt publicat amb id ${pla.puntId}`)
           : new ApiError(
               422,
-              'esdeveniment_not_found',
+              'event_not_found',
               `No hi ha cap esdeveniment amb id ${pla.esdevenimentId}`,
             );
       }

@@ -75,7 +75,7 @@ describe('plansService', () => {
 
   it.each([
     ['punt_not_found', 'punt_not_found'],
-    ['esdeveniment_not_found', 'esdeveniment_not_found'],
+    ['event_not_found', 'event_not_found'],
   ] as const)('amb %s del repositori respon 422 %s', async (reason, code) => {
     const repo = repository({ create: jest.fn(async () => ({ ok: false, reason }) as const) });
     await expect(

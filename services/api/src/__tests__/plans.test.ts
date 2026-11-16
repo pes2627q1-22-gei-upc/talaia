@@ -61,7 +61,7 @@ function memoryRepository() {
         return { ok: false, reason: 'punt_not_found' } as const;
       }
       if (nou.esdevenimentId && nou.esdevenimentId !== LEONIDES) {
-        return { ok: false, reason: 'esdeveniment_not_found' } as const;
+        return { ok: false, reason: 'event_not_found' } as const;
       }
       const pla = {
         id: `00000000-0000-4000-8000-${String(seguent++).padStart(12, '0')}`,
@@ -207,7 +207,7 @@ describe('POST /api/v1/plans', () => {
     [
       'un esdeveniment que no existeix',
       { ...NOU, esdevenimentId: 'perseids-1900' },
-      'esdeveniment_not_found',
+      'event_not_found',
     ],
   ])('amb %s respon 422', async (_cas, body, code) => {
     retirats.add(PRADES);

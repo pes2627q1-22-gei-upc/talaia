@@ -290,7 +290,7 @@ Els plans d'observació de l'usuari autenticat (tipus `Pla`, `PlaNou` i `QuanPla
 - **Punts retirats:** només es pot crear un pla amb un punt `PUBLICAT`, però si el punt es retira després, el pla continua sortint amb `punt.publicat: false`: el `GET` no filtra per l'estat del punt. Si el punt s'esborra de debò, s'esborren els seus plans (vegeu P23 a `docs/decisions/pendents.md`).
 - `PATCH` (TG-161) i `DELETE` (TG-162) encara no hi són.
 
-Errors: JWT absent o invàlid → 401 `unauthorized`; compte bloquejat → 403 `account_blocked`; cos, `quan` o `id` invàlids (també `dataHoraFi` ≤ `dataHoraInici`) → 400 `validation_error`; usuari sense perfil → 404 `profile_not_found`; pla que no és de l'usuari → 404 `plan_not_found`; `POST` amb un punt que no existeix o no és publicat → 422 `punt_not_found`, o amb un esdeveniment que no existeix → 422 `esdeveniment_not_found`; sense `DATABASE_URL` o amb la base de dades caiguda → 503 `database_unavailable`.
+Errors: JWT absent o invàlid → 401 `unauthorized`; compte bloquejat → 403 `account_blocked`; cos, `quan` o `id` invàlids (també `dataHoraFi` ≤ `dataHoraInici`) → 400 `validation_error`; usuari sense perfil → 404 `profile_not_found`; pla que no és de l'usuari → 404 `plan_not_found`; `POST` amb un punt que no existeix o no és publicat → 422 `punt_not_found`, o amb un esdeveniment que no existeix → 422 `event_not_found`; sense `DATABASE_URL` o amb la base de dades caiguda → 503 `database_unavailable`.
 
 ## Rol d'administrador i comptes bloquejats (TG-177, HU41)
 
