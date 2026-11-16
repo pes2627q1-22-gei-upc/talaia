@@ -1,20 +1,27 @@
-import type { Alerta, AlertaNova } from '@talaia/shared';
-import { Router, type NextFunction, type Request, type Response } from 'express';
+import type { Alerta, AlertaCanvis, AlertaNova } from '@talaia/shared';
+import {
+  Router,
+  type NextFunction,
+  type Request,
+  type RequestHandler,
+  type Response,
+} from 'express';
 import { z } from 'zod';
 
-import type { AlertesStore } from '../alertes/alertesRepository';
-import { requireAuth, type AuthenticatedRequest, type JwksSource } from '../middleware/auth';
+import { MAX_ALERTES, type AlertesStore } from '../alertes/alertesRepository';
+import type { AuthenticatedRequest } from '../middleware/auth';
 import { ApiError } from '../middleware/errors';
-import { ErrorSchema, registry } from '../openapi';
+import { registry } from '../openapi';
+import { ERRORS_AUTH, errorResponse } from './auth';
 import { OBJECTIUS } from './recomanacions';
 
 export const DISTANCIA_MAXIMA_KM = 200;
 
 export type AlertesRouterOptions = {
+  /** `requireAuth` amb `accountStatus`: JWT vàlid i compte no bloquejat (`routes/index.ts`). */
+  requireUser: RequestHandler;
   /** Sense `DATABASE_URL`, `createApp` hi passa un store que respon 503. */
   store: AlertesStore;
-  supabaseUrl?: string;
-  jwks?: JwksSource;
 };
 
 const OrigenSchema = z
@@ -41,26 +48,71 @@ const enter = (camp: string, min: number, max: number) => {
     .max(max, { error: missatge });
 };
 
+const QUAN_AVISA = 'cal triar quan avisar: avisaEnArribar, horaAvis o tots dos';
+
+/** Els camps de les preferències, comuns a `POST` i `PATCH`. */
+const PREFERENCIES = {
+  objectiu: z
+    .enum(OBJECTIUS, { error: `objectiu ha de ser un de: ${OBJECTIUS.join(', ')}` })
+    .meta({ description: 'El fenomen: el mateix selector que «Què vols veure?»' }),
+  origen: OrigenSchema,
+  distanciaMaxKm: enter('distanciaMaxKm', 1, DISTANCIA_MAXIMA_KM).meta({
+    description: "Radi en línia recta des de l'origen, en km",
+    example: 60,
+  }),
+  indexMinim: enter('indexMinim', 0, 100).meta({
+    description: 'Índex de visibilitat mínim per avisar',
+    example: 70,
+  }),
+  avisaEnArribar: z
+    .boolean({ error: 'avisaEnArribar ha de ser un booleà' })
+    .meta({ description: "Avisa tan bon punt algun punt arriba a l'índex mínim", example: true }),
+  horaAvis: enter('horaAvis', 0, 23).nullable().meta({
+    description:
+      "Avisa el mateix dia a aquesta hora local si la previsió de la nit arriba a l'índex mínim; `null` si no",
+    example: 18,
+  }),
+};
+
 /**
- * HU16: fenomen, distància màxima des d'un origen i índex mínim. Estricte: un camp desconegut
- * (per exemple un `perfilId`) és un 400. L'usuari surt sempre del JWT.
+ * HU16: fenomen, distància màxima des d'un origen, índex mínim i quan avisar (TG-146). Estricte:
+ * un camp desconegut (per exemple un `perfilId`) és un 400. L'usuari surt sempre del JWT.
  */
 const AlertaNovaSchema: z.ZodType<AlertaNova> = z
-  .strictObject({
-    objectiu: z
-      .enum(OBJECTIUS, { error: `objectiu ha de ser un de: ${OBJECTIUS.join(', ')}` })
-      .meta({ description: 'El fenomen: el mateix selector que «Què vols veure?»' }),
-    origen: OrigenSchema,
-    distanciaMaxKm: enter('distanciaMaxKm', 1, DISTANCIA_MAXIMA_KM).meta({
-      description: "Radi en línia recta des de l'origen, en km",
-      example: 60,
-    }),
-    indexMinim: enter('indexMinim', 0, 100).meta({
-      description: 'Índex de visibilitat mínim per avisar',
-      example: 70,
-    }),
+  .strictObject(PREFERENCIES)
+  .refine((alerta) => alerta.avisaEnArribar || alerta.horaAvis !== null, {
+    error: QUAN_AVISA,
+    path: ['avisaEnArribar'],
   })
-  .meta({ id: 'AlertaNova' });
+  .meta({
+    id: 'AlertaNova',
+    description: 'Almenys un de `avisaEnArribar` (true) o `horaAvis` (no null) ha d’estar triat.',
+  });
+
+/**
+ * HU18 i HU19 (TG-147): només els camps que canvien, almenys un. Estricte com `AlertaNova`. La
+ * regla de «quan avisa» es comprova amb l'alerta desada (`store.update`).
+ */
+const AlertaCanvisSchema: z.ZodType<AlertaCanvis> = z
+  .strictObject({
+    ...PREFERENCIES,
+    activa: z
+      .boolean({ error: 'activa ha de ser un booleà' })
+      .meta({ description: 'Una alerta desactivada no notifica (HU19)', example: false }),
+  })
+  .partial()
+  .refine((canvis) => Object.keys(canvis).length > 0, {
+    error: 'cal almenys un camp per canviar',
+  })
+  .meta({
+    id: 'AlertaCanvis',
+    description:
+      'Només els camps que canvien, almenys un. Després del canvi, almenys un de `avisaEnArribar` (true) o `horaAvis` (no null) ha d’estar triat.',
+  });
+
+const AlertaParamsSchema = z.object({
+  id: z.uuid({ error: 'id ha de ser un UUID' }).meta({ description: 'L’`id` de l’alerta' }),
+});
 
 const AlertaSchema: z.ZodType<Alerta> = z
   .object({
@@ -69,28 +121,24 @@ const AlertaSchema: z.ZodType<Alerta> = z
     origen: z.object({ lat: z.number(), lon: z.number() }),
     distanciaMaxKm: z.number().int(),
     indexMinim: z.number().int(),
+    avisaEnArribar: z.boolean(),
+    horaAvis: z.number().int().nullable(),
     activa: z.boolean(),
     dataCreacio: z.string(),
     dataActualitzacio: z.string(),
   })
   .meta({ id: 'Alerta' });
 
-const errorResponse = (description: string) => ({
-  description,
-  content: { 'application/json': { schema: ErrorSchema } },
-});
-const ERRORS = {
-  401: errorResponse('JWT no vàlid o absent'),
-  404: errorResponse('L’usuari encara no té perfil: l’app ha de fer abans `POST /perfil`'),
-  503: errorResponse('No es pot validar el JWT de Supabase o no hi ha base de dades'),
-};
+const PROFILE_NOT_FOUND = errorResponse(
+  '`profile_not_found`: l’usuari encara no té perfil, l’app ha de fer abans `POST /perfil`',
+);
 
 registry.registerPath({
   method: 'post',
   path: '/alertes',
   tags: ['Alertes'],
   summary: 'Crea una alerta de l’usuari autenticat (HU16)',
-  description: 'L’alerta neix activa i només la veu qui l’ha creat.',
+  description: `L’alerta neix activa i només la veu qui l’ha creat. Com a molt ${MAX_ALERTES} per usuari.`,
   request: {
     body: { required: true, content: { 'application/json': { schema: AlertaNovaSchema } } },
   },
@@ -99,8 +147,14 @@ registry.registerPath({
       description: 'L’alerta creada',
       content: { 'application/json': { schema: AlertaSchema } },
     },
-    400: errorResponse('El cos no és vàlid'),
-    ...ERRORS,
+    400: errorResponse(
+      '`validation_error`: el cos no és vàlid (també si no s’ha triat quan avisar)',
+    ),
+    404: PROFILE_NOT_FOUND,
+    409: errorResponse(
+      `\`alert_limit_reached\`: l’usuari ja té ${MAX_ALERTES} alertes, n’ha d’esborrar alguna`,
+    ),
+    ...ERRORS_AUTH,
   },
 });
 
@@ -114,32 +168,70 @@ registry.registerPath({
       description: 'Les alertes (una llista buida si no en té cap)',
       content: { 'application/json': { schema: z.array(AlertaSchema) } },
     },
-    ...ERRORS,
+    404: PROFILE_NOT_FOUND,
+    ...ERRORS_AUTH,
+  },
+});
+
+registry.registerPath({
+  method: 'patch',
+  path: '/alertes/{id}',
+  tags: ['Alertes'],
+  summary: 'Activa, desactiva o edita una alerta de l’usuari autenticat (HU18, HU19)',
+  description:
+    'Només canvia els camps del cos. Una alerta desactivada no notifica; els canvis s’apliquen al recàlcul següent. Una alerta d’un altre usuari respon igual que una que no existeix.',
+  request: {
+    params: AlertaParamsSchema,
+    body: { required: true, content: { 'application/json': { schema: AlertaCanvisSchema } } },
+  },
+  responses: {
+    200: {
+      description: 'L’alerta amb els canvis',
+      content: { 'application/json': { schema: AlertaSchema } },
+    },
+    400: errorResponse(
+      '`validation_error`: l’`id` no és un UUID, el cos no és vàlid o és buit, o amb els canvis l’alerta no avisaria mai',
+    ),
+    404: errorResponse(
+      '`alert_not_found`: l’usuari no té cap alerta amb aquest `id`; `profile_not_found`: encara no té perfil',
+    ),
+    ...ERRORS_AUTH,
   },
 });
 
 const profileNotFound = () =>
   new ApiError(404, 'profile_not_found', "L'usuari encara no té perfil (cal POST /perfil)");
 
-/** `requireAuth` ja ha respost 401 si no hi ha usuari: aquí sempre hi és. */
-function currentUserId(req: Request): string {
-  const { user } = req as AuthenticatedRequest;
-  if (!user) throw new ApiError(401, 'unauthorized', 'JWT invàlid o caducat');
-  return user.id;
+const alertLimitReached = () =>
+  new ApiError(
+    409,
+    'alert_limit_reached',
+    `Ja tens ${MAX_ALERTES} alertes: n'has d'esborrar alguna per crear-ne una de nova`,
+  );
+
+const alertNotFound = () =>
+  new ApiError(404, 'alert_not_found', 'No tens cap alerta amb aquest id');
+
+/**
+ * El perfil de l'usuari del JWT, que `requireUser` ja ha llegit (i ha rebutjat si està bloquejat).
+ * `null` si encara no té perfil.
+ */
+function currentPerfilId(req: Request): string | null {
+  return (req as AuthenticatedRequest).account?.perfilId ?? null;
 }
 
-export function createAlertesRouter({ store, supabaseUrl, jwks }: AlertesRouterOptions): Router {
+export function createAlertesRouter({ requireUser, store }: AlertesRouterOptions): Router {
   const router = Router();
-  const requireCurrentUser = requireAuth({ supabaseUrl, jwks });
 
   const handleCreate = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const userId = currentUserId(req);
+      const perfilId = currentPerfilId(req);
+      if (!perfilId) return next(profileNotFound());
       const alertaNova = AlertaNovaSchema.parse(req.body ?? {});
-      const alerta = await store.create(userId, alertaNova);
-      if (!alerta) return next(profileNotFound());
+      const result = await store.create(perfilId, alertaNova);
+      if (!result.ok) return next(alertLimitReached());
       // Dades personals: cap memòria cau (ni del mòbil ni d'un proxy) no les ha de desar.
-      res.set('Cache-Control', 'no-store').status(201).json(alerta);
+      res.set('Cache-Control', 'no-store').status(201).json(result.alerta);
       return undefined;
     } catch (error) {
       return next(error);
@@ -148,17 +240,39 @@ export function createAlertesRouter({ store, supabaseUrl, jwks }: AlertesRouterO
 
   const handleList = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const alertes = await store.list(currentUserId(req));
-      if (!alertes) return next(profileNotFound());
-      res.set('Cache-Control', 'no-store').json(alertes);
+      const perfilId = currentPerfilId(req);
+      if (!perfilId) return next(profileNotFound());
+      res.set('Cache-Control', 'no-store').json(await store.list(perfilId));
       return undefined;
     } catch (error) {
       return next(error);
     }
   };
 
-  router.post('/', requireCurrentUser, handleCreate);
-  router.get('/', requireCurrentUser, handleList);
+  const handleUpdate = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const perfilId = currentPerfilId(req);
+      if (!perfilId) return next(profileNotFound());
+      const { id } = AlertaParamsSchema.parse(req.params);
+      const canvis = AlertaCanvisSchema.parse(req.body ?? {});
+      const result = await store.update(perfilId, id, canvis);
+      if (!result.ok) {
+        return next(
+          result.reason === 'not_found'
+            ? alertNotFound()
+            : new ApiError(400, 'validation_error', QUAN_AVISA),
+        );
+      }
+      res.set('Cache-Control', 'no-store').json(result.alerta);
+      return undefined;
+    } catch (error) {
+      return next(error);
+    }
+  };
+
+  router.post('/', requireUser, handleCreate);
+  router.get('/', requireUser, handleList);
+  router.patch('/:id', requireUser, handleUpdate);
 
   return router;
 }

@@ -1,5 +1,6 @@
 import type {
   Esdeveniment,
+  EsdevenimentDetall,
   EsdevenimentsResponse,
   TipusFenomen,
   UbicacioEsdeveniment,
@@ -38,6 +39,41 @@ const EsdevenimentSchema: z.ZodType<Esdeveniment> = z
 export const EsdevenimentsResponseSchema: z.ZodType<EsdevenimentsResponse> = z
   .object({ data: z.array(EsdevenimentSchema) })
   .meta({ id: 'EsdevenimentsResponse' });
+
+const PrecisioTemporalSchema = z.enum(['dia', 'hora', 'minut', 'segon']).meta({
+  id: 'PrecisioTemporal',
+  description: 'Precisió publicada per la font; dia indica que no es coneix l’hora exacta.',
+});
+
+export const EsdevenimentDetallSchema: z.ZodType<EsdevenimentDetall> = z
+  .object({
+    id: z.string().min(1),
+    tipus: TipusFenomenSchema,
+    nom: z.string().min(1),
+    inici: z.iso.datetime(),
+    fi: z.iso.datetime(),
+    maxim: z.iso.datetime().nullable(),
+    descripcio: z.string().min(1),
+    ubicacio: UbicacioEsdevenimentSchema,
+    font: z.string().min(1),
+    horari: z.object({
+      inici: z.iso.datetime(),
+      maxim: z.iso.datetime().nullable(),
+      fi: z.iso.datetime(),
+      precisio: z.object({
+        inici: PrecisioTemporalSchema,
+        maxim: PrecisioTemporalSchema.nullable(),
+        fi: PrecisioTemporalSchema,
+      }),
+    }),
+    explicacio: z.object({
+      fenomen: z.string().min(1),
+      particularitat: z.string().min(1),
+      observacioGeneral: z.string().min(1),
+      observacioEsdeveniment: z.string().min(1),
+    }),
+  })
+  .meta({ id: 'EsdevenimentDetall' });
 
 /** Dies civils de Catalunya; 366 dies inclosos com a màxim, sense paginació en aquest contracte. */
 export const EsdevenimentsQuerySchema = z
@@ -95,9 +131,18 @@ registry.registerPath({
     'Les dates són dies civils de Catalunya ' +
     '(Europe/Madrid): [des_de 00:00, fins_a + 1 dia 00:00). Hi entra un esdeveniment si ' +
     'inici < final i fi > començament. La ubicació és un punt general recomanat per situar ' +
-    "l'esdeveniment al mapa, no una garantia meteorològica.",
+    "l'esdeveniment al mapa, no una garantia meteorològica. Amb JWT, Accept-Language " +
+    'selecciona ca, es o en; amb API key el llistat acordat amb Aprop continua en català.',
   security: [{ ApiKeyAprop: [] }, { BearerSupabase: [] }],
-  request: { query: EsdevenimentsQuerySchema },
+  request: {
+    query: EsdevenimentsQuerySchema,
+    headers: z.object({
+      'Accept-Language': z.string().optional().meta({
+        example: 'es-ES,es;q=0.9,en;q=0.8',
+        description: 'Només s’aplica al llistat amb JWT. Amb API key, català.',
+      }),
+    }),
+  },
   responses: {
     200: {
       description: "Llista d'esdeveniments ordenada per inici ascendent.",
@@ -117,6 +162,56 @@ registry.registerPath({
     },
     500: {
       description: 'Error intern.',
+      content: { 'application/json': { schema: ErrorSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: 'get',
+  path: '/esdeveniments/{id}',
+  operationId: 'getEsdeveniment',
+  tags: ['Esdeveniments'],
+  summary: "Consulta el detall d'un esdeveniment astronòmic",
+  description:
+    'Retorna l’explicació del fenomen i de la seva ocurrència, recomanacions d’observació i ' +
+    'horari en instants UTC amb la precisió coneguda. Accept-Language selecciona ca, es o en ' +
+    'quan hi ha traducció disponible; els camps sense traducció es retornen en català.',
+  security: [{ ApiKeyAprop: [] }, { BearerSupabase: [] }],
+  request: {
+    params: z.object({
+      id: z.string().min(1).meta({ description: 'Identificador públic de l’esdeveniment.' }),
+    }),
+    headers: z.object({
+      'Accept-Language': z.string().optional().meta({
+        example: 'es-ES,es;q=0.9,en;q=0.8',
+        description: 'Idiomes preferits. Suporta ca, es i en; per defecte o fallback, ca.',
+      }),
+    }),
+  },
+  responses: {
+    200: {
+      description: 'Fitxa detallada de l’esdeveniment.',
+      content: { 'application/json': { schema: EsdevenimentDetallSchema } },
+    },
+    400: {
+      description: 'Identificador invàlid.',
+      content: { 'application/json': { schema: ErrorSchema } },
+    },
+    401: {
+      description: 'Credencial absent o invàlida (API key o JWT).',
+      content: { 'application/json': { schema: ErrorSchema } },
+    },
+    404: {
+      description: 'No existeix cap esdeveniment publicable amb aquest identificador.',
+      content: { 'application/json': { schema: ErrorSchema } },
+    },
+    503: {
+      description: 'Base de dades, punt de referència, clau API o validació JWT indisponibles.',
+      content: { 'application/json': { schema: ErrorSchema } },
+    },
+    500: {
+      description: 'Dades incompletes o error intern.',
       content: { 'application/json': { schema: ErrorSchema } },
     },
   },

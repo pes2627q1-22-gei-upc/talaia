@@ -11,7 +11,7 @@ Tipus de domini compartits per l'app, l'admin, l'API i el worker, i el codi pur 
 | `src/meteo.ts` | `PrevisioMeteoHora`, `PrevisioMeteoPunt`, `FontMeteo` (previsió d'Open-Meteo per punt) i `LecturaXema` (observacions de Meteocat) | Variables de TG-95 i TG-114; observacions de la XEMA, TG-115 |
 | `src/astronomia.ts` | `EfemeridesHora`, `NitAstronomica`, `PosicioAstre`, `EstatLluna`, `FranjaCrepuscle`, `FaseLunar` (Sol, Lluna, fase i crepuscles per punt, calculats pel worker) | TG-96; els consumeix la fórmula de l'índex (TG-98) |
 | `src/punts.ts` | `PuntObservacio`, `PuntsMapaGeoJson` (el GeoJSON del mapa, ADR-0012) | Metadades del punt pendents de P13 (TG-87) i del model de TG-86 |
-| `src/recomanacions.ts` | `ObjectiuObservacio`, `ConsultaRecomanacions` (el que es tria a «Què vols veure?», TG-101), `Recomanacio`, `RecomanacionsResposta` | Paràmetres i resposta de `GET /recomanacions` (TG-100) |
+| `src/recomanacions.ts` | `ObjectiuObservacio`, `ConsultaRecomanacions` (el que es tria a «Què vols veure?», TG-101), `ParametresRecomanacions` (la mateixa amb només l'origen obligatori, «A prop meu», TG-133), `Recomanacio`, `RecomanacionsResposta` | Paràmetres i resposta de `GET /recomanacions` (TG-100) |
 | `src/esdeveniments.ts` | `Esdeveniment`, `TipusFenomen` | Contracte amb Aprop acordat a TG-109 |
 | `src/nit.ts` | **Codi:** `nightWindow`, `defaultNight`, `TIME_ZONE`, `NIGHT_START_HOUR`… Una nit va de les 12:00 locals d'un dia a les 12:00 de l'endemà (`Europe/Madrid`) | TG-104; la fan servir l'API i les alertes del worker (TG-153) |
 

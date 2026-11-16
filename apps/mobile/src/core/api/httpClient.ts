@@ -3,6 +3,8 @@ import type { ApiErrorBody } from '@talaia/shared';
 import { getAccessToken } from '@/core/auth/accessToken';
 import { env } from '@/core/config/env';
 
+import { ACCOUNT_BLOCKED, accountBlocked } from './accountBlocked';
+
 /** Error de l'API de Talaia: el servidor sempre respon `{ error: { code, message } }`. */
 export class ApiError extends Error {
   constructor(
@@ -71,7 +73,21 @@ async function apiRequest<T>(url: string, init: RequestInit): Promise<T> {
   init.signal?.addEventListener('abort', cancel);
   try {
     const response = await fetch(url, { ...init, headers, signal: controller.signal });
-    if (!response.ok) throw await toApiError(response);
+    if (!response.ok) {
+      const error = await toApiError(response);
+      // Un sol lloc per a tota l'app: la porta de la sessió hi mostra l'avís (TG-179).
+      // Només si la sessió encara és la de la petició: una resposta tardana d'un compte que ja
+      // ha sortit no pot bloquejar el següent.
+      if (
+        error.status === 403 &&
+        error.code === ACCOUNT_BLOCKED &&
+        token &&
+        (await getAccessToken().catch(() => null)) === token
+      ) {
+        accountBlocked.report();
+      }
+      throw error;
+    }
     return (await response.json()) as T;
   } catch (error) {
     // Un ApiError < 500, perquè TanStack Query no hi torni (3 × 15 s d'esquelet) i es pugui

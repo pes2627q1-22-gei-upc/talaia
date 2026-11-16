@@ -29,9 +29,11 @@ export type Timestamp = ColumnType<Date, Date | string, Date | string>;
 
 export interface Alertes {
   activa: Generated<boolean>;
+  avisaEnArribar: boolean;
   dataActualitzacio: Generated<Timestamp>;
   dataCreacio: Generated<Timestamp>;
   distanciaMaxKm: number;
+  horaAvis: number | null;
   id: Generated<string>;
   indexMinim: number;
   objectiu: string;
@@ -135,11 +137,14 @@ export interface NotificacionsAlertes {
 export interface Perfils {
   authUserId: string;
   avatarUrl: string | null;
+  bloquejat: Generated<boolean>;
   dataActualitzacio: Generated<Timestamp>;
+  dataBloqueig: Timestamp | null;
   dataCreacio: Generated<Timestamp>;
   email: string | null;
   id: Generated<string>;
   nom: string | null;
+  rol: Generated<string>;
 }
 
 export interface PuntsObservacio {
@@ -159,6 +164,7 @@ export interface PuntsObservacio {
   origen: "OFICIAL" | "COMUNITAT";
   slug: string;
   sqm: Numeric | null;
+  textos: Json;
   ubicacio: string;
 }
 

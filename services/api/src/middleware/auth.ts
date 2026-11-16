@@ -1,6 +1,7 @@
 import type { Request, RequestHandler } from 'express';
 import { createRemoteJWKSet, errors as joseErrors, jwtVerify, type JWTVerifyGetKey } from 'jose';
 
+import type { AccountStatus } from '../services/profileService';
 import { ApiError } from './errors';
 
 export type AuthenticatedUser = {
@@ -11,7 +12,11 @@ export type AuthenticatedUser = {
   userMetadata?: Record<string, unknown>;
 };
 
-export type AuthenticatedRequest = Request & { user?: AuthenticatedUser };
+export type AuthenticatedRequest = Request & {
+  user?: AuthenticatedUser;
+  /** Rol i bloqueig del perfil, quan `requireAuth` té `accountStatus`. */
+  account?: AccountStatus | null;
+};
 
 /** D'on surten les claus: el JWKS remot de Supabase o, als tests, `createLocalJWKSet`. */
 export type JwksSource = JWTVerifyGetKey;
@@ -19,6 +24,12 @@ export type JwksSource = JWTVerifyGetKey;
 export type AuthMiddlewareOptions = {
   supabaseUrl?: string;
   jwks?: JwksSource;
+  /**
+   * Amb aquesta funció, `requireAuth` llegeix el perfil després de validar el JWT i rebutja amb 403
+   * `account_blocked` els comptes bloquejats (TG-177). La passen totes les rutes d'usuari; només
+   * `/esdeveniments`, que és pública per a Aprop, no la fa servir.
+   */
+  accountStatus?: (authUserId: string) => Promise<AccountStatus | null>;
 };
 
 /** Errors que vénen del token. Qualsevol altre (JWKS caigut, 5xx, xarxa) és 503, no 401. */
@@ -40,7 +51,11 @@ function isTokenError(error: unknown): boolean {
   return TOKEN_ERRORS.some((tokenError) => error instanceof tokenError);
 }
 
-export function requireAuth({ supabaseUrl, jwks }: AuthMiddlewareOptions = {}): RequestHandler {
+export function requireAuth({
+  supabaseUrl,
+  jwks,
+  accountStatus,
+}: AuthMiddlewareOptions = {}): RequestHandler {
   const issuer = supabaseUrl ? `${supabaseUrl.replace(/\/$/, '')}/auth/v1` : '';
   const keys =
     jwks ?? (issuer ? createRemoteJWKSet(new URL(`${issuer}/.well-known/jwks.json`)) : undefined);
@@ -91,7 +106,6 @@ export function requireAuth({ supabaseUrl, jwks }: AuthMiddlewareOptions = {}): 
       };
 
       (req as AuthenticatedRequest).user = user;
-      return next();
     } catch (error) {
       if (isTokenError(error)) {
         return next(new ApiError(401, 'unauthorized', 'JWT invàlid o caducat'));
@@ -104,5 +118,33 @@ export function requireAuth({ supabaseUrl, jwks }: AuthMiddlewareOptions = {}): 
         ),
       );
     }
+
+    const userId = (req as AuthenticatedRequest).user?.id;
+    if (!accountStatus || !userId) return next();
+    try {
+      const account = await accountStatus(userId);
+      if (account?.bloquejat) return next(accountBlocked());
+      (req as AuthenticatedRequest).account = account;
+      return next();
+    } catch (error) {
+      return next(error);
+    }
   };
 }
+
+/** Codi estable: l'app el reconeix per mostrar l'avís de compte bloquejat (TG-179). */
+const accountBlocked = () =>
+  new ApiError(
+    403,
+    'account_blocked',
+    "Aquest compte està bloquejat per l'administració de Talaia",
+  );
+
+/** Després d'un `requireAuth` amb `accountStatus`: només deixa passar els administradors. */
+export const requireAdmin: RequestHandler = (req, _res, next) => {
+  const { account } = req as AuthenticatedRequest;
+  if (account?.rol !== 'admin') {
+    return next(new ApiError(403, 'forbidden', 'Cal un compte amb rol d’administrador'));
+  }
+  return next();
+};

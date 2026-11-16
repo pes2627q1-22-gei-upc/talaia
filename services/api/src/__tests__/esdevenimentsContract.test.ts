@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 import {
+  EsdevenimentDetallSchema,
   EsdevenimentsQuerySchema,
   EsdevenimentsResponseSchema,
 } from '../routes/esdeveniments.contract';
@@ -10,6 +11,34 @@ const query = (des_de: unknown, fins_a: unknown, tipus?: unknown) =>
   EsdevenimentsQuerySchema.safeParse({ des_de, fins_a, tipus });
 
 describe('contracte de consulta dels esdeveniments', () => {
+  it('valida una fitxa amb horari, precisió temporal i textos explicatius', () => {
+    expect(
+      EsdevenimentDetallSchema.safeParse({
+        id: 'orionids-2026',
+        tipus: 'pluja_estels',
+        nom: 'Oriònids',
+        inici: '2026-10-02T00:00:00.000Z',
+        maxim: '2026-10-21T12:00:00.000Z',
+        fi: '2026-11-07T23:59:59.000Z',
+        descripcio: 'Pluja de meteors ràpids.',
+        ubicacio: { nom: 'COU', latitud: 42, longitud: 0.7 },
+        font: 'IMO',
+        horari: {
+          inici: '2026-10-02T00:00:00.000Z',
+          maxim: '2026-10-21T12:00:00.000Z',
+          fi: '2026-11-07T23:59:59.000Z',
+          precisio: { inici: 'dia', maxim: 'dia', fi: 'dia' },
+        },
+        explicacio: {
+          fenomen: 'Pluja de meteors ràpids.',
+          particularitat: 'Màxim ample.',
+          observacioGeneral: 'Busqueu un cel fosc.',
+          observacioEsdeveniment: 'Observeu la matinada del màxim.',
+        },
+      }).success,
+    ).toBe(true);
+  });
+
   it('valida l’exemple de resposta documentat per a Aprop', () => {
     const markdown = readFileSync(
       resolve(__dirname, '../../../../docs/serveis-externs.md'),

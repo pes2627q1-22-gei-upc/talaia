@@ -11,8 +11,10 @@ export {
   NIGHT_YEAR_MAX,
   NIGHT_YEAR_MIN,
   TIME_ZONE,
+  UPCOMING_NIGHT_FROM_HOUR,
   defaultNight,
   nightWindow,
+  upcomingNight,
   type NightWindow,
 } from '@talaia/shared';
 

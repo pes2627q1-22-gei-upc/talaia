@@ -1,7 +1,10 @@
 /** Cos de qualsevol resposta d'error de l'API: `{ error: { code, message } }`. */
 export type ApiErrorBody = {
   error: {
-    /** Codi estable per a la lògica del client (`not_found`, `validation_error`…). */
+    /**
+     * Codi estable per a la lògica del client (`not_found`, `validation_error`…). Un compte
+     * bloquejat rep `account_blocked` (403) a qualsevol ruta autenticada: l'app hi mostra l'avís.
+     */
     code: string;
     /** Text per a desenvolupadors; l'app tradueix a partir de `code`. */
     message: string;

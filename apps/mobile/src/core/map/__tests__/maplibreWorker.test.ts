@@ -10,7 +10,7 @@ jest.mock(
   { virtual: true },
 );
 
-it('registra el worker de MapLibre des d’un Blob de JavaScript', async () => {
+it('registra el worker de MapLibre des d’un Blob de JavaScript, com a worker clàssic', async () => {
   const createObjectURL = jest.fn((_blob: Blob) => 'blob:talaia/worker');
   URL.createObjectURL = createObjectURL;
 
@@ -18,7 +18,8 @@ it('registra el worker de MapLibre des d’un Blob de JavaScript', async () => {
     jest.requireActual('../maplibreWorker');
   });
 
-  expect(setWorkerUrl).toHaveBeenCalledWith('blob:talaia/worker');
+  // MapLibre fa un worker clàssic quan l'URL acaba en `.cjs` (el de mòdul no carrega des de `file://`).
+  expect(setWorkerUrl).toHaveBeenCalledWith('blob:talaia/worker#maplibre-gl-worker.cjs');
   const blob = createObjectURL.mock.calls[0]?.[0];
   expect(blob?.type).toBe('text/javascript');
   await expect(blob?.text()).resolves.toBe('export{};');
