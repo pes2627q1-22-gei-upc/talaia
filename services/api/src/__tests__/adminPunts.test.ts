@@ -332,6 +332,18 @@ describe('PATCH /api/v1/admin/punts/{id}', () => {
     expect(await idsAlMapa()).toEqual([MONTSEC.id]);
   });
 
+  it('el document del mapa de cada idioma es descarta: el punt retirat no surt en cap', async () => {
+    const mapaEs = () => request(app).get('/api/v1/punts').set('Accept-Language', 'es');
+    expect((await mapaEs()).body.features).toHaveLength(1);
+    expect(await idsAlMapa()).toEqual([MONTSEC.id]);
+
+    const res = await patch(MONTSEC.id, { estat: 'DESACTIVAT' });
+    expect(res.status).toBe(200);
+
+    expect((await mapaEs()).body.features).toEqual([]);
+    expect(await idsAlMapa()).toEqual([]);
+  });
+
   it('edita només els camps que rep, i el mapa ja porta el nom nou', async () => {
     await idsAlMapa();
     const res = await patch(MONTSEC.id, { nom: 'Observatori del Montsec', accessibilitat: null });
