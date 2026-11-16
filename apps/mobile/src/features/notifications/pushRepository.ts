@@ -1,5 +1,6 @@
 import type { DispositiuPush, PlataformaPush } from '@talaia/shared';
-import Constants, { ExecutionEnvironment } from 'expo-constants';
+import { isRunningInExpoGo } from 'expo';
+import Constants from 'expo-constants';
 import * as Device from 'expo-device';
 import type * as NotificationsModule from 'expo-notifications';
 import { Platform } from 'react-native';
@@ -66,14 +67,12 @@ function toPermission(response: NotificationsModule.NotificationPermissionsStatu
 export const pushRepository = {
   /**
    * Si aquest dispositiu pot tenir un Expo push token. Expo Go no rep push des de l'SDK 53, i un
-   * simulador no en té: en tots dos casos, l'app no demana res.
+   * simulador no en té: en tots dos casos, l'app no demana res. Expo Go es detecta amb
+   * `isRunningInExpoGo()`, la mateixa comprovació que fa `expo-notifications`:
+   * `Constants.executionEnvironment` no serveix, perquè Expo Go 58 hi diu `bare`.
    */
   isSupported(): boolean {
-    return (
-      platform() !== null &&
-      Device.isDevice &&
-      Constants.executionEnvironment !== ExecutionEnvironment.StoreClient
-    );
+    return platform() !== null && Device.isDevice && !isRunningInExpoGo();
   },
 
   async getPermission(): Promise<PushPermission> {

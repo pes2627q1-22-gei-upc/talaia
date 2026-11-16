@@ -1,4 +1,4 @@
-import Constants, { ExecutionEnvironment } from 'expo-constants';
+import { isRunningInExpoGo } from 'expo';
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
@@ -7,11 +7,10 @@ import { apiDelete, apiPut } from '@/core/api/httpClient';
 
 import { ALERTS_CHANNEL_ID, pushRepository, UNREGISTER_TIMEOUT_MS } from '../pushRepository';
 
+jest.mock('expo', () => ({ isRunningInExpoGo: jest.fn(() => false) }));
 jest.mock('expo-constants', () => ({
   __esModule: true,
-  ExecutionEnvironment: { Bare: 'bare', Standalone: 'standalone', StoreClient: 'storeClient' },
   default: {
-    executionEnvironment: 'bare',
     expoConfig: { extra: { eas: { projectId: 'projecte-eas' } } },
   },
 }));
@@ -38,7 +37,7 @@ jest.mock('@/core/api/httpClient', () => ({
 
 const notifications = jest.mocked(Notifications);
 const device = Device as { isDevice: boolean };
-const constants = Constants as { executionEnvironment: string };
+const runningInExpoGo = jest.mocked(isRunningInExpoGo);
 const TOKEN = 'ExponentPushToken[abc]';
 
 const permission = (
@@ -57,7 +56,7 @@ beforeEach(async () => {
   jest.clearAllMocks();
   Platform.OS = 'android';
   device.isDevice = true;
-  constants.executionEnvironment = ExecutionEnvironment.Bare;
+  runningInExpoGo.mockReturnValue(false);
   notifications.getExpoPushTokenAsync.mockResolvedValue({ type: 'expo', data: TOKEN });
   // Cap token registrat d'un test anterior.
   await pushRepository.unregisterDevice();
@@ -70,7 +69,7 @@ describe('pushRepository.isSupported', () => {
   });
 
   it('a Expo Go, no (no rep push des de l’SDK 53)', () => {
-    constants.executionEnvironment = ExecutionEnvironment.StoreClient;
+    runningInExpoGo.mockReturnValue(true);
     expect(pushRepository.isSupported()).toBe(false);
   });
 
@@ -97,7 +96,7 @@ describe('pushRepository.getPermission', () => {
   });
 
   it('sense suport torna unavailable sense tocar el mòdul natiu', async () => {
-    constants.executionEnvironment = ExecutionEnvironment.StoreClient;
+    runningInExpoGo.mockReturnValue(true);
     await expect(pushRepository.getPermission()).resolves.toBe('unavailable');
     expect(notifications.getPermissionsAsync).not.toHaveBeenCalled();
   });
@@ -234,9 +233,10 @@ describe('pushRepository.onTokenChange', () => {
 
 describe('a Expo Go', () => {
   it('no carrega expo-notifications, que a Android hi llança un error en importar-lo', async () => {
-    constants.executionEnvironment = ExecutionEnvironment.StoreClient;
+    runningInExpoGo.mockReturnValue(true);
     let isolated!: typeof pushRepository;
     jest.isolateModules(() => {
+      jest.doMock('expo', () => ({ isRunningInExpoGo: () => true }));
       jest.doMock('expo-notifications', () => {
         throw new Error('expo-notifications no s’ha de carregar a Expo Go');
       });
