@@ -36,6 +36,6 @@ Format: **Context → Decisió → Conseqüències**. Estat: `Acceptada`, `Propo
 | [0028](0028-notificacions-push.md) | Notificacions push amb Expo Push Service: tokens a `dispositius_push` via l'API, el worker envia després de cada recàlcul (una per alerta i nit), `data: { puntId }` obre la fitxa; development build d'EAS per provar-les a Android | Proposada |
 | [0029](0029-rol-admin-i-bloqueig.md) | Rol d'administrador i bloqueig de comptes a `perfils`, llegits a cada petició autenticada: 403 `account_blocked` i `requireAdmin` | Acceptada |
 | [0030](0030-web-administracio-vite-react.md) | Web d'administració separada amb Vite + React + TypeScript, compilada com a fitxers estàtics per a Nginx (P11) | Acceptada |
-| [0033](0033-avaluacio-alertes-worker.md) | Avaluació de les alertes al worker després de cada recàlcul: una sola consulta, una decisió pura (índex ≥ mínim a les hores que queden de la nit; desempat per índex, distància i hora) i com a molt una notificació per alerta i nit a `notificacions_alertes`, que envia la TG-154 | Proposada |
+| [0033](0033-avaluacio-alertes-worker.md) | Avaluació de les alertes al worker després de cada recàlcul: una sola consulta, una decisió pura (índex ≥ mínim a les hores que queden de la nit, segons quan avisa cada alerta i sense comptes bloquejats; desempat per índex, distància i hora) i com a molt una notificació per alerta i nit a `notificacions_alertes`, que envia la TG-154 | Proposada |
 
 Decisions encara obertes: [pendents.md](pendents.md).
