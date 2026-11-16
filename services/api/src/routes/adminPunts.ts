@@ -7,11 +7,21 @@ import { ApiError } from '../middleware/errors';
 import { registry } from '../openapi';
 import { MATEIX_LLOC_M } from '../punts/puntsAdminRepository';
 import type { PuntsAdminService } from '../punts/puntsAdminService';
+import { isInCatalonia, MARGE_M } from '../visibilitat/catalunya';
 import { ERRORS_AUTH, errorResponse } from './auth';
 import { DireccioHoritzoSchema } from './punts';
 
-/** Catalunya amb marge, la caixa amb què es valida el catàleg (`data/scripts/punts.ts`). */
+/**
+ * Catalunya amb marge, la caixa amb què es valida el catàleg (`data/scripts/punts.ts`). Surt a
+ * l'OpenAPI i atura `lat` i `lon` intercanviades; el contorn de l'ICGC (`isInCatalonia`, el mateix
+ * de `/visibilitat`) treu el que hi cap sense ser Catalunya: Andorra, la Catalunya Nord, el mar…
+ */
 const CATALUNYA = { minLon: 0.15, maxLon: 3.35, minLat: 40.5, maxLat: 42.9 };
+const FORA_DE_CATALUNYA = `lat i lon: la ubicació ha de ser dins de Catalunya (límit de l'ICGC amb ${MARGE_M / 1000} km de marge)`;
+
+/** Un punt nou o mogut ha de ser dins del contorn de Catalunya (ADR-0031). */
+const dinsDeCatalunya = ({ lat, lon }: { lat?: number; lon?: number }) =>
+  lat === undefined || lon === undefined || isInCatalonia(lat, lon);
 /** Metres: la Pica d'Estats en fa 3.143. */
 const ALTITUD_MAXIMA = 3200;
 /** El rang que admet `punts_observacio.sqm` (ADR-0020). */
@@ -83,6 +93,7 @@ const camps = {
 
 const PuntAdminNouSchema: z.ZodType<PuntAdminNou> = z
   .strictObject({ slug: SlugSchema, ...camps })
+  .refine(dinsDeCatalunya, { error: FORA_DE_CATALUNYA, path: ['lat'] })
   .meta({ id: 'PuntAdminNou' });
 
 const PuntAdminCanvisSchema: z.ZodType<PuntAdminCanvis> = z
@@ -94,6 +105,7 @@ const PuntAdminCanvisSchema: z.ZodType<PuntAdminCanvis> = z
   .refine((canvis) => (canvis.lat === undefined) === (canvis.lon === undefined), {
     error: 'lat i lon es canvien junts',
   })
+  .refine(dinsDeCatalunya, { error: FORA_DE_CATALUNYA, path: ['lat'] })
   .meta({ id: 'PuntAdminCanvis' });
 
 const PuntAdminSchema: z.ZodType<PuntAdmin> = z

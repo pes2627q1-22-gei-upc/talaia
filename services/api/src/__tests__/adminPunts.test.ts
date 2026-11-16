@@ -259,6 +259,20 @@ describe('POST /api/v1/admin/punts', () => {
     expect(await idsAlMapa()).toEqual([MONTSEC.id]);
   });
 
+  it.each([
+    ['Llívia', 42.4636, 1.9786],
+    ['Gimenells', 41.652, 0.389],
+    ['Cap de Creus', 42.3191, 3.3164],
+  ])('accepta un punt a %s, a tocar de la ratlla o de la costa', async (nom, lat, lon) => {
+    const slug = `punt-a-${nom.toLowerCase().replaceAll(' ', '-').replaceAll('í', 'i')}`;
+    const res = await comAdmin(
+      request(app)
+        .post('/api/v1/admin/punts')
+        .send({ ...NOU, slug, lat, lon }),
+    );
+    expect(res.status).toBe(201);
+  });
+
   it('409 slug_already_exists si el slug ja és d’un altre punt', async () => {
     const res = await comAdmin(
       request(app)
@@ -277,6 +291,10 @@ describe('POST /api/v1/admin/punts', () => {
     ['un slug amb accents', { slug: 'mirador-de-sant-joan-d-àger' }],
     ['lat i lon intercanviades', { lat: NOU.lon, lon: NOU.lat }],
     ['un punt fora de Catalunya (Palma)', { lat: 39.5696, lon: 2.6502 }],
+    // Dins de la caixa, però fora del contorn de l'ICGC (`isInCatalonia`).
+    ['un punt a Andorra', { lat: 42.5063, lon: 1.5218 }],
+    ['un punt a la Catalunya Nord (Perpinyà)', { lat: 42.6986, lon: 2.8956 }],
+    ['un punt a la Franja (Fraga)', { lat: 41.5228, lon: 0.3497 }],
     ['una lat de text', { lat: '41.79' }],
     ['una altitud decimal', { altitud: 240.5 }],
     ['una altitud de més de 3.200 m', { altitud: 4000 }],
@@ -421,6 +439,7 @@ describe('PATCH /api/v1/admin/punts/{id}', () => {
     ['un estat de moderació', MONTSEC.id, { estat: 'REBUTJAT' }],
     ['un nom buit', MONTSEC.id, { nom: '' }],
     ['un punt fora de Catalunya (Tolosa)', MONTSEC.id, { lat: 43.6045, lon: 1.444 }],
+    ['moure el punt a Andorra', MONTSEC.id, { lat: 42.5063, lon: 1.5218 }],
   ])('400 validation_error amb %s', async (_cas, id, cos) => {
     const res = await patch(id, cos);
     expect(res.status).toBe(400);
