@@ -17,6 +17,7 @@ npm run api                   # = npm run dev -w services/api, amb recàrrega
 - Desglossament de l'índex d'un punt: `http://localhost:3000/api/v1/punts/{id}/index?nit=2026-10-19` (cal `DATABASE_URL`)
 - Perfil: `GET`, `POST` i `PATCH /api/v1/perfil` (cal el JWT de Supabase a `Authorization: Bearer`)
 - Favorits: `GET` i `POST /api/v1/favorits` i `DELETE /api/v1/favorits/{puntId}` (cal el JWT de Supabase)
+- Plans: `POST` i `GET /api/v1/plans` (`?quan=futurs|passats`) i `GET /api/v1/plans/{id}` (cal el JWT de Supabase)
 - Recomanacions: `http://localhost:3000/api/v1/recomanacions?objectiu=cel_estrellat&lat=41.39&lon=2.17&data=<YYYY-MM-DD>&desDe=22&finsA=6&tempsMaxim=150`; «a prop meu»: `…/recomanacions?lat=41.39&lon=2.17`
 - Visibilitat d'una ubicació qualsevol: `http://localhost:3000/api/v1/visibilitat?lat=41.95&lon=1.52` (no cal `DATABASE_URL`; amb `&hora=<ISO 8601>`, una altra hora)
 - Documentació (Swagger UI): <http://localhost:3000/api/v1/docs>
@@ -38,7 +39,7 @@ Es llegeixen del `.env` de l'**arrel** del repo (`dev` i `start` el carreguen am
 | Variable | Per defecte | Què és |
 |---|---|---|
 | `API_PORT` | `3000` | Port on escolta l'API |
-| `DATABASE_URL` | — | Postgres (`postgresql://…`). **Opcional:** sense ella l'API arrenca amb un avís, `/health` funciona i `/punts`, `/punts/{id}`, `/punts/{id}/index`, `/recomanacions`, `/perfil` i `/favorits` responen 503 `database_unavailable`, i `/visibilitat` funciona amb la foscor estimada. Amb Supabase local: `postgresql://postgres:postgres@127.0.0.1:54322/postgres` |
+| `DATABASE_URL` | — | Postgres (`postgresql://…`). **Opcional:** sense ella l'API arrenca amb un avís, `/health` funciona i `/punts`, `/punts/{id}`, `/punts/{id}/index`, `/recomanacions`, `/perfil`, `/favorits` i `/plans` responen 503 `database_unavailable`, i `/visibilitat` funciona amb la foscor estimada. Amb Supabase local: `postgresql://postgres:postgres@127.0.0.1:54322/postgres` |
 | `SUPABASE_URL` | `http://127.0.0.1:54321` | URL del projecte de Supabase. `requireAuth` hi valida els JWT amb el JWKS (`/auth/v1/.well-known/jwks.json`, ADR-0023): 401 si el token és dolent, 503 si Supabase no respon. Al compose de la VM és obligatòria |
 | `OPEN_METEO_BASE_URL` | `https://api.open-meteo.com/v1` | URL base d'Open-Meteo, la mateixa que fa servir el worker: `GET /visibilitat` hi demana la previsió de les ubicacions que no són al catàleg |
 | `APROP_API_KEY` | — | Secret de l'API assignat a Aprop. No s'inclou al repositori ni a l'app; sense configurar-lo, l'accés amb API key retorna 503, però l'accés JWT continua disponible. |
@@ -61,6 +62,7 @@ src/
     auth.ts             GET, POST i PATCH /perfil (JWT de Supabase, ADR-0023)
     admin.ts            GET /admin/me, GET /admin/usuaris i PATCH /admin/usuaris/{id} (ADR-0029)
     favorits.ts         POST, GET i DELETE /favorits: els punts favorits de l'usuari del JWT (HU25–HU27)
+    plans.ts            POST, GET i GET {id} /plans: els plans d'observació de l'usuari del JWT (HU12)
     puntIndex.ts        GET /punts/{id}/index: desglossament de l'índex per hores i factors (HU04)
     recomanacions.ts    GET /recomanacions (validació de la consulta i OpenAPI)
     visibilitat.ts      GET /visibilitat: índex d'una ubicació qualsevol (X-Cache i OpenAPI)
@@ -81,6 +83,9 @@ src/
   favorits/
     favoritsRepository.ts  Favorits d'un perfil amb @talaia/db: sempre filtrats pel perfil i pels punts publicats
     favoritsService.ts     Hora en curs de l'índex, 404 si el punt no és publicat i errors de la BD → 503
+  plans/
+    plansRepository.ts  Plans d'un perfil amb @talaia/db: sempre filtrats pel perfil, amb el punt (també si s'ha retirat)
+    plansService.ts     Nom del punt per idioma, 422 si el punt o l'esdeveniment no hi són, 404 i errors de la BD → 503
   recomanacions/
     franja.ts           Franja horària local de Catalunya (Europe/Madrid) → UTC, amb el canvi d'hora
     rutes.ts            Temps en cotxe ↔ radi en línia recta, fins que hi hagi Mobilicat
@@ -258,6 +263,34 @@ Els punts favorits de l'usuari autenticat (tipus `Favorit` i `FavoritNou` a `@ta
 - No hi ha límit de favorits: com a molt, un per punt del catàleg (clau primària `(perfil_id, punt_id)`).
 
 Errors: JWT absent o invàlid → 401 `unauthorized`; compte bloquejat → 403 `account_blocked`; cos o `puntId` invàlids → 400 `validation_error`; usuari sense perfil (no ha fet `POST /perfil`) → 404 `profile_not_found`; `POST` d'un punt que no existeix o no és publicat → 404 `punt_not_found`; sense `DATABASE_URL` o amb la base de dades caiguda → 503 `database_unavailable`.
+
+## `/plans` (HU12 · TG-156)
+
+Els plans d'observació de l'usuari autenticat (tipus `Pla`, `PlaNou` i `QuanPlans` a `@talaia/shared`, taula `plans`). Les tres rutes passen per `requireUser` (JWT de Supabase i compte no bloquejat) i responen amb `Cache-Control: no-store`. El nom del punt segueix `Accept-Language` (ca, es, en; reserva ca), com a `/punts`.
+
+- `POST /plans`: crea el pla i respon 201 amb el mateix `Pla` que el `GET`, punt inclòs, perquè l'app no l'hagi de tornar a demanar. Són obligatoris `puntId` (un punt `PUBLICAT`) i `dataHoraInici`; `esdevenimentId` (l'`id` de `GET /esdeveniments/{id}`, és a dir, el `codi`), `dataHoraFi` (posterior a l'inici), `calendariEventId` (≤ 255) i `notes` (≤ 1000) són opcionals. Les dates són ISO 8601 **amb zona** i es desen en UTC. No es comprova que la data sigui futura: ho fa l'app (TG-157). El cos és estricte: un camp de més (per exemple `perfilId`) és un 400.
+- `GET /plans`: tots els plans per data (`[]` si no en té cap). Amb `?quan=futurs`, els que encara no s'han acabat (`dataHoraFi`, o `dataHoraInici` si no en té, ≥ ara), del més proper al més llunyà. Amb `?quan=passats`, la resta, del més recent al més antic.
+- `GET /plans/{id}`: el pla. Si és d'un altre usuari, respon 404 igual que si no existís, per no revelar-ne l'existència.
+
+```json
+{
+  "id": "60fd5b2e-…",
+  "punt": { "id": "b0ccbb91-…", "nom": "Centre d'Observació de l'Univers", "municipi": "Àger", "publicat": true },
+  "esdevenimentId": "leonides-2026",
+  "dataHoraInici": "2026-11-17T21:00:00.000Z",
+  "dataHoraFi": "2026-11-18T01:00:00.000Z",
+  "calendariEventId": null,
+  "notes": "Portar el trípode",
+  "dataCreacio": "2026-11-16T18:07:31.752Z",
+  "dataActualitzacio": "2026-11-16T18:07:31.752Z"
+}
+```
+
+- **Només els de l'usuari:** el perfil és el que `requireUser` ja ha llegit a partir del `sub` del JWT (`req.account.perfilId`), mai el de la petició, i totes les consultes del repositori hi filtren a l'SQL (`where perfil_id = $1`). Esborrar el compte n'esborra els plans (`on delete cascade`, TG-167).
+- **Punts retirats:** només es pot crear un pla amb un punt `PUBLICAT`, però si el punt es retira després, el pla continua sortint amb `punt.publicat: false`: el `GET` no filtra per l'estat del punt. Si el punt s'esborra de debò, s'esborren els seus plans (vegeu P23 a `docs/decisions/pendents.md`).
+- `PATCH` (TG-161) i `DELETE` (TG-162) encara no hi són.
+
+Errors: JWT absent o invàlid → 401 `unauthorized`; compte bloquejat → 403 `account_blocked`; cos, `quan` o `id` invàlids (també `dataHoraFi` ≤ `dataHoraInici`) → 400 `validation_error`; usuari sense perfil → 404 `profile_not_found`; pla que no és de l'usuari → 404 `plan_not_found`; `POST` amb un punt que no existeix o no és publicat → 422 `punt_not_found`, o amb un esdeveniment que no existeix → 422 `esdeveniment_not_found`; sense `DATABASE_URL` o amb la base de dades caiguda → 503 `database_unavailable`.
 
 ## Rol d'administrador i comptes bloquejats (TG-177, HU41)
 
