@@ -41,6 +41,15 @@ export interface Alertes {
   perfilId: string;
 }
 
+export interface DispositiusPush {
+  dataActualitzacio: Generated<Timestamp>;
+  dataCreacio: Generated<Timestamp>;
+  id: Generated<string>;
+  perfilId: string;
+  plataforma: string;
+  token: string;
+}
+
 export interface EsdevenimentsAstronomics {
   codi: string;
   dataActualitzacio: Generated<Timestamp>;
@@ -168,6 +177,7 @@ export interface TipusFenomen {
 
 export interface DB {
   alertes: Alertes;
+  dispositiusPush: DispositiusPush;
   esdevenimentsAstronomics: EsdevenimentsAstronomics;
   estacionsXema: EstacionsXema;
   execucionsWorker: ExecucionsWorker;

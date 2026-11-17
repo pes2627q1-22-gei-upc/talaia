@@ -10,6 +10,13 @@
     "test": "jest"
   },
   "jest": {
+    "collectCoverageFrom": [
+      "src/**/*.ts",
+      "!src/**/__tests__/**",
+      "!src/**/*.test.ts",
+      "!src/**/*.d.ts",
+      "!src/schema.ts"
+    ],
     "preset": "ts-jest",
     "testEnvironment": "node"
   },

@@ -68,7 +68,11 @@
     "goToday": "Torna a avui",
     "events": "Fenòmens",
     "allMonth": "Mostra tot el mes",
-    "relative": { "today": "Avui", "tomorrow": "Demà", "past": "Passat" },
+    "relative": {
+      "today": "Avui",
+      "tomorrow": "Demà",
+      "past": "Passat"
+    },
     "filterLabel": "Filtra fenòmens: {{filter}}",
     "filterTitle": "Filtra fenòmens",
     "closeFilter": "Tanca els filtres",
@@ -80,7 +84,15 @@
       "sun": "Sol",
       "other": "Conjuncions"
     },
-    "weekdays": ["dl", "dt", "dc", "dj", "dv", "ds", "dg"],
+    "weekdays": [
+      "dl",
+      "dt",
+      "dc",
+      "dj",
+      "dv",
+      "ds",
+      "dg"
+    ],
     "filters": {
       "all": "Tots els fenòmens",
       "meteor": "Pluges d'estels",
@@ -301,7 +313,15 @@
       "rangeHint": "Franja horària",
       "picked": "{{weekday}} {{day}} {{month}}"
     },
-    "weekdays": ["dg.", "dl.", "dt.", "dc.", "dj.", "dv.", "ds."],
+    "weekdays": [
+      "dg.",
+      "dl.",
+      "dt.",
+      "dc.",
+      "dj.",
+      "dv.",
+      "ds."
+    ],
     "calendar": {
       "title": "Tria el dia",
       "close": "Tanca",
@@ -374,7 +394,10 @@
   "alerts": {
     "title": "Alertes",
     "soonTitle": "Aviat",
-    "soonMessage": "Aquí podràs crear alertes perquè t'avisem quan hi hagi bones condicions per al que vols veure."
+    "soonMessage": "Aquí podràs crear alertes perquè t'avisem quan hi hagi bones condicions per al que vols veure.",
+    "pushDenied": "Les notificacions estan desactivades: no t'avisarem al mòbil quan hi hagi bones condicions. Pots activar-les a la configuració.",
+    "pushUnavailable": "Aquest dispositiu no pot rebre notificacions. La resta de l'app funciona igual.",
+    "openSettings": "Obre la configuració"
   },
   "auth": {
     "signOut": "Tanca la sessió",
@@ -467,5 +490,8 @@
       "place_vowel": "Des d'{{place}}",
       "emptyHint": "Per anar més lluny, tria la distància a «Què vols veure?»."
     }
+  },
+  "notifications": {
+    "channelName": "Alertes del cel"
   }
 }

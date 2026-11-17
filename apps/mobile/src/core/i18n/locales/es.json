@@ -68,7 +68,11 @@
     "goToday": "Volver a hoy",
     "events": "Fenómenos",
     "allMonth": "Ver todo el mes",
-    "relative": { "today": "Hoy", "tomorrow": "Mañana", "past": "Pasado" },
+    "relative": {
+      "today": "Hoy",
+      "tomorrow": "Mañana",
+      "past": "Pasado"
+    },
     "filterLabel": "Filtrar fenómenos: {{filter}}",
     "filterTitle": "Filtrar fenómenos",
     "closeFilter": "Cerrar filtros",
@@ -80,7 +84,15 @@
       "sun": "Sol",
       "other": "Conjunciones"
     },
-    "weekdays": ["lu", "ma", "mi", "ju", "vi", "sá", "do"],
+    "weekdays": [
+      "lu",
+      "ma",
+      "mi",
+      "ju",
+      "vi",
+      "sá",
+      "do"
+    ],
     "filters": {
       "all": "Todos los fenómenos",
       "meteor": "Lluvias de estrellas",
@@ -301,7 +313,15 @@
       "rangeHint": "Franja horaria",
       "picked": "{{weekday}} {{day}} {{month}}"
     },
-    "weekdays": ["dom.", "lun.", "mar.", "mié.", "jue.", "vie.", "sáb."],
+    "weekdays": [
+      "dom.",
+      "lun.",
+      "mar.",
+      "mié.",
+      "jue.",
+      "vie.",
+      "sáb."
+    ],
     "calendar": {
       "title": "Elige el día",
       "close": "Cerrar",
@@ -374,7 +394,10 @@
   "alerts": {
     "title": "Alertas",
     "soonTitle": "Pronto",
-    "soonMessage": "Aquí podrás crear alertas para que te avisemos cuando haya buenas condiciones para lo que quieres ver."
+    "soonMessage": "Aquí podrás crear alertas para que te avisemos cuando haya buenas condiciones para lo que quieres ver.",
+    "pushDenied": "Las notificaciones están desactivadas: no te avisaremos en el móvil cuando haya buenas condiciones. Puedes activarlas en los ajustes.",
+    "pushUnavailable": "Este dispositivo no puede recibir notificaciones. El resto de la app funciona igual.",
+    "openSettings": "Abrir ajustes"
   },
   "auth": {
     "signOut": "Cerrar sesión",
@@ -467,5 +490,8 @@
       "place_vowel": "Desde {{place}}",
       "emptyHint": "Para ir más lejos, elige la distancia en «¿Qué quieres ver?»."
     }
+  },
+  "notifications": {
+    "channelName": "Alertas del cielo"
   }
 }
