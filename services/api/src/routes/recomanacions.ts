@@ -24,7 +24,8 @@ import { IndexHoraSchema } from '../index/indexSchemas';
 import { secondsToNextHour } from './punts';
 import { numeroAmb, senseBuits, type Numero } from './query';
 
-const OBJECTIUS = [
+/** Els valors d'`ObjectiuObservacio`; també els fan servir les alertes (TG-145). */
+export const OBJECTIUS = [
   'pluja_estels',
   'eclipsi',
   'via_lactia',
