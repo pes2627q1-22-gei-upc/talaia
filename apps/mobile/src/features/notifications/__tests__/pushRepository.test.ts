@@ -216,6 +216,36 @@ describe('pushRepository.unregisterDevice', () => {
       jest.useRealTimers();
     }
   });
+
+  it('després del temps d’espera, no esborra el token de la sessió següent', async () => {
+    let finishPut!: () => void;
+    jest.mocked(apiPut).mockReturnValueOnce(
+      new Promise<undefined>((resolve) => {
+        finishPut = () => resolve(undefined);
+      }),
+    );
+    jest.useFakeTimers();
+    try {
+      // Compte A: el PUT queda pendent i el logout s'acaba per temps.
+      const registrationA = pushRepository.registerDevice('Alertes');
+      await Promise.resolve();
+      const logoutA = pushRepository.unregisterDevice();
+      await jest.advanceTimersByTimeAsync(UNREGISTER_TIMEOUT_MS);
+      await logoutA;
+      // Compte B registra el mateix token del dispositiu.
+      await pushRepository.registerDevice('Alertes');
+      // Acaba el PUT d'A: el logout antic no ha d'esborrar el token de B.
+      finishPut();
+      await registrationA;
+      await jest.runAllTimersAsync();
+      expect(apiDelete).not.toHaveBeenCalled();
+    } finally {
+      jest.useRealTimers();
+    }
+    // El token continua registrat per a B: el seu logout l'esborra.
+    await pushRepository.unregisterDevice();
+    expect(apiDelete).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe('pushRepository.onTokenChange', () => {

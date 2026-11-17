@@ -126,12 +126,15 @@ export const pushRepository = {
   async unregisterDevice(): Promise<void> {
     const pending = pendingRegistration;
     if (!registeredToken && !pending) return;
+    const started = generation;
     let timer: ReturnType<typeof setTimeout> | undefined;
     const timeout = new Promise<void>((resolve) => {
       timer = setTimeout(resolve, UNREGISTER_TIMEOUT_MS);
     });
     const unregister = async () => {
       await pending;
+      // Si s'ha esgotat el temps, ja és una altra sessió: el seu token no s'ha de tocar.
+      if (generation !== started) return;
       const token = registeredToken;
       registeredToken = null;
       generation++;
