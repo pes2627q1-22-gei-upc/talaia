@@ -2,6 +2,7 @@ import { Router } from 'express';
 import swaggerUi from 'swagger-ui-express';
 
 import { version } from '../config/env';
+import type { AlertesStore } from '../alertes/alertesRepository';
 import type { EsdevenimentsService } from '../esdeveniments/esdevenimentsService';
 import type { FavoritsService } from '../favorits/favoritsService';
 import type { BreakdownService } from '../index/breakdownService';
@@ -12,6 +13,7 @@ import type { RecomanacionsService } from '../recomanacions/recomanacionsService
 import type { ProfileStore } from '../services/profileService';
 import type { VisibilitatService } from '../visibilitat/visibilitatService';
 import { createAdminRouter } from './admin';
+import { createAlertesRouter } from './alertes';
 import { createAuthRouter } from './auth';
 import { createEsdevenimentsRouter } from './esdeveniments';
 import './esdeveniments.contract';
@@ -36,6 +38,8 @@ export type ApiDeps = {
   supabaseUrl?: string;
   jwks?: JwksSource;
   profileStore?: ProfileStore;
+  /** `POST`, `GET` i `PATCH /alertes` (TG-145, TG-147). */
+  alertes?: AlertesStore;
   esdeveniments?: EsdevenimentsService;
   apropApiKey?: string;
   /** `POST`, `GET` i `DELETE /favorits` (TG-169). */
@@ -51,10 +55,11 @@ export function createApiRouter({
   supabaseUrl,
   jwks,
   profileStore,
+  alertes,
   esdeveniments,
   apropApiKey,
   favorits,
-}: ApiDeps & { profileStore: ProfileStore }): Router {
+}: ApiDeps & { profileStore: ProfileStore; alertes: AlertesStore }): Router {
   const router = Router();
   router.use('/health', healthRouter);
   router.use('/punts', createPuntsRouter(punts));
@@ -74,6 +79,7 @@ export function createApiRouter({
   });
   router.use(createAuthRouter({ requireUser, profileStore }));
   router.use('/admin', createAdminRouter({ requireUser, profileStore }));
+  router.use('/alertes', createAlertesRouter({ requireUser, store: alertes }));
   router.use('/favorits', createFavoritsRouter({ requireUser, service: favorits }));
 
   // Es genera quan ja s'han importat tots els routers, que són els que registren les rutes.
