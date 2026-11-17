@@ -65,7 +65,11 @@ const NOW = new Date(2026, 9, 21, 18, 7);
 
 async function renderVm(params: Partial<NewPlanParams> = {}) {
   const client = new QueryClient({
-    defaultOptions: { queries: { retry: false, gcTime: Infinity }, mutations: { retry: false } },
+    // Sense `gcTime` a les mutacions, en queda un temporitzador de 5 minuts i Jest no surt.
+    defaultOptions: {
+      queries: { retry: false, gcTime: Infinity },
+      mutations: { retry: false, gcTime: Infinity },
+    },
   });
   const invalidate = jest.spyOn(client, 'invalidateQueries');
   const wrapper = ({ children }: PropsWithChildren) => (
