@@ -5,7 +5,7 @@
  *   npm run astro -w services/worker -- 42.0294,0.7112            # la nit d'avui (UTC)
  *   npm run astro -w services/worker -- 42.0294,0.7112 2026-12-21 # una nit concreta
  */
-import { efemeridesHores, nitAstronomica, type LlocObservacio } from './astronomia';
+import { efemeridesHores, nitAstronomica, type LlocObservacio } from '@talaia/index';
 
 const MS_PER_HORA = 3_600_000;
 

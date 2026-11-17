@@ -2,12 +2,16 @@ import type { ApiErrorBody } from '@talaia/shared';
 import type { ErrorRequestHandler, RequestHandler } from 'express';
 import { ZodError } from 'zod';
 
-/** Error controlat: arriba al client com a `{ error: { code, message } }` amb aquest status. */
+/**
+ * Error controlat: arriba al client com a `{ error: { code, message } }` amb aquest status i, si
+ * n'hi ha, aquestes capçaleres (p. ex. `Retry-After` en un 429).
+ */
 export class ApiError extends Error {
   constructor(
     readonly status: number,
     readonly code: string,
     message: string,
+    readonly headers: Readonly<Record<string, string>> = {},
   ) {
     super(message);
     this.name = 'ApiError';
@@ -20,10 +24,13 @@ export const notFound: RequestHandler = (req, _res, next) => {
 
 /** Únic lloc on es construeixen les respostes d'error de l'API. */
 export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
-  const { status, code, message } = toApiError(err);
+  const { status, code, message, headers } = toApiError(err);
   // Un ApiError és un error previst (p. ex. 503 sense base de dades): qui el llança ja n'ha deixat rastre.
   if (status >= 500 && !(err instanceof ApiError)) console.error(err);
-  res.status(status).json({ error: { code, message } } satisfies ApiErrorBody);
+  res
+    .status(status)
+    .set(headers)
+    .json({ error: { code, message } } satisfies ApiErrorBody);
 };
 
 function toApiError(err: unknown): ApiError {
