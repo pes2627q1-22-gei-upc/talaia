@@ -1,5 +1,5 @@
 import { fakeDb } from '../../testing/fakeDb';
-import { createPlansRepository } from '../plansRepository';
+import { createPlansRepository, MAX_PLANS_FUTURS } from '../plansRepository';
 
 /**
  * L'SQL de `plansRepository` (TG-156) amb el fake de Kysely: la CI no té Postgres. El que s'hi
@@ -53,6 +53,11 @@ const SELECT_PLANS =
   'from "plans" as "pl" inner join "punts_observacio" as "p" on "p"."id" = "pl"."punt_id" ' +
   'where "pl"."perfil_id" = $1';
 
+/** Quan s'acaba un pla: `data_hora_fi` o, sense, el migdia de després de la nit de l'inici. */
+const FI_EFECTIU =
+  'coalesce("pl"."data_hora_fi", ((("pl"."data_hora_inici" at time zone $2) - interval \'12 hours\')::date + 1 + time \'12:00\') at time zone $3)';
+const TZ = 'Europe/Madrid';
+
 describe('plansRepository.list', () => {
   it('sense quan, tots els plans del perfil per data, també els d’un punt retirat', async () => {
     const { db, queries } = fakeDb([FILA, { ...FILA, id: 'altre', punt_estat: 'RETIRAT' }]);
@@ -68,15 +73,15 @@ describe('plansRepository.list', () => {
     expect(queries[0]?.parameters).toEqual([PERFIL]);
   });
 
-  it('futurs: els que no s’han acabat, del més proper al més llunyà', async () => {
+  it('futurs: els que no s’han acabat (sense fi, fins al final de la seva nit), del més proper', async () => {
     const { db, queries } = fakeDb([]);
 
     await createPlansRepository(db).list(PERFIL, 'futurs', ARA);
 
     expect(queries[0]?.sql).toBe(
-      `${SELECT_PLANS} and coalesce("pl"."data_hora_fi", "pl"."data_hora_inici") >= $2 order by "pl"."data_hora_inici" asc, "pl"."id"`,
+      `${SELECT_PLANS} and ${FI_EFECTIU} >= $4 order by "pl"."data_hora_inici" asc, "pl"."id"`,
     );
-    expect(queries[0]?.parameters).toEqual([PERFIL, ARA]);
+    expect(queries[0]?.parameters).toEqual([PERFIL, TZ, TZ, ARA]);
   });
 
   it('passats: els acabats, del més recent al més antic', async () => {
@@ -85,9 +90,9 @@ describe('plansRepository.list', () => {
     await createPlansRepository(db).list(PERFIL, 'passats', ARA);
 
     expect(queries[0]?.sql).toBe(
-      `${SELECT_PLANS} and coalesce("pl"."data_hora_fi", "pl"."data_hora_inici") < $2 order by "pl"."data_hora_inici" desc, "pl"."id"`,
+      `${SELECT_PLANS} and ${FI_EFECTIU} < $4 order by "pl"."data_hora_inici" desc, "pl"."id"`,
     );
-    expect(queries[0]?.parameters).toEqual([PERFIL, ARA]);
+    expect(queries[0]?.parameters).toEqual([PERFIL, TZ, TZ, ARA]);
   });
 
   it('un pla sense data de fi surt amb dataHoraFi: null', async () => {
@@ -123,29 +128,42 @@ describe('plansRepository.create', () => {
 
   const sqls = (queries: { sql: string }[]) => queries.map((q) => q.sql);
 
-  it('comprova el punt publicat i l’esdeveniment, insereix amb el perfil i retorna el pla amb el punt', async () => {
+  it('bloqueja el perfil, comprova punt, esdeveniment i límit, insereix i retorna el pla', async () => {
     const { db, queries } = fakeDb([
+      [{ id: PERFIL }],
       [{ id: MONTSEC }],
       [{ codi: 'leonides-2026' }],
+      [{ total: '0' }],
       [{ id: PLA }],
       [FILA],
     ]);
 
-    await expect(createPlansRepository(db).create(PERFIL, NOU)).resolves.toEqual({
+    await expect(createPlansRepository(db).create(PERFIL, NOU, ARA)).resolves.toEqual({
       ok: true,
       pla: PLA_AMB_TEXTOS,
     });
 
-    const [punt, esdeveniment, insert, select] = queries;
+    const [perfil, punt, esdeveniment, total, insert, select] = queries;
+    expect(perfil?.sql).toBe('select "id" from "perfils" where "id" = $1 for update');
+    expect(perfil?.parameters).toEqual([PERFIL]);
     expect(punt?.sql).toBe(
       'select "id" from "punts_observacio" where "id" = $1 and "estat" = $2 for share',
     );
     expect(punt?.parameters).toEqual([MONTSEC, 'PUBLICAT']);
-    expect(esdeveniment?.sql).toBe(
-      'select "codi" from "esdeveniments_astronomics" where "codi" = $1 for share',
+    // Els mateixos filtres que `GET /esdeveniments/{id}`: rellevant, publicable i d'un tipus públic.
+    expect(esdeveniment?.sql).toMatch(
+      /^select "e"\."codi" from "esdeveniments_astronomics" as "e" inner join "fenomens_astronomics" as "f" on "f"\."codi" = "e"\."fenomen_codi" where "e"\."rellevant_catalunya" = \$1 and "f"\."publicable_calendari" = \$2 and "f"\."tipus_codi" in \(.+\) and "e"\."codi" = \$\d+ for share$/,
     );
+    expect(esdeveniment?.parameters?.slice(0, 2)).toEqual([true, true]);
+    expect(esdeveniment?.parameters?.at(-1)).toBe('leonides-2026');
+    // Només compten els plans que no s'han acabat.
+    expect(total?.sql).toBe(
+      `select count(*) as "total" from "plans" as "pl" where "pl"."perfil_id" = $1 and ${FI_EFECTIU} >= $4`,
+    );
+    expect(total?.parameters).toEqual([PERFIL, TZ, TZ, ARA]);
     expect(insert?.sql).toBe(
-      'insert into "plans" ("perfil_id", "punt_id", "esdeveniment_id", "data_hora_inici", "data_hora_fi", "calendari_event_id", "notes") values ($1, $2, $3, $4, $5, $6, $7) returning "id"',
+      'insert into "plans" ("perfil_id", "punt_id", "esdeveniment_id", "data_hora_inici", "data_hora_fi", "calendari_event_id", "notes") values ($1, $2, $3, $4, $5, $6, $7) ' +
+        'on conflict ("perfil_id", "punt_id", "data_hora_inici") do nothing returning "id"',
     );
     // Les dates en UTC, sigui quina sigui la zona de l'entrada.
     expect(insert?.parameters).toEqual([
@@ -162,12 +180,22 @@ describe('plansRepository.create', () => {
   });
 
   it('sense esdeveniment no el busca i desa els opcionals a null', async () => {
-    const { db, queries } = fakeDb([[{ id: MONTSEC }], [{ id: PLA }], [FILA]]);
+    const { db, queries } = fakeDb([
+      [{ id: PERFIL }],
+      [{ id: MONTSEC }],
+      [{ total: '0' }],
+      [{ id: PLA }],
+      [FILA],
+    ]);
 
-    await createPlansRepository(db).create(PERFIL, {
-      puntId: MONTSEC,
-      dataHoraInici: '2026-11-20T21:00:00Z',
-    });
+    await createPlansRepository(db).create(
+      PERFIL,
+      {
+        puntId: MONTSEC,
+        dataHoraInici: '2026-11-20T21:00:00Z',
+      },
+      ARA,
+    );
 
     expect(sqls(queries).some((sql) => sql.includes('esdeveniments_astronomics'))).toBe(false);
     const insert = queries.find((q) => q.sql.startsWith('insert'));
@@ -183,22 +211,53 @@ describe('plansRepository.create', () => {
   });
 
   it('amb un punt que no és publicat (o no existeix), punt_not_found i no insereix', async () => {
-    const { db, queries } = fakeDb([[], []]);
+    const { db, queries } = fakeDb([[{ id: PERFIL }], []]);
 
-    await expect(createPlansRepository(db).create(PERFIL, NOU)).resolves.toEqual({
+    await expect(createPlansRepository(db).create(PERFIL, NOU, ARA)).resolves.toEqual({
       ok: false,
       reason: 'punt_not_found',
     });
     expect(sqls(queries).some((sql) => sql.startsWith('insert'))).toBe(false);
   });
 
-  it('amb un esdeveniment que no existeix, event_not_found i no insereix', async () => {
-    const { db, queries } = fakeDb([[{ id: MONTSEC }], []]);
+  it('amb un esdeveniment que no existeix o no és públic, event_not_found i no insereix', async () => {
+    const { db, queries } = fakeDb([[{ id: PERFIL }], [{ id: MONTSEC }], []]);
 
-    await expect(createPlansRepository(db).create(PERFIL, NOU)).resolves.toEqual({
+    await expect(createPlansRepository(db).create(PERFIL, NOU, ARA)).resolves.toEqual({
       ok: false,
       reason: 'event_not_found',
     });
     expect(sqls(queries).some((sql) => sql.startsWith('insert'))).toBe(false);
+  });
+
+  it(`amb ${MAX_PLANS_FUTURS} plans pendents, limit i no insereix`, async () => {
+    const { db, queries } = fakeDb([
+      [{ id: PERFIL }],
+      [{ id: MONTSEC }],
+      [{ codi: 'leonides-2026' }],
+      [{ total: String(MAX_PLANS_FUTURS) }],
+    ]);
+
+    await expect(createPlansRepository(db).create(PERFIL, NOU, ARA)).resolves.toEqual({
+      ok: false,
+      reason: 'limit',
+    });
+    expect(sqls(queries).some((sql) => sql.startsWith('insert'))).toBe(false);
+  });
+
+  it('si ja hi ha un pla al mateix punt i hora (on conflict no retorna res), duplicate', async () => {
+    const { db, queries } = fakeDb([
+      [{ id: PERFIL }],
+      [{ id: MONTSEC }],
+      [{ codi: 'leonides-2026' }],
+      [{ total: '1' }],
+      [],
+    ]);
+
+    await expect(createPlansRepository(db).create(PERFIL, NOU, ARA)).resolves.toEqual({
+      ok: false,
+      reason: 'duplicate',
+    });
+    expect(queries).toHaveLength(5);
   });
 });

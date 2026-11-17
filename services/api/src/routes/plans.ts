@@ -75,7 +75,7 @@ const PlansQuerySchema = z.object({
     .optional()
     .meta({
       description:
-        'Futurs: els que no s’han acabat (`dataHoraFi`, o `dataHoraInici` si no en té), del més proper al més llunyà. Passats: la resta, del més recent al més antic. Sense: tots, per data.',
+        'Futurs: els que no s’han acabat (a `dataHoraFi` o, si no en té, a les 12:00 locals de després de la nit de `dataHoraInici`), del més proper al més llunyà. Passats: la resta, del més recent al més antic. Sense: tots, per data.',
     }),
 });
 
@@ -118,7 +118,7 @@ registry.registerPath({
   security: [{ BearerSupabase: [] }],
   summary: 'Crea un pla d’observació de l’usuari autenticat (HU12)',
   description:
-    'Només es pot crear amb un punt publicat. Respon el mateix `Pla` que el GET. Les dates es desen en UTC.',
+    'Només es pot crear amb un punt publicat i, si n’hi ha, un esdeveniment que `GET /esdeveniments/{id}` retorni. Com a molt 20 plans pendents (els passats no hi compten) i un sol pla per punt i hora d’inici. Respon el mateix `Pla` que el GET. Les dates es desen en UTC.',
   request: {
     headers: AcceptLanguageHeaders,
     body: { required: true, content: { 'application/json': { schema: PlaNouSchema } } },
@@ -132,8 +132,11 @@ registry.registerPath({
       '`validation_error`: el cos no és vàlid (també si `dataHoraFi` no és posterior a `dataHoraInici`)',
     ),
     404: errorResponse(NO_PROFILE),
+    409: errorResponse(
+      '`plan_limit_reached`: ja té 20 plans pendents; `plan_already_exists`: ja té un pla en aquest punt a la mateixa hora d’inici',
+    ),
     422: errorResponse(
-      '`punt_not_found`: cap punt publicat amb aquest id; `event_not_found`: cap esdeveniment amb aquest id',
+      '`punt_not_found`: cap punt publicat amb aquest id; `event_not_found`: cap esdeveniment públic amb aquest id (el de `GET /esdeveniments/{id}`)',
     ),
     ...ERRORS_AUTH,
   },

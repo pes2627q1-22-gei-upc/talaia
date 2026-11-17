@@ -25,6 +25,9 @@ create table public.plans (
 
 -- «Els meus plans» (TG-160): sempre els d'un perfil, ordenats per data.
 create index plans_perfil_data_idx on public.plans (perfil_id, data_hora_inici);
+-- El mateix punt a la mateixa hora és el mateix pla: un doble toc a «Crea el pla» no en crea dos
+-- (409 `plan_already_exists`).
+create unique index plans_perfil_punt_inici_key on public.plans (perfil_id, punt_id, data_hora_inici);
 -- Per a l'esborrat en cascada quan s'esborra un punt.
 create index plans_punt_id_idx on public.plans (punt_id);
 

@@ -57,7 +57,7 @@ describe('plansService', () => {
     await service(repo).list(PERFIL, 'futurs');
     await service(repo).get(PERFIL, PLA);
 
-    expect(repo.create).toHaveBeenCalledWith(PERFIL, NOU);
+    expect(repo.create).toHaveBeenCalledWith(PERFIL, NOU, ARA);
     expect(repo.list).toHaveBeenCalledWith(PERFIL, 'futurs', ARA);
     expect(repo.findById).toHaveBeenCalledWith(PERFIL, PLA);
   });
@@ -81,6 +81,14 @@ describe('plansService', () => {
     await expect(
       service(repo).create(PERFIL, { ...NOU, esdevenimentId: 'leonides-2026' }),
     ).rejects.toMatchObject({ status: 422, code });
+  });
+
+  it.each([
+    ['limit', 'plan_limit_reached'],
+    ['duplicate', 'plan_already_exists'],
+  ] as const)('amb %s del repositori respon 409 %s', async (reason, code) => {
+    const repo = repository({ create: jest.fn(async () => ({ ok: false, reason }) as const) });
+    await expect(service(repo).create(PERFIL, NOU)).rejects.toMatchObject({ status: 409, code });
   });
 
   it('un pla que no és del perfil respon 404 plan_not_found', async () => {

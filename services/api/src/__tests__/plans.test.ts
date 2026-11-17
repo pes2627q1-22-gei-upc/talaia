@@ -3,7 +3,12 @@ import { createLocalJWKSet, exportJWK, generateKeyPair, SignJWT } from 'jose';
 import request from 'supertest';
 
 import { createApp } from '../app';
-import type { PlaAmbTextos, PlansRepository } from '../plans/plansRepository';
+import { defaultNight, nightWindow } from '../index/night';
+import {
+  MAX_PLANS_FUTURS,
+  type PlaAmbTextos,
+  type PlansRepository,
+} from '../plans/plansRepository';
 import { createPlansService } from '../plans/plansService';
 import type { ProfileStore } from '../services/profileService';
 
@@ -51,17 +56,30 @@ const profileStore = {
 function memoryRepository() {
   const files: { perfilId: string; pla: Omit<PlaAmbTextos, 'punt'> & { puntId: string } }[] = [];
   let seguent = 1;
+  /** Com `fiEfectiu`: sense `dataHoraFi`, el pla dura fins al final de la nit de l'inici. */
+  const fi = (p: (typeof files)[number]['pla']) =>
+    p.dataHoraFi
+      ? Date.parse(p.dataHoraFi)
+      : +nightWindow(defaultNight(new Date(p.dataHoraInici))).to;
   const ambPunt = ({ puntId, ...pla }: (typeof files)[number]['pla']): PlaAmbTextos => ({
     ...pla,
     punt: { id: puntId, ...PUNTS[puntId]!, publicat: !retirats.has(puntId) },
   });
   const repo: jest.Mocked<PlansRepository> = {
-    create: jest.fn(async (perfilId: string, nou: PlaNou) => {
+    create: jest.fn(async (perfilId: string, nou: PlaNou, ara: Date) => {
       if (!PUNTS[nou.puntId] || retirats.has(nou.puntId)) {
         return { ok: false, reason: 'punt_not_found' } as const;
       }
       if (nou.esdevenimentId && nou.esdevenimentId !== LEONIDES) {
         return { ok: false, reason: 'event_not_found' } as const;
+      }
+      const delPerfil = files.filter((f) => f.perfilId === perfilId).map((f) => f.pla);
+      if (delPerfil.filter((p) => fi(p) >= +ara).length >= MAX_PLANS_FUTURS) {
+        return { ok: false, reason: 'limit' } as const;
+      }
+      const inici = new Date(nou.dataHoraInici).toISOString();
+      if (delPerfil.some((p) => p.puntId === nou.puntId && p.dataHoraInici === inici)) {
+        return { ok: false, reason: 'duplicate' } as const;
       }
       const pla = {
         id: `00000000-0000-4000-8000-${String(seguent++).padStart(12, '0')}`,
@@ -78,7 +96,6 @@ function memoryRepository() {
       return { ok: true, pla: ambPunt(pla) } as const;
     }),
     list: jest.fn(async (perfilId: string, quan, ara: Date) => {
-      const fi = (p: (typeof files)[number]['pla']) => Date.parse(p.dataHoraFi ?? p.dataHoraInici);
       return files
         .filter((f) => f.perfilId === perfilId)
         .map((f) => f.pla)
@@ -174,7 +191,7 @@ describe('POST /api/v1/plans', () => {
       dataActualitzacio: '2026-11-16T10:00:00.000Z',
     });
     // El perfil surt del JWT (via requireUser), no de la petició.
-    expect(repo.create).toHaveBeenCalledWith(MARIA.perfil, NOU);
+    expect(repo.create).toHaveBeenCalledWith(MARIA.perfil, NOU, ARA);
     expect((await llegeix(MARIA.auth, res.body.id)).body).toEqual(res.body);
   });
 
@@ -236,6 +253,27 @@ describe('POST /api/v1/plans', () => {
     expect(repo.create).not.toHaveBeenCalled();
   });
 
+  it('el mateix punt a la mateixa hora (un doble toc) respon 409 plan_already_exists', async () => {
+    expect((await crea(MARIA.auth, NOU)).status).toBe(201);
+    const res = await crea(MARIA.auth, { ...NOU, dataHoraInici: '2026-11-17T21:00:00Z' });
+    expect(res.status).toBe(409);
+    expect(res.body.error.code).toBe('plan_already_exists');
+    expect((await llista(MARIA.auth)).body).toHaveLength(1);
+    // Un altre usuari sí que el pot crear.
+    expect((await crea(PERE.auth, NOU)).status).toBe(201);
+  });
+
+  it(`amb ${MAX_PLANS_FUTURS} plans pendents respon 409 plan_limit_reached; els passats no hi compten`, async () => {
+    await crea(MARIA.auth, { puntId: MONTSEC, dataHoraInici: '2026-11-01T21:00:00Z' });
+    for (let dia = 1; dia <= MAX_PLANS_FUTURS; dia++) {
+      const data = new Date(Date.UTC(2026, 11, dia, 21)).toISOString();
+      expect((await crea(MARIA.auth, { puntId: MONTSEC, dataHoraInici: data })).status).toBe(201);
+    }
+    const res = await crea(MARIA.auth, { puntId: PRADES, dataHoraInici: '2026-12-25T21:00:00Z' });
+    expect(res.status).toBe(409);
+    expect(res.body.error.code).toBe('plan_limit_reached');
+  });
+
   it("respon 404 profile_not_found si l'usuari no ha fet POST /perfil", async () => {
     const res = await crea(SENSE_PERFIL, NOU);
     expect(res.status).toBe(404);
@@ -277,6 +315,16 @@ describe('GET /api/v1/plans', () => {
     const res = await llista(MARIA.auth, '?quan=futurs');
     expect(inicis(res)).toEqual(['2026-11-16T11:00:00.000Z', '2026-11-17T21:00:00.000Z']);
     expect(repo.list).toHaveBeenCalledWith(MARIA.perfil, 'futurs', ARA);
+  });
+
+  it('sense dataHoraFi, un pla és futur fins al migdia de després de la seva nit', async () => {
+    // A les 03:00 locals del 16: de la nit del 15, que s'ha acabat a les 12:00 (ARA són les 13:00).
+    await crea(MARIA.auth, { puntId: MONTSEC, dataHoraInici: '2026-11-16T02:00:00Z' });
+    // A les 12:30 locals del 16: ja ha començat, però és de la nit del 16, que dura fins demà a migdia.
+    await crea(MARIA.auth, { puntId: PRADES, dataHoraInici: '2026-11-16T11:30:00Z' });
+
+    expect(inicis(await llista(MARIA.auth, '?quan=futurs'))).toEqual(['2026-11-16T11:30:00.000Z']);
+    expect(inicis(await llista(MARIA.auth, '?quan=passats'))).toEqual(['2026-11-16T02:00:00.000Z']);
   });
 
   it('?quan=passats: els acabats, del més recent al més antic', async () => {
