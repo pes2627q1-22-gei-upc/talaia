@@ -27,6 +27,29 @@ export type Numeric = ColumnType<string, number | string, number | string>;
 
 export type Timestamp = ColumnType<Date, Date | string, Date | string>;
 
+export interface Alertes {
+  activa: Generated<boolean>;
+  avisaEnArribar: boolean;
+  dataActualitzacio: Generated<Timestamp>;
+  dataCreacio: Generated<Timestamp>;
+  distanciaMaxKm: number;
+  horaAvis: number | null;
+  id: Generated<string>;
+  indexMinim: number;
+  objectiu: string;
+  origen: string;
+  perfilId: string;
+}
+
+export interface DispositiusPush {
+  dataActualitzacio: Generated<Timestamp>;
+  dataCreacio: Generated<Timestamp>;
+  id: Generated<string>;
+  perfilId: string;
+  plataforma: string;
+  token: string;
+}
+
 export interface EsdevenimentsAstronomics {
   codi: string;
   dataActualitzacio: Generated<Timestamp>;
@@ -153,6 +176,8 @@ export interface TipusFenomen {
 }
 
 export interface DB {
+  alertes: Alertes;
+  dispositiusPush: DispositiusPush;
   esdevenimentsAstronomics: EsdevenimentsAstronomics;
   estacionsXema: EstacionsXema;
   execucionsWorker: ExecucionsWorker;

@@ -1,8 +1,14 @@
 import { useTranslation } from 'react-i18next';
+import { StyleSheet } from 'react-native';
 
-import { colors } from '@/core/theme/tokens';
+import { colors, spacing } from '@/core/theme/tokens';
+import { AppText } from '@/shared/ui/AppText';
+import { Button } from '@/shared/ui/Button';
+import { Card } from '@/shared/ui/Card';
 import { Screen } from '@/shared/ui/Screen';
 import { StateMessage } from '@/shared/ui/StateMessage';
+
+import { useAlertsViewModel } from './useAlertsViewModel';
 
 const bellIcon = {
   uri: `data:image/svg+xml;utf8,${encodeURIComponent(
@@ -10,11 +16,26 @@ const bellIcon = {
   )}`,
 };
 
-/** Pestanya d'alertes (mockups 10 i 11): arriba en un altre sprint. */
+/** Pestanya d'alertes (mockups 10 i 11): la llista arriba amb la TG-148. */
 export function AlertsScreen() {
   const { t } = useTranslation();
+  const { pushNotice } = useAlertsViewModel();
   return (
     <Screen title={t('alerts.title')}>
+      {pushNotice ? (
+        <Card style={styles.notice}>
+          <AppText variant="small" color="boira">
+            {pushNotice.message}
+          </AppText>
+          {pushNotice.action ? (
+            <Button
+              variant="text"
+              label={pushNotice.action.label}
+              onPress={pushNotice.action.onPress}
+            />
+          ) : null}
+        </Card>
+      ) : null}
       <StateMessage
         icon={bellIcon}
         fill
@@ -24,3 +45,5 @@ export function AlertsScreen() {
     </Screen>
   );
 }
+
+const styles = StyleSheet.create({ notice: { gap: spacing.sm } });

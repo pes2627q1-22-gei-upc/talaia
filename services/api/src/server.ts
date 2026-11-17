@@ -1,6 +1,7 @@
 import { createDb } from '@talaia/db';
 import { createOpenMeteoClient } from '@talaia/index';
 
+import { createDatabaseAlertesStore } from './alertes/alertesRepository';
 import { createApp } from './app';
 import { loadEnv } from './config/env';
 import { createEsdevenimentsRepository } from './esdeveniments/esdevenimentsRepository';
@@ -13,6 +14,7 @@ import { createDefaultPuntsService } from './punts/puntsService';
 import { createRecomanacionsRepository } from './recomanacions/recomanacionsRepository';
 import { createRecomanacionsService } from './recomanacions/recomanacionsService';
 import { createDatabaseProfileStore } from './services/profileService';
+import { createDatabasePushDeviceStore } from './services/pushDeviceService';
 import { createSqmRepository } from './visibilitat/sqmRepository';
 import { createVisibilitatService } from './visibilitat/visibilitatService';
 
@@ -22,6 +24,8 @@ let punts;
 let breakdown;
 let recomanacions;
 let profileStore;
+let alertes;
+let dispositius;
 let esdeveniments;
 let favorits;
 let sqm;
@@ -38,12 +42,14 @@ if (env.DATABASE_URL) {
   breakdown = createBreakdownService(puntsRepository);
   recomanacions = createRecomanacionsService(createRecomanacionsRepository(db));
   profileStore = createDatabaseProfileStore(db);
+  alertes = createDatabaseAlertesStore(db);
+  dispositius = createDatabasePushDeviceStore(db);
   esdeveniments = createEsdevenimentsService(createEsdevenimentsRepository(db));
   favorits = createFavoritsService(createFavoritsRepository(db));
   sqm = createSqmRepository(db);
 } else {
   console.warn(
-    'Avís: sense DATABASE_URL. /api/v1/health funciona, però /api/v1/punts, /api/v1/punts/{id}/index, /api/v1/recomanacions, /api/v1/perfil, /api/v1/favorits i /api/v1/esdeveniments responen 503. /api/v1/visibilitat funciona amb la foscor estimada.',
+    'Avís: sense DATABASE_URL. /api/v1/health funciona, però /api/v1/punts, /api/v1/punts/{id}/index, /api/v1/recomanacions, /api/v1/perfil (i /perfil/dispositius), /api/v1/alertes, /api/v1/favorits i /api/v1/esdeveniments responen 503. /api/v1/visibilitat funciona amb la foscor estimada.',
   );
 }
 
@@ -61,6 +67,8 @@ createApp({
   recomanacions,
   visibilitat,
   profileStore,
+  alertes,
+  dispositius,
   esdeveniments,
   favorits,
 }).listen(env.API_PORT, (error) => {
