@@ -38,10 +38,15 @@ if (env.DATABASE_URL) {
   const puntsRepository = createPuntsRepository(db);
   punts = createDefaultPuntsService(puntsRepository);
   breakdown = createBreakdownService(puntsRepository);
-  recomanacions = createRecomanacionsService(createRecomanacionsRepository(db));
+  const esdevenimentsRepository = createEsdevenimentsRepository(db);
+  recomanacions = createRecomanacionsService(
+    createRecomanacionsRepository(db),
+    undefined,
+    esdevenimentsRepository,
+  );
   profileStore = createDatabaseProfileStore(db);
   alertes = createDatabaseAlertesStore(db);
-  esdeveniments = createEsdevenimentsService(createEsdevenimentsRepository(db));
+  esdeveniments = createEsdevenimentsService(esdevenimentsRepository);
   favorits = createFavoritsService(createFavoritsRepository(db));
   sqm = createSqmRepository(db);
 } else {
