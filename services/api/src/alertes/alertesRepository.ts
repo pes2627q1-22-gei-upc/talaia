@@ -29,6 +29,8 @@ export type AlertesStore = {
   list: (perfilId: string) => Promise<Alerta[]>;
   /** Aplica els canvis a una alerta del perfil (TG-147). */
   update: (perfilId: string, id: string, canvis: AlertaCanvis) => Promise<UpdateAlertaResult>;
+  /** Esborra una alerta del perfil (TG-150). `false` si el perfil no en té cap amb aquest `id`. */
+  remove: (perfilId: string, id: string) => Promise<boolean>;
 };
 
 const COLUMNES = [
@@ -137,6 +139,17 @@ export function createDatabaseAlertesStore(db: Db): AlertesStore {
           .executeTakeFirstOrThrow();
         return { ok: true, alerta: toAlerta(row) } as const;
       });
+    },
+
+    async remove(perfilId, id) {
+      // Amb `returning` sabem si s'ha esborrat alguna fila: una alerta d'un altre perfil no coincideix.
+      const row = await db
+        .deleteFrom('alertes')
+        .where('id', '=', id)
+        .where('perfilId', '=', perfilId)
+        .returning('id')
+        .executeTakeFirst();
+      return row !== undefined;
     },
   };
 }

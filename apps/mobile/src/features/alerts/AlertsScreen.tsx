@@ -1,5 +1,9 @@
-import { colors } from '@/core/theme/tokens';
+import { StyleSheet } from 'react-native';
+
+import { colors, spacing } from '@/core/theme/tokens';
+import { AppText } from '@/shared/ui/AppText';
 import { Button } from '@/shared/ui/Button';
+import { Card } from '@/shared/ui/Card';
 import { Screen } from '@/shared/ui/Screen';
 import { StateMessage } from '@/shared/ui/StateMessage';
 
@@ -11,13 +15,29 @@ const bellIcon = {
   )}`,
 };
 
-/** Pestanya d'alertes: de moment, només el camí a «Nova alerta» (la llista és TG-148). */
+/** Pestanya d'alertes: l'avís de notificacions i el camí a «Nova alerta» (la llista és TG-148). */
 export function AlertsScreen() {
   const vm = useAlertsViewModel();
   return (
     <Screen title={vm.title}>
+      {vm.pushNotice ? (
+        <Card style={styles.notice}>
+          <AppText variant="small" color="boira">
+            {vm.pushNotice.message}
+          </AppText>
+          {vm.pushNotice.action ? (
+            <Button
+              variant="text"
+              label={vm.pushNotice.action.label}
+              onPress={vm.pushNotice.action.onPress}
+            />
+          ) : null}
+        </Card>
+      ) : null}
       <StateMessage icon={bellIcon} fill title={vm.soonTitle} message={vm.soonMessage} />
       <Button label={vm.create.label} onPress={vm.create.onPress} haptic />
     </Screen>
   );
 }
+
+const styles = StyleSheet.create({ notice: { gap: spacing.sm } });
