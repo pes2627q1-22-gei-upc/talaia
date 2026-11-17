@@ -2,6 +2,7 @@ import type { ApiErrorBody } from '@talaia/shared';
 
 import { getAccessToken } from '@/core/auth/accessToken';
 import { env } from '@/core/config/env';
+import i18n, { DEFAULT_LANGUAGE, isSupportedLanguage } from '@/core/i18n';
 
 import { ACCOUNT_BLOCKED, accountBlocked } from './accountBlocked';
 
@@ -59,6 +60,26 @@ function jsonInit(method: string, body: unknown, init?: RequestInit): RequestIni
   };
 }
 
+/** `PUT` amb cos JSON; un `204` es resol amb `undefined` (`/perfil/dispositius`, TG-152). */
+export async function apiPut<T = void>(
+  path: string,
+  body: unknown,
+  init?: RequestInit,
+): Promise<T> {
+  const headers = new Headers(init?.headers);
+  headers.set('Content-Type', 'application/json');
+  return apiRequest<T>(buildUrl(path), {
+    ...init,
+    method: 'PUT',
+    headers,
+    body: JSON.stringify(body),
+  });
+}
+
+export async function apiDelete<T = void>(path: string, init?: RequestInit): Promise<T> {
+  return apiRequest<T>(buildUrl(path), { ...init, method: 'DELETE' });
+}
+
 async function apiRequest<T>(url: string, init: RequestInit): Promise<T> {
   // Els repositories només poden enviar el JWT a l'API configurada.
   if (new URL(url).origin !== new URL(env.apiUrl).origin) {
@@ -66,6 +87,10 @@ async function apiRequest<T>(url: string, init: RequestInit): Promise<T> {
   }
   const headers = new Headers(init.headers);
   if (!headers.has('Accept')) headers.set('Accept', 'application/json');
+  if (!headers.has('Accept-Language')) {
+    const language = i18n.resolvedLanguage;
+    headers.set('Accept-Language', isSupportedLanguage(language) ? language : DEFAULT_LANGUAGE);
+  }
   const token = await getAccessToken();
   // La sessió actual és l'única font d'autorització, també després d'un logout.
   headers.delete('Authorization');
@@ -97,6 +122,8 @@ async function apiRequest<T>(url: string, init: RequestInit): Promise<T> {
       }
       throw error;
     }
+    // Sense cos (`PUT`/`DELETE` que responen 204).
+    if (response.status === 204) return undefined as T;
     return (await response.json()) as T;
   } catch (error) {
     // Un ApiError < 500, perquè TanStack Query no hi torni (3 × 15 s d'esquelet) i es pugui

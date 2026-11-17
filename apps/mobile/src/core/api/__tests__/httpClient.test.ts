@@ -1,3 +1,5 @@
+import i18n from '@/core/i18n';
+
 import { getAccessToken } from '@/core/auth/accessToken';
 
 import { accountBlocked } from '../accountBlocked';
@@ -32,6 +34,31 @@ describe('apiGet', () => {
       .fn()
       .mockResolvedValue(new Response(JSON.stringify({ data: [1] }), { status: 200 }));
     await expect(apiGet<{ data: number[] }>('/punts')).resolves.toEqual({ data: [1] });
+  });
+
+  it('envia l’idioma actual a GET i POST, també després de canviar-lo', async () => {
+    const request = jest.fn().mockImplementation(() => Promise.resolve(new Response('{}')));
+    globalThis.fetch = request;
+    for (const language of ['ca', 'es', 'en']) {
+      await i18n.changeLanguage(language);
+      await apiGet('/punts');
+      await apiPost('/perfil');
+    }
+    expect(
+      request.mock.calls.map((call) =>
+        new Headers((call[1] as RequestInit).headers).get('Accept-Language'),
+      ),
+    ).toEqual(['ca', 'ca', 'es', 'es', 'en', 'en']);
+    await i18n.changeLanguage('ca');
+  });
+
+  it('conserva una preferència explícita del repositori', async () => {
+    const request = jest.fn().mockResolvedValue(new Response('{}'));
+    globalThis.fetch = request;
+    await apiGet('/esdeveniments/one', undefined, { headers: { 'Accept-Language': 'en' } });
+    expect(
+      new Headers((request.mock.calls[0]![1] as RequestInit).headers).get('Accept-Language'),
+    ).toBe('en');
   });
 
   it('converteix { error: { code, message } } en un ApiError', async () => {

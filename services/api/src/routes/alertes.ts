@@ -199,6 +199,24 @@ registry.registerPath({
   },
 });
 
+registry.registerPath({
+  method: 'delete',
+  path: '/alertes/{id}',
+  tags: ['Alertes'],
+  summary: 'Esborra una alerta de l’usuari autenticat (HU20)',
+  description:
+    'Esborrada, l’alerta ja no notifica. Una alerta d’un altre usuari respon igual que una que no existeix.',
+  request: { params: AlertaParamsSchema },
+  responses: {
+    204: { description: 'L’alerta s’ha esborrat' },
+    400: errorResponse('`validation_error`: l’`id` no és un UUID'),
+    404: errorResponse(
+      '`alert_not_found`: l’usuari no té cap alerta amb aquest `id`; `profile_not_found`: encara no té perfil',
+    ),
+    ...ERRORS_AUTH,
+  },
+});
+
 const profileNotFound = () =>
   new ApiError(404, 'profile_not_found', "L'usuari encara no té perfil (cal POST /perfil)");
 
@@ -270,9 +288,23 @@ export function createAlertesRouter({ requireUser, store }: AlertesRouterOptions
     }
   };
 
+  const handleDelete = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const perfilId = currentPerfilId(req);
+      if (!perfilId) return next(profileNotFound());
+      const { id } = AlertaParamsSchema.parse(req.params);
+      if (!(await store.remove(perfilId, id))) return next(alertNotFound());
+      res.set('Cache-Control', 'no-store').status(204).end();
+      return undefined;
+    } catch (error) {
+      return next(error);
+    }
+  };
+
   router.post('/', requireUser, handleCreate);
   router.get('/', requireUser, handleList);
   router.patch('/:id', requireUser, handleUpdate);
+  router.delete('/:id', requireUser, handleDelete);
 
   return router;
 }

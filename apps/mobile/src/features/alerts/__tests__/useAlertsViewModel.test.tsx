@@ -1,14 +1,20 @@
 import type { Alerta } from '@talaia/shared';
 import { act, renderHook, waitFor } from '@testing-library/react-native';
 import { useRouter } from 'expo-router';
+import { Linking } from 'react-native';
 
 import i18n from '@/core/i18n';
+import { usePushPermission } from '@/features/notifications/PushRegistrationProvider';
+import type { PushRegistrationState } from '@/features/notifications/usePushRegistration';
 import { createQueryWrapper } from '@/test-utils/queryWrapper';
 
 import { alertsRepository } from '../alertsRepository';
 import { useAlertsViewModel } from '../useAlertsViewModel';
 
 jest.mock('expo-router', () => ({ useRouter: jest.fn() }));
+jest.mock('@/features/notifications/PushRegistrationProvider', () => ({
+  usePushPermission: jest.fn(),
+}));
 jest.mock('../alertsRepository', () => {
   const { useQuery } = jest.requireActual('@tanstack/react-query');
   const actual = jest.requireActual('../alertsRepository');
@@ -25,6 +31,13 @@ const push = jest.fn();
 jest.mocked(useRouter).mockReturnValue({ push } as unknown as ReturnType<typeof useRouter>);
 const mockedList = jest.mocked(alertsRepository.list);
 const mockedSetActive = jest.mocked(alertsRepository.setActive);
+
+const withPermission = (permission: PushRegistrationState['permission']) =>
+  jest.mocked(usePushPermission).mockReturnValue({
+    permission,
+    registered: permission === 'granted',
+    requestPermission: jest.fn(),
+  });
 
 const alert = (overrides: Partial<Alerta> = {}): Alerta => ({
   id: 'a1',
@@ -49,6 +62,7 @@ describe('useAlertsViewModel', () => {
     push.mockReset();
     mockedList.mockReset();
     mockedSetActive.mockReset();
+    withPermission('granted');
     await i18n.changeLanguage('ca');
   });
 
@@ -123,5 +137,35 @@ describe('useAlertsViewModel', () => {
     const { result } = await renderViewModel();
     result.current.create.onPress();
     expect(push).toHaveBeenCalledWith('/nova-alerta');
+  });
+
+  it.each(['granted', 'undetermined', null] as const)(
+    'amb el permís %s no avisa de res',
+    async (p) => {
+      mockedList.mockResolvedValue([]);
+      withPermission(p);
+      const { result } = await renderViewModel();
+      expect(result.current.pushNotice).toBeNull();
+    },
+  );
+
+  it('sense permís de notificacions, ho diu i ofereix obrir la configuració', async () => {
+    mockedList.mockResolvedValue([]);
+    withPermission('denied');
+    const openSettings = jest.spyOn(Linking, 'openSettings').mockResolvedValue();
+    const { result } = await renderViewModel();
+    expect(result.current.pushNotice?.message).toMatch(/notificacions estan desactivades/);
+    result.current.pushNotice?.action?.onPress();
+    expect(openSettings).toHaveBeenCalled();
+    openSettings.mockRestore();
+  });
+
+  it('a un dispositiu sense push (Expo Go, simulador), ho diu sense cap acció', async () => {
+    mockedList.mockResolvedValue([]);
+    withPermission('unavailable');
+    const { result } = await renderViewModel();
+    expect(result.current.pushNotice).toEqual({
+      message: expect.stringMatching(/no pot rebre notificacions/),
+    });
   });
 });

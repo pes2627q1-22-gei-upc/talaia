@@ -72,6 +72,20 @@ export function AlertsScreen() {
 
   return (
     <Screen title={vm.title} subtitle={vm.subtitle}>
+      {vm.pushNotice ? (
+        <Card style={styles.notice}>
+          <AppText variant="small" color="boira">
+            {vm.pushNotice.message}
+          </AppText>
+          {vm.pushNotice.action ? (
+            <Button
+              variant="text"
+              label={vm.pushNotice.action.label}
+              onPress={vm.pushNotice.action.onPress}
+            />
+          ) : null}
+        </Card>
+      ) : null}
       {vm.state === 'loading' ? (
         <View style={styles.list} testID="alerts-loading">
           {Array.from({ length: SKELETON_ROWS }, (_, index) => (
@@ -130,4 +144,5 @@ const styles = StyleSheet.create({
   text: { flex: 1, gap: spacing.xxs },
   off: { opacity: 0.5 },
   create: { marginTop: spacing.sm },
+  notice: { gap: spacing.sm },
 });

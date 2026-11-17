@@ -2,16 +2,21 @@ import type { Alerta } from '@talaia/shared';
 import { fireEvent, render, screen, within } from '@testing-library/react-native';
 import { useRouter } from 'expo-router';
 import type { PropsWithChildren } from 'react';
-import { StyleSheet } from 'react-native';
+import { Linking, StyleSheet } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import i18n from '@/core/i18n';
+import { usePushPermission } from '@/features/notifications/PushRegistrationProvider';
+import type { PushRegistrationState } from '@/features/notifications/usePushRegistration';
 import { createQueryWrapper } from '@/test-utils/queryWrapper';
 
 import { alertsRepository } from '../alertsRepository';
 import { AlertsScreen } from '../AlertsScreen';
 
 jest.mock('expo-router', () => ({ useRouter: jest.fn() }));
+jest.mock('@/features/notifications/PushRegistrationProvider', () => ({
+  usePushPermission: jest.fn(),
+}));
 jest.mock('../alertsRepository', () => {
   const { useQuery } = jest.requireActual('@tanstack/react-query');
   const actual = jest.requireActual('../alertsRepository');
@@ -28,6 +33,13 @@ const push = jest.fn();
 jest.mocked(useRouter).mockReturnValue({ push } as unknown as ReturnType<typeof useRouter>);
 const mockedList = jest.mocked(alertsRepository.list);
 const mockedSetActive = jest.mocked(alertsRepository.setActive);
+
+const withPermission = (permission: PushRegistrationState['permission']) =>
+  jest.mocked(usePushPermission).mockReturnValue({
+    permission,
+    registered: permission === 'granted',
+    requestPermission: jest.fn(),
+  });
 
 const alert = (overrides: Partial<Alerta>): Alerta => ({
   id: 'a1',
@@ -67,6 +79,7 @@ describe('AlertsScreen', () => {
     push.mockReset();
     mockedList.mockReset();
     mockedSetActive.mockReset();
+    withPermission('granted');
     await i18n.changeLanguage('ca');
   });
 
@@ -147,5 +160,25 @@ describe('AlertsScreen', () => {
     await fireEvent.press(await screen.findByRole('switch', { name: "Alerta de Pluja d'estels" }));
     const warning = await screen.findByRole('alert');
     expect(within(warning.parent ?? warning).getByText(/No hem pogut canviar/)).toBeOnTheScreen();
+  });
+
+  it('sense permís de notificacions, ho indica sobre la llista i obre la configuració (HU17)', async () => {
+    mockedList.mockResolvedValue([alert({})]);
+    withPermission('denied');
+    const openSettings = jest.spyOn(Linking, 'openSettings').mockResolvedValue();
+    await renderScreen();
+    expect(await screen.findByText("Pluja d'estels")).toBeOnTheScreen();
+    expect(screen.getByText(/notificacions estan desactivades/)).toBeOnTheScreen();
+    await fireEvent.press(screen.getByRole('button', { name: 'Obre la configuració' }));
+    expect(openSettings).toHaveBeenCalledTimes(1);
+    openSettings.mockRestore();
+  });
+
+  it('a Expo Go diu que no hi ha notificacions, sense botó', async () => {
+    mockedList.mockResolvedValue([]);
+    withPermission('unavailable');
+    await renderScreen();
+    expect(await screen.findByText(/no pot rebre notificacions/)).toBeOnTheScreen();
+    expect(screen.queryByRole('button', { name: 'Obre la configuració' })).toBeNull();
   });
 });

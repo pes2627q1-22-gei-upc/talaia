@@ -394,7 +394,10 @@
     "emptyTitle": "No alerts yet",
     "emptyMessage": "Create one and we'll let you know when conditions are good for what you want to see.",
     "errorTitle": "We couldn't load your alerts",
-    "retry": "Try again"
+    "retry": "Try again",
+    "pushDenied": "Notifications are turned off: we won't alert you on your phone when conditions are good. You can turn them on in Settings.",
+    "pushUnavailable": "This device can’t receive notifications. The rest of the app works as usual.",
+    "openSettings": "Open Settings"
   },
   "auth": {
     "signOut": "Sign out",
@@ -474,5 +477,8 @@
     "byCar": "{{travel}} by car",
     "collapseSheet": "Collapse the list",
     "expandSheet": "Expand the list"
+  },
+  "notifications": {
+    "channelName": "Sky alerts"
   }
 }

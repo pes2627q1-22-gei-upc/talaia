@@ -20,9 +20,13 @@ export function fetchEvent(eventId: string, language: string, signal?: AbortSign
 }
 
 /** L'esdeveniment que ja ha baixat el calendari. */
-function fromCalendar(client: QueryClient, eventId: string): EventData | undefined {
+function fromCalendar(
+  client: QueryClient,
+  eventId: string,
+  language: string,
+): EventData | undefined {
   for (const [, data] of client.getQueriesData<EsdevenimentsResponse>({
-    queryKey: ['calendar'],
+    queryKey: ['calendar', language],
   })) {
     const event = data?.data.find((item) => item.id === eventId);
     if (event) return event;
@@ -36,7 +40,7 @@ export function useEventQuery(eventId: string, language: string) {
     queryKey: eventKeys.detail(eventId, language),
     queryFn: ({ signal }) => fetchEvent(eventId, language, signal),
     // La fitxa s'obre a l'instant amb el calendari i el detall la completa quan arriba.
-    placeholderData: () => fromCalendar(client, eventId),
+    placeholderData: () => fromCalendar(client, eventId, language),
     // Com el calendari: les dades astronòmiques no canvien d'un moment a l'altre.
     staleTime: 60 * 60 * 1000,
     retry: false,
@@ -44,6 +48,6 @@ export function useEventQuery(eventId: string, language: string) {
   // Si el detall falla, val més la fitxa del calendari que un error.
   return {
     ...query,
-    data: query.data ?? (query.isError ? fromCalendar(client, eventId) : undefined),
+    data: query.data ?? (query.isError ? fromCalendar(client, eventId, language) : undefined),
   };
 }
