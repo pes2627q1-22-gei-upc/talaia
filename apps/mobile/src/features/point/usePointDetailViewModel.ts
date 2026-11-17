@@ -1,3 +1,4 @@
+import { useRouter } from 'expo-router';
 import { Alert, Linking } from 'react-native';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -20,6 +21,7 @@ const FACTORS = [
 
 export function usePointDetailViewModel(pointId: string) {
   const { t, i18n } = useTranslation();
+  const router = useRouter();
   const query = usePointDetailQuery(pointId);
   const breakdown = usePointBreakdownQuery(pointId);
   const point = query.data;
@@ -130,6 +132,8 @@ export function usePointDetailViewModel(pointId: string) {
           const formatTime = (timestamp: number) =>
             twoDigitHours(clockFormatter.format(new Date(timestamp)));
           return {
+            // L'inici en ISO, perquè «Crea un pla» el proposi com a hora de sortida.
+            start: hours[first]!.id,
             from: formatTime(Date.parse(hours[first]!.id)),
             to: formatTime(finalTimestamp + duration),
             hourIds: new Set(hours.slice(first, last + 1).map((hour) => hour.id)),
@@ -235,7 +239,12 @@ export function usePointDetailViewModel(pointId: string) {
         `https://www.google.com/maps/dir/?api=1&destination=${destination}`,
       ).catch(() => Alert.alert(t('point.mapsErrorTitle'), t('point.mapsErrorMessage')));
     },
-    createPlan: () => Alert.alert(t('point.planSoonTitle'), t('point.planSoonMessage')),
+    // El pla surt amb la millor franja de la nit com a hora de sortida, si n'hi ha (TG-157).
+    createPlan: () =>
+      router.push({
+        pathname: '/pla/nou',
+        params: { puntId: pointId, ...(bestPeriod ? { inici: bestPeriod.start } : {}) },
+      }),
     hoursLabel: t('point.tonight'),
     timezoneLabel: t('point.timezone'),
     noHours: t('point.noHours'),

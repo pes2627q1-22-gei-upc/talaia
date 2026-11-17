@@ -56,6 +56,17 @@ function RootStack() {
         }}
       />
       <Stack.Screen
+        name="pla/nou"
+        options={{
+          headerShown: true,
+          title: t('plans.new.header'),
+          headerStyle: { backgroundColor: colors.nit },
+          headerShadowVisible: false,
+          headerTintColor: colors.lluna,
+          headerBackButtonDisplayMode: 'minimal',
+        }}
+      />
+      <Stack.Screen
         name="benvinguda"
         options={{ presentation: 'fullScreenModal', animation: 'fade' }}
       />

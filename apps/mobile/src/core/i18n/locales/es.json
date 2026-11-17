@@ -166,8 +166,6 @@
     "createPlan": "Crea un plan",
     "mapsErrorTitle": "No hemos podido abrir el mapa",
     "mapsErrorMessage": "Vuelve a intentarlo dentro de un momento.",
-    "planSoonTitle": "Planes, próximamente",
-    "planSoonMessage": "La creación de planes aún no está disponible.",
     "timezone": "Hora local de Cataluña · Europe/Madrid",
     "noHours": "Todavía no hay previsión para esta noche.",
     "hourA11y": "{{time}}: índice {{value}} de 100, {{level}}",
@@ -415,5 +413,55 @@
     "byCar": "{{travel}} en coche",
     "collapseSheet": "Plegar la lista",
     "expandSheet": "Desplegar la lista"
+  },
+  "plans": {
+    "new": {
+      "header": "Nuevo plan",
+      "title": "Plan de observación",
+      "point": "Punto de observación",
+      "pointA11y": "Punto de observación: {{name}}, {{municipality}}",
+      "pointUnavailable": "No hemos podido cargar el punto",
+      "day": "Día",
+      "dayValue": "{{weekday}} {{day}} {{month}}",
+      "monthsShort": [
+        "ene.",
+        "feb.",
+        "mar.",
+        "abr.",
+        "may.",
+        "jun.",
+        "jul.",
+        "ago.",
+        "sept.",
+        "oct.",
+        "nov.",
+        "dic."
+      ],
+      "time": "Hora de salida",
+      "hour": "Hora",
+      "minute": "Minutos",
+      "past": "La hora de salida ya ha pasado. Elige una más tarde.",
+      "event": "Fenómeno",
+      "eventValue": "{{type}}: {{name}}",
+      "noEvent": "Ninguno en concreto",
+      "eventSheet": "¿Qué vas a ver?",
+      "noEvents": "No hay ningún fenómeno del calendario alrededor de este día.",
+      "eventsError": "No hemos podido cargar los fenómenos",
+      "retry": "Vuelve a intentarlo",
+      "notes": "Notas",
+      "notesPlaceholder": "Ropa de abrigo, frontal rojo…",
+      "save": "Guarda el plan",
+      "saving": "Guardando…",
+      "dateSheet": "Elige el día",
+      "timeSheet": "Hora de salida",
+      "done": "Hecho",
+      "close": "Cerrar",
+      "errors": {
+        "alreadyExists": "Ya tienes un plan en este punto a esta hora.",
+        "limitReached": "Has llegado al máximo de 20 planes pendientes.",
+        "pointGone": "Este punto ya no está disponible.",
+        "generic": "No hemos podido guardar el plan. Vuelve a intentarlo en un momento."
+      }
+    }
   }
 }
