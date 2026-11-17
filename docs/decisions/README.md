@@ -38,5 +38,6 @@ Format: **Context → Decisió → Conseqüències**. Estat: `Acceptada`, `Propo
 | [0030](0030-web-administracio-vite-react.md) | Web d'administració separada amb Vite + React + TypeScript, compilada com a fitxers estàtics per a Nginx (P11) | Acceptada |
 | [0031](0031-visibilitat-ubicacio-al-moment.md) | Índex d'una ubicació qualsevol de Catalunya calculat al moment a l'API (`GET /visibilitat`): previsió per cel·la de 0,01° en memòria cau LRU fins al minut 5 de l'hora següent (i la caducada si Open-Meteo falla), SQM d'un punt del catàleg a 1 km o menys (mesurat només a la mateixa cel·la), límit oficial de l'ICGC amb 1,5 km de marge, i 20 consultes noves per client i 250 en total per hora; el càlcul (Open-Meteo, astronomia i fórmula) es comparteix amb el worker a `@talaia/index` | Proposada |
 | [0032](0032-mode-nit-vermell.md) | Mode nit vermell sobre negre: paleta `vermell` dels tokens amb `ThemeProvider` i `makeStyles`, filtre CSS al contenidor del mapa i brillantor baixa amb `expo-brightness` (HU45) | Proposada |
+| [0035](0035-avis-deploy.md) | Avís per correu des del Gmail de l'equip quan el deploy de la VM falla (un per fallada) i quan es recupera, amb `curl` a l'SMTP | Proposada |
 
 Decisions encara obertes: [pendents.md](pendents.md).
