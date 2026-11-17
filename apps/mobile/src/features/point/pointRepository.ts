@@ -1,12 +1,13 @@
 import type { DesglossamentIndex, PuntFitxa } from '@talaia/shared';
 import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 
 import { apiGet } from '@/core/api/httpClient';
 
 import type { PointDetailModel } from './pointModel';
 
 export const pointKeys = {
-  detail: (pointId: string) => ['punts', 'detail', pointId] as const,
+  detail: (pointId: string, language: string) => ['punts', 'detail', pointId, language] as const,
   breakdown: (pointId: string) => ['punts', 'breakdown', pointId] as const,
 };
 
@@ -42,8 +43,9 @@ export async function fetchPointDetail(
 }
 
 export function usePointDetailQuery(pointId: string) {
+  const { i18n } = useTranslation();
   return useQuery({
-    queryKey: pointKeys.detail(pointId),
+    queryKey: pointKeys.detail(pointId, i18n.resolvedLanguage ?? 'ca'),
     queryFn: ({ signal }) => fetchPointDetail(pointId, signal),
     enabled: pointId.trim().length > 0,
     staleTime: 60_000,
