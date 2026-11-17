@@ -12,6 +12,13 @@
     "lint": "eslint ."
   },
   "jest": {
+    "collectCoverageFrom": [
+      "src/**/*.ts",
+      "!src/**/__tests__/**",
+      "!src/**/*.test.ts",
+      "!src/**/*.d.ts",
+      "!src/testing/**"
+    ],
     "preset": "ts-jest",
     "testEnvironment": "node",
     "extensionsToTreatAsEsm": [
