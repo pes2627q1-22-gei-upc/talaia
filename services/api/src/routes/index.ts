@@ -2,7 +2,9 @@ import { Router } from 'express';
 import swaggerUi from 'swagger-ui-express';
 
 import { version } from '../config/env';
+import type { AlertesStore } from '../alertes/alertesRepository';
 import type { EsdevenimentsService } from '../esdeveniments/esdevenimentsService';
+import type { FavoritsService } from '../favorits/favoritsService';
 import type { BreakdownService } from '../index/breakdownService';
 import { requireAuth, type JwksSource } from '../middleware/auth';
 import { buildOpenApiDocument } from '../openapi';
@@ -12,16 +14,21 @@ import type { RecomanacionsService } from '../recomanacions/recomanacionsService
 import type { ProfileStore } from '../services/profileService';
 import type { VisibilitatService } from '../visibilitat/visibilitatService';
 import { createAdminRouter } from './admin';
+import { createAlertesRouter } from './alertes';
 import { createAuthRouter } from './auth';
 import { createEsdevenimentsRouter } from './esdeveniments';
 import './esdeveniments.contract';
+import { createFavoritsRouter } from './favorits';
 import { healthRouter } from './health';
 import { createPuntIndexRouter } from './puntIndex';
 import { createPuntsRouter } from './punts';
 import { createRecomanacionsRouter } from './recomanacions';
 import { createVisibilitatRouter } from './visibilitat';
 
-/** Dependències dels routers. Sense `punts` o `breakdown` (no hi ha `DATABASE_URL`), les seves rutes responen 503. */
+/**
+ * Dependències dels routers. Sense `punts`, `breakdown` o `favorits` (no hi ha `DATABASE_URL`), les
+ * seves rutes responen 503.
+ */
 export type ApiDeps = {
   punts?: PuntsService;
   /** `GET /punts/{id}/index` (TG-104). */
@@ -34,8 +41,12 @@ export type ApiDeps = {
   supabaseUrl?: string;
   jwks?: JwksSource;
   profileStore?: ProfileStore;
+  /** `POST`, `GET` i `PATCH /alertes` (TG-145, TG-147). */
+  alertes?: AlertesStore;
   esdeveniments?: EsdevenimentsService;
   apropApiKey?: string;
+  /** `POST`, `GET` i `DELETE /favorits` (TG-169). */
+  favorits?: FavoritsService;
 };
 
 /** Router de `/api/v1`: un router per recurs (punts, recomanacions, visibilitat, esdeveniments…). */
@@ -48,9 +59,11 @@ export function createApiRouter({
   supabaseUrl,
   jwks,
   profileStore,
+  alertes,
   esdeveniments,
   apropApiKey,
-}: ApiDeps & { profileStore: ProfileStore }): Router {
+  favorits,
+}: ApiDeps & { profileStore: ProfileStore; alertes: AlertesStore }): Router {
   const router = Router();
   router.use('/health', healthRouter);
   router.use('/punts', createPuntsRouter(punts));
@@ -70,6 +83,8 @@ export function createApiRouter({
   });
   router.use(createAuthRouter({ requireUser, profileStore }));
   router.use('/admin', createAdminRouter({ requireUser, profileStore, puntsAdmin }));
+  router.use('/alertes', createAlertesRouter({ requireUser, store: alertes }));
+  router.use('/favorits', createFavoritsRouter({ requireUser, service: favorits }));
 
   // Es genera quan ja s'han importat tots els routers, que són els que registren les rutes.
   const openapi = buildOpenApiDocument(version);

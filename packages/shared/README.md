@@ -14,6 +14,7 @@ Tipus de domini compartits per l'app, l'admin, l'API i el worker. Cada tipus s'e
 | `src/recomanacions.ts` | `ObjectiuObservacio`, `ConsultaRecomanacions` (el que es tria a «Què vols veure?», TG-101), `ParametresRecomanacions` (la mateixa amb només l'origen obligatori, «A prop meu», TG-133), `Recomanacio`, `RecomanacionsResposta` | Paràmetres i resposta de `GET /recomanacions` (TG-100) |
 | `src/visibilitat.ts` | `ConsultaVisibilitat`, `VisibilitatUbicacio` (l'índex d'una ubicació qualsevol de Catalunya en una hora) | Paràmetres i resposta de `GET /visibilitat` (TG-130, ADR-0031) |
 | `src/esdeveniments.ts` | `Esdeveniment`, `TipusFenomen` | Contracte amb Aprop acordat a TG-109 |
+| `src/favorits.ts` | `Favorit` (un punt dels favorits amb l'índex de l'hora en curs), `FavoritNou` | Resposta i cos de `/favorits` (TG-169) |
 
 Un camp que depèn d'una decisió pendent porta un comentari que ho diu. No s'hi inventen valors: quan es decideixi, s'actualitza aquí i a l'ADR.
 

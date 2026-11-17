@@ -17,6 +17,8 @@ npm run api                   # = npm run dev -w services/api, amb recàrrega
 - Desglossament de l'índex d'un punt: `http://localhost:3000/api/v1/punts/{id}/index?nit=2026-10-19` (cal `DATABASE_URL`)
 - Perfil: `GET`, `POST` i `PATCH /api/v1/perfil` (cal el JWT de Supabase a `Authorization: Bearer`)
 - Administració: `/api/v1/admin/usuaris` i `/api/v1/admin/punts` (JWT d'un compte amb `rol = 'admin'`)
+- Alertes: `GET` i `POST /api/v1/alertes` i `PATCH /api/v1/alertes/{id}` (cal el JWT de Supabase)
+- Favorits: `GET` i `POST /api/v1/favorits` i `DELETE /api/v1/favorits/{puntId}` (cal el JWT de Supabase)
 - Recomanacions: `http://localhost:3000/api/v1/recomanacions?objectiu=cel_estrellat&lat=41.39&lon=2.17&data=<YYYY-MM-DD>&desDe=22&finsA=6&tempsMaxim=150`; «a prop meu»: `…/recomanacions?lat=41.39&lon=2.17`
 - Visibilitat d'una ubicació qualsevol: `http://localhost:3000/api/v1/visibilitat?lat=41.95&lon=1.52` (no cal `DATABASE_URL`; amb `&hora=<ISO 8601>`, una altra hora)
 - Documentació (Swagger UI): <http://localhost:3000/api/v1/docs>
@@ -38,7 +40,7 @@ Es llegeixen del `.env` de l'**arrel** del repo (`dev` i `start` el carreguen am
 | Variable | Per defecte | Què és |
 |---|---|---|
 | `API_PORT` | `3000` | Port on escolta l'API |
-| `DATABASE_URL` | — | Postgres (`postgresql://…`). **Opcional:** sense ella l'API arrenca amb un avís, `/health` funciona i `/punts`, `/punts/{id}`, `/punts/{id}/index`, `/recomanacions`, `/perfil` i `/admin` responen 503 `database_unavailable`, i `/visibilitat` funciona amb la foscor estimada. Amb Supabase local: `postgresql://postgres:postgres@127.0.0.1:54322/postgres` |
+| `DATABASE_URL` | — | Postgres (`postgresql://…`). **Opcional:** sense ella l'API arrenca amb un avís, `/health` funciona i `/punts`, `/punts/{id}`, `/punts/{id}/index`, `/recomanacions`, `/perfil`, `/admin`, `/alertes` i `/favorits` responen 503 `database_unavailable`, i `/visibilitat` funciona amb la foscor estimada. Amb Supabase local: `postgresql://postgres:postgres@127.0.0.1:54322/postgres` |
 | `SUPABASE_URL` | `http://127.0.0.1:54321` | URL del projecte de Supabase. `requireAuth` hi valida els JWT amb el JWKS (`/auth/v1/.well-known/jwks.json`, ADR-0023): 401 si el token és dolent, 503 si Supabase no respon. Al compose de la VM és obligatòria |
 | `OPEN_METEO_BASE_URL` | `https://api.open-meteo.com/v1` | URL base d'Open-Meteo, la mateixa que fa servir el worker: `GET /visibilitat` hi demana la previsió de les ubicacions que no són al catàleg |
 | `APROP_API_KEY` | — | Secret de l'API assignat a Aprop. No s'inclou al repositori ni a l'app; sense configurar-lo, l'accés amb API key retorna 503, però l'accés JWT continua disponible. |
@@ -59,7 +61,9 @@ src/
     punts.ts            GET /punts (bbox, ETag, Cache-Control i 304) i GET /punts/{id}
     esdeveniments.ts    GET /esdeveniments, autenticació API key o JWT
     auth.ts             GET, POST i PATCH /perfil (JWT de Supabase, ADR-0023)
+    alertes.ts          GET, POST i PATCH /alertes: les alertes de l'usuari del JWT (HU16, HU18, HU19)
     admin.ts            GET /admin/me, GET /admin/usuaris i PATCH /admin/usuaris/{id} (ADR-0029)
+    favorits.ts         POST, GET i DELETE /favorits: els punts favorits de l'usuari del JWT (HU25–HU27)
     puntIndex.ts        GET /punts/{id}/index: desglossament de l'índex per hores i factors (HU04)
     recomanacions.ts    GET /recomanacions (validació de la consulta i OpenAPI)
     adminPunts.ts       /admin/punts: crear, editar i retirar punts (HU39), muntat a admin.ts
@@ -80,6 +84,11 @@ src/
     night.ts            Què és «una nit» (12:00 → 12:00, hora de Catalunya) i la nit per defecte
     indexSchemas.ts     Esquemes zod/OpenAPI de l'índex per hora (IndexHora), compartits per /punts/{id} i /punts/{id}/index
     breakdownService.ts Punt + nit → DesglossamentIndex; 404 si el punt no és públic, 503 si la BD falla
+  alertes/
+    alertesRepository.ts  Alertes de l'usuari amb @talaia/db: sempre filtrades pel perfil del JWT
+  favorits/
+    favoritsRepository.ts  Favorits d'un perfil amb @talaia/db: sempre filtrats pel perfil i pels punts publicats
+    favoritsService.ts     Hora en curs de l'índex, 404 si el punt no és publicat i errors de la BD → 503
   recomanacions/
     franja.ts           Franja horària local de Catalunya (Europe/Madrid) → UTC, amb el canvi d'hora
     rutes.ts            Temps en cotxe ↔ radi en línia recta, fins que hi hagi Mobilicat
@@ -236,6 +245,28 @@ El perfil de l'usuari autenticat (tipus `Perfil` a `@talaia/shared`, taula `perf
 
 Errors: JWT absent o invàlid → 401 `unauthorized`; compte bloquejat → 403 `account_blocked`; cos invàlid → 400 `validation_error`; sense `DATABASE_URL` o sense poder validar el JWT → 503.
 
+## `/favorits` (HU25–HU27 · TG-169)
+
+Els punts favorits de l'usuari autenticat (tipus `Favorit` i `FavoritNou` a `@talaia/shared`, taula `favorits`). Com `/perfil`, les tres rutes passen per `requireUser` (JWT de Supabase i compte no bloquejat) i responen amb `Cache-Control: no-store`.
+
+- `POST /favorits` amb `{ "puntId": "<uuid>" }`: desa el punt. És idempotent: 201 amb el favorit si és nou i 200 amb el mateix favorit si ja hi era (no en canvia la data). Només es poden desar punts `PUBLICAT`. El cos és estricte: un camp de més (per exemple `perfilId`) és un 400.
+- `GET /favorits`: els favorits, els més nous primer (`[]` si no en té cap). Cada un és el punt (`id`, `nom`, `municipi`, `lat`, `lon`) amb l'`index` de l'hora en curs, com a `/punts` (`null` si el worker encara no l'ha calculat), i `dataCreacio`, quan es va desar. L'`id` és el del punt: el que obre la fitxa (`/punts/{id}`) i el que es passa al `DELETE`. El `nom` segueix `Accept-Language` (ca, es, en; reserva ca) com a `/punts` (TG-164), també a la resposta del `POST`.
+- `DELETE /favorits/{puntId}`: treu el punt dels favorits. També és idempotent: 204 encara que no hi fos.
+
+```json
+[
+  { "id": "6f1c2b7e-…", "nom": "Mirador del Montsec", "municipi": "Àger", "lat": 42.0244, "lon": 0.7364,
+    "index": { "valor": 82, "franja": "ras", "deDia": false }, "dataCreacio": "2026-11-16T19:02:11.000Z" }
+]
+```
+
+- **Només els de l'usuari:** el perfil és el que `requireUser` ja ha llegit a partir del `sub` del JWT (`req.account.perfilId`), mai el de la petició, i les consultes hi filtren a l'SQL. Esborrar el compte n'esborra els favorits (`on delete cascade`).
+- **Punts retirats:** un punt que deixa de ser `PUBLICAT` no surt a `GET /favorits`, però la fila es conserva: si es torna a publicar, hi torna. El `DELETE` també el treu. Si s'esborra el punt, se n'esborren els favorits.
+- **Si un punt és favorit** (botó de la fitxa, TG-170): l'app ho mira a la llista de `GET /favorits`. La fitxa (`/punts/{id}`) és pública i es desa a la memòria cau fins a la propera hora, i per això no porta cap marca per usuari. Com que `POST` i `DELETE` són idempotents, l'app pot canviar el botó a l'instant i enviar la petició al darrere.
+- No hi ha límit de favorits: com a molt, un per punt del catàleg (clau primària `(perfil_id, punt_id)`).
+
+Errors: JWT absent o invàlid → 401 `unauthorized`; compte bloquejat → 403 `account_blocked`; cos o `puntId` invàlids → 400 `validation_error`; usuari sense perfil (no ha fet `POST /perfil`) → 404 `profile_not_found`; `POST` d'un punt que no existeix o no és publicat → 404 `punt_not_found`; sense `DATABASE_URL` o amb la base de dades caiguda → 503 `database_unavailable`.
+
 ## Rol d'administrador i comptes bloquejats (TG-177, HU41)
 
 `perfils.rol` (`usuari` o `admin`) i `perfils.bloquejat` (ADR-0029). `routes/index.ts` crea un sol `requireUser` (`requireAuth` amb `accountStatus`): valida el JWT i llegeix el perfil, i si el compte està bloquejat respon **403 `account_blocked`**. Totes les rutes d'usuari l'han de fer servir; les rutes públiques (`/health`, `/punts`, `/recomanacions`, `/visibilitat`, `/esdeveniments`) no hi miren. `requireAdmin`, posat al darrere, només deixa passar els administradors: si no, 403 `forbidden`.
@@ -283,6 +314,18 @@ El punt de referència de `/esdeveniments` (`centre-observacio-univers`, ADR-002
 
 Errors: 401 `unauthorized`; 403 `forbidden` o `account_blocked`; 400 `validation_error`; 404 `punt_not_found`; 409 `slug_already_exists` (`POST`), o `moderation_required` o `reference_point_required` (`PATCH`); 503 `database_unavailable`.
 
+## `/alertes` (HU16 · TG-145, HU18/HU19 · TG-147)
+
+Les alertes de l'usuari autenticat (tipus `Alerta` i `AlertaNova` a `@talaia/shared`, taula `alertes`). Com `/perfil`, passen pel `requireUser` de `routes/index.ts` (JWT de Supabase i compte no bloquejat) i responen amb `Cache-Control: no-store`.
+
+- `POST /alertes`: crea una alerta (201), sempre activa. Com a molt **20 per usuari** (`MAX_ALERTES`), perquè el worker de notificacions (TG-153) les avalua totes cada hora; el comptatge i la inserció es fan en una transacció que bloqueja el perfil, de manera que dues peticions alhora no poden passar el límit. Cos: `{ "objectiu": "pluja_estels", "origen": { "lat": 41.3874, "lon": 2.1686 }, "distanciaMaxKm": 60, "indexMinim": 70, "avisaEnArribar": true, "horaAvis": 18 }`. `objectiu` és un `ObjectiuObservacio` (el selector de «Què vols veure?»), `distanciaMaxKm` un enter d'1 a 200 i `indexMinim` un enter de 0 a 100. Quan s'avisa (TG-146): `avisaEnArribar` (tan bon punt algun punt arriba a l'índex mínim) i `horaAvis` (el mateix dia a aquesta hora local, enter de 0 a 23, si la previsió de la nit hi arriba; `null` si no). Tots dos són obligatoris al cos i almenys un ha d'estar triat (`true` o una hora); si no, 400. La taula ho garanteix amb el `check` `alertes_quan_avisa`. El cos és estricte: un camp de més (per exemple `perfilId`) és un 400.
+- `GET /alertes`: les alertes de l'usuari, de la més nova a la més antiga (`[]` si no en té cap).
+- `PATCH /alertes/{id}` (TG-147): activa o desactiva l'alerta (`{ "activa": false }`, HU19; una alerta desactivada no notifica) i n'edita les preferències (HU18). Cos `AlertaCanvis`: els mateixos camps que `POST` més `activa`, tots opcionals però almenys un, i estricte. Respon 200 amb l'`Alerta`. La regla de «quan avisa» es comprova amb els valors que quedaran després del canvi: treure l'hora d'una alerta que no avisa en arribar-hi és un 400 `validation_error`. Es fa en una transacció que bloqueja la fila. Un `id` que no és un UUID és un 400; una alerta que no és de l'usuari respon 404 `alert_not_found`, igual que una que no existeix.
+
+**Només les de l'usuari:** el perfil surt sempre del JWT (`req.account.perfilId`, que llegeix `requireUser`), mai del cos, i les consultes filtren per ell a l'SQL. Esborrar el compte esborra les alertes (`on delete cascade`).
+
+Errors: JWT absent o invàlid → 401 `unauthorized`; compte bloquejat → 403 `account_blocked`; cos invàlid → 400 `validation_error`; usuari sense perfil (no ha fet `POST /perfil`) → 404 `profile_not_found`; ja en té 20 → 409 `alert_limit_reached`; sense `DATABASE_URL` → 503.
+
 ## Afegir una ruta
 
 1. Crea `src/routes/<recurs>.ts` amb el seu `Router`, els esquemes zod (`.meta({ id })` per als que han de sortir a l'OpenAPI) i `registry.registerPath(...)` per a cada ruta.
@@ -305,10 +348,11 @@ Tota resposta d'error té el format `{ error: { code, message } }`:
 | 403 | `forbidden` | Ruta de `/admin` amb un compte que no és administrador |
 | 404 | `not_found` | La ruta no existeix |
 | 404 | `usuari_not_found` | `PATCH /admin/usuaris/{id}`: cap perfil amb aquest `id` |
-| 404 | `punt_not_found` | `/punts/{id}` i `/punts/{id}/index`: cap punt publicat amb aquest `id`. `/admin/punts/{id}`: cap punt amb aquest `id` |
+| 404 | `punt_not_found` | `/punts/{id}`, `/punts/{id}/index` i `POST /favorits`: cap punt publicat amb aquest `id`. `/admin/punts/{id}`: cap punt amb aquest `id` |
 | 409 | `slug_already_exists` | `POST /admin/punts`: ja hi ha un punt amb aquest `slug` |
 | 409 | `moderation_required` | `PATCH /admin/punts/{id}`: es vol canviar l'estat d'un punt `PENDENT` o `REBUTJAT`, que es fa des de la moderació |
 | 409 | `reference_point_required` | `PATCH /admin/punts/{id}`: es vol retirar el punt de referència de `/esdeveniments` (ADR-0026) |
+| 404 | `profile_not_found` | `/perfil` (`GET` i `PATCH`) i `/favorits`: l'usuari encara no ha fet `POST /perfil` |
 | 422 | `fora_de_catalunya` | `GET /visibilitat`: la ubicació és fora de Catalunya |
 | 422 | `hora_sense_previsio` | `GET /visibilitat`: l'hora no és entre l'hora en curs i 72 hores endavant (o Open-Meteo no l'ha tornat) |
 | 429 | `too_many_requests` | `GET /visibilitat`: el client ja ha fet 20 consultes noves aquesta hora. Porta `Retry-After` |
