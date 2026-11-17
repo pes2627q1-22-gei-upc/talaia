@@ -21,6 +21,8 @@ jest.mock('react-native-safe-area-context', () => ({
 }));
 jest.mock('@/features/auth/AuthProvider', () => ({
   AuthProvider: ({ children }: PropsWithChildren) => children,
+  // Sense sessió: el registre del token de push (TG-152) no fa res.
+  useAuthState: () => ({ user: null }),
 }));
 
 beforeEach(() => {
