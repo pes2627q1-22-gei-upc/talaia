@@ -1,5 +1,6 @@
 import type { EsdevenimentsResponse } from '@talaia/shared';
 import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 
 import { apiGet } from '@/core/api/httpClient';
 import type { CalendarMonth } from '@/shared/ui/calendarGrid';
@@ -12,8 +13,9 @@ export function fetchCalendarEvents(month: CalendarMonth) {
 }
 
 export function useCalendarEventsQuery(month: CalendarMonth) {
+  const { i18n } = useTranslation();
   return useQuery({
-    queryKey: ['calendar', month.year, month.month],
+    queryKey: ['calendar', i18n.resolvedLanguage ?? 'ca', month.year, month.month],
     queryFn: () => fetchCalendarEvents(month),
     staleTime: 60 * 60 * 1000,
     retry: false,
