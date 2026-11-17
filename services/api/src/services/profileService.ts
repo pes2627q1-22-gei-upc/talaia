@@ -3,6 +3,7 @@ import type { Rol } from '@talaia/shared';
 import { sql } from 'kysely';
 
 import type { AuthenticatedUser } from '../middleware/auth';
+import { ApiError } from '../middleware/errors';
 
 export type ProfileRecord = {
   id: string;
@@ -45,6 +46,9 @@ export type ProfileStore = {
 
 type Db = ReturnType<typeof createDb>;
 
+/** Codi d'error de Postgres quan una clau forana no troba la fila a què apunta. */
+const FOREIGN_KEY_VIOLATION = '23503';
+
 /** Perfils a la base de dades. Rep el pool de `server.ts`, el mateix que fan servir els punts. */
 export function createDatabaseProfileStore(db: Db): ProfileStore {
   return {
@@ -68,7 +72,15 @@ export function createDatabaseProfileStore(db: Db): ProfileStore {
         })
         .onConflict((oc) => oc.column('authUserId').doNothing())
         .returningAll()
-        .executeTakeFirst();
+        .executeTakeFirst()
+        .catch((error: unknown) => {
+          // El JWT d'un compte esborrat (DELETE /perfil) val fins que caduca, però el seu
+          // `auth.users` ja no hi és i la clau forana rebutja el perfil nou.
+          if ((error as { code?: unknown }).code === FOREIGN_KEY_VIOLATION) {
+            throw new ApiError(401, 'unauthorized', 'El compte ja no existeix');
+          }
+          throw error;
+        });
 
       if (inserted) {
         return { created: true, profile: deserializeProfile(inserted) };
