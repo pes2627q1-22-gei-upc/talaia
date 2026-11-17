@@ -1,6 +1,6 @@
+import type { OpenMeteoClient } from '@talaia/index';
 import type { PrevisioMeteoPunt, PuntObservacio } from '@talaia/shared';
 
-import type { OpenMeteoClient } from './openMeteo';
 import type { PrevisioMeteoRepository } from './repository';
 
 /** El que la ingesta necessita d'un punt: on és i com identificar-ne la previsió. */

@@ -1,9 +1,12 @@
+import {
+  OpenMeteoError,
+  calculaIndexHores,
+  efemeridesHores,
+  type OpenMeteoClient,
+} from '@talaia/index';
 import type { PuntObservacio } from '@talaia/shared';
 
-import { efemeridesHores } from '../astronomia/astronomia';
-import { calculaIndexHores } from '../index/formula';
 import type { IndexRepository } from '../index/repository';
-import { OpenMeteoError, type OpenMeteoClient } from '../meteo/openMeteo';
 
 /** El que el recàlcul necessita d'un punt: on és i quina foscor té. */
 export type PuntPerRecalcul = Pick<PuntObservacio, 'id' | 'lat' | 'lon'> & {

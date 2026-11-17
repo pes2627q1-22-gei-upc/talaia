@@ -82,6 +82,12 @@ export interface ExecucionsWorker {
   punts: Generated<number>;
 }
 
+export interface Favorits {
+  dataCreacio: Generated<Timestamp>;
+  perfilId: string;
+  puntId: string;
+}
+
 export interface FenomensAstronomics {
   codi: string;
   dataActualitzacio: Generated<Timestamp>;
@@ -178,6 +184,7 @@ export interface DB {
   esdevenimentsAstronomics: EsdevenimentsAstronomics;
   estacionsXema: EstacionsXema;
   execucionsWorker: ExecucionsWorker;
+  favorits: Favorits;
   fenomensAstronomics: FenomensAstronomics;
   fontsAstronomiques: FontsAstronomiques;
   indexVisibilitat: IndexVisibilitat;
