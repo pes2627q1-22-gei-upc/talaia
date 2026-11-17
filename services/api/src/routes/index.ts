@@ -40,7 +40,7 @@ export type ApiDeps = {
   supabaseUrl?: string;
   jwks?: JwksSource;
   profileStore?: ProfileStore;
-  /** `POST`, `GET` i `PATCH /alertes` (TG-145, TG-147). */
+  /** `POST`, `GET`, `PATCH` i `DELETE /alertes` (TG-145, TG-147, TG-150). */
   alertes?: AlertesStore;
   /** Expo push tokens (`/perfil/dispositius`, TG-152). */
   dispositius?: PushDeviceStore;

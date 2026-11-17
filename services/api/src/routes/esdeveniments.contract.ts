@@ -156,6 +156,9 @@ registry.registerPath({
       description: 'Credencial absent o invàlida (API key o JWT).',
       content: { 'application/json': { schema: ErrorSchema } },
     },
+    429: {
+      description: 'Límit general de Nginx superat (20 peticions per segon i per IP).',
+    },
     503: {
       description: 'Base de dades, punt de referència, clau API o validació JWT indisponibles.',
       content: { 'application/json': { schema: ErrorSchema } },
@@ -205,6 +208,9 @@ registry.registerPath({
     404: {
       description: 'No existeix cap esdeveniment publicable amb aquest identificador.',
       content: { 'application/json': { schema: ErrorSchema } },
+    },
+    429: {
+      description: 'Límit general de Nginx superat (20 peticions per segon i per IP).',
     },
     503: {
       description: 'Base de dades, punt de referència, clau API o validació JWT indisponibles.',
