@@ -70,7 +70,7 @@ Opcions:
 - El **development build amb EAS per a Android** és l'entorn de proves de les push.
 - La resta de l'app continua a Expo Go, i la regla de l'ADR-0014 («cap mòdul natiu que Expo Go no porti») es manté per a tot el que no siguin les push.
 - Les **notificacions locals** (`scheduleNotificationAsync`, amb el mateix `data`) serveixen per provar el *deep link* a Expo Go, i l'eina de prova d'Expo (expo.dev/notifications) serveix per enviar a un token sense el worker.
-- A Expo Go, l'app **no demana el token**: si `Constants.executionEnvironment === ExecutionEnvironment.StoreClient`, se salta el registre, i la pantalla d'alertes ho indica en lloc de fallar.
+- A Expo Go, l'app **no demana el token**: si `isRunningInExpoGo()` (del paquet `expo`), se salta el registre, i la pantalla d'alertes ho indica en lloc de fallar. *Actualització 2026-11-16 (TG-152):* abans deia `Constants.executionEnvironment === ExecutionEnvironment.StoreClient`, però Expo Go 58 hi diu `bare`. A més, a Android `expo-notifications` llança un error en carregar-se a Expo Go, i per això l'app només el carrega fora d'Expo Go.
 - El build d'iOS (*ad hoc*, amb els dispositius registrats al compte d'Apple) només es fa si l'equip el necessita per a la demo.
 
 ### Credencials: mai al repositori
