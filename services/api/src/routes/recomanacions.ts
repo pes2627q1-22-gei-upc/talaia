@@ -91,6 +91,17 @@ const queryShape = (numero: Numero) => {
         description: `Temps màxim en cotxe, en minuts. Per defecte, ${TEMPS_MAXIM_PER_DEFECTE} («A prop meu»)`,
         example: 150,
       }),
+    esdevenimentId: z
+      .string({ error: "esdevenimentId ha de ser el codi d'un esdeveniment" })
+      .trim()
+      .min(1, { error: "esdevenimentId ha de ser el codi d'un esdeveniment" })
+      .max(200, { error: "esdevenimentId ha de ser el codi d'un esdeveniment" })
+      .optional()
+      .meta({
+        description:
+          "«On veure-ho» (HU11): el `id` de `GET /esdeveniments/{id}`. El rànquing és el de la finestra de l'esdeveniment: amb hores conegudes (eclipsis, conjuncions), `[inici, fi]`; amb precisió de dia (pluges d'estels, fases), la nit del màxim (de 12:00 a 12:00 locals) o, si ja ha passat i encara dura, la nit que toca retallada a `[inici, fi]`. No va amb `data`, `desDe` ni `finsA`",
+        example: 'leonids-2026',
+      }),
     limit: numero(`limit ha de ser un nombre enter de 1 a ${LIMIT_MAXIM}`, {
       min: 1,
       max: LIMIT_MAXIM,
@@ -114,6 +125,12 @@ const QuerySchema = z
   .refine((q) => q.desDe === undefined || q.desDe !== q.finsA, {
     error: 'desDe i finsA no poden ser iguals: la franja dura almenys una hora',
   })
+  .refine(
+    (q) =>
+      q.esdevenimentId === undefined ||
+      (q.data === undefined && q.desDe === undefined && q.finsA === undefined),
+    { error: "esdevenimentId no va amb data, desDe ni finsA: la finestra és la de l'esdeveniment" },
+  )
   .transform(({ lat, lon, ...q }): ParametresRecomanacions => ({ ...q, origen: { lat, lon } }));
 
 const RecomanacionsSchema: z.ZodType<RecomanacionsResposta> = z
@@ -169,8 +186,24 @@ const RecomanacionsSchema: z.ZodType<RecomanacionsResposta> = z
       )
       .meta({
         description:
-          'Els `limit` primers punts publicats dins del radi, ordenats per `millorHora`, `mitjana` i distància. Els que no tenen índex, al final.',
+          'Els `limit` primers punts publicats dins del radi, ordenats per `millorHora` (l’índex màxim de la franja), `mitjana` i distància. Els que no tenen índex, al final.',
       }),
+    esdeveniment: z
+      .object({
+        id: z.string().meta({ example: 'leonids-2026' }),
+        inici: z.string().meta({ example: '2026-11-06T00:00:00.000Z' }),
+        maxim: z.string().nullable().meta({ example: '2026-11-17T23:45:00.000Z' }),
+        fi: z.string().meta({ example: '2026-11-30T23:59:59.000Z' }),
+      })
+      .optional()
+      .meta({
+        description:
+          "Només amb `esdevenimentId`: l'horari complet de l'esdeveniment (UTC). `franja` i `data` són la finestra que se n'ha tret.",
+      }),
+    avis: z.enum(['sense_previsio']).optional().meta({
+      description:
+        "Només amb `esdevenimentId`. `sense_previsio`: cap punt del radi té índex a la finestra (més enllà de la previsió); els punts surten per distància. S'hi poden afegir valors nous.",
+    }),
   })
   .meta({ id: 'Recomanacions' });
 
@@ -185,6 +218,7 @@ registry.registerPath({
     `a ${TEMPS_MAXIM_PER_DEFECTE} minuts en cotxe. ` +
     "Ordena els punts publicats dins del radi per l'índex de visibilitat v1 de la franja horària (ADR-0018). " +
     "L'índex és el mateix per a tots els objectius fins que s'adapti per fenomen. " +
+    "Amb `esdevenimentId` («On veure-ho», HU11), la franja és la finestra de l'esdeveniment i el rànquing va per l'índex màxim d'aquesta finestra (`millorHora`). " +
     'El radi surt de `tempsMaxim` amb una estimació en línia recta fins que hi hagi el servei de rutes de Mobilicat. ' +
     '`Cache-Control` privat fins a la propera hora: la consulta porta la ubicació de qui la fa.',
   request: { query: QueryDoc },
@@ -196,7 +230,11 @@ registry.registerPath({
     },
     400: {
       description:
-        'Paràmetres invàlids (`validation_error`) o franja que ja ha passat (`franja_passada`)',
+        'Paràmetres invàlids (`validation_error`, també `esdevenimentId` amb `data`, `desDe` o `finsA`) o franja que ja ha passat (`franja_passada`, també un esdeveniment ja acabat)',
+      content: { 'application/json': { schema: ErrorSchema } },
+    },
+    404: {
+      description: 'Cap esdeveniment publicable amb aquest `esdevenimentId` (`event_not_found`)',
       content: { 'application/json': { schema: ErrorSchema } },
     },
     503: {

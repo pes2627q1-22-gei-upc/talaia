@@ -1,4 +1,5 @@
 import type {
+  EsdevenimentRecomanacions,
   IndexHora,
   ObjectiuObservacio,
   ParametresRecomanacions,
@@ -6,10 +7,12 @@ import type {
   RecomanacionsResposta,
 } from '@talaia/shared';
 
+import type { EsdevenimentsRepository } from '../esdeveniments/esdevenimentsRepository';
 import { nightWindow, upcomingNight } from '../index/night';
 import { ApiError } from '../middleware/errors';
 import { iniciHora } from '../punts/puntsService';
 import { puntLocalitzat } from '../punts/localitzacio';
+import { finestraEsdeveniment, type FinestraEsdeveniment } from './finestra';
 import { franjaUtc } from './franja';
 import type {
   IndexHoraPunt,
@@ -51,12 +54,20 @@ export type ConsultaResolta = {
  * partir de les 06:00, la que ve), la nit sencera si no hi ha franja, 60 minuts en cotxe,
  * `cel_estrellat` i 20 punts. Amb només una de `desDe` i `finsA` no se sap quina franja es vol: la
  * ruta ho rebutja abans d'arribar aquí.
+ *
+ * Amb la `finestra` d'un esdeveniment (TG-140), la nit i la franja són les seves.
  */
-export function resolConsulta(consulta: ParametresRecomanacions, now: Date): ConsultaResolta {
-  const data = consulta.data ?? upcomingNight(now);
+export function resolConsulta(
+  consulta: ParametresRecomanacions,
+  now: Date,
+  finestra?: FinestraEsdeveniment,
+): ConsultaResolta {
+  const data = finestra?.data ?? consulta.data ?? upcomingNight(now);
   const { desDe, finsA } = consulta;
   let franja: ConsultaResolta['franja'];
-  if (desDe !== undefined && finsA !== undefined) {
+  if (finestra) {
+    franja = { desDe: finestra.desDe, finsA: finestra.finsA };
+  } else if (desDe !== undefined && finsA !== undefined) {
     franja = franjaUtc(data, desDe, finsA);
   } else {
     const nit = nightWindow(data);
@@ -131,17 +142,60 @@ async function fromDatabase<T>(query: () => Promise<T>): Promise<T> {
   }
 }
 
+/** D'on es llegeix l'esdeveniment d'una consulta amb `esdevenimentId`: el calendari de TG-138. */
+export type EsdevenimentsFont = Pick<EsdevenimentsRepository, 'findPublicById'>;
+
+/**
+ * L'esdeveniment i la seva finestra (`finestraEsdeveniment`). El mateix 404 que
+ * `GET /esdeveniments/{id}`, i 400 `franja_passada` si ja s'ha acabat.
+ */
+async function finestraDe(
+  esdeveniments: EsdevenimentsFont | undefined,
+  id: string,
+  now: Date,
+): Promise<{ esdeveniment: EsdevenimentRecomanacions; finestra: FinestraEsdeveniment }> {
+  if (!esdeveniments) {
+    throw new ApiError(503, 'database_unavailable', 'Ara mateix no es pot llegir el calendari');
+  }
+  const fila = await fromDatabase(() => esdeveniments.findPublicById(id));
+  if (!fila) {
+    throw new ApiError(404, 'event_not_found', `No hi ha cap esdeveniment publicable amb id ${id}`);
+  }
+  const finestra = finestraEsdeveniment(fila, now);
+  if (!finestra) {
+    throw new ApiError(400, 'franja_passada', `L'esdeveniment ${id} ja s'ha acabat`);
+  }
+  return {
+    esdeveniment: {
+      id: fila.codi,
+      inici: fila.inici.toISOString(),
+      maxim: fila.maxim?.toISOString() ?? null,
+      fi: fila.fi.toISOString(),
+    },
+    finestra,
+  };
+}
+
 /**
  * L'índex v1 (ADR-0018) és el mateix per a tots els objectius: l'adaptació per fenomen arriba en
  * sprints posteriors. Per això `objectiu` es valida però encara no canvia el rànquing.
+ *
+ * Amb `esdevenimentId` (HU11, TG-140), el rànquing és el de la finestra de l'esdeveniment
+ * (`finestraEsdeveniment`) i l'agregació, la de sempre: primer l'índex **màxim** de la finestra
+ * (`millorHora`, «hi haurà algun moment bo?»), després la mitjana i després la distància.
  */
 export function createRecomanacionsService(
   repository: RecomanacionsRepository,
   rutes: EstimadorRutes = rutesEnLiniaRecta,
+  esdeveniments?: EsdevenimentsFont,
 ): RecomanacionsService {
   return {
     async getRecomanacions(parametres, now = new Date(), acceptLanguage) {
-      const { franja, ...consulta } = resolConsulta(parametres, now);
+      const delEsdeveniment =
+        parametres.esdevenimentId === undefined
+          ? undefined
+          : await finestraDe(esdeveniments, parametres.esdevenimentId, now);
+      const { franja, ...consulta } = resolConsulta(parametres, now, delEsdeveniment?.finestra);
       const horaActual = iniciHora(now);
       if (franja.finsA <= horaActual) {
         throw new ApiError(400, 'franja_passada', 'La franja horària demanada ja ha passat');
@@ -160,7 +214,7 @@ export function createRecomanacionsService(
         ),
       );
 
-      return {
+      const resposta: RecomanacionsResposta = {
         data: consulta.data,
         tempsMaxim: consulta.tempsMaxim,
         radiKm,
@@ -172,6 +226,11 @@ export function createRecomanacionsService(
           rutes,
         ).slice(0, consulta.limit),
       };
+      if (!delEsdeveniment) return resposta;
+      resposta.esdeveniment = delEsdeveniment.esdeveniment;
+      // Cap hora amb índex (més enllà de la previsió): els punts ja surten per distància.
+      if (punts.length > 0 && index.length === 0) resposta.avis = 'sense_previsio';
+      return resposta;
     },
   };
 }
