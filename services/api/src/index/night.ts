@@ -81,7 +81,7 @@ function utcOffsetMs(instant: Date, timeZone: string): number {
 }
 
 /** El dia (`YYYY-MM-DD`) que és en una zona horària en un instant. */
-function localDate(instant: Date, timeZone: string): string {
+export function localDate(instant: Date, timeZone: string): string {
   const parts = new Intl.DateTimeFormat('en-CA', {
     timeZone,
     year: 'numeric',

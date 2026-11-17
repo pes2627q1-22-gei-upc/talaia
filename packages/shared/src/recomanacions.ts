@@ -50,7 +50,34 @@ export type ConsultaRecomanacions = {
  * 12:00 a les 12:00 de l'endemà) des de l'hora en curs. `desDe` i `finsA` van junts.
  */
 export type ParametresRecomanacions = Pick<ConsultaRecomanacions, 'origen'> &
-  Partial<Omit<ConsultaRecomanacions, 'origen'>>;
+  Partial<Omit<ConsultaRecomanacions, 'origen'>> & {
+    /**
+     * «On veure-ho» des de la fitxa d'un fenomen (HU11, TG-140): el `codi` de
+     * `GET /api/v1/esdeveniments/{id}` (el mateix que `PlaNou.esdevenimentId`). La franja i la nit
+     * surten de l'esdeveniment (`RecomanacionsResposta.esdeveniment`), així que no va amb `data`,
+     * `desDe` ni `finsA`.
+     */
+    esdevenimentId?: string;
+  };
+
+/**
+ * Avisos de `RecomanacionsResposta`. Una unió de literals perquè l'app en pugui fer un `switch`
+ * exhaustiu; se n'hi poden afegir de nous.
+ *
+ * - `sense_previsio`: cap punt del radi té índex a la finestra de l'esdeveniment (és més enllà de
+ *   la previsió o el worker encara no l'ha calculat): els punts surten per distància.
+ */
+export type AvisRecomanacions = 'sense_previsio';
+
+/** L'esdeveniment d'una consulta amb `esdevenimentId`: el seu horari, en ISO 8601 UTC. */
+export type EsdevenimentRecomanacions = {
+  /** El `codi` de `GET /api/v1/esdeveniments/{id}`. */
+  id: string;
+  inici: string;
+  /** `null` si el fenomen no té un màxim definit. */
+  maxim: string | null;
+  fi: string;
+};
 
 /** Un punt del rànquing de `GET /api/v1/recomanacions`. */
 export type Recomanacio = PuntObservacio & {
@@ -87,4 +114,13 @@ export type RecomanacionsResposta = {
    * previsió) van al final.
    */
   punts: Recomanacio[];
+  /**
+   * Només amb `esdevenimentId`: l'esdeveniment, el seu horari complet. `franja` (i `data`) són la
+   * finestra que se n'ha tret: amb hores conegudes (eclipsis, conjuncions), `[inici, fi]`; amb
+   * precisió de dia (pluges d'estels, fases), la nit del màxim o, si ja ha passat i encara dura, la
+   * nit que toca.
+   */
+  esdeveniment?: EsdevenimentRecomanacions;
+  /** Només amb `esdevenimentId`, i només si cal: vegeu `AvisRecomanacions`. */
+  avis?: AvisRecomanacions;
 };
