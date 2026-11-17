@@ -13,14 +13,16 @@ export function AppProviders({ children }: PropsWithChildren) {
   const [ready, setReady] = useState(false);
   useEffect(() => {
     let mounted = true;
-    void languageReady.then(() => {
+    const finishLoading = () => {
       if (mounted) setReady(true);
-    });
+    };
+    // Un error d’inicialització de l’idioma no ha de bloquejar tota l’app.
+    void languageReady.then(finishLoading, finishLoading);
     return () => {
       mounted = false;
     };
   }, []);
-  // Cap consulta abans de recuperar la preferència desada.
+  // Cap consulta abans d’acabar l’intent de recuperar la preferència desada.
   if (!ready) return null;
 
   return (
