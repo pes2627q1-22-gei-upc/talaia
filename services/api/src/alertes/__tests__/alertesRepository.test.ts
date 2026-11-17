@@ -189,3 +189,21 @@ describe('createDatabaseAlertesStore.update', () => {
     expect(queries).toHaveLength(2);
   });
 });
+
+describe('createDatabaseAlertesStore.remove', () => {
+  const ID = '00000000-0000-4000-8000-000000000001';
+
+  it('esborra només l’alerta del perfil i torna true', async () => {
+    const { db, queries } = fakeDb([[{ id: ID }]]);
+    await expect(createDatabaseAlertesStore(db).remove(PERFIL, ID)).resolves.toBe(true);
+    expect(queries.map((q) => q.sql)).toEqual([
+      'delete from "alertes" where "id" = $1 and "perfil_id" = $2 returning "id"',
+    ]);
+    expect(queries[0]?.parameters).toEqual([ID, PERFIL]);
+  });
+
+  it('torna false si el perfil no té l’alerta (no existeix o és d’un altre)', async () => {
+    const { db } = fakeDb([[]]);
+    await expect(createDatabaseAlertesStore(db).remove(PERFIL, ID)).resolves.toBe(false);
+  });
+});
