@@ -15,7 +15,7 @@ Format: **Context → Decisió → Conseqüències**. Estat: `Acceptada`, `Propo
 | [0007](0007-git-snapshot-stable-prod.md) | Branques snapshot / stable / prod amb PR obligatòria | Substituïda per 0009 |
 | [0008](0008-monorepo.md) | Monorepo amb apps/, services/, packages/shared | Acceptada |
 | [0009](0009-gitflow.md) | Gitflow amb snapshot (develop) / stable (main) / prod, i Conventional Commits 1.0.0 | Acceptada |
-| [0010](0010-eines-app.md) | npm workspaces, Expo Router, TanStack Query, Jest, Node 22 i eines de qualitat (ESLint, Prettier, commitlint) | Acceptada |
+| [0010](0010-eines-app.md) | npm workspaces, Expo Router, TanStack Query, Jest, Node 22 i eines de qualitat (ESLint, Prettier, commitlint) | Acceptada (tests de l'admin: 0034) |
 | [0011](0011-validacio-openapi-zod.md) | Validació amb zod i OpenAPI generat amb zod-to-openapi a l'API | Acceptada |
 | [0012](0012-punts-mapa-geojson.md) | Els punts del mapa se serveixen com un sol GeoJSON en memòria cau (`ETag`), no amb consultes per bbox | Acceptada |
 | [0013](0013-acces-bd-kysely.md) | Accés a la base de dades amb Kysely (`@talaia/db`) sobre migracions SQL de Supabase; RLS activat sense polítiques | Acceptada |
@@ -37,5 +37,6 @@ Format: **Context → Decisió → Conseqüències**. Estat: `Acceptada`, `Propo
 | [0029](0029-rol-admin-i-bloqueig.md) | Rol d'administrador i bloqueig de comptes a `perfils`, llegits a cada petició autenticada: 403 `account_blocked` i `requireAdmin` | Acceptada |
 | [0030](0030-web-administracio-vite-react.md) | Web d'administració separada amb Vite + React + TypeScript, compilada com a fitxers estàtics per a Nginx (P11) | Acceptada |
 | [0031](0031-visibilitat-ubicacio-al-moment.md) | Índex d'una ubicació qualsevol de Catalunya calculat al moment a l'API (`GET /visibilitat`): previsió per cel·la de 0,01° en memòria cau LRU fins al minut 5 de l'hora següent (i la caducada si Open-Meteo falla), SQM d'un punt del catàleg a 1 km o menys (mesurat només a la mateixa cel·la), límit oficial de l'ICGC amb 1,5 km de marge, i 20 consultes noves per client i 250 en total per hora; el càlcul (Open-Meteo, astronomia i fórmula) es comparteix amb el worker a `@talaia/index` | Proposada |
+| [0034](0034-tests-admin-vitest.md) | Tests de la web d'administració amb Vitest, jsdom i Testing Library, amb Supabase i l'API simulats; cobertura LCOV a SonarCloud (excepció a P7 de l'ADR-0010) | Acceptada |
 
 Decisions encara obertes: [pendents.md](pendents.md).
