@@ -5,12 +5,12 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { colors, motion, radii, sizes, spacing } from '@/core/theme/tokens';
+import { FieldRow } from '@/features/explore/FieldRow';
 import { AppText } from '@/shared/ui/AppText';
 import { Button } from '@/shared/ui/Button';
 import { MonthCalendar } from '@/shared/ui/MonthCalendar';
 import { PressableScale } from '@/shared/ui/PressableScale';
 import { Sheet } from '@/shared/ui/Sheet';
-import { Skeleton } from '@/shared/ui/Skeleton';
 import { TextField } from '@/shared/ui/TextField';
 
 import { DepartureTimeSheet } from './DepartureTimeSheet';
@@ -20,7 +20,6 @@ import { type NewPlanParams, useNewPlanViewModel } from './useNewPlanViewModel';
 const pinIcon = require('@/assets/images/explora/ubicacio.svg');
 const calendarIcon = require('@/assets/images/plans/calendari.svg');
 const clockIcon = require('@/assets/images/explora/rellotge.svg');
-const chevronIcon = require('@/assets/images/calendar/chevron-down.svg');
 
 /** Entrada en cascada, com `Screen`: fosa i 6 pt, com a molt 6 blocs. */
 function Enter({ index, children }: PropsWithChildren<{ index: number }>) {
@@ -42,54 +41,6 @@ function SectionLabel({ children }: PropsWithChildren) {
     <AppText variant="label" color="boira">
       {children}
     </AppText>
-  );
-}
-
-/** Fila del formulari (mockup 06): icona, valor i, si s'hi pot tocar, `>`. */
-function FieldRow({
-  icon,
-  label,
-  accessibilityLabel,
-  loading = false,
-  onPress,
-}: {
-  icon: ImageSource;
-  label: string;
-  accessibilityLabel: string;
-  loading?: boolean;
-  onPress?: () => void;
-}) {
-  const content = (
-    <>
-      <Image source={icon} tintColor={colors.lluna} style={styles.icon} accessible={false} />
-      {loading ? (
-        <View style={styles.rowValue} testID="plan-point-loading">
-          <Skeleton width="55%" height={14} />
-        </View>
-      ) : (
-        <AppText variant="body" numberOfLines={1} style={styles.rowValue}>
-          {label}
-        </AppText>
-      )}
-      {onPress ? <Image source={chevronIcon} style={styles.chevron} accessible={false} /> : null}
-    </>
-  );
-  if (!onPress) {
-    return (
-      <View
-        accessible
-        accessibilityLabel={accessibilityLabel}
-        accessibilityState={{ busy: loading }}
-        style={styles.row}
-      >
-        {content}
-      </View>
-    );
-  }
-  return (
-    <PressableScale onPress={onPress} accessibilityLabel={accessibilityLabel} style={styles.row}>
-      {content}
-    </PressableScale>
   );
 }
 
@@ -145,7 +96,9 @@ export function NewPlanScreen(params: NewPlanParams) {
             icon={pinIcon}
             label={vm.point.name}
             accessibilityLabel={vm.point.accessibilityLabel}
+            iconTint={colors.lluna}
             loading={vm.point.loading}
+            loadingTestID="plan-point-loading"
           />
         </Enter>
 
@@ -177,7 +130,9 @@ export function NewPlanScreen(params: NewPlanParams) {
             icon={vm.event.icon}
             label={vm.event.value}
             accessibilityLabel={`${vm.event.label}: ${vm.event.value}`}
+            iconTint={colors.lluna}
             onPress={vm.event.onPress}
+            chevron
           />
         </Enter>
 
@@ -220,24 +175,7 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.nit },
   content: { padding: spacing.ml, gap: spacing.lg },
   section: { gap: spacing.ms },
-  row: {
-    minHeight: sizes.button,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.ms,
-    paddingHorizontal: spacing.md,
-    borderRadius: radii.md,
-    borderWidth: 1,
-    borderColor: colors.linia,
-    backgroundColor: colors.card,
-  },
-  rowValue: { flex: 1 },
   icon: { width: sizes.icon, height: sizes.icon },
-  chevron: {
-    width: sizes.iconSmall,
-    height: sizes.iconSmall,
-    transform: [{ rotate: '-90deg' }],
-  },
   cards: { flexDirection: 'row', gap: spacing.ms },
   card: {
     flex: 1,
