@@ -62,7 +62,9 @@ export function useMapViewModel() {
   const { t } = useTranslation();
   const params = useLocalSearchParams<RecommendationParams>();
   const location = useCurrentPlaceQuery();
-  const { refetch } = location;
+  // `isStale` es llegeix en pintar: React Query només torna a pintar per les propietats llegides,
+  // i així el hook sap quan la ubicació caduca encara que no passi res més.
+  const { refetch, isStale } = location;
   const place = !location.isError && location.data?.status === 'ready' ? location.data.place : null;
   const userLocation = place ? { lat: place.lat, lon: place.lon } : null;
   const [nearby, setNearby] = useState<Nearby>('idle');
@@ -153,7 +155,7 @@ export function useMapViewModel() {
             loading: mode === 'waiting',
             onPress: () => {
               // Una ubicació de fa més de 5 min es torna a llegir: l'usuari pot haver-se mogut.
-              if (place && !location.isStale) openNearby('aqui', place.lat, place.lon, place.name);
+              if (place && !isStale) openNearby('aqui', place.lat, place.lon, place.name);
               else if (mode === 'idle') void findMe();
             },
           },
