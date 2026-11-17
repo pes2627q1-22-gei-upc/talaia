@@ -28,21 +28,21 @@ export function useAlertsViewModel() {
   const alerts = useAlertsQuery();
   const { permission } = usePushPermission();
 
-  // L'interruptor canvia a l'instant (optimista); si l'API falla, torna on era i ho diu.
+  const setActiveInCache = (id: string, activa: boolean) =>
+    queryClient.setQueryData<Alerta[]>(ALERTS_KEY, (list) =>
+      list?.map((alert) => (alert.id === id ? { ...alert, activa } : alert)),
+    );
+
+  // L'interruptor canvia a l'instant (optimista); si l'API falla, només aquella alerta torna on
+  // era (les altres que s'hagin tocat mentrestant es queden com estan) i ho diu.
   const toggle = useMutation({
     mutationFn: ({ id, activa }: { id: string; activa: boolean }) =>
       alertsRepository.setActive(id, activa),
     onMutate: async ({ id, activa }) => {
       await queryClient.cancelQueries({ queryKey: ALERTS_KEY });
-      const previous = queryClient.getQueryData<Alerta[]>(ALERTS_KEY);
-      queryClient.setQueryData<Alerta[]>(ALERTS_KEY, (list) =>
-        list?.map((alert) => (alert.id === id ? { ...alert, activa } : alert)),
-      );
-      return { previous };
+      setActiveInCache(id, activa);
     },
-    onError: (_error, _vars, context) => {
-      queryClient.setQueryData(ALERTS_KEY, context?.previous);
-    },
+    onError: (_error, { id, activa }) => setActiveInCache(id, !activa),
     onSettled: () => queryClient.invalidateQueries({ queryKey: ALERTS_KEY }),
   });
 

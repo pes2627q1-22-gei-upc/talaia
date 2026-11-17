@@ -132,6 +132,30 @@ describe('useAlertsViewModel', () => {
     expect(result.current.items[0]?.active).toBe(true);
   });
 
+  it('si un PATCH falla, només desfà aquella alerta, no les tocades mentrestant', async () => {
+    mockedList
+      .mockResolvedValueOnce([alert(), alert({ id: 'a2', objectiu: 'via_lactia' })])
+      .mockReturnValue(new Promise(() => undefined));
+    let failA1: (error: Error) => void = () => undefined;
+    mockedSetActive.mockImplementation((id) =>
+      id === 'a1'
+        ? new Promise((_resolve, reject) => {
+            failA1 = reject;
+          })
+        : new Promise(() => undefined),
+    );
+    const { result } = await renderViewModel();
+    await waitFor(() => expect(result.current.state).toBe('list'));
+
+    await act(() => result.current.items[0]?.onToggle(false));
+    await act(() => result.current.items[1]?.onToggle(false));
+    await waitFor(() => expect(result.current.items[1]?.active).toBe(false));
+    await act(async () => failA1(new Error('network')));
+
+    await waitFor(() => expect(result.current.items[0]?.active).toBe(true));
+    expect(result.current.items[1]?.active).toBe(false);
+  });
+
   it('«Nova alerta» obre la pantalla de crear-ne una', async () => {
     mockedList.mockResolvedValue([]);
     const { result } = await renderViewModel();

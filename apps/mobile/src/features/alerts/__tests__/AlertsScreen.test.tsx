@@ -1,5 +1,5 @@
 import type { Alerta } from '@talaia/shared';
-import { fireEvent, render, screen, within } from '@testing-library/react-native';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react-native';
 import { useRouter } from 'expo-router';
 import type { PropsWithChildren } from 'react';
 import { Linking, StyleSheet } from 'react-native';
@@ -131,7 +131,9 @@ describe('AlertsScreen', () => {
     const toggle = await screen.findByRole('switch', { name: "Alerta de Pluja d'estels" });
     await fireEvent.press(toggle);
     expect(mockedSetActive).toHaveBeenCalledWith('a1', false);
-    expect(screen.getByRole('switch', { name: "Alerta de Pluja d'estels" })).not.toBeChecked();
+    await waitFor(() =>
+      expect(screen.getByRole('switch', { name: "Alerta de Pluja d'estels" })).not.toBeChecked(),
+    );
 
     await fireEvent.press(screen.getByRole('button', { name: 'Nova alerta' }));
     expect(push).toHaveBeenCalledWith('/nova-alerta');
