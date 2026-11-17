@@ -19,6 +19,7 @@ import type { MapCamera } from './NightMap';
 import { useMapPointsQuery } from './mapRepository';
 import { EMPTY_MAP_POINTS } from './pointMarkers';
 import { useDeviceHeading } from './useDeviceHeading';
+import { useMapSpot } from './useMapSpot';
 import { nightStyle } from './style/nightStyle';
 
 /**
@@ -136,6 +137,9 @@ export function useMapViewModel() {
   const denied = location.data?.status === 'denied' ? location.data : null;
   // L'origen d'un rànquing «A prop meu» triat al mapa: la ubicació de l'usuari ja es veu sola.
   const picked = params.aprop === 'triat' ? parseQuery(params) : null;
+  // Sense cerca, tocar el mapa tria un lloc per veure'n l'índex (HU05, mockup 04).
+  const spot = useMapSpot(place);
+  const spotCard = !recommendations && mode !== 'picking' ? spot.card : null;
 
   return {
     userLocation,
@@ -145,9 +149,18 @@ export function useMapViewModel() {
     points,
     notice,
     recommendations,
-    origin: picked ? { ...picked.origen, label: t('map.origin'), color: colors.far } : null,
-    nearby:
+    origin: picked
+      ? { ...picked.origen, label: t('map.origin'), color: colors.far }
+      : spotCard && spot.spot
+        ? { ...spot.spot, label: t('map.spot.marker'), color: colors.far }
+        : null,
+    hint:
       recommendations || mode === 'picking'
+        ? null
+        : { title: t('map.spot.hint.title'), subtitle: t('map.spot.hint.subtitle') },
+    spot: spotCard,
+    nearby:
+      recommendations || mode === 'picking' || spotCard
         ? null
         : {
             label: t('recommendations.nearby.label'),
@@ -181,7 +194,15 @@ export function useMapViewModel() {
             setNearby('idle');
             openNearby('triat', lat, lon);
           }
-        : undefined,
+        : recommendations
+          ? undefined
+          : async (lat: number, lon: number) => {
+              void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              // Un «A prop meu» que encara busca la ubicació ja no obre el rànquing.
+              search.current++;
+              setNearby('idle');
+              spot.pick(lat, lon);
+            },
     back: { label: t('map.back'), onPress: () => router.back() },
     retryLabel: t('map.retry'),
     retry: () => {

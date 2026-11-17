@@ -29,6 +29,35 @@
       "allow": "Permitir la ubicación",
       "settings": "Abrir Ajustes",
       "close": "Cerrar"
+    },
+    "spot": {
+      "hint": {
+        "title": "Elige un punto en el mapa",
+        "subtitle": "Toca donde quieras para ver su índice"
+      },
+      "title": "Punto elegido en el mapa",
+      "marker": "Punto elegido",
+      "coords": "Lat {{lat}} · Lon {{lon}}",
+      "from": "A {{travel}} de {{place}}",
+      "from_vowel": "A {{travel}} de {{place}}",
+      "fromHere": "A {{travel}} de donde estás",
+      "calculate": "Calcular el índice aquí",
+      "loading": "Calculando el índice…",
+      "at": "Índice de la hora actual ({{time}})",
+      "daytime": "Es de día: el índice cuenta a partir del anochecer.",
+      "estimated": "La oscuridad del cielo es estimada: no hay ningún punto medido cerca.",
+      "outside": {
+        "title": "Este lugar está fuera de Cataluña",
+        "description": "El índice solo se calcula dentro de Cataluña. Toca otro lugar."
+      },
+      "limit": {
+        "title": "Has hecho muchas consultas esta hora",
+        "description": "Vuelve a intentarlo cuando empiece la hora siguiente."
+      },
+      "error": {
+        "title": "No hemos podido calcular el índice",
+        "description": "Vuelve a intentarlo dentro de un rato."
+      }
     }
   },
   "calendar": {

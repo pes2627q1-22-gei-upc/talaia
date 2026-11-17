@@ -12,6 +12,7 @@ import { IndexLegend, RecommendationsSummary } from '../recommendations/Recommen
 import { RecommendationsSheet } from '../recommendations/RecommendationsSheet';
 
 import NightMap from './NightMap';
+import { SpotCard } from './SpotCard';
 import { useMapViewModel } from './useMapViewModel';
 
 const chrome = { background: colors.nit, text: colors.boira, link: colors.lluna };
@@ -164,8 +165,62 @@ export function MapScreen() {
             <Image source={backIcon} style={styles.backIcon} accessible={false} />
           </PressableScale>
           {recommendations && <RecommendationsSummary header={recommendations.header} />}
+          {vm.hint && <RecommendationsSummary header={{ ...vm.hint, legend: [] }} />}
         </View>
         {recommendations && <IndexLegend items={recommendations.header.legend} />}
+        {vm.notice && (
+          <View
+            style={styles.notice}
+            accessibilityLiveRegion="polite"
+            accessibilityState={{ busy: vm.notice.kind === 'loading' }}
+          >
+            {canRetry ? (
+              <View style={styles.retryContainer}>
+                <View style={styles.noticeText}>
+                  <AppText variant="label">{vm.notice.title}</AppText>
+                  {vm.notice.description && (
+                    <AppText variant="small" color="boira">
+                      {vm.notice.description}
+                    </AppText>
+                  )}
+                </View>
+
+                <PressableScale
+                  onPress={vm.retry}
+                  accessibilityLabel={vm.retryLabel}
+                  accessibilityRole="button"
+                  style={styles.retryActionRow}
+                  hitSlop={spacing.ms}
+                >
+                  <AppText variant="label" style={styles.retryText}>
+                    {vm.retryLabel}
+                  </AppText>
+                  <Image source={retryIcon} style={styles.retryIcon} accessible={false} />
+                </PressableScale>
+              </View>
+            ) : (
+              <View style={styles.noticeRow}>
+                {vm.notice.kind === 'loading' && (
+                  <ActivityIndicator
+                    testID="map-loading-indicator"
+                    size="small"
+                    color={colors.far}
+                    accessibilityElementsHidden
+                    importantForAccessibility="no"
+                  />
+                )}
+                <View style={styles.noticeText}>
+                  <AppText variant="label">{vm.notice.title}</AppText>
+                  {vm.notice.description && (
+                    <AppText variant="small" color="boira">
+                      {vm.notice.description}
+                    </AppText>
+                  )}
+                </View>
+              </View>
+            )}
+          </View>
+        )}
       </View>
       {recommendations && <RecommendationsSheet sheet={recommendations.sheet} />}
       {vm.nearby && (
@@ -195,6 +250,15 @@ export function MapScreen() {
             )}
             <AppText variant="label">{vm.nearby.label}</AppText>
           </PressableScale>
+        </Animated.View>
+      )}
+      {vm.spot && (
+        <Animated.View
+          entering={enterUp}
+          exiting={exitDown}
+          style={[styles.spot, { bottom: insets.bottom + spacing.md }]}
+        >
+          <SpotCard card={vm.spot} />
         </Animated.View>
       )}
       {vm.picker && (
@@ -235,59 +299,6 @@ export function MapScreen() {
             </PressableScale>
           </View>
         </Animated.View>
-      )}
-      {vm.notice && (
-        <View
-          style={[styles.notice, { top: insets.top + sizes.button + spacing.sm }]}
-          accessibilityLiveRegion="polite"
-          accessibilityState={{ busy: vm.notice.kind === 'loading' }}
-        >
-          {canRetry ? (
-            <View style={styles.retryContainer}>
-              <View style={styles.noticeText}>
-                <AppText variant="label">{vm.notice.title}</AppText>
-                {vm.notice.description && (
-                  <AppText variant="small" color="boira">
-                    {vm.notice.description}
-                  </AppText>
-                )}
-              </View>
-
-              <PressableScale
-                onPress={vm.retry}
-                accessibilityLabel={vm.retryLabel}
-                accessibilityRole="button"
-                style={styles.retryActionRow}
-                hitSlop={spacing.ms}
-              >
-                <AppText variant="label" style={styles.retryText}>
-                  {vm.retryLabel}
-                </AppText>
-                <Image source={retryIcon} style={styles.retryIcon} accessible={false} />
-              </PressableScale>
-            </View>
-          ) : (
-            <View style={styles.noticeRow}>
-              {vm.notice.kind === 'loading' && (
-                <ActivityIndicator
-                  testID="map-loading-indicator"
-                  size="small"
-                  color={colors.far}
-                  accessibilityElementsHidden
-                  importantForAccessibility="no"
-                />
-              )}
-              <View style={styles.noticeText}>
-                <AppText variant="label">{vm.notice.title}</AppText>
-                {vm.notice.description && (
-                  <AppText variant="small" color="boira">
-                    {vm.notice.description}
-                  </AppText>
-                )}
-              </View>
-            </View>
-          )}
-        </View>
       )}
     </View>
   );
@@ -359,6 +370,7 @@ const styles = StyleSheet.create({
     shadowRadius: 16,
     elevation: 8,
   },
+  spot: { position: 'absolute', left: spacing.md, right: spacing.md },
   pickerRow: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.ms },
   pickerBadge: {
     width: sizes.chip,
@@ -377,10 +389,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   closeIcon: { width: sizes.iconSmall, height: sizes.iconSmall },
+  // Dins de la columna de dalt: queda sota la capçalera, sigui quina sigui la seva alçada.
   notice: {
-    position: 'absolute',
-    left: spacing.md,
-    right: spacing.md,
     padding: spacing.md,
     gap: spacing.sm,
     borderRadius: radii.md,

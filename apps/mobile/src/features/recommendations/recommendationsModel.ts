@@ -1,3 +1,4 @@
+import type { TFunction } from 'i18next';
 import type {
   ConsultaRecomanacions,
   ObjectiuObservacio,
@@ -5,7 +6,7 @@ import type {
   Recomanacio,
 } from '@talaia/shared';
 
-import { GRID_GOALS } from '../explore/exploreModel';
+import { GRID_GOALS, travelParts } from '../explore/exploreModel';
 import type { MapPoints } from '../map/pointMarkers';
 import { twoDigitHours } from '../point/pointModel';
 
@@ -60,6 +61,15 @@ export function parseQuery(params: RecommendationParams): ParametresRecomanacion
  * Context de i18next per a la «de» catalana: s'apostrofa davant de vocal o hac (Igualada, Horta) i
  * de l'u i l'onze («a menys d'1 h»). Els altres idiomes no tenen la variant i fan servir la base.
  */
+/** Temps en cotxe: «45 min», «2 h», «2 h 5 min». */
+export function formatTravel(t: TFunction, total: number): string {
+  const { hours, minutes } = travelParts(total);
+  if (!hours) return t('recommendations.duration.minutes', { minutes });
+  return minutes
+    ? t('recommendations.duration.hoursMinutes', { hours, minutes })
+    : t('recommendations.duration.hours', { hours });
+}
+
 export function elision(text: string): 'vowel' | undefined {
   return /^(h?[aeiouàèéíïòóúü]|11?(?!\d))/i.test(text) ? 'vowel' : undefined;
 }
