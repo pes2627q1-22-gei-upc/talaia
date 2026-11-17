@@ -17,6 +17,7 @@ npm run api                   # = npm run dev -w services/api, amb recàrrega
 - Desglossament de l'índex d'un punt: `http://localhost:3000/api/v1/punts/{id}/index?nit=2026-10-19` (cal `DATABASE_URL`)
 - Perfil: `GET`, `POST` i `PATCH /api/v1/perfil` (cal el JWT de Supabase a `Authorization: Bearer`)
 - Alertes: `GET` i `POST /api/v1/alertes` i `PATCH` i `DELETE /api/v1/alertes/{id}` (cal el JWT de Supabase)
+- Tokens de push: `PUT /api/v1/perfil/dispositius` i `DELETE /api/v1/perfil/dispositius/{token}` (JWT)
 - Favorits: `GET` i `POST /api/v1/favorits` i `DELETE /api/v1/favorits/{puntId}` (cal el JWT de Supabase)
 - Recomanacions: `http://localhost:3000/api/v1/recomanacions?objectiu=cel_estrellat&lat=41.39&lon=2.17&data=<YYYY-MM-DD>&desDe=22&finsA=6&tempsMaxim=150`; «a prop meu»: `…/recomanacions?lat=41.39&lon=2.17`
 - Visibilitat d'una ubicació qualsevol: `http://localhost:3000/api/v1/visibilitat?lat=41.95&lon=1.52` (no cal `DATABASE_URL`; amb `&hora=<ISO 8601>`, una altra hora)
@@ -39,7 +40,7 @@ Es llegeixen del `.env` de l'**arrel** del repo (`dev` i `start` el carreguen am
 | Variable | Per defecte | Què és |
 |---|---|---|
 | `API_PORT` | `3000` | Port on escolta l'API |
-| `DATABASE_URL` | — | Postgres (`postgresql://…`). **Opcional:** sense ella l'API arrenca amb un avís, `/health` funciona i `/punts`, `/punts/{id}`, `/punts/{id}/index`, `/recomanacions`, `/perfil`, `/alertes` i `/favorits` responen 503 `database_unavailable`, i `/visibilitat` funciona amb la foscor estimada. Amb Supabase local: `postgresql://postgres:postgres@127.0.0.1:54322/postgres` |
+| `DATABASE_URL` | — | Postgres (`postgresql://…`). **Opcional:** sense ella l'API arrenca amb un avís, `/health` funciona i `/punts`, `/punts/{id}`, `/punts/{id}/index`, `/recomanacions`, `/perfil`, `/perfil/dispositius`, `/alertes` i `/favorits` responen 503 `database_unavailable`, i `/visibilitat` funciona amb la foscor estimada. Amb Supabase local: `postgresql://postgres:postgres@127.0.0.1:54322/postgres` |
 | `SUPABASE_URL` | `http://127.0.0.1:54321` | URL del projecte de Supabase. `requireAuth` hi valida els JWT amb el JWKS (`/auth/v1/.well-known/jwks.json`, ADR-0023): 401 si el token és dolent, 503 si Supabase no respon. Al compose de la VM és obligatòria |
 | `OPEN_METEO_BASE_URL` | `https://api.open-meteo.com/v1` | URL base d'Open-Meteo, la mateixa que fa servir el worker: `GET /visibilitat` hi demana la previsió de les ubicacions que no són al catàleg |
 | `APROP_API_KEY` | — | Secret de l'API assignat a Aprop. No s'inclou al repositori ni a l'app; sense configurar-lo, l'accés amb API key retorna 503, però l'accés JWT continua disponible. |
@@ -61,6 +62,7 @@ src/
     esdeveniments.ts    GET /esdeveniments, autenticació API key o JWT
     auth.ts             GET, POST i PATCH /perfil (JWT de Supabase, ADR-0023)
     alertes.ts          GET, POST, PATCH i DELETE /alertes: les alertes de l'usuari del JWT (HU16, HU18–HU20)
+    dispositius.ts      PUT i DELETE /perfil/dispositius: Expo push tokens (ADR-0028)
     admin.ts            GET /admin/me, GET /admin/usuaris i PATCH /admin/usuaris/{id} (ADR-0029)
     favorits.ts         POST, GET i DELETE /favorits: els punts favorits de l'usuari del JWT (HU25–HU27)
     puntIndex.ts        GET /punts/{id}/index: desglossament de l'índex per hores i factors (HU04)
@@ -280,6 +282,20 @@ Rutes de `/admin` (tipus `UsuariAdmin` i `UsuariAdminCanvis` a `@talaia/shared`,
 - `PATCH /admin/usuaris/{id}` amb `{ "bloquejat": true | false }`: bloqueja o desbloqueja el compte. L'`id` és el del perfil (`perfils.id`). Torna el compte amb el canvi. Tornar a bloquejar un compte bloquejat no en canvia la data.
 
 Errors: 401 `unauthorized`; 403 `forbidden` (no és admin) o `account_blocked`; 400 `validation_error` (l'`id` no és un UUID o el cos no és vàlid) o `cannot_block_self` (un administrador no es pot bloquejar a si mateix); 404 `usuari_not_found`; 503 sense base de dades.
+
+## `/perfil/dispositius` (HU17, TG-152, ADR-0028)
+
+Els Expo push tokens dels dispositius de l'usuari (taula `dispositius_push`, tipus `DispositiuPush` a `@talaia/shared`), que el worker fa servir per enviar les alertes. Un perfil pot tenir diversos dispositius; un token només és d'un perfil. Les dues rutes fan servir `requireUser` (ADR-0029): un compte bloquejat rep 403 `account_blocked` i no pot registrar ni treure tokens.
+
+- `PUT /perfil/dispositius` amb `{ "token": "ExponentPushToken[…]", "plataforma": "android" }`: upsert idempotent per `token` → 204. Si el token era d'un altre perfil (una altra persona ha entrat al mateix mòbil), passa al de l'usuari del JWT. Es valida el format del token (`ExponentPushToken[…]` o `ExpoPushToken[…]`) i la plataforma (`ios`, `android`); un camp de més és un 400. 404 `profile_not_found` si encara no s'ha fet el `POST /perfil`.
+- `DELETE /perfil/dispositius/{token}` (amb `encodeURIComponent`): l'app la crida en tancar la sessió. Només treu el token si és de l'usuari del JWT i respon 204 també si no hi era.
+
+Prova a mà amb l'API local i un JWT (per exemple, el de l'app):
+
+```bash
+curl -i -X PUT localhost:3000/api/v1/perfil/dispositius -H "Authorization: Bearer $JWT" -H 'Content-Type: application/json' -d '{"token":"ExponentPushToken[prova]","plataforma":"android"}'
+curl -i -X DELETE "localhost:3000/api/v1/perfil/dispositius/ExponentPushToken%5Bprova%5D" -H "Authorization: Bearer $JWT"
+```
 
 ## `/alertes` (HU16 · TG-145, HU18/HU19 · TG-147, HU20 · TG-150)
 

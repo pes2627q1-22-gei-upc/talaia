@@ -4,6 +4,7 @@ import type { PropsWithChildren } from 'react';
 
 import { accountBlocked } from '@/core/api/accountBlocked';
 import '@/core/i18n';
+import { pushRepository } from '@/features/notifications/pushRepository';
 
 import { AuthProvider } from '../AuthProvider';
 import { authRepository, type AuthUser } from '../authRepository';
@@ -17,6 +18,10 @@ jest.mock('../authRepository', () => ({
     signOut: jest.fn(),
     startAutoRefresh: jest.fn(),
   },
+}));
+
+jest.mock('@/features/notifications/pushRepository', () => ({
+  pushRepository: { unregisterDevice: jest.fn(async () => undefined) },
 }));
 
 jest.mock('../profileRepository', () => ({
@@ -202,4 +207,16 @@ it('respecta SIGNED_OUT encara que després falli la revocació remota', async (
   await act(() => result.current.signOut());
   expect(result.current.user).toBeNull();
   expect(result.current.error).toBeNull();
+});
+
+it('en tancar la sessió, treu el token de push abans del signOut (ADR-0028)', async () => {
+  repository.getUser.mockResolvedValue({ id: 'one', email: 'one@example.test' });
+  const { result } = await renderHook(useAuthViewModel, { wrapper });
+  await waitFor(() => expect(result.current.isAuthenticated).toBe(true));
+  await act(() => result.current.signOut());
+  const unregister = jest.mocked(pushRepository.unregisterDevice);
+  expect(unregister).toHaveBeenCalledTimes(1);
+  expect(unregister.mock.invocationCallOrder[0]).toBeLessThan(
+    repository.signOut.mock.invocationCallOrder[0]!,
+  );
 });
