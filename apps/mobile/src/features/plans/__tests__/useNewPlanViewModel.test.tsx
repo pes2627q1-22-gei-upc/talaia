@@ -115,8 +115,18 @@ afterEach(() => {
 });
 
 it('arrenca amb el punt de la fitxa i la millor franja com a hora de sortida', async () => {
+  // El punt arriba quan el test ho diu: si no, pot ser a la memòria cau abans del primer `expect`.
+  let resolvePoint: (value: unknown) => void = () => undefined;
+  const events = respond();
+  get.mockImplementation(((path: string, query?: Record<string, unknown>) =>
+    path === '/esdeveniments'
+      ? events(path, query)
+      : new Promise<unknown>((resolve) => {
+          resolvePoint = resolve;
+        })) as typeof apiGet);
   const { result } = await renderVm();
   expect(result.current.point.loading).toBe(true);
+  await act(async () => resolvePoint(asPointResponse()));
   await waitFor(() => expect(result.current.point.name).toBe('Serra del Montsec'));
   expect(result.current.header).toBe('Nou pla');
   expect(result.current.title).toBe("Pla d'observació");
