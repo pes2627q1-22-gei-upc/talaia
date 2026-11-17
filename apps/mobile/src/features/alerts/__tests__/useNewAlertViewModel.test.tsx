@@ -157,6 +157,20 @@ describe('useNewAlertViewModel', () => {
     expect(mockedCreate.mock.calls[0]?.[0].origen).toEqual({ lat: 42.103, lon: 1.846 });
   });
 
+  it('moure el mapa, tancar-lo sense triar i reobrir-lo desa el centre que es veu', async () => {
+    mockedName.mockResolvedValue('Barcelona');
+    const { result } = await readyViewModel();
+    await act(() => result.current.originModes.onChange(1));
+    await act(() => result.current.zoneSheet.onCenterChange({ lat: 42.1034, lon: 1.8456 }));
+    await act(() => result.current.zoneSheet.onClose());
+
+    await act(() => result.current.origin.onPress?.());
+    expect(result.current.zoneSheet.center).toEqual({ lat: 41.387412, lon: 2.168569 });
+    await act(() => result.current.zoneSheet.confirm.onPress());
+    await waitFor(() => expect(result.current.zoneSheet.visible).toBe(false));
+    expect(mockedName).toHaveBeenCalledWith(41.387412, 2.168569);
+  });
+
   it('si es tanca el mapa sense triar, no hi ha zona i no es pot crear', async () => {
     const { result } = await readyViewModel();
     await act(() => result.current.originModes.onChange(1));
