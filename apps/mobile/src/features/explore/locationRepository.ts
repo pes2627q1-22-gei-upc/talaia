@@ -31,14 +31,24 @@ export async function getCurrentPlace(): Promise<CurrentPlace> {
   return { status: 'ready', place: { name: await placeName(lat, lon), lat, lon } };
 }
 
+/** Temps màxim d'espera del geocodificador: sense xarxa, a Android es pot quedar penjat. */
+export const PLACE_NAME_TIMEOUT_MS = 4000;
+
 /**
  * El municipi (o la comarca) d'un punt, amb el geocodificador del mòbil. El nom és un extra: si
- * falla, és buit i la posició continua servint.
+ * falla o tarda més de `PLACE_NAME_TIMEOUT_MS`, és buit i la posició continua servint.
  */
 export async function placeName(lat: number, lon: number): Promise<string> {
-  const [address] = await Location.reverseGeocodeAsync({ latitude: lat, longitude: lon }).catch(
-    () => [],
-  );
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<Location.LocationGeocodedAddress[]>((resolve) => {
+    timer = setTimeout(() => resolve([]), PLACE_NAME_TIMEOUT_MS);
+  });
+  const [address] = await Promise.race([
+    Location.reverseGeocodeAsync({ latitude: lat, longitude: lon }),
+    timeout,
+  ])
+    .catch(() => [])
+    .finally(() => clearTimeout(timer));
   return address?.city ?? address?.subregion ?? address?.region ?? '';
 }
 
