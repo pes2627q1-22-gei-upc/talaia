@@ -19,6 +19,9 @@ export function bandOf(index: number): FranjaIndex {
 /**
  * L'API desa la distància en km en línia recta (`distanciaMaxKm`, 1–200). El temps es converteix
  * com ho fa `/recomanacions` (TG-100): 60 km/h amb un desviament de ×1,3. 4 h → 185 km.
+ *
+ * És una còpia de `rutesEnLiniaRecta` (`services/api/src/recomanacions/rutes.ts`): si l'API canvia
+ * l'estimació (Mobilicat, TG-135), cal canviar-la també aquí.
  */
 export function travelToKm(minutes: number): number {
   return Math.max(1, Math.round(minutes / 1.3));
