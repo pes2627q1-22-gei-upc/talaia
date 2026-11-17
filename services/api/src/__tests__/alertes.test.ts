@@ -7,7 +7,8 @@ import { createApp } from '../app';
 import type { AccountStatus, ProfileStore } from '../services/profileService';
 
 /**
- * `POST` i `GET /api/v1/alertes` (HU16, TG-145) i `PATCH /api/v1/alertes/{id}` (TG-147) amb JWT locals, el `requireUser` comú (comptes
+ * `POST` i `GET /api/v1/alertes` (HU16, TG-145), `PATCH /api/v1/alertes/{id}` (TG-147) i
+ * `DELETE /api/v1/alertes/{id}` (TG-150) amb JWT locals, el `requireUser` comú (comptes
  * bloquejats, TG-177) i les alertes en memòria.
  */
 const supabaseUrl = 'https://example.supabase.co';
@@ -85,6 +86,14 @@ function memoryStore() {
         }
         fila.alerta = alerta;
         return { ok: true, alerta };
+      },
+    ),
+    remove: jest.fn<ReturnType<AlertesStore['remove']>, Parameters<AlertesStore['remove']>>(
+      async (perfilId, id) => {
+        const i = alertes.findIndex((a) => a.perfilId === perfilId && a.alerta.id === id);
+        if (i === -1) return false;
+        alertes.splice(i, 1);
+        return true;
       },
     ),
   } satisfies AlertesStore;
@@ -456,6 +465,113 @@ describe('PATCH /api/v1/alertes/{id}', () => {
   });
 });
 
+describe('DELETE /api/v1/alertes/{id}', () => {
+  /** Una app amb una alerta de la Maria (`idAlerta(1)`) ja creada. */
+  async function ambAlerta() {
+    const store = memoryStore();
+    const app = appAmb(store);
+    const res = await request(app)
+      .post('/api/v1/alertes')
+      .set('Authorization', auth(MARIA.auth))
+      .send(NOVA);
+    expect(res.status).toBe(201);
+    return { store, app, id: res.body.id as string };
+  }
+
+  it('esborra l’alerta i respon 204 sense cos ni memòria cau (HU20)', async () => {
+    const { store, app, id } = await ambAlerta();
+    const res = await request(app)
+      .delete(`/api/v1/alertes/${id}`)
+      .set('Authorization', auth(MARIA.auth));
+
+    expect(res.status).toBe(204);
+    expect(res.headers['cache-control']).toBe('no-store');
+    expect(res.text).toBe('');
+    expect(store.remove).toHaveBeenCalledWith(MARIA.perfil, id);
+
+    const llista = await request(app).get('/api/v1/alertes').set('Authorization', auth(MARIA.auth));
+    expect(llista.body).toEqual([]);
+  });
+
+  it('esborrar-la dues vegades: la segona respon 404 alert_not_found', async () => {
+    const { app, id } = await ambAlerta();
+    const esborra = () =>
+      request(app).delete(`/api/v1/alertes/${id}`).set('Authorization', auth(MARIA.auth));
+    expect((await esborra()).status).toBe(204);
+    const res = await esborra();
+    expect(res.status).toBe(404);
+    expect(res.body.error.code).toBe('alert_not_found');
+  });
+
+  it('respon 404 alert_not_found si l’alerta no existeix', async () => {
+    const { app } = await ambAlerta();
+    const res = await request(app)
+      .delete(`/api/v1/alertes/${NO_EXISTEIX}`)
+      .set('Authorization', auth(MARIA.auth));
+    expect(res.status).toBe(404);
+    expect(res.body.error.code).toBe('alert_not_found');
+  });
+
+  it('una alerta d’un altre usuari respon 404 com si no existís i no s’esborra', async () => {
+    const { store, app, id } = await ambAlerta();
+    const res = await request(app)
+      .delete(`/api/v1/alertes/${id}`)
+      .set('Authorization', auth(PERE.auth));
+
+    expect(res.status).toBe(404);
+    expect(res.body.error.code).toBe('alert_not_found');
+    expect(store.remove).toHaveBeenCalledWith(PERE.perfil, id);
+
+    const maria = await request(app).get('/api/v1/alertes').set('Authorization', auth(MARIA.auth));
+    expect(maria.body).toHaveLength(1);
+  });
+
+  it('respon 400 validation_error si l’id no és un UUID', async () => {
+    const { store, app } = await ambAlerta();
+    const res = await request(app)
+      .delete('/api/v1/alertes/no-es-un-uuid')
+      .set('Authorization', auth(MARIA.auth));
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe('validation_error');
+    expect(store.remove).not.toHaveBeenCalled();
+  });
+
+  it("respon 404 profile_not_found si l'usuari no té perfil", async () => {
+    const { store, app, id } = await ambAlerta();
+    const res = await request(app)
+      .delete(`/api/v1/alertes/${id}`)
+      .set('Authorization', auth(SENSE_PERFIL));
+    expect(res.status).toBe(404);
+    expect(res.body.error.code).toBe('profile_not_found');
+    expect(store.remove).not.toHaveBeenCalled();
+  });
+
+  it('amb un compte bloquejat respon 403 account_blocked', async () => {
+    const { store, app, id } = await ambAlerta();
+    const res = await request(app)
+      .delete(`/api/v1/alertes/${id}`)
+      .set('Authorization', auth(BLOQUEJAT.auth));
+    expect(res.status).toBe(403);
+    expect(res.body.error.code).toBe('account_blocked');
+    expect(store.remove).not.toHaveBeenCalled();
+  });
+
+  it('sense Authorization respon 401', async () => {
+    const { store, app, id } = await ambAlerta();
+    const res = await request(app).delete(`/api/v1/alertes/${id}`);
+    expect(res.status).toBe(401);
+    expect(store.remove).not.toHaveBeenCalled();
+  });
+
+  it('sense DATABASE_URL respon 503 database_unavailable', async () => {
+    const res = await request(createApp({ supabaseUrl, jwks }))
+      .delete(`/api/v1/alertes/${idAlerta(1)}`)
+      .set('Authorization', auth(MARIA.auth));
+    expect(res.status).toBe(503);
+    expect(res.body.error.code).toBe('database_unavailable');
+  });
+});
+
 describe('/api/v1/alertes amb un compte bloquejat (TG-177)', () => {
   it.each(['post', 'get'] as const)('%s respon 403 account_blocked', async (method) => {
     const store = memoryStore();
@@ -595,5 +711,19 @@ describe('/alertes a l’OpenAPI', () => {
       'objectiu',
       'origen',
     ]);
+  });
+
+  it('documenta DELETE /alertes/{id} amb 204 i 404 alert_not_found', async () => {
+    const res = await request(createApp()).get('/api/v1/openapi.json');
+    const { delete: del } = res.body.paths['/alertes/{id}'];
+
+    expect(del.tags).toEqual(['Alertes']);
+    expect(del.parameters).toEqual([
+      expect.objectContaining({ name: 'id', in: 'path', required: true }),
+    ]);
+    expect(del.requestBody).toBeUndefined();
+    expect(Object.keys(del.responses).sort()).toEqual(['204', '400', '401', '403', '404', '503']);
+    expect(del.responses['204'].content).toBeUndefined();
+    expect(del.responses['404'].description).toContain('alert_not_found');
   });
 });

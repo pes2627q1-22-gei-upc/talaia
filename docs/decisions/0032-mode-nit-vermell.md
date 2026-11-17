@@ -32,7 +32,7 @@ Hi ha una segona paleta amb les mateixes claus que `colors`. Les regles són aqu
 
 - **Només el canal vermell:** a cada color, el verd i el blau són `00` (`#RR0000`, amb transparència o sense).
 - **Contrast del text:** el text és ≥ 4,5:1 sobre totes les superfícies.
-- **Contrast de la resta:** els accents i les franges són ≥ 3:1 sobre el fons.
+- **Contrast de la resta:** els accents, les franges i les categories són ≥ 3:1 sobre totes les superfícies, perquè també fan de vora o de punt sobre targetes i fulls.
 - **Comprovació:** un test de la paleta comprova les tres regles.
 
 Amb només el vermell, el contrast màxim sobre el negre és 5,25:1. Per això el text principal i el secundari surten gairebé iguals, i la jerarquia la fan la mida i el pes.
@@ -49,9 +49,9 @@ Amb només el vermell, el contrast màxim sobre el negre és 5,25:1. Per això e
 | `lluna` | `#EEF0F7` | `#FF0000` | 5,0–5,25:1 |
 | `boira` | `#9AA3C7` | `#F20000` | ≥ 4,5:1 fins a `crep` |
 | `far` | `#FFB547` | `#FF0000` | El text sobre `far` és `nit` (5,25:1) |
-| `ras` · `jus` · `tap` | | `#FF0000` · `#DC0000` · `#B80000` | ≥ 3:1. Només una pista: la franja la diuen el número i el text |
+| `ras` · `jus` · `tap` | | `#FF0000` · `#DC0000` · `#BE0000` | ≥ 3:1 fins a `crep` (`tap`, 3,04:1). Només una pista: la franja la diuen el número i el text |
 | `ubicacio` | `#4B9FFF` | `#FF0000` | |
-| `fenomen*`, `pedra` | | `#C80000` | Les categories del calendari les diu el text |
+| `fenomen*`, `pedra` | | `#C80000` | ≥ 3:1 fins a `crep`. Les categories del calendari les diu el text |
 
 Els degradats i `pointMapColors` també tenen la seva versió vermella. A la TG-239 es poden ajustar els valors, sempre dins de les regles: el test és qui mana.
 
@@ -66,6 +66,7 @@ Els degradats i `pointMapColors` també tenen la seva versió vermella. A la TG-
 - **Estils:** `makeStyles((t) => StyleSheet.create({ … }))` en lloc d'un `StyleSheet.create` amb `colors` en carregar el mòdul. Crea els estils un sol cop per tema, quan cal, i el component els llegeix amb el hook que retorna.
 - **El que no són colors** (espaiats, radis, mides, tipografia i moviment) continua sent constant: el mode nit no hi toca.
 - **Fitxers sense React:** el codi que fa servir colors fora d'un component (`nightStyle`, `MarkerPalette`, `MapChrome`) rep la paleta com a paràmetre.
+- **Barra d'estat:** en mode nit s'amaga (`<StatusBar hidden />`). L'hora i la bateria de l'iOS sempre surten en blanc, i no es poden tenyir.
 - **Barrera:** a la TG-239, quan s'acabi de migrar, una regla `no-restricted-imports` d'ESLint no deixarà importar `colors`, `gradients` ni `pointMapColors` fora de `core/theme`. Així, el codi nou no se salta el tema.
 
 ### Mapa
@@ -92,7 +93,7 @@ A iOS, `setBrightnessAsync` canvia la brillantor de tota la pantalla, no només 
 
 `auto` és el que hi ha per defecte. L'activació automàtica és cosa de la TG-240.
 
-Una tria a mà (activar o desactivar) es desa a AsyncStorage amb la seva caducitat: les 06:00 de l'endemà, la mateixa hora en què l'app canvia de nit (`NIGHT_ENDS_AT`). Així, «la seva tria mana fins a la nit següent».
+Una tria a mà (activar o desactivar) es desa a AsyncStorage amb la seva caducitat: les 06:00 següents, la mateixa hora en què l'app canvia de nit (`NIGHT_ENDS_AT`). Si es tria a la 01:00, caduca cinc hores després, no l'endemà. Així, «la seva tria mana fins a la nit següent».
 
 El `ThemeProvider` decideix el tema a partir d'aquest estat.
 
