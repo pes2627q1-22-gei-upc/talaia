@@ -81,6 +81,12 @@ export function useNewAlertViewModel() {
     });
   };
 
+  // Cada cop que s'obre, el mapa torna a `mapStart`: un centre mogut i descartat no s'hi pot desar.
+  const openZone = () => {
+    setZoneDraft(null);
+    setZoneOpen(true);
+  };
+
   const confirmZone = async () => {
     const picked = zoneDraft ?? mapStart.center;
     setZoneNaming(true);
@@ -95,13 +101,13 @@ export function useNewAlertViewModel() {
         state: 'ready' as const,
         label: zone.name || t('alerts.new.zone.unnamed'),
         hint: t('alerts.new.zone.change'),
-        onPress: () => setZoneOpen(true),
+        onPress: openZone,
       }
     : {
         state: 'empty' as const,
         label: t('alerts.new.zone.empty'),
         hint: t('alerts.new.zone.pick'),
-        onPress: () => setZoneOpen(true),
+        onPress: openZone,
       };
 
   const { hours, minutes } = travelParts(travel);
@@ -143,7 +149,7 @@ export function useNewAlertViewModel() {
         const mode = ORIGIN_MODES[index] ?? 'current';
         setOriginMode(mode);
         // La primera vegada que es tria una zona, el mapa s'obre de seguida.
-        if (mode === 'zone' && !zone) setZoneOpen(true);
+        if (mode === 'zone' && !zone) openZone();
       },
     },
     origin: originMode === 'current' ? current : zoneField,
