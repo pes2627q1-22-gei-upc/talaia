@@ -28,12 +28,28 @@ export async function getCurrentPlace(): Promise<CurrentPlace> {
     (await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }));
   const { latitude: lat, longitude: lon } = position.coords;
 
-  // El nom és un extra: si el geocodificador falla, la posició continua servint.
-  const [address] = await Location.reverseGeocodeAsync({ latitude: lat, longitude: lon }).catch(
-    () => [],
-  );
-  const name = address?.city ?? address?.subregion ?? address?.region ?? '';
-  return { status: 'ready', place: { name, lat, lon } };
+  return { status: 'ready', place: { name: await placeName(lat, lon), lat, lon } };
+}
+
+/** Temps màxim d'espera del geocodificador: sense xarxa, a Android es pot quedar penjat. */
+export const PLACE_NAME_TIMEOUT_MS = 4000;
+
+/**
+ * El municipi (o la comarca) d'un punt, amb el geocodificador del mòbil. El nom és un extra: si
+ * falla o tarda més de `PLACE_NAME_TIMEOUT_MS`, és buit i la posició continua servint.
+ */
+export async function placeName(lat: number, lon: number): Promise<string> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<Location.LocationGeocodedAddress[]>((resolve) => {
+    timer = setTimeout(() => resolve([]), PLACE_NAME_TIMEOUT_MS);
+  });
+  const [address] = await Promise.race([
+    Location.reverseGeocodeAsync({ latitude: lat, longitude: lon }),
+    timeout,
+  ])
+    .catch(() => [])
+    .finally(() => clearTimeout(timer));
+  return address?.city ?? address?.subregion ?? address?.region ?? '';
 }
 
 /** Comparteix la ubicació entre Explora i el mapa, sense duplicar peticions. */
