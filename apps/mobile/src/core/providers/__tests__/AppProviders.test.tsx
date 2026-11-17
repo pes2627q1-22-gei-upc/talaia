@@ -22,6 +22,10 @@ jest.mock('react-native-safe-area-context', () => ({
 jest.mock('@/features/auth/AuthProvider', () => ({
   AuthProvider: ({ children }: PropsWithChildren) => children,
 }));
+// El registre de notificacions necessita la sessió real: aquí només es prova l'espera de l'idioma.
+jest.mock('@/features/notifications/PushRegistrationProvider', () => ({
+  PushRegistrationProvider: ({ children }: PropsWithChildren) => children,
+}));
 
 beforeEach(() => {
   mockLanguageReady = new Promise<void>((resolve, reject) => {
