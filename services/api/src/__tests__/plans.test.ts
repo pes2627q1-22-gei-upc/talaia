@@ -465,9 +465,12 @@ describe('/plans a l’OpenAPI', () => {
       '401',
       '403',
       '404',
+      '409',
       '422',
       '503',
     ]);
+    expect(post.responses['409'].description).toContain('plan_limit_reached');
+    expect(post.responses['409'].description).toContain('plan_already_exists');
     expect(get.parameters.map((p: { name: string }) => p.name)).toContain('quan');
     expect(getId.responses['404'].description).toContain('plan_not_found');
     expect(res.body.components.schemas).toHaveProperty('Pla');
