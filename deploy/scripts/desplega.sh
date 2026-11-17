@@ -12,7 +12,7 @@
 set -eu
 
 # Avís de fallada (des del trap). El cos porta el pas, el commit i la cua del log; mai el fitxer d'entorn.
-# shellcheck disable=SC2317 # la crida el trap d'EXIT
+# shellcheck disable=SC2317,SC2329 # la crida el trap d'EXIT
 fallada() {
   echo "$(date -Is) ERROR: el deploy ha fallat ($pas)"
   [ -f deploy/scripts/avisa.sh ] || return 0
