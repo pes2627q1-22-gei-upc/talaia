@@ -16,10 +16,11 @@ npm run api                   # = npm run dev -w services/api, amb recàrrega
 - Detall del fenomen: `GET /api/v1/esdeveniments/{id}` (mateixa autenticació; `Accept-Language: ca|es|en`, amb fallback al català)
 - Desglossament de l'índex d'un punt: `http://localhost:3000/api/v1/punts/{id}/index?nit=2026-10-19` (cal `DATABASE_URL`)
 - Perfil: `GET`, `POST` i `PATCH /api/v1/perfil` (cal el JWT de Supabase a `Authorization: Bearer`)
-- Alertes: `GET` i `POST /api/v1/alertes` i `PATCH /api/v1/alertes/{id}` (cal el JWT de Supabase)
+- Alertes: `GET` i `POST /api/v1/alertes` i `PATCH` i `DELETE /api/v1/alertes/{id}` (cal el JWT de Supabase)
+- Tokens de push: `PUT /api/v1/perfil/dispositius` i `DELETE /api/v1/perfil/dispositius/{token}` (JWT)
 - Favorits: `GET` i `POST /api/v1/favorits` i `DELETE /api/v1/favorits/{puntId}` (cal el JWT de Supabase)
 - Plans: `POST` i `GET /api/v1/plans` (`?quan=futurs|passats`) i `GET /api/v1/plans/{id}` (cal el JWT de Supabase)
-- Recomanacions: `http://localhost:3000/api/v1/recomanacions?objectiu=cel_estrellat&lat=41.39&lon=2.17&data=<YYYY-MM-DD>&desDe=22&finsA=6&tempsMaxim=150`; «a prop meu»: `…/recomanacions?lat=41.39&lon=2.17`
+- Recomanacions: `http://localhost:3000/api/v1/recomanacions?objectiu=cel_estrellat&lat=41.39&lon=2.17&data=<YYYY-MM-DD>&desDe=22&finsA=6&tempsMaxim=150`; «a prop meu»: `…/recomanacions?lat=41.39&lon=2.17`; «on veure-ho»: `…/recomanacions?lat=41.39&lon=2.17&esdevenimentId=leonids-2026`
 - Visibilitat d'una ubicació qualsevol: `http://localhost:3000/api/v1/visibilitat?lat=41.95&lon=1.52` (no cal `DATABASE_URL`; amb `&hora=<ISO 8601>`, una altra hora)
 - Documentació (Swagger UI): <http://localhost:3000/api/v1/docs>
 - OpenAPI: <http://localhost:3000/api/v1/openapi.json>
@@ -40,7 +41,7 @@ Es llegeixen del `.env` de l'**arrel** del repo (`dev` i `start` el carreguen am
 | Variable | Per defecte | Què és |
 |---|---|---|
 | `API_PORT` | `3000` | Port on escolta l'API |
-| `DATABASE_URL` | — | Postgres (`postgresql://…`). **Opcional:** sense ella l'API arrenca amb un avís, `/health` funciona i `/punts`, `/punts/{id}`, `/punts/{id}/index`, `/recomanacions`, `/perfil`, `/alertes`, `/favorits` i `/plans` responen 503 `database_unavailable`, i `/visibilitat` funciona amb la foscor estimada. Amb Supabase local: `postgresql://postgres:postgres@127.0.0.1:54322/postgres` |
+| `DATABASE_URL` | — | Postgres (`postgresql://…`). **Opcional:** sense ella l'API arrenca amb un avís, `/health` funciona i `/punts`, `/punts/{id}`, `/punts/{id}/index`, `/recomanacions`, `/perfil`, `/perfil/dispositius`, `/alertes`, `/favorits` i `/plans` responen 503 `database_unavailable`, i `/visibilitat` funciona amb la foscor estimada. Amb Supabase local: `postgresql://postgres:postgres@127.0.0.1:54322/postgres` |
 | `SUPABASE_URL` | `http://127.0.0.1:54321` | URL del projecte de Supabase. `requireAuth` hi valida els JWT amb el JWKS (`/auth/v1/.well-known/jwks.json`, ADR-0023): 401 si el token és dolent, 503 si Supabase no respon. Al compose de la VM és obligatòria |
 | `OPEN_METEO_BASE_URL` | `https://api.open-meteo.com/v1` | URL base d'Open-Meteo, la mateixa que fa servir el worker: `GET /visibilitat` hi demana la previsió de les ubicacions que no són al catàleg |
 | `APROP_API_KEY` | — | Secret de l'API assignat a Aprop. No s'inclou al repositori ni a l'app; sense configurar-lo, l'accés amb API key retorna 503, però l'accés JWT continua disponible. |
@@ -61,7 +62,8 @@ src/
     punts.ts            GET /punts (bbox, ETag, Cache-Control i 304) i GET /punts/{id}
     esdeveniments.ts    GET /esdeveniments, autenticació API key o JWT
     auth.ts             GET, POST i PATCH /perfil (JWT de Supabase, ADR-0023)
-    alertes.ts          GET, POST i PATCH /alertes: les alertes de l'usuari del JWT (HU16, HU18, HU19)
+    alertes.ts          GET, POST, PATCH i DELETE /alertes: les alertes de l'usuari del JWT (HU16, HU18–HU20)
+    dispositius.ts      PUT i DELETE /perfil/dispositius: Expo push tokens (ADR-0028)
     admin.ts            GET /admin/me, GET /admin/usuaris i PATCH /admin/usuaris/{id} (ADR-0029)
     favorits.ts         POST, GET i DELETE /favorits: els punts favorits de l'usuari del JWT (HU25–HU27)
     plans.ts            POST, GET i GET {id} /plans: els plans d'observació de l'usuari del JWT (HU12)
@@ -92,6 +94,7 @@ src/
     plansService.ts     Nom del punt per idioma, 422 si el punt o l'esdeveniment no hi són, 404 i errors de la BD → 503
   recomanacions/
     franja.ts           Franja horària local de Catalunya (Europe/Madrid) → UTC, amb el canvi d'hora
+    finestra.ts         Finestra horària d'un esdeveniment del calendari (codi pur, TG-140)
     rutes.ts            Temps en cotxe ↔ radi en línia recta, fins que hi hagi Mobilicat
     recomanacionsRepository.ts  Punts dins del radi (PostGIS) i índex de la franja
     recomanacionsService.ts     Rànquing: millor hora, mitjana i distància; errors de la base de dades → 503
@@ -188,7 +191,7 @@ El desglossament de l'índex d'un punt per a una nit: una entrada per hora amb e
 - **HTTP:** `Cache-Control: public, max-age=<segons fins a la propera hora>`, com `/punts`: l'índex només canvia quan el worker recalcula.
 - **Comparteix amb `/punts/{id}`** les consultes del repositori (`findPublished`, `indexHores`) i l'esquema `IndexHora` de l'OpenAPI (`src/index/indexSchemas.ts`); la ruta és un router a part (`routes/puntIndex.ts`).
 
-## `GET /recomanacions` (HU01, TG-100; HU02, TG-133)
+## `GET /recomanacions` (HU01, TG-100; HU02, TG-133; HU11, TG-140)
 
 El rànquing de punts per a la consulta de «Què vols veure?» (`ParametresRecomanacions` → `RecomanacionsResposta` a `@talaia/shared`). Només l'origen és obligatori: `lat` i `lon`. La resta és opcional, i el servei l'omple (`resolConsulta`):
 
@@ -199,6 +202,7 @@ El rànquing de punts per a la consulta de «Què vols veure?» (`ParametresReco
 | `desDe`, `finsA` | hores locals de Catalunya, 0–23, diferents; **van juntes** (només una → 400) | la nit sencera, de 12:00 a 12:00 (des de l'hora en curs) |
 | `tempsMaxim` | minuts en cotxe, 1–600 | **60** (≈ 46,2 km) |
 | `limit` | 1–100 | 20 |
+| `esdevenimentId` | el `id` (`codi`) de `GET /esdeveniments/{id}`; **no va amb** `data`, `desDe` ni `finsA` (→ 400) | — |
 
 **«A prop meu»** (HU02): amb només la ubicació de l'usuari, `?lat=41.39&lon=2.17` torna el rànquing de la nit en curs a 60 minuts en cotxe. La resposta porta la `data` i el `tempsMaxim` que s'han fet servir, perquè l'app ensenyi la consulta resolta. La mateixa definició valida i documenta la query (ADR-0011).
 
@@ -208,7 +212,15 @@ El rànquing de punts per a la consulta de «Què vols veure?» (`ParametresReco
 - **Sense índex** (una nit més enllà de la previsió, ~4 dies): 200 amb `millorHora` i `mitjana` a `null` i els punts per distància. L'app hi pot dir «encara no hi ha previsió».
 - **Objectiu:** es valida, però l'índex v1 és el mateix per a tots (ADR-0018). Per a `posta_sol` i `sortida_sol` surt baix, perquè el factor Sol val 0 de dia: l'adaptació per fenomen és d'un sprint posterior.
 
-Errors: paràmetres invàlids → 400 `validation_error`; franja passada → 400 `franja_passada`; sense base de dades → 503. `Cache-Control` fins a la propera hora.
+**«On veure-ho»** (HU11, TG-140): amb `esdevenimentId`, la nit i la franja surten de l'esdeveniment (`finestraEsdeveniment` a `finestra.ts`) i la resposta porta, a més, `esdeveniment` (`{ id, inici, maxim, fi }`). Es combina amb l'origen, `tempsMaxim`, `limit` i `objectiu`.
+
+- **Hores conegudes** (eclipsis, conjuncions: `precisio.inici` i `precisio.fi` d'hora o més fines): la franja és `[inici, fi]`, ampliada a les hores senceres que la toquen (05:30–06:30 → les hores de les 05:00 i les 06:00).
+- **Precisió de dia** (pluges d'estels de setmanes, fases de la Lluna, superllunes): el màxim de tot `[inici, fi]` seria una hora qualsevol dels dies de previsió. Per això, si la **nit del màxim** (la nit de 12:00 a 12:00 que el conté; sense màxim, la del primer dia) és la que toca (`upcomingNight`) o una de posterior, la franja és aquella nit sencera. Si ja ha passat però l'esdeveniment **encara dura** (`fi` ≥ ara), la nit que toca, retallada a `[inici, fi]`: les Leònides (6–30/11) encara es poden mirar el 20/11.
+- **Agregació:** la mateixa que sense esdeveniment: primer l'**índex màxim** de la finestra (`millorHora`: «hi haurà algun moment bo?»), després la mitjana i després la distància.
+- **Errors:** esdeveniment inexistent o no publicable → 404 `event_not_found` (el mateix que `GET /esdeveniments/{id}`); ja acabat (`fi` < ara) → 400 `franja_passada`. Si cap punt del radi té índex a la finestra (més enllà de la previsió), 200 amb els punts per distància i **`avis: 'sense_previsio'`** (`AvisRecomanacions`, una unió de literals perquè l'app en faci un `switch` exhaustiu).
+- Sense `esdevenimentId`, la resposta no canvia: no porta ni `esdeveniment` ni `avis`.
+
+Errors: paràmetres invàlids → 400 `validation_error`; franja passada → 400 `franja_passada`; esdeveniment inexistent → 404 `event_not_found`; sense base de dades → 503. `Cache-Control` fins a la propera hora.
 
 ## `GET /visibilitat` (HU05, TG-130)
 
@@ -314,13 +326,28 @@ Rutes de `/admin` (tipus `UsuariAdmin` i `UsuariAdminCanvis` a `@talaia/shared`,
 
 Errors: 401 `unauthorized`; 403 `forbidden` (no és admin) o `account_blocked`; 400 `validation_error` (l'`id` no és un UUID o el cos no és vàlid) o `cannot_block_self` (un administrador no es pot bloquejar a si mateix); 404 `usuari_not_found`; 503 sense base de dades.
 
-## `/alertes` (HU16 · TG-145, HU18/HU19 · TG-147)
+## `/perfil/dispositius` (HU17, TG-152, ADR-0028)
+
+Els Expo push tokens dels dispositius de l'usuari (taula `dispositius_push`, tipus `DispositiuPush` a `@talaia/shared`), que el worker fa servir per enviar les alertes. Un perfil pot tenir diversos dispositius; un token només és d'un perfil. Les dues rutes fan servir `requireUser` (ADR-0029): un compte bloquejat rep 403 `account_blocked` i no pot registrar ni treure tokens.
+
+- `PUT /perfil/dispositius` amb `{ "token": "ExponentPushToken[…]", "plataforma": "android" }`: upsert idempotent per `token` → 204. Si el token era d'un altre perfil (una altra persona ha entrat al mateix mòbil), passa al de l'usuari del JWT. Es valida el format del token (`ExponentPushToken[…]` o `ExpoPushToken[…]`) i la plataforma (`ios`, `android`); un camp de més és un 400. 404 `profile_not_found` si encara no s'ha fet el `POST /perfil`.
+- `DELETE /perfil/dispositius/{token}` (amb `encodeURIComponent`): l'app la crida en tancar la sessió. Només treu el token si és de l'usuari del JWT i respon 204 també si no hi era.
+
+Prova a mà amb l'API local i un JWT (per exemple, el de l'app):
+
+```bash
+curl -i -X PUT localhost:3000/api/v1/perfil/dispositius -H "Authorization: Bearer $JWT" -H 'Content-Type: application/json' -d '{"token":"ExponentPushToken[prova]","plataforma":"android"}'
+curl -i -X DELETE "localhost:3000/api/v1/perfil/dispositius/ExponentPushToken%5Bprova%5D" -H "Authorization: Bearer $JWT"
+```
+
+## `/alertes` (HU16 · TG-145, HU18/HU19 · TG-147, HU20 · TG-150)
 
 Les alertes de l'usuari autenticat (tipus `Alerta` i `AlertaNova` a `@talaia/shared`, taula `alertes`). Com `/perfil`, passen pel `requireUser` de `routes/index.ts` (JWT de Supabase i compte no bloquejat) i responen amb `Cache-Control: no-store`.
 
 - `POST /alertes`: crea una alerta (201), sempre activa. Com a molt **20 per usuari** (`MAX_ALERTES`), perquè el worker de notificacions (TG-153) les avalua totes cada hora; el comptatge i la inserció es fan en una transacció que bloqueja el perfil, de manera que dues peticions alhora no poden passar el límit. Cos: `{ "objectiu": "pluja_estels", "origen": { "lat": 41.3874, "lon": 2.1686 }, "distanciaMaxKm": 60, "indexMinim": 70, "avisaEnArribar": true, "horaAvis": 18 }`. `objectiu` és un `ObjectiuObservacio` (el selector de «Què vols veure?»), `distanciaMaxKm` un enter d'1 a 200 i `indexMinim` un enter de 0 a 100. Quan s'avisa (TG-146): `avisaEnArribar` (tan bon punt algun punt arriba a l'índex mínim) i `horaAvis` (el mateix dia a aquesta hora local, enter de 0 a 23, si la previsió de la nit hi arriba; `null` si no). Tots dos són obligatoris al cos i almenys un ha d'estar triat (`true` o una hora); si no, 400. La taula ho garanteix amb el `check` `alertes_quan_avisa`. El cos és estricte: un camp de més (per exemple `perfilId`) és un 400.
 - `GET /alertes`: les alertes de l'usuari, de la més nova a la més antiga (`[]` si no en té cap).
 - `PATCH /alertes/{id}` (TG-147): activa o desactiva l'alerta (`{ "activa": false }`, HU19; una alerta desactivada no notifica) i n'edita les preferències (HU18). Cos `AlertaCanvis`: els mateixos camps que `POST` més `activa`, tots opcionals però almenys un, i estricte. Respon 200 amb l'`Alerta`. La regla de «quan avisa» es comprova amb els valors que quedaran després del canvi: treure l'hora d'una alerta que no avisa en arribar-hi és un 400 `validation_error`. Es fa en una transacció que bloqueja la fila. Un `id` que no és un UUID és un 400; una alerta que no és de l'usuari respon 404 `alert_not_found`, igual que una que no existeix.
+- `DELETE /alertes/{id}` (TG-150, HU20): esborra l'alerta i respon 204 sense cos; esborrada, ja no notifica. Un `id` que no és un UUID és un 400; una alerta que no és de l'usuari respon 404 `alert_not_found`, igual que una que no existeix (o que ja s'ha esborrat), de manera que no es pot saber si l'`id` d'un altre existeix. L'esborrat filtra per `id` i perfil a l'SQL (`delete … returning id`).
 
 **Només les de l'usuari:** el perfil surt sempre del JWT (`req.account.perfilId`, que llegeix `requireUser`), mai del cos, i les consultes filtren per ell a l'SQL. Esborrar el compte esborra les alertes (`on delete cascade`).
 
@@ -341,7 +368,7 @@ Tota resposta d'error té el format `{ error: { code, message } }`:
 |---|---|---|
 | 400 | `validation_error` | Un esquema zod rebutja l'entrada |
 | 400 | `invalid_json` | El cos no és JSON vàlid |
-| 400 | `franja_passada` | `GET /recomanacions` amb una franja horària que ja ha acabat |
+| 400 | `franja_passada` | `GET /recomanacions` amb una franja horària o un esdeveniment (`esdevenimentId`) que ja ha acabat |
 | 400 | `cannot_block_self` | `PATCH /admin/usuaris/{id}`: un administrador es vol bloquejar a si mateix |
 | 401 | `unauthorized` | Falta el JWT o no és vàlid |
 | 403 | `account_blocked` | El compte està bloquejat (HU41): a qualsevol ruta amb `requireUser`. L'app hi mostra l'avís |
@@ -349,6 +376,7 @@ Tota resposta d'error té el format `{ error: { code, message } }`:
 | 404 | `not_found` | La ruta no existeix |
 | 404 | `usuari_not_found` | `PATCH /admin/usuaris/{id}`: cap perfil amb aquest `id` |
 | 404 | `punt_not_found` | `/punts/{id}`, `/punts/{id}/index` i `POST /favorits`: cap punt publicat amb aquest `id` |
+| 404 | `event_not_found` | `GET /esdeveniments/{id}` i `GET /recomanacions?esdevenimentId=`: cap esdeveniment publicable amb aquest `id` |
 | 404 | `profile_not_found` | `/perfil` (`GET` i `PATCH`) i `/favorits`: l'usuari encara no ha fet `POST /perfil` |
 | 422 | `fora_de_catalunya` | `GET /visibilitat`: la ubicació és fora de Catalunya |
 | 422 | `hora_sense_previsio` | `GET /visibilitat`: l'hora no és entre l'hora en curs i 72 hores endavant (o Open-Meteo no l'ha tornat) |

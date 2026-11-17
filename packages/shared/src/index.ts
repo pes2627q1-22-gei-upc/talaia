@@ -5,6 +5,7 @@ export type * from './esdeveniments';
 export type * from './favorits';
 export type * from './indexVisibilitat';
 export type * from './meteo';
+export type * from './notificacions';
 export type * from './perfil';
 export type * from './plans';
 export type * from './punts';

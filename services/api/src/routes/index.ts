@@ -12,10 +12,12 @@ import type { PlansService } from '../plans/plansService';
 import type { PuntsService } from '../punts/puntsService';
 import type { RecomanacionsService } from '../recomanacions/recomanacionsService';
 import type { ProfileStore } from '../services/profileService';
+import type { PushDeviceStore } from '../services/pushDeviceService';
 import type { VisibilitatService } from '../visibilitat/visibilitatService';
 import { createAdminRouter } from './admin';
 import { createAlertesRouter } from './alertes';
 import { createAuthRouter } from './auth';
+import { createDispositiusRouter } from './dispositius';
 import { createEsdevenimentsRouter } from './esdeveniments';
 import './esdeveniments.contract';
 import { createFavoritsRouter } from './favorits';
@@ -40,8 +42,10 @@ export type ApiDeps = {
   supabaseUrl?: string;
   jwks?: JwksSource;
   profileStore?: ProfileStore;
-  /** `POST`, `GET` i `PATCH /alertes` (TG-145, TG-147). */
+  /** `POST`, `GET`, `PATCH` i `DELETE /alertes` (TG-145, TG-147, TG-150). */
   alertes?: AlertesStore;
+  /** Expo push tokens (`/perfil/dispositius`, TG-152). */
+  dispositius?: PushDeviceStore;
   esdeveniments?: EsdevenimentsService;
   apropApiKey?: string;
   /** `POST`, `GET` i `DELETE /favorits` (TG-169). */
@@ -60,6 +64,7 @@ export function createApiRouter({
   jwks,
   profileStore,
   alertes,
+  dispositius,
   esdeveniments,
   apropApiKey,
   favorits,
@@ -83,6 +88,7 @@ export function createApiRouter({
     accountStatus: (authUserId) => profileStore.getAccountStatus(authUserId),
   });
   router.use(createAuthRouter({ requireUser, profileStore }));
+  router.use(createDispositiusRouter({ requireUser, store: dispositius }));
   router.use('/admin', createAdminRouter({ requireUser, profileStore }));
   router.use('/alertes', createAlertesRouter({ requireUser, store: alertes }));
   router.use('/favorits', createFavoritsRouter({ requireUser, service: favorits }));

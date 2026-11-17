@@ -16,6 +16,12 @@
     "xema": "tsx --env-file-if-exists=../../.env src/meteocat/cli.ts"
   },
   "jest": {
+    "collectCoverageFrom": [
+      "src/**/*.ts",
+      "!src/**/__tests__/**",
+      "!src/**/*.test.ts",
+      "!src/**/*.d.ts"
+    ],
     "preset": "ts-jest",
     "testEnvironment": "node"
   },

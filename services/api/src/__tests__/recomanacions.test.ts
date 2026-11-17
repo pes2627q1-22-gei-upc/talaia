@@ -1,8 +1,12 @@
 import request from 'supertest';
 
 import { createApp } from '../app';
+import type { FilaEsdeveniment } from '../esdeveniments/esdevenimentsRepository';
 import type { RecomanacionsRepository } from '../recomanacions/recomanacionsRepository';
-import { createRecomanacionsService } from '../recomanacions/recomanacionsService';
+import {
+  createRecomanacionsService,
+  type EsdevenimentsFont,
+} from '../recomanacions/recomanacionsService';
 
 // Una nit llunyana: la franja no ha passat mai, i a l'hivern (CET) 22 h locals = 21 h UTC.
 const QUERY = {
@@ -325,7 +329,7 @@ describe('GET /api/v1/recomanacions', () => {
   it("surt a l'OpenAPI amb l'esquema Recomanacions", async () => {
     const res = await request(createApp()).get('/api/v1/openapi.json');
     const ruta = res.body.paths['/recomanacions'];
-    expect(Object.keys(ruta.get.responses)).toEqual(['200', '400', '503']);
+    expect(Object.keys(ruta.get.responses)).toEqual(['200', '400', '404', '503']);
     // Els paràmetres es documenten amb la mateixa definició que els valida: tipus, rangs i format.
     const params = Object.fromEntries(
       ruta.get.parameters.map((p: { name: string; required: boolean; schema: object }) => [
@@ -341,6 +345,7 @@ describe('GET /api/v1/recomanacions', () => {
       'desDe',
       'finsA',
       'tempsMaxim',
+      'esdevenimentId',
       'limit',
     ]);
     expect(params.lat).toMatchObject({ required: true, type: 'number', minimum: -90, maximum: 90 });
@@ -362,6 +367,106 @@ describe('GET /api/v1/recomanacions', () => {
     );
     expect(recomanacions.properties.punts.items.properties.millorHora.allOf[0].$ref).toBe(
       '#/components/schemas/IndexHora',
+    );
+    // TG-140: camps opcionals, no trenquen el contracte.
+    expect(recomanacions.required).not.toContain('esdeveniment');
+    expect(recomanacions.required).not.toContain('avis');
+    expect(recomanacions.properties.avis.enum).toEqual(['sense_previsio']);
+    expect(params.esdevenimentId).toMatchObject({ required: false, type: 'string' });
+    expect(res.body.paths['/recomanacions'].get.responses['404']).toBeDefined();
+  });
+});
+
+describe('GET /api/v1/recomanacions?esdevenimentId= (TG-140)', () => {
+  // Un eclipsi llunyà amb hores conegudes: la finestra no ha passat mai.
+  const ECLIPSI: FilaEsdeveniment = {
+    codi: 'eclipsi-lunar-2099-12-15',
+    tipus: 'eclipsi_llunar',
+    inici: new Date('2099-12-15T22:12:00Z'),
+    fi: new Date('2099-12-16T01:13:00Z'),
+    maxim: new Date('2099-12-15T23:13:00Z'),
+    precisio: { inici: 'minut', fi: 'minut', maxim: 'minut' },
+    textosFenomen: {},
+    textosEsdeveniment: {},
+    organitzacio: 'NASA',
+    metodeCalcul: null,
+  };
+  const esdeveniments: EsdevenimentsFont = {
+    findPublicById: async (id) => (id === ECLIPSI.codi ? ECLIPSI : undefined),
+  };
+  const app = (repo: RecomanacionsRepository = repository) =>
+    createApp({ recomanacions: createRecomanacionsService(repo, undefined, esdeveniments) });
+  const ORIGEN = { lat: QUERY.lat, lon: QUERY.lon };
+
+  it("respon 200 amb la finestra de l'esdeveniment i l'esdeveniment", async () => {
+    const res = await request(app())
+      .get('/api/v1/recomanacions')
+      .query({ ...ORIGEN, esdevenimentId: ECLIPSI.codi });
+
+    expect(res.status).toBe(200);
+    expect(res.body.data).toBe('2099-12-15');
+    expect(res.body.franja).toEqual({
+      desDe: '2099-12-15T22:00:00.000Z',
+      finsA: '2099-12-16T01:13:00.000Z',
+    });
+    expect(res.body.esdeveniment).toEqual({
+      id: ECLIPSI.codi,
+      inici: '2099-12-15T22:12:00.000Z',
+      maxim: '2099-12-15T23:13:00.000Z',
+      fi: '2099-12-16T01:13:00.000Z',
+    });
+    // La millor hora de cada punt cau dins de la finestra.
+    const millor = res.body.punts[0].millorHora.hora;
+    expect(millor >= res.body.franja.desDe && millor < res.body.franja.finsA).toBe(true);
+    expect(res.body).not.toHaveProperty('avis');
+  });
+
+  it('sense índex a la finestra: avis sense_previsio', async () => {
+    const res = await request(app({ ...repository, indexHores: async () => [] }))
+      .get('/api/v1/recomanacions')
+      .query({ ...ORIGEN, esdevenimentId: ECLIPSI.codi });
+    expect(res.status).toBe(200);
+    expect(res.body.avis).toBe('sense_previsio');
+    expect(res.body.punts.map((p: { id: string }) => p.id)).toEqual(['b', 'a']);
+  });
+
+  it('un esdeveniment que no existeix → 404 event_not_found', async () => {
+    const res = await request(app())
+      .get('/api/v1/recomanacions')
+      .query({ ...ORIGEN, esdevenimentId: 'no-existeix' });
+    expect(res.status).toBe(404);
+    expect(res.body.error.code).toBe('event_not_found');
+  });
+
+  it.each([
+    ['data', { data: '2099-12-15' }],
+    ['desDe i finsA', { desDe: '22', finsA: '6' }],
+  ])('esdevenimentId amb %s → 400 validation_error', async (_cas, canvis) => {
+    const res = await request(app())
+      .get('/api/v1/recomanacions')
+      .query({ ...ORIGEN, esdevenimentId: ECLIPSI.codi, ...canvis });
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe('validation_error');
+    expect(res.body.error.message).toBe(
+      "esdevenimentId no va amb data, desDe ni finsA: la finestra és la de l'esdeveniment",
+    );
+  });
+
+  it('esdevenimentId buit (o d’espais) és un que falta, com la resta de paràmetres (`senseBuits`)', async () => {
+    const res = await request(app())
+      .get('/api/v1/recomanacions')
+      .query({ ...ORIGEN, esdevenimentId: '  ' });
+    expect(res.status).toBe(200);
+    expect(res.body).not.toHaveProperty('esdeveniment');
+  });
+
+  it('sense esdevenimentId, la mateixa resposta que abans (regressió)', async () => {
+    const amb = await request(app()).get('/api/v1/recomanacions').query(QUERY);
+    const sense = await request(appWith()).get('/api/v1/recomanacions').query(QUERY);
+    expect(amb.status).toBe(200);
+    expect(amb.body).toEqual(sense.body);
+    expect(Object.keys(amb.body).sort()).toEqual(
+      ['data', 'franja', 'punts', 'radiKm', 'tempsMaxim', 'total'].sort(),
     );
   });
 });
