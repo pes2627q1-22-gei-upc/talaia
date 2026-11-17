@@ -9,6 +9,7 @@ on:
       - 'services/*/Dockerfile'
       - 'services/worker/**'
       - 'packages/db/**'
+      - 'packages/index/**'
       - '.dockerignore'
       - 'package-lock.json'
       - '.github/workflows/deploy*.yml'

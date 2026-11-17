@@ -418,7 +418,11 @@
     "title": "El teu compte està bloquejat",
     "message": "No pots fer servir Talaia amb aquest compte. Si creus que és un error, contacta amb l'equip de Talaia.",
     "retry": "Torna-ho a comprovar",
-    "checking": "Comprovant…"
+    "checking": "Comprovant…",
+    "contact": "Escriu a {{email}}",
+    "contactError": "No s'ha pogut obrir el correu. Escriu-nos a {{email}}.",
+    "contactSubject": "Compte de Talaia bloquejat",
+    "contactBody": "El meu compte de Talaia és {{account}}."
   },
   "emailLogin": {
     "title": "Entra amb el correu",

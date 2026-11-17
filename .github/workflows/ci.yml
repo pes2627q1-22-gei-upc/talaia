@@ -77,6 +77,10 @@ jobs:
         if: ${{ !cancelled() && matrix.check == 'tests' }}
         run: npm run test --workspace packages/db -- --ci
 
+      - name: Tests de @talaia/index
+        if: ${{ !cancelled() && matrix.check == 'tests' }}
+        run: npm run test --workspace packages/index -- --ci
+
       - name: Tests dels scripts de dades
         if: ${{ !cancelled() && matrix.check == 'tests' }}
         run: npm run test --workspace data
