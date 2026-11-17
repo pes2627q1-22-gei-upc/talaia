@@ -51,7 +51,7 @@ function renderVm(id: string, calendar: Esdeveniment[] = []) {
     defaultOptions: { queries: { retry: false, gcTime: Infinity } },
   });
   // Com si el calendari ja hagués baixat el mes.
-  if (calendar.length) client.setQueryData(['calendar', 2026, 9], { data: calendar });
+  if (calendar.length) client.setQueryData(['calendar', 'ca', 2026, 9], { data: calendar });
   const wrapper = ({ children }: PropsWithChildren) => (
     <QueryClientProvider client={client}>{children}</QueryClientProvider>
   );
@@ -174,8 +174,10 @@ it('apostrofa l’1 i l’11 i diu «a la» per a la una', async () => {
 });
 
 it('també en castellà i en anglès, i demana el detall en aquest idioma', async () => {
+  get.mockResolvedValue(orionids);
   const { result } = await renderVm('orionids-2026', [orionids]);
   await act(() => i18n.changeLanguage('es'));
+  await waitFor(() => expect(result.current.status).toBe('ok'));
   expect(result.current).toMatchObject({
     headerTitle: 'Evento',
     typeLabel: 'Lluvia de estrellas',
@@ -184,6 +186,7 @@ it('també en castellà i en anglès, i demana el detall en aquest idioma', asyn
   });
   expect(get).toHaveBeenLastCalledWith(...request('orionids-2026', 'es'));
   await act(() => i18n.changeLanguage('en'));
+  await waitFor(() => expect(result.current.status).toBe('ok'));
   expect(result.current).toMatchObject({
     headerTitle: 'Event',
     typeLabel: 'Meteor shower',
@@ -227,4 +230,11 @@ it('torna al calendari, també si s’hi ha arribat per un enllaç', async () =>
   jest.mocked(router.canGoBack).mockReturnValueOnce(false);
   result.current.back();
   expect(router.replace).toHaveBeenCalledWith('/calendari');
+});
+
+it('no mostra el calendari català mentre espera el detall en una altra llengua', async () => {
+  const { result } = await renderVm('orionids-2026', [orionids]);
+  expect(result.current.status).toBe('ok');
+  await act(() => i18n.changeLanguage('es'));
+  expect(result.current.status).toBe('loading');
 });

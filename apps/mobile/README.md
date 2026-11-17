@@ -210,3 +210,32 @@ Per a una feature `xxx` (identificadors en anglès) amb ruta `/ruta-en-catala`:
 6. **Textos**: les claus noves als tres fitxers de `core/i18n/locales/` (ca, es, en). Són tipades: una clau inexistent no compila, i un test comprova que els tres idiomes tenen les mateixes.
 7. **Tests** a `src/features/xxx/__tests__/`: copia els d'`apiStatus`. Només se simula `apiGet` (`jest.mock('@/core/api/httpClient', …)`) i el proveïdor de consultes és `createQueryWrapper()`.
 8. Abans de la PR, des de l'arrel: `npm run lint && npm run typecheck && npm test`.
+
+### Idioma de l’app i del contingut (TG-163)
+
+Al perfil es pot triar català, castellà o anglès. El canvi és immediat i es desa
+localment amb AsyncStorage (`talaia:idioma`), també després de tancar la sessió.
+En arrencar, l’app recupera aquesta preferència abans de muntar els proveïdors de
+sessió i les pantalles; sense preferència vàlida, fa servir l’idioma del dispositiu
+si és compatible, o català.
+
+El client HTTP afegeix `Accept-Language` a totes les peticions; conserva una
+capçalera explícita del repositori. Les consultes de punts, mapa, recomanacions i
+calendari tenen memòria cau separada per idioma. El detall d’un esdeveniment només
+reutilitza les dades del calendari en la mateixa llengua. Les traduccions editorials
+i el fallback de contingut al català corresponen a l’API (TG-164).
+
+Comprovació manual a Expo Go (pendent de fer en dispositiu):
+
+1. Obrir el perfil i triar cadascun dels tres idiomes: comprovar els textos, el botó
+   seleccionat i que els tres selectors siguin visibles, sense solapaments ni retalls.
+2. Obrir mapa, fitxa d’un punt, recomanacions i calendari; canviar d’idioma i tornar-hi.
+   Comprovar els textos amb un contingut que tingui traducció i la capçalera de petició.
+3. Tancar completament l’app i tornar-la a obrir: comprovar que conserva l’idioma.
+4. Repetir amb mida de lletra ampliada i pantalla estreta: comprovar que els selectors
+   salten de línia i continuen accessibles.
+
+Les proves automàtiques del perfil cobreixen els botons, la selecció i els textos
+en ca/es/en. `httpClient.test.ts` cobreix la capçalera, i `localizedQueries.test.tsx`
+comprova que canviar d’idioma renova les dades i que tornar-hi reutilitza només la
+memòria cau corresponent. Aquestes proves no substitueixen la inspecció visual al dispositiu.

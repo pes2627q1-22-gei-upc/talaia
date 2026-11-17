@@ -2,6 +2,7 @@ import type { ApiErrorBody } from '@talaia/shared';
 
 import { getAccessToken } from '@/core/auth/accessToken';
 import { env } from '@/core/config/env';
+import i18n, { DEFAULT_LANGUAGE, isSupportedLanguage } from '@/core/i18n';
 
 import { ACCOUNT_BLOCKED, accountBlocked } from './accountBlocked';
 
@@ -57,6 +58,10 @@ async function apiRequest<T>(url: string, init: RequestInit): Promise<T> {
   }
   const headers = new Headers(init.headers);
   if (!headers.has('Accept')) headers.set('Accept', 'application/json');
+  if (!headers.has('Accept-Language')) {
+    const language = i18n.resolvedLanguage;
+    headers.set('Accept-Language', isSupportedLanguage(language) ? language : DEFAULT_LANGUAGE);
+  }
   const token = await getAccessToken();
   // La sessió actual és l'única font d'autorització, també després d'un logout.
   headers.delete('Authorization');
