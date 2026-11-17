@@ -33,3 +33,9 @@ export type AlertaNova = Pick<
   Alerta,
   'objectiu' | 'origen' | 'distanciaMaxKm' | 'indexMinim' | 'avisaEnArribar' | 'horaAvis'
 >;
+
+/**
+ * Cos de `PATCH /api/v1/alertes/{id}` (TG-147): activar o desactivar l'alerta (HU19) i canviar-ne
+ * les preferències (HU18). Només hi van els camps que canvien, almenys un.
+ */
+export type AlertaCanvis = Partial<AlertaNova & Pick<Alerta, 'activa'>>;
