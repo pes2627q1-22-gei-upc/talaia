@@ -71,6 +71,7 @@
       {
         "displayName": "app",
         "preset": "jest-expo",
+        "globalSetup": "<rootDir>/jest.timezone.js",
         "testEnvironment": "@shopify/react-native-skia/jestEnv.js",
         "transform": {
           "[/\\\\]NightMap\\.tsx$": [
