@@ -39,6 +39,7 @@ export function createApp({ profileStore, alertes, ...apiDeps }: AppOptions = {}
       create: alertesUnavailable,
       list: alertesUnavailable,
       update: alertesUnavailable,
+      remove: alertesUnavailable,
     } satisfies AlertesStore);
 
   const app = express();
