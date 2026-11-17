@@ -175,6 +175,7 @@ it('envia el punt, la sortida en UTC, el fenomen i les notes', async () => {
     puntId: 'montsec',
     esdevenimentId: 'orionides-2026',
     dataHoraInici: '2026-10-21T21:15:00.000Z',
+    dataHoraFi: null,
     calendariEventId: null,
     notes: 'Frontal vermell',
   });
@@ -188,9 +189,27 @@ it('sense fenomen ni notes, envia null', async () => {
     puntId: 'montsec',
     esdevenimentId: null,
     dataHoraInici: '2026-10-21T20:00:00.000Z',
+    dataHoraFi: null,
     calendariEventId: null,
     notes: null,
   });
+});
+
+it('amb el final de la franja, envia dataHoraFi i en conserva la durada si es mou la sortida', async () => {
+  post.mockResolvedValue({ id: 'p1' });
+  const { result } = await renderVm({ fi: '2026-10-22T00:00:00Z' });
+  await act(async () => {
+    result.current.time.onPress();
+    result.current.timeSheet.onHourChange(22);
+  });
+  await act(async () => result.current.save.onPress());
+  expect(post).toHaveBeenCalledWith(
+    '/plans',
+    expect.objectContaining({
+      dataHoraInici: '2026-10-21T20:15:00.000Z',
+      dataHoraFi: '2026-10-21T23:00:00.000Z',
+    }),
+  );
 });
 
 it('no envia dues vegades amb un doble toc', async () => {

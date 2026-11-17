@@ -23,6 +23,7 @@ import {
   formatTime,
   HOURS,
   initialDeparture,
+  initialDuration,
   isFuture,
   localDate,
   MINUTES,
@@ -36,6 +37,8 @@ export type NewPlanParams = {
   puntId: string;
   /** Inici de la millor franja de la nit (ISO), per proposar l'hora de sortida. */
   inici?: string;
+  /** Final de la millor franja (ISO): el pla en conserva la durada encara que es mogui la sortida. */
+  fi?: string;
   /** Fenomen ja triat (el `id` de `/esdeveniments`). */
   esdevenimentId?: string;
 };
@@ -46,13 +49,15 @@ const CALENDAR_DAYS = 365;
 const capitalize = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
 
 /** «Pla d'observació» (HU12, mockup 06): punt, dia, hora de sortida, fenomen i notes. */
-export function useNewPlanViewModel({ puntId, inici, esdevenimentId }: NewPlanParams) {
+export function useNewPlanViewModel({ puntId, inici, fi, esdevenimentId }: NewPlanParams) {
   const { t, i18n } = useTranslation();
   const router = useRouter();
   const queryClient = useQueryClient();
   const point = usePointDetailQuery(puntId);
 
   const [departure, setDeparture] = useState<Departure>(() => initialDeparture(inici));
+  // Es calcula un sol cop, amb la sortida inicial: després, el final segueix la sortida.
+  const [durationMs] = useState(() => initialDuration(departure, inici, fi));
   const [event, setEvent] = useState<Esdeveniment | null>(null);
   // El fenomen dels paràmetres només es coneix pel seu id fins que arriba la llista.
   const [pendingEventId, setPendingEventId] = useState(esdevenimentId ?? null);
@@ -136,6 +141,7 @@ export function useNewPlanViewModel({ puntId, inici, esdevenimentId }: NewPlanPa
         puntId,
         esdevenimentId: chosenEvent?.id ?? null,
         departure,
+        durationMs,
         notes,
       }),
     );

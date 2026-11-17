@@ -132,8 +132,9 @@ export function usePointDetailViewModel(pointId: string) {
           const formatTime = (timestamp: number) =>
             twoDigitHours(clockFormatter.format(new Date(timestamp)));
           return {
-            // L'inici en ISO, perquè «Crea un pla» el proposi com a hora de sortida.
+            // L'inici i el final en ISO, perquè «Crea un pla» proposi la franja.
             start: hours[first]!.id,
+            end: new Date(finalTimestamp + duration).toISOString(),
             from: formatTime(Date.parse(hours[first]!.id)),
             to: formatTime(finalTimestamp + duration),
             hourIds: new Set(hours.slice(first, last + 1).map((hour) => hour.id)),
@@ -243,7 +244,10 @@ export function usePointDetailViewModel(pointId: string) {
     createPlan: () =>
       router.push({
         pathname: '/pla/nou',
-        params: { puntId: pointId, ...(bestPeriod ? { inici: bestPeriod.start } : {}) },
+        params: {
+          puntId: pointId,
+          ...(bestPeriod ? { inici: bestPeriod.start, fi: bestPeriod.end } : {}),
+        },
       }),
     hoursLabel: t('point.tonight'),
     timezoneLabel: t('point.timezone'),

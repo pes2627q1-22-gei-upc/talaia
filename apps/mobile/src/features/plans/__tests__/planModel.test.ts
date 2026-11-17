@@ -6,10 +6,14 @@ import {
   eventFitsDay,
   eventWindow,
   initialDeparture,
+  initialDuration,
   isFuture,
   localToIso,
   planErrorKey,
 } from '../planModel';
+
+const MINUTE = 60 * 1000;
+const HOUR = 60 * MINUTE;
 
 /** Un instant local de Catalunya (la zona dels tests, `jest.timezone.js`). */
 const local = (y: number, m: number, d: number, h: number, min = 0) =>
@@ -111,20 +115,80 @@ it('les notes buides o amb només espais són null', () => {
   expect(cleanNotes('  Roba d’abric  ')).toBe('Roba d’abric');
 });
 
-it('el cos del POST porta la sortida en UTC i el calendari a null (TG-158)', () => {
-  expect(
-    buildNewPlan({
+const base = {
+  puntId: 'montsec',
+  esdevenimentId: 'orionides-2026',
+  departure: { date: '2026-10-21', hour: 23, minute: 15 },
+  notes: ' Frontal vermell ',
+};
+
+describe('buildNewPlan', () => {
+  it('el cos del POST porta la sortida en UTC i el calendari a null (TG-158)', () => {
+    expect(buildNewPlan({ ...base, durationMs: null })).toEqual({
       puntId: 'montsec',
       esdevenimentId: 'orionides-2026',
-      departure: { date: '2026-10-21', hour: 23, minute: 15 },
-      notes: ' Frontal vermell ',
-    }),
-  ).toEqual({
-    puntId: 'montsec',
-    esdevenimentId: 'orionides-2026',
-    dataHoraInici: '2026-10-21T21:15:00.000Z',
-    calendariEventId: null,
-    notes: 'Frontal vermell',
+      dataHoraInici: '2026-10-21T21:15:00.000Z',
+      dataHoraFi: null,
+      calendariEventId: null,
+      notes: 'Frontal vermell',
+    });
+  });
+
+  it('amb la durada de la franja, envia el final', () => {
+    expect(buildNewPlan({ ...base, durationMs: 3 * HOUR }).dataHoraFi).toBe(
+      '2026-10-22T00:15:00.000Z',
+    );
+  });
+
+  it('una durada nul·la o negativa no envia cap final', () => {
+    expect(buildNewPlan({ ...base, durationMs: 0 }).dataHoraFi).toBeNull();
+    expect(buildNewPlan({ ...base, durationMs: -HOUR }).dataHoraFi).toBeNull();
+  });
+});
+
+describe('initialDuration', () => {
+  // La franja de la fitxa: de 23:15 a 02:00 (hora de Catalunya).
+  const inici = '2026-10-21T21:15:00Z';
+  const fi = '2026-10-22T00:00:00Z';
+  const departure = { date: '2026-10-21', hour: 23, minute: 15 };
+
+  it('és del començament de la franja a `fi`', () => {
+    expect(initialDuration(departure, inici, fi)).toBe(2 * HOUR + 45 * MINUTE);
+  });
+
+  it('sense fi (o sense inici), null: el pla dura fins al final de la nit', () => {
+    expect(initialDuration(departure, inici, undefined)).toBeNull();
+    expect(initialDuration(departure, undefined, fi)).toBeNull();
+  });
+
+  it("amb l'inici arrodonit als 5 minuts, el final continua sent `fi`", () => {
+    // Franja de 23:12: la roda proposa 23:15.
+    const duration = initialDuration(departure, '2026-10-21T21:12:00Z', fi);
+    expect(buildNewPlan({ ...base, departure, durationMs: duration }).dataHoraFi).toBe(
+      '2026-10-22T00:00:00.000Z',
+    );
+  });
+
+  it('si la sortida es mou, el final es mou igual i la durada es manté', () => {
+    const duration = initialDuration(departure, inici, fi);
+    const later = buildNewPlan({
+      puntId: 'montsec',
+      esdevenimentId: null,
+      departure: { date: '2026-10-22', hour: 0, minute: 30 },
+      durationMs: duration,
+      notes: '',
+    });
+    expect(later.dataHoraInici).toBe('2026-10-21T22:30:00.000Z');
+    expect(later.dataHoraFi).toBe('2026-10-22T01:15:00.000Z');
+  });
+
+  it("si la sortida no surt de la franja (l'inici ja havia passat), null", () => {
+    expect(initialDuration({ date: '2026-10-21', hour: 22, minute: 0 }, inici, fi)).toBeNull();
+  });
+
+  it('un final que no queda després de la sortida, o mal format, null', () => {
+    expect(initialDuration(departure, inici, inici)).toBeNull();
+    expect(initialDuration(departure, inici, 'demà')).toBeNull();
   });
 });
 

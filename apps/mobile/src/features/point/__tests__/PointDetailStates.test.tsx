@@ -100,13 +100,14 @@ it('informa si Maps no es pot obrir', async () => {
   );
 });
 
-it('Crea un pla obre el pla amb la millor franja de la nit com a hora de sortida (TG-157)', async () => {
+it('Crea un pla obre el pla amb la millor franja de la nit, inici i final (TG-157)', async () => {
   mockPush.mockReset();
   await render(page());
   await fireEvent.press(screen.getByRole('button', { name: 'Crea un pla' }));
   expect(mockPush).toHaveBeenCalledWith({
     pathname: '/pla/nou',
-    params: { puntId: 'montsec', inici: '2026-10-18T23:00:00Z' },
+    // Una sola hora bona: la franja dura una hora.
+    params: { puntId: 'montsec', inici: '2026-10-18T23:00:00Z', fi: '2026-10-19T00:00:00.000Z' },
   });
 });
 

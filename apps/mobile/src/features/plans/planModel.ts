@@ -78,6 +78,28 @@ export function initialDeparture(inici: string | undefined, now: Date = new Date
   return toDeparture(nextHour);
 }
 
+/** Una sortida arrodonida cap amunt queda menys d'un pas (5 minuts) després de l'`inici` original. */
+const STEP_MS = 5 * 60 * 1000;
+
+/**
+ * Durada de la franja que la fitxa proposa (de la sortida inicial a `fi`), perquè el pla conservi
+ * el final encara que l'usuari mogui la sortida. `null` si no hi ha `fi`, si la sortida no surt de
+ * la franja (l'`inici` ja havia passat) o si el final no queda després de la sortida.
+ */
+export function initialDuration(
+  departure: Departure,
+  inici: string | undefined,
+  fi: string | undefined,
+): number | null {
+  if (!inici || !fi) return null;
+  const start = Date.parse(departureIso(departure));
+  const from = Date.parse(inici);
+  const end = Date.parse(fi);
+  if (!Number.isFinite(from) || !Number.isFinite(end)) return null;
+  if (start < from || start - from >= STEP_MS) return null;
+  return end > start ? end - start : null;
+}
+
 /** Dies (`YYYY-MM-DD`, hora de Catalunya, com `/esdeveniments`) que es demanen per a una data. */
 export function eventWindow(date: string) {
   return { from: addDays(date, -EVENT_WINDOW_DAYS), to: addDays(date, EVENT_WINDOW_DAYS) };
@@ -98,17 +120,28 @@ export function cleanNotes(notes: string): string | null {
   return trimmed ? trimmed : null;
 }
 
-/** Cos de `POST /plans`. El calendari del mòbil és la TG-158: de moment, sempre `null`. */
+/**
+ * Cos de `POST /plans`. El final és la sortida més la durada de la franja (`initialDuration`): si
+ * l'usuari mou la sortida, el final es mou igual. El calendari del mòbil és la TG-158: de moment,
+ * sempre `null`.
+ */
 export function buildNewPlan(input: {
   puntId: string;
   esdevenimentId: string | null;
   departure: Departure;
+  durationMs: number | null;
   notes: string;
 }): PlaNou {
+  const dataHoraInici = departureIso(input.departure);
+  const dataHoraFi =
+    input.durationMs !== null && input.durationMs > 0
+      ? new Date(Date.parse(dataHoraInici) + input.durationMs).toISOString()
+      : null;
   return {
     puntId: input.puntId,
     esdevenimentId: input.esdevenimentId,
-    dataHoraInici: departureIso(input.departure),
+    dataHoraInici,
+    dataHoraFi,
     calendariEventId: null,
     notes: cleanNotes(input.notes),
   };
