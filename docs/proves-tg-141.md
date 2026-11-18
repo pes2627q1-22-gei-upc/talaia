@@ -4,12 +4,14 @@ Validació local del 18/11/2026 a `feature/TG-141-on-veure-ho`.
 Entorn admès: Node 22.23.3, Expo SDK 58 segons `apps/mobile/package.json`.
 
 Guies aplicades: [proves d’UI](testing-ui.md), [CI](ci.md) i
-[onboarding](onboarding.md). No hi ha cap fitxer anomenat `testing.md` en aquesta
-versió del repositori.
+[onboarding](onboarding.md). El seguiment visual es recull a l'[inventari d'UI](testing-ui-inventari.md);
+aquest document conserva el detall de les ordres de la tasca.
 
 ## Comportament final que es valida
 
 - La fitxa ofereix «On veure-ho» i demana la ubicació quan es prem el botó.
+  Si l’esdeveniment ha acabat, el botó queda desactivat amb un missatge; una
+  resposta `franja_passada` al rànquing explica el motiu sense oferir reintent.
 - El rànquing s’obre dins del Calendari; «Enrere» retorna a la fitxa.
 - La consulta envia l’esdeveniment i l’origen. La finestra horària la resol l’API.
 - Sense límit explícit de temps, es consideren tots els punts publicats i es
@@ -103,3 +105,29 @@ text ampliat que no s’hagi comunicat.
 El Quality Gate de SonarCloud (80 % al codi nou, segons `docs/ci.md`) requereix
 una execució remota de CI sobre la PR. La cobertura local i la preparació LCOV
 no equivalen a haver superat aquest gate.
+
+## Correccions de la revisió de PR #160
+
+La revisió de Jsolee demana evitar la consulta d'esdeveniments acabats i el
+reintent d'una franja passada. S'afegeixen tests per a aquests casos, incloent
+l'esdeveniment que acaba mentre espera la ubicació, el retorn des del mapa i el
+missatge en ca/es/en. També es prova l'apostrofació d'Igualada i Àger.
+
+Validació d'aquesta correcció: `npm test -w apps/mobile -- --selectProjects app
+--runInBand src/features/event src/features/recommendations
+src/features/map/__tests__/MapScreen.test.tsx`: **9 suites i 80 tests correctes**.
+`npm run typecheck -w apps/mobile` i `npm run lint -w apps/mobile` correctes;
+el lint conserva l'avís d'i18n ja indicat. Format dels fitxers de codi i
+`git diff --check` correctes.
+
+El text de qualitat i proximitat explicita la prioritat ras/jus/tap. Es conserven
+les fronteres de qualitat a 40 i 70; la penalització per distància només es
+compara dins del mateix nivell.
+
+Vinyet confirma el 18/11/2026 que ha provat el full del rànquing a iOS amb Expo Go
+tant des d'Explora com des del Calendari. Es conserva `RankingSafeArea` perquè
+la comprovació inclou els dos accessos. `react-native-screens/experimental`
+continua sent una API experimental; cal revisar-la en actualitzar la dependència.
+No s'han aportat captures/vídeo, model, versió d'iOS ni mida de text. La revisió
+visual de l'estat passat afegit en aquesta correcció queda pendent. El registre
+amb el format de `docs/testing-ui.md` és a `docs/testing-ui-inventari.md`.

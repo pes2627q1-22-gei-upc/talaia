@@ -100,11 +100,13 @@ export function RecommendationsSheet({ sheet }: { sheet: Sheet }) {
           {sheet.state === 'error' && (
             <View style={styles.message} accessibilityLiveRegion="polite">
               <AppText variant="label">{sheet.errorLabel}</AppText>
-              <PressableScale onPress={sheet.onRetry} hitSlop={spacing.ms}>
-                <AppText variant="link" color="far">
-                  {sheet.retryLabel}
-                </AppText>
-              </PressableScale>
+              {sheet.canRetry && (
+                <PressableScale onPress={sheet.onRetry} hitSlop={spacing.ms}>
+                  <AppText variant="link" color="far">
+                    {sheet.retryLabel}
+                  </AppText>
+                </PressableScale>
+              )}
             </View>
           )}
 

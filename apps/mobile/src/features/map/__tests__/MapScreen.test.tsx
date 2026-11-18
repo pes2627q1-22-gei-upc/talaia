@@ -6,6 +6,7 @@ import { fireGestureHandler, getByGestureTestId } from 'react-native-gesture-han
 import { Platform, StyleSheet, View } from 'react-native';
 
 import i18n from '@/core/i18n';
+import { ApiError } from '@/core/api/httpClient';
 
 import { nightOf } from '../../explore/exploreModel';
 import type { RecommendationParams } from '../../recommendations/recommendationsModel';
@@ -23,6 +24,7 @@ jest.mock('expo-router', () => ({
 
 const mockRefetchRecommendations = jest.fn();
 let mockRecommendations = {
+  error: null as Error | null,
   data: undefined as RecomanacionsResposta | undefined,
   isPending: true,
   isError: false,
@@ -73,6 +75,7 @@ describe('MapScreen', () => {
     jest.mocked(router.back).mockClear();
     mockParams = {};
     mockRecommendations = {
+      error: null,
       data: undefined,
       isPending: true,
       isError: false,
@@ -87,6 +90,26 @@ describe('MapScreen', () => {
       refetch: mockRefetch,
     };
   });
+
+  it.each(['ca', 'es', 'en'])(
+    'una franja passada explica el problema sense reintent (%s)',
+    async (language) => {
+      await i18n.changeLanguage(language);
+      mockParams = { esdevenimentId: 'leonids-2026', lat: '41.98', lon: '2.82' };
+      mockRecommendations = {
+        ...mockRecommendations,
+        isPending: false,
+        isError: true,
+        isFetching: false,
+        error: new ApiError(400, 'franja_passada', 'Franja passada'),
+      };
+      await render(<MapScreen />, { wrapper: GestureHandlerRootView });
+      expect(screen.getByText(i18n.t('recommendations.pastWindow'))).toBeOnTheScreen();
+      expect(screen.queryByRole('button', { name: i18n.t('map.retry') })).toBeNull();
+      await fireEvent.press(screen.getByRole('button', { name: i18n.t('map.back') }));
+      expect(router.back).toHaveBeenCalledTimes(1);
+    },
+  );
 
   it("passa l'estil nocturn, la càmera i l'etiqueta accessible al mapa", async () => {
     await render(<MapScreen />, { wrapper: GestureHandlerRootView });
@@ -247,6 +270,7 @@ describe('MapScreen amb una cerca (TG-102, mockup 03)', () => {
     jest.mocked(router.push).mockClear();
     mockRefetchRecommendations.mockClear();
     mockRecommendations = {
+      error: null,
       data: undefined,
       isPending: true,
       isError: false,

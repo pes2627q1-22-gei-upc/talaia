@@ -3,6 +3,8 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { ApiError } from '@/core/api/httpClient';
+
 import { addDays, dayParts, nightOf, travelParts } from '../explore/exploreModel';
 import { EMPTY_MAP_POINTS } from '../map/pointMarkers';
 
@@ -68,6 +70,8 @@ export function useRecommendationsViewModel() {
     return t('explore.when.picked', { weekday: weekdays[weekday], day, month });
   })();
   const travel = query.tempsMaxim === undefined ? null : duration(query.tempsMaxim);
+  const placeContext = /^[aeiouàèéíïòóúü]/i.test(params.lloc?.trim() ?? '') ? 'vowel' : undefined;
+  const pastWindow = result.error instanceof ApiError && result.error.code === 'franja_passada';
 
   const punts = data?.punts ?? [];
   const rows = (expanded ? punts : punts.slice(0, VISIBLE_ROWS)).map((punt, position) => {
@@ -133,7 +137,7 @@ export function useRecommendationsViewModel() {
       subtitle:
         travel === null
           ? params.lloc
-            ? t('recommendations.fromUnlimited', { place: params.lloc })
+            ? t('recommendations.fromUnlimited', { place: params.lloc, context: placeContext })
             : t('recommendations.fromHereUnlimited')
           : params.lloc
             ? t('recommendations.from', { place: params.lloc, travel })
@@ -151,7 +155,8 @@ export function useRecommendationsViewModel() {
       state,
       rows,
       loadingLabel: t('recommendations.loading'),
-      errorLabel: t('recommendations.error'),
+      errorLabel: t(pastWindow ? 'recommendations.pastWindow' : 'recommendations.error'),
+      canRetry: !pastWindow,
       retryLabel: t('map.retry'),
       onRetry: () => void result.refetch(),
       emptyTitle: t(travel === null ? 'recommendations.emptyCatalog' : 'recommendations.empty', {

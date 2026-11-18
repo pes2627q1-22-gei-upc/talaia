@@ -12,7 +12,7 @@ jest.mock('expo-router', () => ({ router: { push: jest.fn() } }));
 jest.mock('../../explore/locationRepository', () => ({ useCurrentPlaceQuery: jest.fn() }));
 const location = jest.mocked(useCurrentPlaceQuery);
 const refetch = jest.fn();
-const event = { id: 'leonids-2026', nom: 'Leònids' } as Esdeveniment;
+const event = { id: 'leonids-2026', nom: 'Leònids', fi: '2099-11-30T23:59:59Z' } as Esdeveniment;
 const ready = {
   isError: false,
   data: { status: 'ready', place: { lat: 41.981234, lon: 2.821234, name: '' } },
@@ -28,6 +28,7 @@ function query(overrides: object = {}) {
 
 beforeEach(async () => {
   jest.clearAllMocks();
+  jest.spyOn(AppState, 'addEventListener').mockReturnValue({ remove: jest.fn() });
   refetch.mockReset().mockResolvedValue(ready);
   query();
   await i18n.changeLanguage('ca');
@@ -125,4 +126,36 @@ it('si es tanca la fitxa mentre espera la ubicació no navega després', async (
     await pending;
   });
   expect(router.push).not.toHaveBeenCalled();
+});
+
+it('un esdeveniment acabat desactiva l’acció i no demana la ubicació', async () => {
+  const past = { ...event, fi: '2020-11-30T23:59:59Z' };
+  const { result } = await renderHook(() => useEventRecommendations(past));
+  expect(result.current.disabled).toBe(true);
+  expect(result.current.message).toBe(i18n.t('recommendations.pastWindow'));
+  await act(() => result.current.onPress('30 de novembre'));
+  expect(refetch).not.toHaveBeenCalled();
+  expect(router.push).not.toHaveBeenCalled();
+});
+
+it('no navega si l’esdeveniment acaba mentre espera la ubicació', async () => {
+  const now = jest.spyOn(Date, 'now').mockReturnValue(Date.parse(event.fi) - 1);
+  let finish!: (value: typeof ready) => void;
+  refetch.mockReturnValue(
+    new Promise((resolve) => {
+      finish = resolve;
+    }),
+  );
+  try {
+    const { result } = await renderHook(() => useEventRecommendations(event));
+    const pending = result.current.onPress('30 de novembre');
+    now.mockReturnValue(Date.parse(event.fi) + 1);
+    await act(async () => {
+      finish(ready);
+      await pending;
+    });
+    expect(router.push).not.toHaveBeenCalled();
+  } finally {
+    now.mockRestore();
+  }
 });

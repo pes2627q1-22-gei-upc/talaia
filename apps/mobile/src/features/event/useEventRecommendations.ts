@@ -1,6 +1,6 @@
 import type { Esdeveniment } from '@talaia/shared';
 import { router } from 'expo-router';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AppState, Linking } from 'react-native';
 
@@ -11,6 +11,18 @@ import { useCurrentPlaceQuery } from '../explore/locationRepository';
 export function useEventRecommendations(event: Esdeveniment | undefined) {
   const { t } = useTranslation();
   const location = useCurrentPlaceQuery(false);
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const refresh = () => setNow(Date.now());
+    const timer = setInterval(refresh, 60_000);
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state === 'active') refresh();
+    });
+    return () => {
+      clearInterval(timer);
+      subscription.remove();
+    };
+  }, []);
   const opening = useRef(false);
   const mounted = useRef(true);
   useEffect(() => {
@@ -20,6 +32,7 @@ export function useEventRecommendations(event: Esdeveniment | undefined) {
     };
   }, []);
   const denied = location.data?.status === 'denied' ? location.data : null;
+  const ended = !!event && Date.parse(event.fi) < now;
   const settings = denied && !denied.canAskAgain;
   const { refetch } = location;
   useEffect(() => {
@@ -30,19 +43,24 @@ export function useEventRecommendations(event: Esdeveniment | undefined) {
     return () => subscription.remove();
   }, [settings, refetch]);
   return {
-    label: location.isFetching
-      ? t('explore.origin.locating')
-      : settings
-        ? t('explore.origin.settings')
-        : t('event.whereToWatch'),
-    disabled: location.isFetching,
-    message: location.isError
-      ? t('explore.origin.error')
-      : denied
-        ? t('explore.origin.denied')
-        : null,
+    label: ended
+      ? t('event.whereToWatch')
+      : location.isFetching
+        ? t('explore.origin.locating')
+        : settings
+          ? t('explore.origin.settings')
+          : t('event.whereToWatch'),
+    disabled: ended || location.isFetching,
+    message: ended
+      ? t('recommendations.pastWindow')
+      : location.isError
+        ? t('explore.origin.error')
+        : denied
+          ? t('explore.origin.denied')
+          : null,
     onPress: async (when: string) => {
-      if (!event || opening.current) return;
+      const hasEnded = () => !!event && Date.parse(event.fi) < Date.now();
+      if (!event || hasEnded() || opening.current) return;
       if (settings) {
         await Linking.openSettings();
         return;
@@ -50,7 +68,8 @@ export function useEventRecommendations(event: Esdeveniment | undefined) {
       opening.current = true;
       try {
         const result = await location.refetch();
-        if (!mounted.current || result.isError || result.data?.status !== 'ready') return;
+        if (!mounted.current || hasEnded() || result.isError || result.data?.status !== 'ready')
+          return;
         const { place } = result.data;
         router.push({
           pathname: '/calendari/recomanacions',

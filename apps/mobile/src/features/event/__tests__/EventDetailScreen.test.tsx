@@ -169,3 +169,10 @@ it('«On veure-ho» és accessible i obre el rànquing del fenomen sense perdre 
     },
   });
 });
+
+it('desactiva «On veure-ho» per a un esdeveniment passat i explica per què', async () => {
+  get.mockResolvedValue({ ...eclipsi, fi: '2020-02-21T01:13:00Z' });
+  await renderScreen();
+  expect(await screen.findByRole('button', { name: 'On veure-ho' })).toBeDisabled();
+  expect(screen.getByText(i18n.t('recommendations.pastWindow'))).toBeOnTheScreen();
+});

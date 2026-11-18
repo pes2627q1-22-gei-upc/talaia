@@ -219,7 +219,9 @@ El rànquing de punts per a la consulta de «Què vols veure?» (`ParametresReco
   Aquesta puntuació només ordena: l’índex que rep l’app continua sent el real.
   Els empats es resolen per distància, índex exacte, mitjana i identificador.
   Els punts sense índex van al final per distància. La puntuació contínua
-  elimina els salts de les antigues franges de cinc punts.
+  elimina els salts de les antigues franges de cinc punts dins de cada nivell.
+  Es mantenen les fronteres de qualitat a 40 i 70: un 70 a 290 km passa davant
+  d’un 69 a 1 km perquè `ras` es prioritza sobre `jus`.
 - **Abast:** sense `tempsMaxim`, es consideren tots els punts publicats: la resposta
   porta `tempsMaxim: null` i `radiKm: null`. Un `tempsMaxim` explícit continua
   limitant el radi. S’ordena **abans** d’aplicar `limit` (20 per defecte);
