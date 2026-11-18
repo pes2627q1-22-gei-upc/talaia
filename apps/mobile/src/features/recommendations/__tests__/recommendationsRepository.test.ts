@@ -23,3 +23,8 @@ it('crida GET /recomanacions amb l’origen pla, com el valida l’API', async (
     tempsMaxim: 150,
   });
 });
+
+it('«A prop meu» només envia l’origen: la resta la tria l’API (TG-133)', async () => {
+  await fetchRecommendations({ origen: { lat: 41.98, lon: 2.82 } });
+  expect(apiGet).toHaveBeenLastCalledWith('/recomanacions', { lat: 41.98, lon: 2.82 });
+});

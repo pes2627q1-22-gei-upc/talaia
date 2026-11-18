@@ -12,6 +12,7 @@ jest.mock('maplibre-gl', () => ({ Map: jest.fn(), Marker: jest.fn() }), { virtua
 jest.mock('@/core/map/maplibreWorker', () => ({}));
 jest.mock('../pointMarkers', () => ({
   bindClusterInteraction: jest.fn(),
+  CLUSTERS_LAYER: 'talaia-point-clusters',
   MARKERS_LAYER: 'talaia-point-markers',
   syncMapPoints: jest.fn(),
 }));
@@ -50,9 +51,15 @@ const props: ComponentProps<typeof NightMap> = {
 let root: Root;
 let host: HTMLDivElement;
 let load: () => void;
+let clickMap: (event: {
+  point: { x: number; y: number };
+  lngLat: { lat: number; lng: number };
+}) => void;
 let map: {
   on: jest.Mock;
   off: jest.Mock;
+  getLayer: jest.Mock;
+  queryRenderedFeatures: jest.Mock;
   getCanvas: jest.Mock;
   remove: jest.Mock;
   fitBounds: jest.Mock;
@@ -77,10 +84,14 @@ beforeEach(() => {
   unbind = jest.fn();
   jest.mocked(bindClusterInteraction).mockReturnValue(unbind);
   map = {
-    on: jest.fn((event, callback) => {
-      if (event === 'load') load = callback;
+    on: jest.fn((event, layerOrCallback) => {
+      if (event === 'load') load = layerOrCallback;
+      // `map.on('click', callback)`: el toc a qualsevol lloc (amb capa, és el dels marcadors).
+      if (event === 'click' && typeof layerOrCallback === 'function') clickMap = layerOrCallback;
     }),
     off: jest.fn(),
+    getLayer: jest.fn(() => ({})),
+    queryRenderedFeatures: jest.fn(() => []),
     getCanvas: jest.fn(() => ({ style: {} })),
     remove: jest.fn(),
     fitBounds: jest.fn(),
@@ -215,4 +226,34 @@ it('amb un rànquing, no agrupa els punts i enquadra la càmera un sol cop per z
   await act(async () => root.render(<NightMap {...props} cluster={false} fit={other} />));
   expect(map.fitBounds).toHaveBeenCalledTimes(2);
   await act(async () => root.unmount());
+});
+
+it('un toc al terreny diu on ha caigut; sobre un marcador, o sense acció, no', async () => {
+  const onMapPress = jest.fn(async () => {});
+  await act(async () => root.render(<NightMap {...props} onMapPress={onMapPress} />));
+  const tap = { point: { x: 10, y: 20 }, lngLat: { lat: 41.5, lng: 1.9 } };
+  clickMap(tap);
+  expect(map.queryRenderedFeatures).toHaveBeenCalledWith(tap.point, {
+    layers: ['talaia-point-markers', 'talaia-point-clusters'],
+  });
+  expect(onMapPress).toHaveBeenCalledWith(41.5, 1.9);
+  map.queryRenderedFeatures.mockReturnValueOnce([{ properties: { id: 'montsec' } }]);
+  clickMap(tap);
+  expect(onMapPress).toHaveBeenCalledTimes(1);
+  await act(async () => root.render(<NightMap {...props} />));
+  clickMap(tap);
+  expect(onMapPress).toHaveBeenCalledTimes(1);
+});
+
+it('marca el punt de sortida triat i el treu quan ja no n’hi ha', async () => {
+  const origin = { lat: 41.5, lon: 1.9, label: 'Punt de sortida', color: '#FFB547' };
+  await act(async () => root.render(<NightMap {...props} origin={origin} />));
+  const [marker] = markers;
+  expect(marker!.setLngLat).toHaveBeenCalledWith([1.9, 41.5]);
+  expect(marker!.addTo).toHaveBeenCalledWith(map);
+  expect(marker!.element.getAttribute('aria-label')).toBe('Punt de sortida');
+  // L'entrada s'anima en un fill: MapLibre mou el marcador amb el seu propi `transform`.
+  expect(marker!.element.querySelector('.talaia-origin')).not.toBeNull();
+  await act(async () => root.render(<NightMap {...props} origin={null} />));
+  expect(marker!.remove).toHaveBeenCalledTimes(1);
 });

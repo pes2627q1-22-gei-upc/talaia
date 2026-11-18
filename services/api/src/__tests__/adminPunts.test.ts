@@ -39,6 +39,7 @@ const profileStore: ProfileStore = {
   getAccountStatus: async (authUserId) => COMPTES[authUserId] ?? null,
   listProfiles: unavailable,
   setBlocked: unavailable,
+  deleteAccount: unavailable,
 };
 
 const MONTSEC: PuntAdmin = {

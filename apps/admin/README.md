@@ -11,3 +11,7 @@ Client estàtic React + Vite (ADR-0030). Fa servir el mateix Supabase Auth que l
 5. El compte ha de tenir un perfil amb `rol = 'admin'` (vegeu `services/api/README.md`). El correu fa servir el codi de sis xifres; Google torna a la mateixa pàgina amb PKCE. L'entrada per correu no crea comptes nous des de la web administrativa.
 
 L'API es consulta per ruta relativa `/api/v1`, també quan Nginx serveixi els fitxers compilats al mateix origen. L'administració de punts i usuaris s'afegeix en tasques posteriors. Per compilar: `npm run build --workspace apps/admin`.
+
+## Tests
+
+`npm run test --workspace apps/admin` (Vitest, ADR-0034). Els tests fan servir Testing Library sobre jsdom i actuen com l'usuari: inici de sessió amb Google i amb codi, retorn PKCE, comprovació del rol, tancament i caducitat de la sessió, i estats de càrrega i d'error. Supabase Auth i l'API se simulen (`src/__tests__/support/fakeAuth.ts`); no cal `.env.local` ni cap servei. Amb `-- --coverage` es genera `coverage/lcov.info`, que la CI envia a SonarCloud.

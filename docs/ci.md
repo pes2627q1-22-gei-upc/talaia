@@ -1,4 +1,4 @@
-# CI i SonarCloud (TG-70, TG-181)
+# CI i SonarCloud (TG-70, TG-181, TG-263)
 
 El workflow [ci.yml](../.github/workflows/ci.yml) executa tres checks independents:
 `lint`, `typecheck` i `tests`. S'activa en obrir o reobrir una PR, quan s'hi pugen
@@ -11,11 +11,11 @@ Les ordres explícites de lint, typecheck i tests sí que s'executen. Aquesta
 configuració és per a la CI; no canvia la instal·lació local ni els hooks de Git.
 Les accions estan fixades al SHA complet del commit, amb la versió en un comentari.
 Per actualitzar-les, cal verificar el nou commit al repositori oficial i canviar el SHA.
-El check `tests` executa amb cobertura els tests d'`apps/mobile`, `services/api`,
-`services/worker`, `packages/db` i `packages/index`. Els tests dels altres workspaces
-s'executen encara que fallin els de l'app. Els informes es desen durant 7 dies:
-`mobile-coverage` per a l'app i `services-coverage` per als serveis i paquets,
-també si Jest falla i ha generat informes. També s'executen els tests dels scripts
+El check `tests` executa amb cobertura els tests d'`apps/mobile`, `apps/admin`,
+`services/api`, `services/worker`, `packages/db` i `packages/index`. Els tests dels altres
+workspaces s'executen encara que fallin els de l'app. Els informes es desen durant 7 dies:
+`mobile-coverage` per a l'app, `admin-coverage` per a la web d'administració i
+`services-coverage` per als serveis i paquets, també si els tests fallen i han generat informes. També s'executen els tests dels scripts
 de dades, Supabase, eines del sprint master i preparació de cobertura.
 `packages/shared` només té tipus i el cobreix `typecheck`.
 
@@ -31,7 +31,7 @@ El deploy de `stable` no és a GitHub Actions: el fa un cron de la VM ([ADR-0021
 
 La integració amb SonarCloud està **activada** al repositori. La configuració amplia
 l'anàlisi de l'app a l'admin, l'API, el worker, `packages/db` i `packages/index`,
-amb informes de cobertura de tots excepte l'admin, que encara no té tests.
+amb informes de cobertura de tots sis (els de l'admin, des de la TG-263).
 La validació remota documentada més avall correspon a l'abast original de l'app;
 cal comprovar l'ampliació en una execució de CI i al tauler de SonarCloud.
 El projecte utilitza el Quality Gate **Sonar way**, amb un mínim
@@ -78,7 +78,7 @@ sense mostrar el valor del token.
 ## Consultar els informes i el llindar
 
 1. A GitHub, obre **Actions → CI** i selecciona una execució recent acabada.
-2. Al resum, a **Artifacts**, descarrega `mobile-coverage` o `services-coverage`.
+2. Al resum, a **Artifacts**, descarrega `mobile-coverage`, `admin-coverage` o `services-coverage`.
    Es conserven durant **7 dies**; una execució més antiga pot haver perdut els artefactes.
 3. Descomprimeix el ZIP i obre `lcov-report/index.html` al navegador per consultar
    la cobertura per fitxer. A `services-coverage`, els informes són a
@@ -145,13 +145,13 @@ Per tant, aquests casos no validen el Quality Gate amb aquest workflow.
 | Mòdul | Anàlisi estàtica | Informe de cobertura |
 | --- | --- | --- |
 | `apps/mobile/src` | Sí | Jest |
-| `apps/admin/src` | Sí | Encara no té suite de tests |
+| `apps/admin/src` | Sí | Vitest ([ADR-0034](decisions/0034-tests-admin-vitest.md)) |
 | `services/api/src` | Sí | Jest |
 | `services/worker/src` | Sí | Jest |
 | `packages/db/src` | Sí | Jest |
 | `packages/index/src` | Sí | Jest |
 
-Es manté un únic projecte de SonarCloud amb els informes LCOV dels cinc workspaces.
+Es manté un únic projecte de SonarCloud amb els informes LCOV dels sis workspaces.
 `packages/index` conté la fórmula i els càlculs compartits entre l'API i el worker;
 analitzar només el worker deixaria aquesta lògica fora de l'abast.
 
@@ -160,8 +160,9 @@ separats del codi de producció. Les declaracions `*.d.ts`, el fitxer generat
 `packages/db/src/schema.ts` i els helpers de tests `services/api/src/testing/`
 s'exclouen de l'anàlisi de producció. Builds, dades, migracions i scripts auxiliars
 queden fora de les carpetes `src` seleccionades. `packages/shared` només conté tipus.
-L'admin es manté dins de l'abast de cobertura encara que no tingui tests:
-no s'exclou per millorar el percentatge. Crear-ne la suite és una tasca separada.
+L'admin és una web Vite i es prova amb Vitest i Testing Library (ADR-0034), simulant
+Supabase Auth i l'API. La cobertura inclou tots els fitxers d'`apps/admin/src`, també
+els que no carreguen els tests; els helpers de `src/__tests__/` es classifiquen com a tests.
 
 L'API, el worker i els paquets configuren `collectCoverageFrom` per incloure també
 fitxers de producció no carregats pels tests, amb les exclusions anteriors.
@@ -171,10 +172,10 @@ i Sonar també analitza el codi de producció dins de l'abast que no apareix a L
 ### Validar l'ampliació en una PR
 
 1. Comprova que passen `lint`, `typecheck` i `tests`, inclosa la preparació dels LCOV.
-2. Descarrega els dos artefactes i comprova que cada workspace té el seu informe
+2. Descarrega els tres artefactes i comprova que cada workspace té el seu informe
    original i l'adaptat amb rutes de repositori.
 3. Al tauler de SonarCloud, comprova que apareixen els sis mòduls i que la cobertura
-   de l'API, el worker i els paquets coincideix amb els fitxers dels informes.
+   de l'admin, l'API, el worker i els paquets coincideix amb els fitxers dels informes.
 4. Comprova el Quality Gate de la PR i adjunta els enllaços de CI i Sonar a la PR.
    No canviïs el llindar ni afegeixis exclusions per ocultar manca de cobertura.
    Una prova controlada amb cobertura insuficient, en una branca de prova, permet
