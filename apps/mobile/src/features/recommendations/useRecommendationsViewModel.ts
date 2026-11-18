@@ -54,17 +54,20 @@ export function useRecommendationsViewModel() {
       : t('recommendations.duration.hours', { hours });
   };
 
+  const eventSearch = 'esdevenimentId' in query;
+  const date = eventSearch ? data?.data : query.data;
   const tonight = nightOf(new Date());
   const when = (() => {
-    if (query.data === tonight) return t('recommendations.when.tonight');
-    if (query.data === addDays(tonight, 1)) return t('recommendations.when.tomorrow');
-    const { weekday, day } = dayParts(query.data);
+    if (!date) return params.eventWhen ?? t('event.title');
+    if (date === tonight) return t('recommendations.when.tonight');
+    if (date === addDays(tonight, 1)) return t('recommendations.when.tomorrow');
+    const { weekday, day } = dayParts(date);
     const weekdays = t('explore.weekdays', { returnObjects: true }) as string[];
     const months = t('explore.calendar.monthsShort', { returnObjects: true }) as string[];
-    const month = months[Number(query.data.slice(5, 7)) - 1];
+    const month = months[Number(date.slice(5, 7)) - 1];
     return t('explore.when.picked', { weekday: weekdays[weekday], day, month });
   })();
-  const travel = duration(query.tempsMaxim);
+  const travel = query.tempsMaxim === undefined ? null : duration(query.tempsMaxim);
 
   const punts = data?.punts ?? [];
   const rows = (expanded ? punts : punts.slice(0, VISIBLE_ROWS)).map((punt, position) => {
@@ -72,6 +75,13 @@ export function useRecommendationsViewModel() {
     const rank = ordinal(position + 1, i18n.language);
     const hour = millorHora ? localTime(millorHora.hora) : null;
     const time = duration(punt.tempsEstimat);
+    const distance = eventSearch
+      ? t('recommendations.distance', {
+          km: new Intl.NumberFormat(i18n.resolvedLanguage ?? 'ca', {
+            maximumFractionDigits: 1,
+          }).format(punt.distanciaKm),
+        })
+      : null;
     const index = millorHora
       ? t('index.a11y', {
           value: millorHora.valor,
@@ -84,12 +94,14 @@ export function useRecommendationsViewModel() {
       index: millorHora,
       hour,
       travel: time,
+      distance,
       rank,
-      highlighted: position === 0,
+      highlighted: position === 0 && data?.avis !== 'sense_previsio',
       accessibilityLabel: [
         `${rank}: ${punt.nom}`,
         index,
         hour && t('recommendations.bestHour', { hour }),
+        distance,
         t('recommendations.byCar', { travel: time }),
       ]
         .filter(Boolean)
@@ -111,27 +123,55 @@ export function useRecommendationsViewModel() {
     points,
     bounds,
     header: {
-      title: t('recommendations.title', { goal: t(`explore.goals.${query.objectiu}`), when }),
-      subtitle: params.lloc
-        ? t('recommendations.from', { place: params.lloc, travel })
-        : t('recommendations.fromHere', { travel }),
+      title: eventSearch
+        ? (params.eventName ?? t('event.title'))
+        : t('recommendations.title', {
+            goal: t(`explore.goals.${query.objectiu}`),
+            when,
+          }),
+      eventDate: eventSearch ? when : null,
+      subtitle:
+        travel === null
+          ? params.lloc
+            ? t('recommendations.fromUnlimited', { place: params.lloc })
+            : t('recommendations.fromHereUnlimited')
+          : params.lloc
+            ? t('recommendations.from', { place: params.lloc, travel })
+            : t('recommendations.fromHere', { travel }),
       legend: LEGEND.map((franja) => ({ franja, label: t(`index.level.${franja}`) })),
     },
     sheet: {
-      title: t('recommendations.best', { when }),
+      title: t(eventSearch ? 'recommendations.eventRanking' : 'recommendations.best', { when }),
+      notice:
+        data?.avis === 'sense_previsio'
+          ? t('recommendations.noEventForecast')
+          : eventSearch
+            ? t('recommendations.qualityDistanceHint')
+            : null,
       state,
       rows,
       loadingLabel: t('recommendations.loading'),
       errorLabel: t('recommendations.error'),
       retryLabel: t('map.retry'),
       onRetry: () => void result.refetch(),
-      emptyTitle: t('recommendations.empty', { travel }),
-      emptyHint: t('recommendations.emptyHint'),
+      emptyTitle: t(travel === null ? 'recommendations.emptyCatalog' : 'recommendations.empty', {
+        travel,
+      }),
+      emptyHint: t(eventSearch ? 'recommendations.emptyEventHint' : 'recommendations.emptyHint'),
       collapsed,
-      collapseLabel: t(collapsed ? 'recommendations.expandSheet' : 'recommendations.collapseSheet'),
+      collapseLabel: t(
+        eventSearch
+          ? collapsed
+            ? 'recommendations.showRanking'
+            : 'recommendations.hideRanking'
+          : collapsed
+            ? 'recommendations.expandSheet'
+            : 'recommendations.collapseSheet',
+      ),
+      onSetCollapsed: setCollapsed,
       onToggleCollapsed: () => setCollapsed((value) => !value),
       toggle:
-        !collapsed && punts.length > VISIBLE_ROWS
+        punts.length > VISIBLE_ROWS
           ? {
               label: t(expanded ? 'recommendations.showLess' : 'recommendations.showAll'),
               onPress: () => setExpanded((value) => !value),

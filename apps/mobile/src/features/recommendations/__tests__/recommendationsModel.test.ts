@@ -113,3 +113,22 @@ it('boundsOf dona la zona que conté tots els llocs, o res si no n’hi ha', () 
   ]);
   expect(boundsOf([])).toBeNull();
 });
+
+it('la cerca per esdeveniment envia el codi i l’origen, sense inventar una franja', () => {
+  const event = { esdevenimentId: 'leonids-2026', lat: '41.98', lon: '2.82' };
+  expect(parseQuery(event)).toEqual({
+    esdevenimentId: 'leonids-2026',
+    origen: { lat: 41.98, lon: 2.82 },
+  });
+  expect(parseQuery({ ...event, tempsMaxim: '90' })).toMatchObject({ tempsMaxim: 90 });
+  for (const invalid of [
+    { esdevenimentId: '' },
+    { lat: '' },
+    { lon: 'abc' },
+    { tempsMaxim: 'abc' },
+    { data: '2026-11-18' },
+    { desDe: '22' },
+    { finsA: '6' },
+  ])
+    expect(parseQuery({ ...event, ...invalid })).toBeNull();
+});

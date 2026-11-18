@@ -1,7 +1,8 @@
 import { Image } from 'expo-image';
 import { useMemo } from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Platform, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView as NativeSafeAreaView } from 'react-native-screens/experimental';
 
 import { colors, radii, sizes, spacing } from '@/core/theme/tokens';
 import { AppText } from '@/shared/ui/AppText';
@@ -62,6 +63,8 @@ const backIcon = {
  */
 export function MapScreen() {
   const vm = useMapViewModel();
+  // Android ja reserva l’espai de les pestanyes; a iOS el menú se superposa al mapa.
+  const RankingSafeArea = Platform.OS === 'ios' ? NativeSafeAreaView : View;
   const insets = useSafeAreaInsets();
   const canRetry = vm.notice?.kind === 'error' || vm.notice?.kind === 'empty';
   const recommendations = vm.recommendations;
@@ -126,7 +129,18 @@ export function MapScreen() {
         </View>
         {recommendations && <IndexLegend items={recommendations.header.legend} />}
       </View>
-      {recommendations && <RecommendationsSheet sheet={recommendations.sheet} />}
+      {recommendations && (
+        <RankingSafeArea
+          testID="ranking-safe-area"
+          pointerEvents="box-none"
+          style={StyleSheet.absoluteFill}
+          {...(Platform.OS === 'ios' ? { edges: { bottom: true } } : {})}
+        >
+          <View style={styles.rankingViewport} pointerEvents="box-none">
+            <RecommendationsSheet sheet={recommendations.sheet} />
+          </View>
+        </RankingSafeArea>
+      )}
       {vm.notice && (
         <View
           style={[styles.notice, { top: insets.top + sizes.button + spacing.sm }]}
@@ -185,7 +199,8 @@ export function MapScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.nit },
+  container: { flex: 1, backgroundColor: colors.nit, overflow: 'hidden' },
+  rankingViewport: { flex: 1, overflow: 'hidden' },
   top: { position: 'absolute', left: spacing.md, right: spacing.md, gap: spacing.ms },
   topRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   back: {

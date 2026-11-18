@@ -108,7 +108,8 @@
     "notFoundMessage": "It may no longer be available. Go back to the calendar and choose another one.",
     "errorTitle": "Could not load this event",
     "errorMessage": "Check your connection and try again.",
-    "retry": "Try again"
+    "retry": "Try again",
+    "whereToWatch": "Where to watch"
   },
   "profile": {
     "title": "Profile",
@@ -470,7 +471,17 @@
     "bestHour": "Best time: {{hour}}",
     "byCar": "{{travel}} by car",
     "collapseSheet": "Collapse the list",
-    "expandSheet": "Expand the list"
+    "expandSheet": "Expand the list",
+    "noEventForecast": "There is no forecast for this event yet. Spots are shown by distance; check the index closer to the date.",
+    "emptyEventHint": "Try again later.",
+    "eventRanking": "Best spots ranking",
+    "qualityDistanceHint": "We prioritize visibility, then nearby spots with a similar index.",
+    "distance": "{{km}} km in a straight line",
+    "fromUnlimited": "From {{place}} · no distance limit",
+    "fromHereUnlimited": "From your location · no distance limit",
+    "emptyCatalog": "No spots available yet",
+    "hideRanking": "Hide ranking",
+    "showRanking": "Show ranking"
   },
   "notifications": {
     "channelName": "Sky alerts"

@@ -9,6 +9,8 @@ import i18n from '@/core/i18n';
 import { sizes } from '@/core/theme/tokens';
 import { createQueryWrapper } from '@/test-utils/queryWrapper';
 
+import { useCurrentPlaceQuery } from '../../explore/locationRepository';
+
 import { EventDetailScreen } from '../EventDetailScreen';
 
 jest.mock('@/core/api/httpClient', () => ({
@@ -16,7 +18,10 @@ jest.mock('@/core/api/httpClient', () => ({
   apiGet: jest.fn(),
 }));
 jest.mock('expo-router', () => ({
-  router: { canGoBack: jest.fn(() => true), back: jest.fn(), replace: jest.fn() },
+  router: { canGoBack: jest.fn(() => true), back: jest.fn(), replace: jest.fn(), push: jest.fn() },
+}));
+jest.mock('../../explore/locationRepository', () => ({
+  useCurrentPlaceQuery: jest.fn(() => ({ isFetching: false, isError: false, refetch: jest.fn() })),
 }));
 const get = jest.mocked(apiGet);
 
@@ -134,4 +139,33 @@ it('avisa si l’esdeveniment no existeix i deixa tornar-ho a provar si falla la
   await renderScreen();
   await fireEvent.press(await screen.findByRole('button', { name: 'Torna-ho a provar' }));
   expect(await screen.findByRole('header', { name: eclipsi.nom })).toBeOnTheScreen();
+});
+
+it('«On veure-ho» és accessible i obre el rànquing del fenomen sense perdre la fitxa', async () => {
+  const refetch = jest.fn().mockResolvedValue({
+    data: { status: 'ready', place: { name: 'Girona', lat: 41.98, lon: 2.82 } },
+    isError: false,
+  });
+  jest.mocked(useCurrentPlaceQuery).mockReturnValue({
+    isFetching: false,
+    isError: false,
+    refetch,
+  } as unknown as ReturnType<typeof useCurrentPlaceQuery>);
+  await renderScreen();
+  const button = await screen.findByRole('button', { name: 'On veure-ho' });
+  expect(refetch).not.toHaveBeenCalled();
+  expect(StyleSheet.flatten(button.props.style)).toMatchObject({ minHeight: sizes.button });
+  expect(screen.getByText('On veure-ho').props.numberOfLines).toBeUndefined();
+  await fireEvent.press(button);
+  expect(router.push).toHaveBeenLastCalledWith({
+    pathname: '/calendari/recomanacions',
+    params: {
+      esdevenimentId: eclipsi.id,
+      eventName: eclipsi.nom,
+      eventWhen: 'Nit del 20 al 21 de febrer',
+      lat: '41.98',
+      lon: '2.82',
+      lloc: 'Girona',
+    },
+  });
 });

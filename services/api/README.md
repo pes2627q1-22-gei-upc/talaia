@@ -195,7 +195,7 @@ El rànquing de punts per a la consulta de «Què vols veure?» (`ParametresReco
 | `objectiu` | `ObjectiuObservacio` | `cel_estrellat` (l'índex v1 és el mateix per a tots) |
 | `data` | la nit, `YYYY-MM-DD`, entre el 2000 i el 2100 | la nit que toca (`upcomingNight`): fins a les 06:00, la que s'acaba; després, la que ve. No és com a `/punts/{id}/index` (12:00): al matí, la nit que s'acaba només té hores de dia |
 | `desDe`, `finsA` | hores locals de Catalunya, 0–23, diferents; **van juntes** (només una → 400) | la nit sencera, de 12:00 a 12:00 (des de l'hora en curs) |
-| `tempsMaxim` | minuts en cotxe, 1–600 | **60** (≈ 46,2 km) |
+| `tempsMaxim` | minuts en cotxe, 1–600 | **60** (≈ 46,2 km); amb `esdevenimentId`, sense límit si s’omet |
 | `limit` | 1–100 | 20 |
 | `esdevenimentId` | el `id` (`codi`) de `GET /esdeveniments/{id}`; **no va amb** `data`, `desDe` ni `finsA` (→ 400) | — |
 
@@ -211,7 +211,21 @@ El rànquing de punts per a la consulta de «Què vols veure?» (`ParametresReco
 
 - **Hores conegudes** (eclipsis, conjuncions: `precisio.inici` i `precisio.fi` d'hora o més fines): la franja és `[inici, fi]`, ampliada a les hores senceres que la toquen (05:30–06:30 → les hores de les 05:00 i les 06:00).
 - **Precisió de dia** (pluges d'estels de setmanes, fases de la Lluna, superllunes): el màxim de tot `[inici, fi]` seria una hora qualsevol dels dies de previsió. Per això, si la **nit del màxim** (la nit de 12:00 a 12:00 que el conté; sense màxim, la del primer dia) és la que toca (`upcomingNight`) o una de posterior, la franja és aquella nit sencera. Si ja ha passat però l'esdeveniment **encara dura** (`fi` ≥ ara), la nit que toca, retallada a `[inici, fi]`: les Leònides (6–30/11) encara es poden mirar el 20/11.
-- **Agregació:** la mateixa que sense esdeveniment: primer l'**índex màxim** de la finestra (`millorHora`: «hi haurà algun moment bo?»), després la mitjana i després la distància.
+- **Qualitat i proximitat (TG-141):** primer el nivell de qualitat de la millor
+  hora (`ras`, `jus`, `tap`); dins del mateix nivell, la puntuació
+  `índex màxim − min(10, distànciaKm / 30)`, de més alta a més baixa.
+  La distància compensa fins a 10 punts d’índex, a raó d’un punt per cada 30 km.
+  Exemple: índex 100 a 150 km puntua 95 i guanya un 95 a 20 km, que puntua 94,33.
+  Aquesta puntuació només ordena: l’índex que rep l’app continua sent el real.
+  Els empats es resolen per distància, índex exacte, mitjana i identificador.
+  Els punts sense índex van al final per distància. La puntuació contínua
+  elimina els salts de les antigues franges de cinc punts.
+- **Abast:** sense `tempsMaxim`, es consideren tots els punts publicats: la resposta
+  porta `tempsMaxim: null` i `radiKm: null`. Un `tempsMaxim` explícit continua
+  limitant el radi. S’ordena **abans** d’aplicar `limit` (20 per defecte);
+  `total` compta tots els candidats. Aquesta ordenació i l’absència de límit per
+  defecte s’apliquen a les cerques amb esdeveniment. Explora i «A prop meu»
+  mantenen el contracte anterior.
 - **Errors:** esdeveniment inexistent o no publicable → 404 `event_not_found` (el mateix que `GET /esdeveniments/{id}`); ja acabat (`fi` < ara) → 400 `franja_passada`. Si cap punt del radi té índex a la finestra (més enllà de la previsió), 200 amb els punts per distància i **`avis: 'sense_previsio'`** (`AvisRecomanacions`, una unió de literals perquè l'app en faci un `switch` exhaustiu).
 - Sense `esdevenimentId`, la resposta no canvia: no porta ni `esdeveniment` ni `avis`.
 

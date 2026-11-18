@@ -1,4 +1,9 @@
-import type { ConsultaRecomanacions, ObjectiuObservacio, Recomanacio } from '@talaia/shared';
+import type {
+  ConsultaRecomanacions,
+  ObjectiuObservacio,
+  ParametresRecomanacions,
+  Recomanacio,
+} from '@talaia/shared';
 
 import { GRID_GOALS } from '../explore/exploreModel';
 import type { MapPoints } from '../map/pointMarkers';
@@ -6,8 +11,28 @@ import { twoDigitHours } from '../point/pointModel';
 
 /** Paràmetres de `/recomanacions` tal com els deixa «Què vols veure?»: tot és text a la ruta. */
 export type RecommendationParams = Partial<
-  Record<'objectiu' | 'lat' | 'lon' | 'data' | 'desDe' | 'finsA' | 'tempsMaxim' | 'lloc', string>
+  Record<
+    | 'objectiu'
+    | 'lat'
+    | 'lon'
+    | 'data'
+    | 'desDe'
+    | 'finsA'
+    | 'tempsMaxim'
+    | 'lloc'
+    | 'esdevenimentId'
+    | 'eventName'
+    | 'eventWhen',
+    string
+  >
 >;
+
+/** La franja de l’esdeveniment sempre la resol l’API (TG-140). */
+export type EventRecommendationQuery = Required<
+  Pick<ParametresRecomanacions, 'esdevenimentId' | 'origen'>
+> &
+  Pick<ParametresRecomanacions, 'tempsMaxim'>;
+export type RecommendationQuery = ConsultaRecomanacions | EventRecommendationQuery;
 
 /** Files del full abans de «Mostra'ls tots» (mockup 03). */
 export const VISIBLE_ROWS = 3;
@@ -21,7 +46,25 @@ const isGoal = (value: string | undefined): value is ObjectiuObservacio =>
  * La consulta de la ruta, o `null` si no n'hi ha cap («Mostra el mapa») o li falta alguna cosa.
  * Els rangs i la franja els valida l'API: aquí només es comprova que hi siguin.
  */
-export function parseQuery(params: RecommendationParams): ConsultaRecomanacions | null {
+export function parseQuery(params: RecommendationParams): RecommendationQuery | null {
+  if (params.esdevenimentId !== undefined) {
+    const lat = params.lat?.trim() ? Number(params.lat) : Number.NaN;
+    const lon = params.lon?.trim() ? Number(params.lon) : Number.NaN;
+    const tempsMaxim = params.tempsMaxim === undefined ? undefined : Number(params.tempsMaxim);
+    if (
+      !params.esdevenimentId.trim() ||
+      ![lat, lon].every(Number.isFinite) ||
+      (tempsMaxim !== undefined && !Number.isFinite(tempsMaxim))
+    )
+      return null;
+    if (params.data !== undefined || params.desDe !== undefined || params.finsA !== undefined)
+      return null;
+    return {
+      esdevenimentId: params.esdevenimentId,
+      origen: { lat, lon },
+      ...(tempsMaxim !== undefined ? { tempsMaxim } : {}),
+    };
+  }
   const { objectiu, data } = params;
   if (!isGoal(objectiu) || !data || !/^\d{4}-\d{2}-\d{2}$/.test(data)) return null;
   const number = (value?: string) => (value ? Number(value) : Number.NaN);

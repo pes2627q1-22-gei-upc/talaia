@@ -83,7 +83,7 @@ A `apps/mobile/src/shared/ui/`. Cap pantalla torna a definir un botó, una targe
 
 L'índex, al Figma, és només la xifra amb el color de la franja i l'etiqueta: ni anell ni barra. L'anell és dels marcadors del mapa (capa de MapLibre, TG-90) i les barres, del desglossament per factors (TG-105).
 
-Encara no hi són: el gest d'arrossegar el full inferior (TG-102), les etiquetes i la llegenda del mapa (TG-89/TG-90/TG-102) i les icones de Talaia (`Button` ja accepta `icon`). La barra de pestanyes és la nativa (`NativeTabs`), amb quatre pestanyes (Explora, Calendari, Alertes i Perfil) i l'activa en `far`.
+El full del rànquing es pot arrossegar per la nansa cap avall per plegar-lo i cap amunt per recuperar-lo (TG-141), amb Reanimated i una acció accessible equivalent. Encara no hi són: les etiquetes i la llegenda del mapa (TG-89/TG-90/TG-102) i les icones de Talaia (`Button` ja accepta `icon`). La barra de pestanyes és la nativa (`NativeTabs`), amb quatre pestanyes (Explora, Calendari, Alertes i Perfil) i l'activa en `far`.
 
 ## Moviment i fluïdesa
 

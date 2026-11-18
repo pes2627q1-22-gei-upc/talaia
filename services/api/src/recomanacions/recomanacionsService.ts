@@ -44,7 +44,7 @@ export type RecomanacionsService = {
 export type ConsultaResolta = {
   objectiu: ObjectiuObservacio;
   data: string;
-  tempsMaxim: number;
+  tempsMaxim: number | null;
   limit: number;
   franja: { desDe: Date; finsA: Date };
 };
@@ -55,7 +55,8 @@ export type ConsultaResolta = {
  * `cel_estrellat` i 20 punts. Amb només una de `desDe` i `finsA` no se sap quina franja es vol: la
  * ruta ho rebutja abans d'arribar aquí.
  *
- * Amb la `finestra` d'un esdeveniment (TG-140), la nit i la franja són les seves.
+ * Amb la `finestra` d'un esdeveniment (TG-140), la nit i la franja són les seves;
+ * sense `tempsMaxim`, no es limita el radi (`null`, TG-141).
  */
 export function resolConsulta(
   consulta: ParametresRecomanacions,
@@ -76,7 +77,7 @@ export function resolConsulta(
   return {
     objectiu: consulta.objectiu ?? OBJECTIU_PER_DEFECTE,
     data,
-    tempsMaxim: consulta.tempsMaxim ?? TEMPS_MAXIM_PER_DEFECTE,
+    tempsMaxim: consulta.tempsMaxim ?? (finestra ? null : TEMPS_MAXIM_PER_DEFECTE),
     limit: consulta.limit ?? LIMIT_PER_DEFECTE,
     franja,
   };
@@ -104,11 +105,39 @@ export function comparaRecomanacions(a: Recomanacio, b: Recomanacio): number {
   );
 }
 
+/** La distància pot compensar fins a 10 punts d’índex, a raó d’1 punt per cada 30 km. */
+export const EVENT_DISTANCE_KM_PER_POINT = 30;
+export const EVENT_MAX_DISTANCE_PENALTY = 10;
+const EVENT_QUALITY_LEVEL = { tap: 0, jus: 1, ras: 2 } as const;
+
+/**
+ * TG-141: dins del mateix nivell de qualitat (ras/jus/tap), puntua l’índex màxim
+ * menys la penalització de distància. La puntuació només ordena: no modifica l’índex real.
+ * Sense índex, al final per distància. Desempats: proximitat, índex exacte, mitjana i id.
+ */
+export function compareEventRecommendations(a: Recomanacio, b: Recomanacio): number {
+  const level = (point: Recomanacio) =>
+    point.millorHora ? EVENT_QUALITY_LEVEL[point.millorHora.franja] : -1;
+  const score = (point: Recomanacio) =>
+    point.millorHora
+      ? point.millorHora.valor -
+        Math.min(EVENT_MAX_DISTANCE_PENALTY, point.distanciaKm / EVENT_DISTANCE_KM_PER_POINT)
+      : 0;
+  return (
+    level(b) - level(a) ||
+    score(b) - score(a) ||
+    a.distanciaKm - b.distanciaKm ||
+    comparaRecomanacions(a, b) ||
+    a.id.localeCompare(b.id)
+  );
+}
+
 /** Construeix el rànquing a partir dels punts candidats i del seu índex. */
 export function rankeja(
   punts: PuntCandidat[],
   index: IndexHoraPunt[],
   rutes: EstimadorRutes,
+  compare = comparaRecomanacions,
 ): Recomanacio[] {
   const perPunt = new Map<string, IndexHora[]>();
   for (const { puntId, ...hora } of index) {
@@ -126,7 +155,7 @@ export function rankeja(
         ...resumeix(perPunt.get(punt.id) ?? []),
       };
     })
-    .sort(comparaRecomanacions);
+    .sort(compare);
 }
 
 /** Un error de la base de dades arriba al client com a 503, i el detall queda al log. */
@@ -182,8 +211,10 @@ async function finestraDe(
  * sprints posteriors. Per això `objectiu` es valida però encara no canvia el rànquing.
  *
  * Amb `esdevenimentId` (HU11, TG-140), el rànquing és el de la finestra de l'esdeveniment
- * (`finestraEsdeveniment`) i l'agregació, la de sempre: primer l'índex **màxim** de la finestra
- * (`millorHora`, «hi haurà algun moment bo?»), després la mitjana i després la distància.
+ * (`finestraEsdeveniment`). L'índex **màxim** de la finestra
+ * (`millorHora`) es combina amb la proximitat: dins de ras/jus/tap, es resten
+ * fins a 10 punts d’índex, a raó d’un punt per cada 30 km (només per ordenar).
+ * Sense `tempsMaxim`, es considera tot el catàleg publicat, sense tall de distància.
  */
 export function createRecomanacionsService(
   repository: RecomanacionsRepository,
@@ -202,10 +233,10 @@ export function createRecomanacionsService(
         throw new ApiError(400, 'franja_passada', 'La franja horària demanada ja ha passat');
       }
       const desDe = franja.desDe > horaActual ? franja.desDe : horaActual;
-      const radiKm = rutes.radiKm(consulta.tempsMaxim);
+      const radiKm = consulta.tempsMaxim === null ? null : rutes.radiKm(consulta.tempsMaxim);
 
       const punts = await fromDatabase(() =>
-        repository.puntsDinsRadi(parametres.origen, radiKm * 1000),
+        repository.puntsDinsRadi(parametres.origen, radiKm === null ? null : radiKm * 1000),
       );
       const index = await fromDatabase(() =>
         repository.indexHores(
@@ -225,6 +256,7 @@ export function createRecomanacionsService(
           punts.map((p) => puntLocalitzat(p, acceptLanguage)),
           index,
           rutes,
+          delEsdeveniment ? compareEventRecommendations : comparaRecomanacions,
         ).slice(0, consulta.limit),
       };
       if (!delEsdeveniment) return resposta;
