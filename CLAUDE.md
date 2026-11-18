@@ -141,6 +141,24 @@ Especificada → implementada → provada (tests a la CI) → revisada (PR aprov
 5. Missatges de commit i descripció de PR seguint la convenció; plantilla a `.github/pull_request_template.md`.
 6. L'estat de la tasca a Taiga es canvia a mà (`docs/git-workflow.md` → «Integració Taiga ↔ GitHub»): «In progress» en començar, «Ready for test» en obrir la PR i tancada en fusionar. Els commits no porten etiquetes d'estat (`TG-<ref> #<estat>`): només el peu `Refs: TG-<ref>`.
 
+### Eines del repositori (`.claude/`)
+
+- **Skills:**
+  - `/tasca TG-<ref>`: comença una tasca;
+  - `/obre-pr`: verifica la branca i obre la PR;
+  - `/revisa-pr <núm>`: revisa la PR d'un company, i no la publica sense ok;
+  - `/nou-adr <títol>`: ADR nova amb el número lliure següent.
+- **Agents:**
+  - `revisor`: revisa un diff, només llegint;
+  - `verificador`: executa el lint, el typecheck i els tests dels workspaces afectats.
+- **Regles per àrea** (`.claude/rules/`): es carreguen soles quan es toca `supabase/`, `apps/mobile/`, `services/` i `packages/`, o `docs/decisions/`. Hi ha les trampes que ja ens han passat.
+- **`settings.json`:**
+  - permet sense preguntar les ordres que només llegeixen o comproven;
+  - pregunta abans d'un `push --force`, d'un `gh pr merge` i d'un `db push`;
+  - no deixa llegir els `.env`.
+
+  La configuració personal va a `.claude/settings.local.json` i a `CLAUDE.local.md`, que estan ignorats. Mapa i com afegir-ne: `.claude/README.md`.
+
 ## Enllaços
 
 - Repositori: https://github.com/pes2627q1-22-gei-upc/talaia
