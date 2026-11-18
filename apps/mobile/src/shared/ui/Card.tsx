@@ -1,7 +1,8 @@
 import type { PropsWithChildren } from 'react';
-import { type StyleProp, StyleSheet, View, type ViewStyle } from 'react-native';
+import { type StyleProp, View, type ViewStyle } from 'react-native';
 
-import { colors, radii, spacing } from '@/core/theme/tokens';
+import { makeStyles } from '@/core/theme/theme';
+import { radii, spacing } from '@/core/theme/tokens';
 
 import { PressableScale } from './PressableScale';
 
@@ -21,6 +22,7 @@ export function Card({
   style,
   children,
 }: CardProps) {
+  const styles = useStyles();
   const cardStyle = [styles.card, selected && styles.selected, style];
   if (!onPress) {
     return (
@@ -41,7 +43,7 @@ export function Card({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(({ colors }) => ({
   card: {
     padding: spacing.md,
     borderRadius: radii.md,
@@ -50,4 +52,4 @@ const styles = StyleSheet.create({
     backgroundColor: colors.card,
   },
   selected: { backgroundColor: colors.vel, borderColor: colors.vora },
-});
+}));

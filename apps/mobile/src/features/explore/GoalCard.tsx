@@ -1,6 +1,6 @@
 import { Image } from 'expo-image';
 import { useEffect } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useReducedMotion,
@@ -8,7 +8,8 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-import { colors, motion, radii, sizes, spacing } from '@/core/theme/tokens';
+import { makeStyles, useTheme } from '@/core/theme/theme';
+import { motion, radii, sizes, spacing } from '@/core/theme/tokens';
 import { AppText } from '@/shared/ui/AppText';
 import { PressableScale } from '@/shared/ui/PressableScale';
 
@@ -27,6 +28,8 @@ type GoalCardProps = {
 
 /** Un fenomen de «Què vols veure?». El triat s'omple de `far` amb una fosa curta. */
 export function GoalCard({ label, icon, selected, onPress, hint, badge, disabled }: GoalCardProps) {
+  const styles = useStyles();
+  const { colors } = useTheme();
   const reduceMotion = useReducedMotion();
   const fill = useSharedValue(selected ? 1 : 0);
   const wide = hint !== undefined;
@@ -87,6 +90,7 @@ export function GoalCard({ label, icon, selected, onPress, hint, badge, disabled
 }
 
 function Badge({ text }: { text: string }) {
+  const styles = useStyles();
   return (
     <View style={styles.badge}>
       <AppText variant="overline" color="far">
@@ -96,7 +100,7 @@ function Badge({ text }: { text: string }) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(({ colors }) => ({
   card: {
     overflow: 'hidden',
     borderRadius: radii.md,
@@ -136,4 +140,4 @@ const styles = StyleSheet.create({
     borderRadius: radii.sm,
     backgroundColor: `${colors.far}26`,
   },
-});
+}));

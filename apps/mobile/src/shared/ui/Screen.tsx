@@ -1,9 +1,10 @@
 import type { PropsWithChildren } from 'react';
-import { StyleSheet } from 'react-native';
+
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { colors, motion, spacing } from '@/core/theme/tokens';
+import { makeStyles } from '@/core/theme/theme';
+import { motion, spacing } from '@/core/theme/tokens';
 
 import { AppText } from './AppText';
 
@@ -21,6 +22,7 @@ const enter = (delay: number) =>
 
 /** Esquelet comú d'una pantalla: fons de nit, títol de la marca i subtítol. */
 export function Screen({ title, subtitle, children }: ScreenProps) {
+  const styles = useStyles();
   return (
     <SafeAreaView style={styles.safeArea}>
       <Animated.View entering={enter(0)} style={styles.header}>
@@ -40,7 +42,7 @@ export function Screen({ title, subtitle, children }: ScreenProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(({ colors }) => ({
   safeArea: {
     flex: 1,
     backgroundColor: colors.nit,
@@ -55,4 +57,4 @@ const styles = StyleSheet.create({
     padding: spacing.ml,
     gap: spacing.md,
   },
-});
+}));

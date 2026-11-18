@@ -33,6 +33,25 @@ Els quatre tokens `fenomen*` són categories del calendari, sense significat de 
 
 Escala de l'índex de visibilitat: `tap` (0–39) → `jus` (40–69) → `ras` (70–100). *Llindars a confirmar amb la fórmula v1 (TG-98).* L'app no els calcula: la franja arriba de l'API (`IndexVisibilitat.franja`) i és el nom del token de color.
 
+### Mode nit (paleta `vermell`, ADR-0032)
+
+Quan s'observa, l'app passa a vermell sobre negre: el blau i el verd trenquen l'adaptació de l'ull a la foscor. És la paleta `colorsVermell` (amb `gradientsVermell` i `pointMapColorsVermell`) de `tokens.ts`, amb les mateixes claus.
+
+| Token | `vermell` | | Token | `vermell` |
+|---|---|---|---|---|
+| `nit` | `#000000` | | `lluna` · `far` · `ubicacio` · `ras` | `#FF0000` |
+| `card` | `#0F0000` | | `boira` | `#F20000` |
+| `sheet` | `#120000` | | `jus` | `#DC0000` |
+| `vel` | `#170000` | | `tap` | `#BE0000` |
+| `crep` | `#1C0000` | | `pedra` · `fenomen*` | `#C80000` |
+| `linia` | `#2E0000` | | | |
+| `vora` | `#5A0000` | | | |
+
+- **Regles,** comprovades per `core/theme/__tests__/palettes.test.ts`: només el canal vermell, el text ≥ 4,5:1 i els accents ≥ 3:1 sobre totes les superfícies (de `nit` a `crep`).
+- **El text principal i el secundari surten gairebé iguals:** el contrast màxim sobre el negre és 5,25:1. La jerarquia la fan la mida i el pes.
+- **Les franges de l'índex i les categories del calendari no es distingeixen pel color.** Al costat sempre hi ha d'haver el número o el text.
+- **Com es fa servir:** les pantalles no importen `colors`: fan servir `useTheme()` i `makeStyles()` (`core/theme/theme.tsx`), i així es tornen a pintar quan canvia el tema.
+
 ## Tipografia
 
 - **Big Shoulders Display** — titulars, xifres de l'índex, marca.

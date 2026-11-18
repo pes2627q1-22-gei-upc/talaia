@@ -1,8 +1,9 @@
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { colors, motion, spacing } from '@/core/theme/tokens';
+import { makeStyles } from '@/core/theme/theme';
+import { motion, spacing } from '@/core/theme/tokens';
 import { AppText } from '@/shared/ui/AppText';
 import { Button } from '@/shared/ui/Button';
 
@@ -10,6 +11,7 @@ import { useAccountBlockedViewModel } from './useAccountBlockedViewModel';
 
 /** El compte està bloquejat (403 `account_blocked`): no es pot entrar a l'app fins que el desbloquegin. */
 export function AccountBlockedScreen() {
+  const styles = useStyles();
   const vm = useAccountBlockedViewModel();
   return (
     <SafeAreaView style={styles.root}>
@@ -62,7 +64,7 @@ export function AccountBlockedScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(({ colors }) => ({
   root: { flex: 1, backgroundColor: colors.nit, paddingHorizontal: spacing.lg },
   // El text al centre i els botons a baix, a l'abast del polze: no es tapen mai.
   content: { flex: 1, justifyContent: 'center', gap: spacing.sm },
@@ -70,4 +72,4 @@ const styles = StyleSheet.create({
   // Un botó de text s'alinea a l'esquerra; aquí va centrat com el text de l'avís.
   contact: { alignSelf: 'center' },
   actions: { gap: spacing.sm, marginBottom: spacing.lg },
-});
+}));
