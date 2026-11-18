@@ -185,12 +185,17 @@ function apsidesPropers(ms: number): { perigeu: number; apogeu: number } {
   }
   const perigeus = candidats.filter((a) => a.kind === ApsisKind.Pericenter);
   const apogeus = candidats.filter((a) => a.kind === ApsisKind.Apocenter);
-  const mesProper = (items: typeof candidats) =>
-    items.reduce((millor, actual) =>
-      Math.abs(actual.time.date.getTime() - ms) < Math.abs(millor.time.date.getTime() - ms)
-        ? actual
-        : millor,
+  const mesProper = (items: typeof candidats) => {
+    const [primer, ...resta] = items;
+    if (!primer) throw new Error('No s’ha trobat cap àpside lunar dins de la finestra de cerca.');
+    return resta.reduce(
+      (millor, actual) =>
+        Math.abs(actual.time.date.getTime() - ms) < Math.abs(millor.time.date.getTime() - ms)
+          ? actual
+          : millor,
+      primer,
     );
+  };
   return { perigeu: mesProper(perigeus).dist_km, apogeu: mesProper(apogeus).dist_km };
 }
 
