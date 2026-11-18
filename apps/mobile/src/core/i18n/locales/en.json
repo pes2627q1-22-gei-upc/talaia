@@ -336,8 +336,6 @@
   },
   "alerts": {
     "title": "Alerts",
-    "soonTitle": "Coming soon",
-    "soonMessage": "Here you'll be able to create alerts so we can tell you when conditions are good for what you want to see.",
     "create": "New alert",
     "new": {
       "title": "New alert",
@@ -387,6 +385,25 @@
         "required": "Choose at least one way to be notified."
       }
     },
+    "edit": {
+      "title": "Edit alert",
+      "cta": "Save changes",
+      "saving": "Saving changes…",
+      "errors": {
+        "generic": "We couldn't save the changes. Try again."
+      },
+      "missingTitle": "We couldn't find this alert",
+      "missingMessage": "You may have deleted it. Go back to your alerts."
+    },
+    "subtitle": "We only notify you when the sky plays along.",
+    "summary": "Within {{travel}}, index {{index}} or higher",
+    "toggle": "{{name}} alert",
+    "editHint": "Opens the alert to edit it",
+    "toggleError": "We couldn't change the alert. Please try again.",
+    "emptyTitle": "No alerts yet",
+    "emptyMessage": "Create one and we'll let you know when conditions are good for what you want to see.",
+    "errorTitle": "We couldn't load your alerts",
+    "retry": "Try again",
     "pushDenied": "Notifications are turned off: we won't alert you on your phone when conditions are good. You can turn them on in Settings.",
     "pushUnavailable": "This device can’t receive notifications. The rest of the app works as usual.",
     "openSettings": "Open Settings"
