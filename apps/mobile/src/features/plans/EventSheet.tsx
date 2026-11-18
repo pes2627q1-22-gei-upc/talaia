@@ -1,7 +1,8 @@
 import { Image } from 'expo-image';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 
-import { colors, radii, sizes, spacing } from '@/core/theme/tokens';
+import { makeStyles, useTheme } from '@/core/theme/theme';
+import { radii, sizes, spacing } from '@/core/theme/tokens';
 import { AppText } from '@/shared/ui/AppText';
 import { PressableScale } from '@/shared/ui/PressableScale';
 import { Sheet } from '@/shared/ui/Sheet';
@@ -28,6 +29,8 @@ export function EventSheet({
   emptyMessage,
   options,
 }: EventSheetProps) {
+  const styles = useStyles();
+  const { colors } = useTheme();
   return (
     <Sheet visible={visible} onClose={onClose} title={title} closeLabel={closeLabel}>
       <ScrollView style={styles.list} contentContainerStyle={styles.content}>
@@ -77,7 +80,7 @@ export function EventSheet({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(({ colors }) => ({
   list: { maxHeight: LIST_MAX_HEIGHT },
   content: { gap: spacing.sm },
   row: {
@@ -96,4 +99,4 @@ const styles = StyleSheet.create({
   icon: { width: sizes.icon, height: sizes.icon },
   text: { flex: 1, gap: spacing.xxs },
   empty: { textAlign: 'center' },
-});
+}));

@@ -1,10 +1,11 @@
 import { Image, type ImageSource } from 'expo-image';
 import type { PropsWithChildren } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { colors, motion, radii, sizes, spacing } from '@/core/theme/tokens';
+import { makeStyles, useTheme } from '@/core/theme/theme';
+import { motion, radii, sizes, spacing } from '@/core/theme/tokens';
 import { FieldRow } from '@/features/explore/FieldRow';
 import { AppText } from '@/shared/ui/AppText';
 import { Button } from '@/shared/ui/Button';
@@ -23,6 +24,7 @@ const clockIcon = require('@/assets/images/explora/rellotge.svg');
 
 /** Entrada en cascada, com `Screen`: fosa i 6 pt, com a molt 6 blocs. */
 function Enter({ index, children }: PropsWithChildren<{ index: number }>) {
+  const styles = useStyles();
   return (
     <Animated.View
       entering={FadeInDown.duration(motion.base)
@@ -56,6 +58,8 @@ function ValueCard({
   value: string;
   onPress: () => void;
 }) {
+  const styles = useStyles();
+  const { colors } = useTheme();
   return (
     <PressableScale onPress={onPress} accessibilityLabel={`${label}: ${value}`} style={styles.card}>
       <View style={styles.cardLabel}>
@@ -73,6 +77,8 @@ function ValueCard({
 
 /** «Pla d'observació» (HU12, mockup 06). El calendari del mòbil és la TG-158. */
 export function NewPlanScreen(params: NewPlanParams) {
+  const styles = useStyles();
+  const { colors } = useTheme();
   const vm = useNewPlanViewModel(params);
   const { visible, title, closeLabel, onClose, ...calendar } = vm.dateSheet;
 
@@ -171,7 +177,7 @@ export function NewPlanScreen(params: NewPlanParams) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(({ colors }) => ({
   root: { flex: 1, backgroundColor: colors.nit },
   content: { padding: spacing.ml, gap: spacing.lg },
   section: { gap: spacing.ms },
@@ -188,4 +194,4 @@ const styles = StyleSheet.create({
   },
   cardLabel: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   shrink: { flexShrink: 1 },
-});
+}));

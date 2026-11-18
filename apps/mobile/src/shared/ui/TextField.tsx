@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { StyleSheet, TextInput, type TextInputProps, View } from 'react-native';
+import { TextInput, type TextInputProps, View } from 'react-native';
 
-import { colors, radii, sizes, spacing, typography } from '@/core/theme/tokens';
+import { makeStyles, useTheme } from '@/core/theme/theme';
+import { radii, sizes, spacing, typography } from '@/core/theme/tokens';
 
 import { AppText } from './AppText';
 
@@ -19,6 +20,8 @@ type TextFieldProps = Omit<TextInputProps, 'style' | 'placeholderTextColor'> & {
  * vora de cop: no és una animació, és un estat.
  */
 export function TextField({ label, error, onFocus, onBlur, ...rest }: TextFieldProps) {
+  const styles = useStyles();
+  const { colors } = useTheme();
   const [focused, setFocused] = useState(false);
   return (
     <View style={styles.root}>
@@ -55,7 +58,7 @@ export function TextField({ label, error, onFocus, onBlur, ...rest }: TextFieldP
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(({ colors }) => ({
   root: { gap: spacing.sm },
   input: {
     ...typography.body,
@@ -76,4 +79,4 @@ const styles = StyleSheet.create({
   },
   focused: { borderColor: colors.far },
   invalid: { borderColor: colors.tap },
-});
+}));
