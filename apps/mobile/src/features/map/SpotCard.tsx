@@ -1,7 +1,8 @@
 import { Image } from 'expo-image';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, View } from 'react-native';
 
-import { colors, radii, sizes, spacing } from '@/core/theme/tokens';
+import { makeStyles, useTheme } from '@/core/theme/theme';
+import { radii, sizes, spacing } from '@/core/theme/tokens';
 import { AppText } from '@/shared/ui/AppText';
 import { Button } from '@/shared/ui/Button';
 import { IndexIndicator } from '@/shared/ui/IndexIndicator';
@@ -18,10 +19,11 @@ export type SpotCardModel = {
   state: SpotState;
 };
 
+// El color el posa `tintColor`, perquè canvia amb el tema (mode nit).
 const pinIcon = {
   uri: `data:image/svg+xml;utf8,${encodeURIComponent(`
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-      fill="none" stroke="${colors.far}" stroke-width="1.8"
+      fill="none" stroke="#000" stroke-width="1.8"
       stroke-linecap="round" stroke-linejoin="round">
       <path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11Z"/>
       <path d="M12 6.6l.9 2.5 2.5.9-2.5.9-.9 2.5-.9-2.5-2.5-.9 2.5-.9Z"/>
@@ -32,7 +34,7 @@ const pinIcon = {
 const closeIcon = {
   uri: `data:image/svg+xml;utf8,${encodeURIComponent(`
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-      fill="none" stroke="${colors.boira}" stroke-width="1.8" stroke-linecap="round">
+      fill="none" stroke="#000" stroke-width="1.8" stroke-linecap="round">
       <path d="M7 7L17 17M17 7L7 17"/>
     </svg>
   `)}`,
@@ -43,6 +45,8 @@ const closeIcon = {
  * l'índex d'aquell lloc a l'hora en curs.
  */
 export function SpotCard({ card }: { card: SpotCardModel }) {
+  const styles = useStyles();
+  const { colors } = useTheme();
   const { state } = card;
   return (
     <View style={styles.card} accessibilityLiveRegion="polite">
@@ -60,14 +64,19 @@ export function SpotCard({ card }: { card: SpotCardModel }) {
             </AppText>
           )}
         </View>
-        <Image source={pinIcon} style={styles.pin} accessible={false} />
+        <Image source={pinIcon} tintColor={colors.far} style={styles.pin} accessible={false} />
         <PressableScale
           onPress={card.onClose}
           accessibilityLabel={card.closeLabel}
           hitSlop={spacing.ms}
           style={styles.close}
         >
-          <Image source={closeIcon} style={styles.closeIcon} accessible={false} />
+          <Image
+            source={closeIcon}
+            tintColor={colors.boira}
+            style={styles.closeIcon}
+            accessible={false}
+          />
         </PressableScale>
       </View>
 
@@ -121,7 +130,7 @@ export function SpotCard({ card }: { card: SpotCardModel }) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(({ colors }) => ({
   card: {
     gap: spacing.md,
     padding: spacing.md,
@@ -148,4 +157,4 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.ms, minHeight: sizes.button },
   result: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   retry: { alignSelf: 'flex-start', marginTop: spacing.xs },
-});
+}));
