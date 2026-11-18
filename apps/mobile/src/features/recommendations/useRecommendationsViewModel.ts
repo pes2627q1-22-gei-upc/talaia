@@ -10,7 +10,9 @@ import { EMPTY_MAP_POINTS } from '../map/pointMarkers';
 
 import {
   boundsOf,
+  elision,
   localTime,
+  nearbyOrigin,
   ordinal,
   parseQuery,
   type RecommendationParams,
@@ -22,8 +24,9 @@ import { useRecommendationsQuery } from './recommendationsRepository';
 const LEGEND: readonly FranjaIndex[] = ['ras', 'jus', 'tap'];
 
 /**
- * Rànquing de «Què vols veure?» sobre el mapa (HU01, mockup 03): capçalera amb la cerca, marcadors
- * i full amb els millors punts. `null` si la ruta no porta cap cerca («Mostra el mapa»).
+ * Rànquing sobre el mapa (mockup 03): capçalera amb la cerca, marcadors i full amb els millors
+ * punts. El fa «Què vols veure?» (HU01) o «A prop meu» (HU02). `null` si la ruta no porta cap
+ * cerca («Mostra el mapa»).
  */
 export function useRecommendationsViewModel() {
   const { t, i18n } = useTranslation();
@@ -56,21 +59,49 @@ export function useRecommendationsViewModel() {
       : t('recommendations.duration.hours', { hours });
   };
 
-  const eventSearch = 'esdevenimentId' in query;
-  const date = eventSearch ? data?.data : query.data;
+  const eventSearch = !!query.esdevenimentId;
+  const nearby = eventSearch ? null : nearbyOrigin(params);
+  const night = query.data ?? data?.data;
+  const minutes = query.tempsMaxim ?? data?.tempsMaxim;
   const tonight = nightOf(new Date());
   const when = (() => {
-    if (!date) return params.eventWhen ?? t('event.title');
-    if (date === tonight) return t('recommendations.when.tonight');
-    if (date === addDays(tonight, 1)) return t('recommendations.when.tomorrow');
-    const { weekday, day } = dayParts(date);
+    if (!night) return eventSearch ? (params.eventWhen ?? t('event.title')) : null;
+    if (night === tonight) return t('recommendations.when.tonight');
+    if (night === addDays(tonight, 1)) return t('recommendations.when.tomorrow');
+    const { weekday, day } = dayParts(night);
     const weekdays = t('explore.weekdays', { returnObjects: true }) as string[];
     const months = t('explore.calendar.monthsShort', { returnObjects: true }) as string[];
-    const month = months[Number(date.slice(5, 7)) - 1];
+    const month = months[Number(night.slice(5, 7)) - 1];
     return t('explore.when.picked', { weekday: weekdays[weekday], day, month });
   })();
-  const travel = query.tempsMaxim === undefined ? null : duration(query.tempsMaxim);
-  const placeContext = /^[aeiouàèéíïòóúü]/i.test(params.lloc?.trim() ?? '') ? 'vowel' : undefined;
+  const travel = minutes == null ? null : duration(minutes);
+  const title = eventSearch
+    ? (params.eventName ?? t('event.title'))
+    : nearby
+      ? when
+        ? t('recommendations.nearby.title', { when })
+        : t('recommendations.nearby.label')
+      : t('recommendations.title', {
+          goal: t(`explore.goals.${query.objectiu ?? 'cel_estrellat'}`),
+          when,
+        });
+  const subtitle = (() => {
+    const place = params.lloc;
+    if (!travel) {
+      if (eventSearch)
+        return place
+          ? t('recommendations.fromUnlimited', { place, context: elision(place) })
+          : t('recommendations.fromHereUnlimited');
+      if (place) return t('recommendations.nearby.place', { place, context: elision(place) });
+      return t(
+        nearby === 'triat' ? 'recommendations.nearby.picked' : 'recommendations.nearby.here',
+      );
+    }
+    if (place) return t('recommendations.from', { place, travel, context: elision(place) });
+    return t(nearby === 'triat' ? 'recommendations.fromPicked' : 'recommendations.fromHere', {
+      travel,
+    });
+  })();
   const pastWindow = result.error instanceof ApiError && result.error.code === 'franja_passada';
 
   const punts = data?.punts ?? [];
@@ -127,25 +158,17 @@ export function useRecommendationsViewModel() {
     points,
     bounds,
     header: {
-      title: eventSearch
-        ? (params.eventName ?? t('event.title'))
-        : t('recommendations.title', {
-            goal: t(`explore.goals.${query.objectiu}`),
-            when,
-          }),
+      title,
       eventDate: eventSearch ? when : null,
-      subtitle:
-        travel === null
-          ? params.lloc
-            ? t('recommendations.fromUnlimited', { place: params.lloc, context: placeContext })
-            : t('recommendations.fromHereUnlimited')
-          : params.lloc
-            ? t('recommendations.from', { place: params.lloc, travel })
-            : t('recommendations.fromHere', { travel }),
+      subtitle,
       legend: LEGEND.map((franja) => ({ franja, label: t(`index.level.${franja}`) })),
     },
     sheet: {
-      title: t(eventSearch ? 'recommendations.eventRanking' : 'recommendations.best', { when }),
+      title: eventSearch
+        ? t('recommendations.eventRanking')
+        : when
+          ? t('recommendations.best', { when })
+          : t('recommendations.nearby.best'),
       notice:
         data?.avis === 'sense_previsio'
           ? t('recommendations.noEventForecast')
@@ -159,10 +182,18 @@ export function useRecommendationsViewModel() {
       canRetry: !pastWindow,
       retryLabel: t('map.retry'),
       onRetry: () => void result.refetch(),
-      emptyTitle: t(travel === null ? 'recommendations.emptyCatalog' : 'recommendations.empty', {
-        travel,
-      }),
-      emptyHint: t(eventSearch ? 'recommendations.emptyEventHint' : 'recommendations.emptyHint'),
+      emptyTitle: travel
+        ? t('recommendations.empty', { travel, context: elision(travel) })
+        : eventSearch
+          ? t('recommendations.emptyCatalog')
+          : '',
+      emptyHint: t(
+        eventSearch
+          ? 'recommendations.emptyEventHint'
+          : nearby
+            ? 'recommendations.nearby.emptyHint'
+            : 'recommendations.emptyHint',
+      ),
       collapsed,
       collapseLabel: t(
         eventSearch

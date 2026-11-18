@@ -35,3 +35,8 @@ it('delega la data i la franja de l’esdeveniment a l’API', async () => {
     lon: 2.82,
   });
 });
+
+it('«A prop meu» només envia l’origen: la resta la tria l’API (TG-133)', async () => {
+  await fetchRecommendations({ origen: { lat: 41.98, lon: 2.82 } });
+  expect(apiGet).toHaveBeenLastCalledWith('/recomanacions', { lat: 41.98, lon: 2.82 });
+});

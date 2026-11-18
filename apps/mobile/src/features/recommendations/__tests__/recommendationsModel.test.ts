@@ -1,6 +1,14 @@
 import type { Recomanacio } from '@talaia/shared';
 
-import { boundsOf, localTime, ordinal, parseQuery, toMapPoints } from '../recommendationsModel';
+import {
+  boundsOf,
+  elision,
+  localTime,
+  nearbyOrigin,
+  ordinal,
+  parseQuery,
+  toMapPoints,
+} from '../recommendationsModel';
 
 const PARAMS = {
   objectiu: 'via_lactia',
@@ -33,6 +41,22 @@ describe('parseQuery', () => {
     expect(parseQuery({ ...PARAMS, tempsMaxim: 'molt' })).toBeNull();
     const { finsA: _, ...senseFinsA } = PARAMS;
     expect(parseQuery(senseFinsA)).toBeNull();
+  });
+
+  it('«A prop meu» només porta l’origen, sigui la ubicació o un lloc triat al mapa', () => {
+    expect(parseQuery({ aprop: 'aqui', lat: '41.387', lon: '2.169', lloc: 'Barcelona' })).toEqual({
+      origen: { lat: 41.387, lon: 2.169 },
+    });
+    expect(parseQuery({ aprop: 'triat', lat: '42.1', lon: '1.8' })).toEqual({
+      origen: { lat: 42.1, lon: 1.8 },
+    });
+    expect(parseQuery({ aprop: 'triat', lat: '42.1' })).toBeNull();
+    expect(nearbyOrigin({ aprop: 'aqui' })).toBe('aqui');
+    expect(nearbyOrigin({ aprop: 'triat' })).toBe('triat');
+    // Un valor desconegut no és «A prop meu»: sense la resta de la cerca, no hi ha consulta.
+    expect(nearbyOrigin({ aprop: 'lluny' })).toBeNull();
+    expect(parseQuery({ aprop: 'lluny', lat: '42.1', lon: '1.8' })).toBeNull();
+    expect(nearbyOrigin(PARAMS)).toBeNull();
   });
 });
 
@@ -131,4 +155,13 @@ it('la cerca per esdeveniment envia el codi i l’origen, sense inventar una fra
     { finsA: '6' },
   ])
     expect(parseQuery({ ...event, ...invalid })).toBeNull();
+});
+
+it('elision diu quan s’apostrofa la «de» catalana: vocal, hac, l’u i l’onze', () => {
+  for (const text of ['Igualada', 'Olot', 'Horta', 'Úrgell', '1 h', '1 h 30 min', '11 h']) {
+    expect(elision(text)).toBe('vowel');
+  }
+  for (const text of ['Girona', 'Vic', '15 min', '10 min', '2 h', '45 min']) {
+    expect(elision(text)).toBeUndefined();
+  }
 });
