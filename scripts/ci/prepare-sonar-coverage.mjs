@@ -4,6 +4,7 @@ import { pathToFileURL } from 'node:url';
 
 const workspaces = [
   'apps/mobile',
+  'apps/admin',
   'services/api',
   'services/worker',
   'packages/db',

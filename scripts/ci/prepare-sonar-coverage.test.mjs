@@ -10,6 +10,7 @@ function fixture(t) {
   t.after(() => rmSync(root, { recursive: true, force: true }));
   for (const workspace of [
     'apps/mobile',
+    'apps/admin',
     'services/api',
     'services/worker',
     'packages/db',
@@ -31,6 +32,7 @@ test('distingeix fitxers amb el mateix nom en workspaces diferents i conserva el
   prepareCoverage(root);
   for (const workspace of [
     'apps/mobile',
+    'apps/admin',
     'services/api',
     'services/worker',
     'packages/db',

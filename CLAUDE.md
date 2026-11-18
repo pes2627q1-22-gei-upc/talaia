@@ -109,7 +109,7 @@ Regla: un tipus de domini s'escriu **una sola vegada** a `packages/shared` i el 
 - **Design system:** tots els colors, tipografies i espaiats surten dels tokens (`docs/design-system.md`). Cap color "a mà" a les pantalles.
 - **Moviment i fluïdesa:** l'app ha de ser molt estètica i fluida. Animacions amb Reanimated (només `transform`/`opacity`), esquelets en lloc d'spinners, resposta al tacte i 60 fps comprovats al dispositiu: regles a `docs/design-system.md`.
 - **API:** REST, recursos en català tal com estan acordats amb altres equips (`/punts`, `/recomanacions`, `/esdeveniments`). Errors amb format uniforme `{ error: { code, message } }`. Tota ruta nova es documenta a l'OpenAPI a la mateixa PR.
-- **Tests:** Jest. Cada ViewModel i cada servei de domini amb tests. La fórmula de l'índex és codi pur i 100 % testejable.
+- **Tests:** Jest (a la web d'administració, Vitest: ADR-0034). Cada ViewModel i cada servei de domini amb tests. La fórmula de l'índex és codi pur i 100 % testejable.
 - **Secrets:** mai al repositori (és **públic**). `.env.example` documenta les variables; els valors reals van a `.env` (ignorat) i als secrets de GitHub.
 - **Bugs:** segueix `docs/gestio-bugs.md`. Si detectes un defecte preexistent o fora de l'abast de la tasca, informa'n la persona responsable amb passos per reproduir-lo; no creïs una issue ni n'iniciïs la correcció sense confirmar-ho amb ella. Els errors d'una tasca en curs es resolen dins de la mateixa tasca.
 

@@ -18,15 +18,19 @@ export const authClient =
 
 let redirectResult: Promise<void> | undefined;
 
-/** React StrictMode pot muntar dues vegades l'app: el codi PKCE només es pot bescanviar un cop. */
+/**
+ * React StrictMode pot muntar dues vegades l'app: el codi PKCE només es pot bescanviar un cop.
+ * El segon muntatge reaprofita el resultat del primer, perquè l'adreça ja s'ha netejat.
+ */
 export function completeAuthRedirect(): Promise<void> {
   if (!authClient) return Promise.resolve();
+  if (redirectResult) return redirectResult;
   const client = authClient;
   const params = new URLSearchParams(window.location.search);
   const code = params.get('code');
   const authError = params.get('error_description');
   if (!code && !authError) return Promise.resolve();
-  redirectResult ??= (async () => {
+  redirectResult = (async () => {
     window.history.replaceState({}, '', window.location.pathname);
     if (authError) throw new Error(authError);
     const { error } = await client.auth.exchangeCodeForSession(code!);
