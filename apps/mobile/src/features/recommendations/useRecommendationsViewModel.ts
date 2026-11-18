@@ -8,7 +8,9 @@ import { EMPTY_MAP_POINTS } from '../map/pointMarkers';
 
 import {
   boundsOf,
+  elision,
   localTime,
+  nearbyOrigin,
   ordinal,
   parseQuery,
   type RecommendationParams,
@@ -20,8 +22,9 @@ import { useRecommendationsQuery } from './recommendationsRepository';
 const LEGEND: readonly FranjaIndex[] = ['ras', 'jus', 'tap'];
 
 /**
- * Rànquing de «Què vols veure?» sobre el mapa (HU01, mockup 03): capçalera amb la cerca, marcadors
- * i full amb els millors punts. `null` si la ruta no porta cap cerca («Mostra el mapa»).
+ * Rànquing sobre el mapa (mockup 03): capçalera amb la cerca, marcadors i full amb els millors
+ * punts. El fa «Què vols veure?» (HU01) o «A prop meu» (HU02). `null` si la ruta no porta cap
+ * cerca («Mostra el mapa»).
  */
 export function useRecommendationsViewModel() {
   const { t, i18n } = useTranslation();
@@ -54,17 +57,43 @@ export function useRecommendationsViewModel() {
       : t('recommendations.duration.hours', { hours });
   };
 
+  // «A prop meu» no tria la nit ni la distància: les diu l'API en respondre (TG-133).
+  const nearby = nearbyOrigin(params);
+  const night = query.data ?? data?.data;
+  const minutes = query.tempsMaxim ?? data?.tempsMaxim;
   const tonight = nightOf(new Date());
   const when = (() => {
-    if (query.data === tonight) return t('recommendations.when.tonight');
-    if (query.data === addDays(tonight, 1)) return t('recommendations.when.tomorrow');
-    const { weekday, day } = dayParts(query.data);
+    if (!night) return null;
+    if (night === tonight) return t('recommendations.when.tonight');
+    if (night === addDays(tonight, 1)) return t('recommendations.when.tomorrow');
+    const { weekday, day } = dayParts(night);
     const weekdays = t('explore.weekdays', { returnObjects: true }) as string[];
     const months = t('explore.calendar.monthsShort', { returnObjects: true }) as string[];
-    const month = months[Number(query.data.slice(5, 7)) - 1];
+    const month = months[Number(night.slice(5, 7)) - 1];
     return t('explore.when.picked', { weekday: weekdays[weekday], day, month });
   })();
-  const travel = duration(query.tempsMaxim);
+  const travel = minutes === undefined ? null : duration(minutes);
+  const title = nearby
+    ? when
+      ? t('recommendations.nearby.title', { when })
+      : t('recommendations.nearby.label')
+    : t('recommendations.title', {
+        goal: t(`explore.goals.${query.objectiu ?? 'cel_estrellat'}`),
+        when,
+      });
+  const subtitle = (() => {
+    const place = params.lloc;
+    if (!travel) {
+      if (place) return t('recommendations.nearby.place', { place, context: elision(place) });
+      return t(
+        nearby === 'triat' ? 'recommendations.nearby.picked' : 'recommendations.nearby.here',
+      );
+    }
+    if (place) return t('recommendations.from', { place, travel, context: elision(place) });
+    return t(nearby === 'triat' ? 'recommendations.fromPicked' : 'recommendations.fromHere', {
+      travel,
+    });
+  })();
 
   const punts = data?.punts ?? [];
   const rows = (expanded ? punts : punts.slice(0, VISIBLE_ROWS)).map((punt, position) => {
@@ -111,22 +140,21 @@ export function useRecommendationsViewModel() {
     points,
     bounds,
     header: {
-      title: t('recommendations.title', { goal: t(`explore.goals.${query.objectiu}`), when }),
-      subtitle: params.lloc
-        ? t('recommendations.from', { place: params.lloc, travel })
-        : t('recommendations.fromHere', { travel }),
+      title,
+      subtitle,
       legend: LEGEND.map((franja) => ({ franja, label: t(`index.level.${franja}`) })),
     },
     sheet: {
-      title: t('recommendations.best', { when }),
+      title: when ? t('recommendations.best', { when }) : t('recommendations.nearby.best'),
       state,
       rows,
       loadingLabel: t('recommendations.loading'),
       errorLabel: t('recommendations.error'),
       retryLabel: t('map.retry'),
       onRetry: () => void result.refetch(),
-      emptyTitle: t('recommendations.empty', { travel }),
-      emptyHint: t('recommendations.emptyHint'),
+      emptyTitle: travel ? t('recommendations.empty', { travel, context: elision(travel) }) : '',
+      // «A prop meu» no deixa triar la distància: per anar més lluny, «Què vols veure?».
+      emptyHint: t(nearby ? 'recommendations.nearby.emptyHint' : 'recommendations.emptyHint'),
       collapsed,
       collapseLabel: t(collapsed ? 'recommendations.expandSheet' : 'recommendations.collapseSheet'),
       onToggleCollapsed: () => setCollapsed((value) => !value),
