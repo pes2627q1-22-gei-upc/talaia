@@ -162,6 +162,19 @@ export interface Perfils {
   rol: Generated<string>;
 }
 
+export interface Plans {
+  calendariEventId: string | null;
+  dataActualitzacio: Generated<Timestamp>;
+  dataCreacio: Generated<Timestamp>;
+  dataHoraFi: Timestamp | null;
+  dataHoraInici: Timestamp;
+  esdevenimentId: string | null;
+  id: Generated<string>;
+  notes: string | null;
+  perfilId: string;
+  puntId: string;
+}
+
 export interface PuntsObservacio {
   accessibilitat: string | null;
   altitud: number | null;
@@ -201,6 +214,7 @@ export interface DB {
   lecturesXema: LecturesXema;
   notificacionsAlertes: NotificacionsAlertes;
   perfils: Perfils;
+  plans: Plans;
   puntsObservacio: PuntsObservacio;
   tipusFenomen: TipusFenomen;
 }

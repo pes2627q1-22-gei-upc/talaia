@@ -8,6 +8,7 @@ import type { FavoritsService } from '../favorits/favoritsService';
 import type { BreakdownService } from '../index/breakdownService';
 import { requireAuth, type JwksSource } from '../middleware/auth';
 import { buildOpenApiDocument } from '../openapi';
+import type { PlansService } from '../plans/plansService';
 import type { PuntsService } from '../punts/puntsService';
 import type { RecomanacionsService } from '../recomanacions/recomanacionsService';
 import type { ProfileStore } from '../services/profileService';
@@ -21,13 +22,14 @@ import { createEsdevenimentsRouter } from './esdeveniments';
 import './esdeveniments.contract';
 import { createFavoritsRouter } from './favorits';
 import { healthRouter } from './health';
+import { createPlansRouter } from './plans';
 import { createPuntIndexRouter } from './puntIndex';
 import { createPuntsRouter } from './punts';
 import { createRecomanacionsRouter } from './recomanacions';
 import { createVisibilitatRouter } from './visibilitat';
 
 /**
- * Dependències dels routers. Sense `punts`, `breakdown` o `favorits` (no hi ha `DATABASE_URL`), les
+ * Dependències dels routers. Sense `punts`, `breakdown`, `favorits` o `plans` (no hi ha `DATABASE_URL`), les
  * seves rutes responen 503.
  */
 export type ApiDeps = {
@@ -48,6 +50,8 @@ export type ApiDeps = {
   apropApiKey?: string;
   /** `POST`, `GET` i `DELETE /favorits` (TG-169). */
   favorits?: FavoritsService;
+  /** `POST` i `GET /plans` (TG-156). */
+  plans?: PlansService;
 };
 
 /** Router de `/api/v1`: un router per recurs (punts, recomanacions, visibilitat, esdeveniments…). */
@@ -64,6 +68,7 @@ export function createApiRouter({
   esdeveniments,
   apropApiKey,
   favorits,
+  plans,
 }: ApiDeps & { profileStore: ProfileStore; alertes: AlertesStore }): Router {
   const router = Router();
   router.use('/health', healthRouter);
@@ -87,6 +92,7 @@ export function createApiRouter({
   router.use('/admin', createAdminRouter({ requireUser, profileStore }));
   router.use('/alertes', createAlertesRouter({ requireUser, store: alertes }));
   router.use('/favorits', createFavoritsRouter({ requireUser, service: favorits }));
+  router.use('/plans', createPlansRouter({ requireUser, service: plans }));
 
   // Es genera quan ja s'han importat tots els routers, que són els que registren les rutes.
   const openapi = buildOpenApiDocument(version);

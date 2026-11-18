@@ -1,4 +1,3 @@
-import { useTranslation } from 'react-i18next';
 import { StyleSheet } from 'react-native';
 
 import { colors, spacing } from '@/core/theme/tokens';
@@ -16,32 +15,27 @@ const bellIcon = {
   )}`,
 };
 
-/** Pestanya d'alertes (mockups 10 i 11): la llista arriba amb la TG-148. */
+/** Pestanya d'alertes: l'avís de notificacions i el camí a «Nova alerta» (la llista és TG-148). */
 export function AlertsScreen() {
-  const { t } = useTranslation();
-  const { pushNotice } = useAlertsViewModel();
+  const vm = useAlertsViewModel();
   return (
-    <Screen title={t('alerts.title')}>
-      {pushNotice ? (
+    <Screen title={vm.title}>
+      {vm.pushNotice ? (
         <Card style={styles.notice}>
           <AppText variant="small" color="boira">
-            {pushNotice.message}
+            {vm.pushNotice.message}
           </AppText>
-          {pushNotice.action ? (
+          {vm.pushNotice.action ? (
             <Button
               variant="text"
-              label={pushNotice.action.label}
-              onPress={pushNotice.action.onPress}
+              label={vm.pushNotice.action.label}
+              onPress={vm.pushNotice.action.onPress}
             />
           ) : null}
         </Card>
       ) : null}
-      <StateMessage
-        icon={bellIcon}
-        fill
-        title={t('alerts.soonTitle')}
-        message={t('alerts.soonMessage')}
-      />
+      <StateMessage icon={bellIcon} fill title={vm.soonTitle} message={vm.soonMessage} />
+      <Button label={vm.create.label} onPress={vm.create.onPress} haptic />
     </Screen>
   );
 }
