@@ -8,6 +8,8 @@ import { type ThemeName, ThemeProvider } from '../theme';
 jest.mock('expo-brightness', () => ({
   getBrightnessAsync: jest.fn().mockResolvedValue(0.5),
   setBrightnessAsync: jest.fn().mockResolvedValue(undefined),
+  isUsingSystemBrightnessAsync: jest.fn().mockResolvedValue(true),
+  restoreSystemBrightnessAsync: jest.fn().mockResolvedValue(undefined),
 }));
 
 function App({ theme }: { theme: ThemeName }) {
