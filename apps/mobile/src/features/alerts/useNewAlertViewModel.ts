@@ -1,7 +1,7 @@
 import type { ObjectiuObservacio } from '@talaia/shared';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { ApiError } from '@/core/api/httpClient';
@@ -81,16 +81,32 @@ export function useNewAlertViewModel() {
     });
   };
 
-  // Cada cop que s'obre, el mapa torna a `mapStart`: un centre mogut i descartat no s'hi pot desar.
+  // Cada confirmació té un número; obrir o tancar el mapa el canvia, i la resposta del nom d'una
+  // confirmació antiga ja no desa la zona ni tanca el mapa.
+  const namingRequest = useRef(0);
+
+  // Cada cop que s'obre, el mapa torna a `mapStart` i n'agafa el centre com a esborrany: un centre
+  // mogut i descartat no s'hi pot desar, i si després arriba la ubicació, el mapa (que no es mou)
+  // i el que es desa continuen sent el mateix punt.
   const openZone = () => {
-    setZoneDraft(null);
+    namingRequest.current += 1;
+    setZoneNaming(false);
+    setZoneDraft(mapStart.center);
     setZoneOpen(true);
+  };
+
+  const closeZone = () => {
+    namingRequest.current += 1;
+    setZoneNaming(false);
+    setZoneOpen(false);
   };
 
   const confirmZone = async () => {
     const picked = zoneDraft ?? mapStart.center;
+    const request = ++namingRequest.current;
     setZoneNaming(true);
     const name = await placeName(picked.lat, picked.lon);
+    if (request !== namingRequest.current) return;
     setZone({ ...picked, name });
     setZoneNaming(false);
     setZoneOpen(false);
@@ -169,7 +185,7 @@ export function useNewAlertViewModel() {
         onPress: () => void confirmZone(),
       },
       closeLabel: t('alerts.new.zone.close'),
-      onClose: () => setZoneOpen(false),
+      onClose: closeZone,
     },
     travel: {
       title: t('alerts.new.travel.title'),

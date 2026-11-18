@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { ApiError } from '@/core/api/httpClient';
 import i18n from '@/core/i18n';
 import { getCurrentPlace, placeName } from '@/features/explore/locationRepository';
+import { camera } from '@/features/map/useMapViewModel';
 import { createQueryWrapper } from '@/test-utils/queryWrapper';
 
 import { alertsRepository } from '../alertsRepository';
@@ -169,6 +170,38 @@ describe('useNewAlertViewModel', () => {
     await act(() => result.current.zoneSheet.confirm.onPress());
     await waitFor(() => expect(result.current.zoneSheet.visible).toBe(false));
     expect(mockedName).toHaveBeenCalledWith(41.387412, 2.168569);
+  });
+
+  it('si la ubicació arriba amb el mapa obert, confirmar sense moure’l desa el centre que es veu', async () => {
+    let locate: (value: typeof BARCELONA) => void = () => undefined;
+    mockedPlace.mockReturnValue(new Promise((resolve) => (locate = resolve)));
+    mockedName.mockResolvedValue('');
+    const { result } = await renderViewModel();
+    await act(() => result.current.originModes.onChange(1));
+    const shown = { lat: camera.center[1], lon: camera.center[0] };
+    expect(result.current.zoneSheet.center).toEqual(shown);
+
+    await act(async () => locate(BARCELONA));
+    await waitFor(() => expect(result.current.zoneSheet.zoom).toBe(10));
+    await act(() => result.current.zoneSheet.confirm.onPress());
+    await waitFor(() => expect(result.current.zoneSheet.visible).toBe(false));
+    expect(mockedName).toHaveBeenCalledWith(shown.lat, shown.lon);
+  });
+
+  it('el nom d’una zona confirmada i tancada no desa res ni tanca el mapa reobert', async () => {
+    let name: (value: string) => void = () => undefined;
+    mockedName.mockReturnValueOnce(new Promise((resolve) => (name = resolve)));
+    const { result } = await readyViewModel();
+    await act(() => result.current.originModes.onChange(1));
+    await act(() => result.current.zoneSheet.onCenterChange({ lat: 42.1034, lon: 1.8456 }));
+    await act(() => result.current.zoneSheet.confirm.onPress());
+    await act(() => result.current.zoneSheet.onClose());
+    await act(() => result.current.origin.onPress?.());
+
+    await act(async () => name('Berga'));
+    expect(result.current.zoneSheet.visible).toBe(true);
+    expect(result.current.zoneSheet.confirm.disabled).toBe(false);
+    expect(result.current.origin).toMatchObject({ label: 'Cap zona triada' });
   });
 
   it('si es tanca el mapa sense triar, no hi ha zona i no es pot crear', async () => {
