@@ -4,8 +4,12 @@ import type { ReactNode } from 'react';
 import TabsLayout from '@/app/(tabs)/_layout';
 import i18n from '@/core/i18n';
 import { useSessionGate } from '@/features/auth/useSessionGate';
+import { useOpenNotifiedPoint } from '@/features/notifications/useOpenNotifiedPoint';
 
 jest.mock('@/features/auth/useSessionGate', () => ({ useSessionGate: jest.fn() }));
+jest.mock('@/features/notifications/useOpenNotifiedPoint', () => ({
+  useOpenNotifiedPoint: jest.fn(),
+}));
 // Les pantalles d’error tenen tests propis; aquí es prova quina munta el layout.
 jest.mock('@/features/auth/RestoreErrorScreen', () => ({
   RestoreErrorScreen: () => {
@@ -71,4 +75,15 @@ it('amb sessió vàlida mostra les quatre pestanyes traduïdes', async () => {
   for (const key of ['tabs.explore', 'tabs.calendar', 'tabs.alerts', 'tabs.profile'] as const) {
     expect(screen.getByText(i18n.t(key))).toBeOnTheScreen();
   }
+});
+
+it.each([
+  ['signedIn', true],
+  ['restoring', false],
+  ['blocked', false],
+  ['signedOut', false],
+] as const)('en estat %s, obrir la fitxa en tocar una notificació: %s', async (gate, enabled) => {
+  jest.mocked(useSessionGate).mockReturnValue(gate);
+  await render(<TabsLayout />);
+  expect(useOpenNotifiedPoint).toHaveBeenLastCalledWith(enabled);
 });

@@ -2,7 +2,7 @@
 
 Procés de Talaia que ingesta les dades externes i recalcula l'índex de visibilitat de tots els punts **cada hora** ([ADR-0004](../../docs/decisions/0004-index-precalculat.md)). Node 22 + TypeScript (strict), mateixes eines que l'API.
 
-Estat: hi ha la **ingesta de la previsió d'Open-Meteo** (TG-95 i TG-114), el **càlcul astronòmic** amb Astronomy Engine (TG-96), la **fórmula de l'índex v1** amb la seva persistència (TG-98) i la **ingesta de les observacions de la XEMA** de Meteocat (TG-115, `npm run xema`). El **procés horari** (TG-99) recalcula l'índex de tots els punts en arrencar i cada hora amb node-cron, dins del contenidor, i després **avalua les alertes** (TG-153): l'enviament de les notificacions push és la TG-154.
+Estat: hi ha la **ingesta de la previsió d'Open-Meteo** (TG-95 i TG-114), el **càlcul astronòmic** amb Astronomy Engine (TG-96), la **fórmula de l'índex v1** amb la seva persistència (TG-98) i la **ingesta de les observacions de la XEMA** de Meteocat (TG-115, `npm run xema`). El **procés horari** (TG-99) recalcula l'índex de tots els punts en arrencar i cada hora amb node-cron, dins del contenidor, i després **avalua les alertes** (TG-153): i **n'envia les notificacions push** amb l'Expo Push Service (TG-154).
 
 El client d'Open-Meteo, el càlcul astronòmic i la fórmula de l'índex són a **`@talaia/index`** (`packages/index`), perquè l'API també els fa servir per calcular l'índex d'una ubicació qualsevol al moment ([ADR-0031](../../docs/decisions/0031-visibilitat-ubicacio-al-moment.md)). El worker hi posa la planificació, la persistència i les CLI de prova.
 
@@ -159,10 +159,27 @@ Per què així: [ADR-0033](../../docs/decisions/0033-avaluacio-alertes-worker.md
 - **La decisió** (`pickNotifications`, codi pur): per a cada alerta activa del pla i d'un compte no bloquejat (ADR-0029), els punts publicats a `distancia_max_km` o menys de l'origen amb un índex ≥ `index_minim` i més gran que 0. El millor és el de més índex; si empaten, el més proper, i després l'hora més d'hora. A la v1 l'índex és el mateix per a tots els objectius (ADR-0018).
 - **Una per alerta i nit:** `notificacions_alertes` té la clau primària `(alerta_id, nit)` i la notificació es desa amb `on conflict do nothing`. La consulta de candidats ja salta les alertes notificades aquesta nit. Si cap hora no arriba al mínim, no es desa res i una previsió millor encara pot notificar més tard.
 - **Eficient:** una sola consulta per pla per a totes les alertes (`st_dwithin` amb el radi de cada una, sobre l'índex GIST) i un sol `insert`, sigui quin sigui el nombre d'alertes.
-- **Per a la TG-154:** `evaluateAlerts` torna només les notificacions noves, amb `perfilId` (per buscar-ne els tokens), `puntId` (el `data: { puntId }` que obre la fitxa), `puntNom`, `hora` i `index`. L'enviament s'afegeix a `createAlertsStep`, que és el que `main.ts` passa a `recalculaIndex`, i omple `enviada_el` i `ticket_ids`.
+- **Enviament:** el fa `createAlertsStep` després d'avaluar (vegeu «Enviament de les notificacions»).
 
-Pendent: deixar fora els perfils bloquejats (`perfils.bloquejat`, ADR-0029) quan aquesta branca integri `snapshot` (vegeu l'ADR-0033).
+## Enviament de les notificacions (TG-154)
+
+```
+src/
+  alertes/
+    expoPush.ts              Client de l'Expo Push Service amb `fetch` (un POST de com a molt 100 missatges)
+    enviament.ts             Què s'envia, el text i els reintents (`sendPendingNotifications`)
+    enviamentRepository.ts   Pendents, tokens de `dispositius_push`, `enviada_el` i tokens morts (Kysely)
+```
+
+- **Què:** a cada execució, després d'avaluar, les files de `notificacions_alertes` amb `enviada_el` a `null` la millor hora de les quals encara no ha passat (l'hora en curs compta), d'alertes actives, comptes no bloquejats i punts publicats. Són les noves i les que no s'han pogut enviar abans: **les fallides es reintenten** a l'execució següent.
+- **A qui:** un missatge per token del perfil (`dispositius_push`), en peticions de com a molt 100, amb `data: { puntId }` (l'app obre la fitxa en tocar-la), `channelId: 'alertes'`, `sound: 'default'` i el text en català: «Bona nit per observar a Montsec» / «Índex de visibilitat 75 a les 23:00».
+- **Enviada:** quan Expo accepta el missatge d'almenys un dispositiu, s'omplen `enviada_el` i `ticket_ids` i no es torna a enviar. Amb la clau `(alerta_id, nit)` de l'avaluació, com a molt una per alerta i nit.
+- **Tokens morts:** el ticket `DeviceNotRegistered` (l'app s'ha desinstal·lat) esborra el token de `dispositius_push`. Els altres errors (`MessageRateExceeded`, HTTP, xarxa) deixen la fila pendent i van al log i a `execucions_worker.error_alertes`; les notificacions noves continuen comptant a `execucions_worker.notificacions`.
+- **Sense token** (sense permís de notificacions, Expo Go): no s'envia res i la fila queda pendent; si l'usuari activa les notificacions abans de la millor hora, la rep llavors.
+- **`EXPO_ACCESS_TOKEN`** (opcional): cal si el projecte d'Expo té activada la seguretat reforçada de push; s'envia com a `Authorization: Bearer`.
+- Per què `fetch` i no `expo-server-sdk`: amb unes poques notificacions per hora només cal un `POST`, i la llibreria (ESM, Node ≥ 22.12) afegiria una dependència per a quatre línies. Els reintents ja els fa l'execució horària.
+- Encara no es llegeixen els *receipts* d'Expo (`/push/getReceipts`): un `DeviceNotRegistered` que només arribi pel receipt no esborra el token fins que un ticket posterior el torni (vegeu l'ADR-0028).
 
 ## Tests
 
-Jest, sense xarxa: la ingesta es prova amb un client d'Open-Meteo i un repositori falsos, el recàlcul amb ports en memòria, el repositori de l'índex en memòria i la XEMA amb un `fetch` fals. Els tests del client d'Open-Meteo, del càlcul astronòmic i de la fórmula són a `@talaia/index` (`npm test -w packages/index`). Les alertes (TG-155): la finestra de la nit (migdia, matinada, estiu i hivern, les nits de 23 i 25 hores del canvi d'hora), els plans de cada execució (en arribar-hi i a una hora, abans i després del migdia), la decisió (mínim, índex 0, radi, alertes inactives, comptes bloquejats, quan avisa, hores passades i de la nit següent, desempats), la no repetició amb un repositori en memòria que fa de clau primària i amb l'SQL de Kysely (`src/testing/fakeDb.ts`), i que un error de les alertes no fa fallar el recàlcul. Els tests de l'enviament arriben amb la TG-154.
+Jest, sense xarxa: la ingesta es prova amb un client d'Open-Meteo i un repositori falsos, el recàlcul amb ports en memòria, el repositori de l'índex en memòria i la XEMA amb un `fetch` fals. Els tests del client d'Open-Meteo, del càlcul astronòmic i de la fórmula són a `@talaia/index` (`npm test -w packages/index`). Les alertes (TG-155): la finestra de la nit (migdia, matinada, estiu i hivern, les nits de 23 i 25 hores del canvi d'hora), els plans de cada execució (en arribar-hi i a una hora, abans i després del migdia), la decisió (mínim, índex 0, radi, alertes inactives, comptes bloquejats, quan avisa, hores passades i de la nit següent, desempats), la no repetició amb un repositori en memòria que fa de clau primària i amb l'SQL de Kysely (`src/testing/fakeDb.ts`), i que un error de les alertes no fa fallar el recàlcul. L'enviament (TG-154): el client d'Expo amb un `fetch` fals (tickets, errors HTTP i de xarxa, access token, lots de 100), els reintents i la no repetició amb un repositori en memòria, els tokens `DeviceNotRegistered` i l'SQL de Kysely.

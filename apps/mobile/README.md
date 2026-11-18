@@ -185,6 +185,7 @@ i [Expo SecureStore](https://docs.expo.dev/versions/latest/sdk/securestore/).
 - En tancar la sessió, `AuthProvider` fa el `DELETE /perfil/dispositius/{token}` abans del `signOut` (com a molt 3 s: sense xarxa, el logout continua).
 - `usePushPermission().permission` és `granted`, `denied`, `undetermined` (no demanat), `unavailable` (el dispositiu no pot tenir token) o `null` (sense sessió o encara no s'ha mirat). Sense permís, la pantalla d'alertes ho indica i ofereix obrir la configuració (HU17, criteri 4).
 - Tot falla en silenci: sense token (Expo Go, simulador, sense xarxa, sense perfil), `registered` queda a `false` i l'app funciona igual.
+- **En tocar una notificació d'una alerta** (TG-154), `useOpenNotifiedPoint` (a `(tabs)/_layout.tsx`) obre `/punt/[id]` amb el `data.puntId` de la push, també si l'app estava tancada (`getLastNotificationResponse`). Només amb sessió (`useSessionGate` a `signedIn`): sense sessió o amb el compte bloquejat no s'obre res. Amb l'app oberta, la notificació també es mostra (`setNotificationHandler`).
 
 ### Com provar-ho
 
@@ -196,7 +197,7 @@ i [Expo SecureStore](https://docs.expo.dev/versions/latest/sdk/securestore/).
   npm run mobile -- --dev-client   # des de l'arrel, amb l'APK instal·lat
   ```
 
-  Inicia la sessió i dona el permís (de moment, a la configuració d'Android, fins que la TG-148 el demani): en tornar a l'app, el token surt a `dispositius_push`. Per enviar-li una notificació sense el worker, l'eina d'Expo: <https://expo.dev/notifications>.
+  Inicia la sessió i dona el permís (de moment, a la configuració d'Android, fins que la TG-148 el demani): en tornar a l'app, el token surt a `dispositius_push`. Per enviar-li una notificació sense el worker, l'eina d'Expo: <https://expo.dev/notifications>. Amb `{"puntId": "<uuid d'un punt publicat>"}` al camp *Data*, en tocar-la s'obre la fitxa del punt.
 - **iOS**: com Android, amb un build `development` *ad hoc* (`--platform ios`) i els dispositius registrats al compte d'Apple, només si l'equip el necessita.
 
 `npm run mobile` continua obrint Expo Go (`--go`): amb `expo-dev-client` instal·lat, `expo start` obriria el development build.

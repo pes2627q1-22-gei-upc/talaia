@@ -45,6 +45,7 @@ services:
       DATABASE_URL: ${DATABASE_URL:-}
       OPEN_METEO_BASE_URL: ${OPEN_METEO_BASE_URL:-}
       METEOCAT_API_KEY: ${METEOCAT_API_KEY:-}
+      EXPO_ACCESS_TOKEN: ${EXPO_ACCESS_TOKEN:-}
     volumes:
       - ${SUPABASE_CA_CERT:-/dev/null}:/run/talaia/supabase-ca.crt:ro
 

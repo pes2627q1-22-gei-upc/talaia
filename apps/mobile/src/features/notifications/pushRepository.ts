@@ -152,6 +152,44 @@ export const pushRepository = {
     }
   },
 
+  /**
+   * Avisa amb el `puntId` quan l'usuari toca una notificació d'una alerta (TG-154, ADR-0028), també
+   * la que ha obert l'app en fred (`getLastNotificationResponse`). Cada resposta es fa servir un
+   * sol cop: s'esborra en llegir-la, i si el listener rep la mateixa de l'arrencada, no es repeteix.
+   * Amb l'app oberta, les notificacions també es mostren (si no, Expo no les ensenya).
+   */
+  onPointNotificationOpened(listener: (puntId: string) => void): () => void {
+    if (!pushRepository.isSupported()) return () => {};
+    const {
+      addNotificationResponseReceivedListener,
+      clearLastNotificationResponse,
+      getLastNotificationResponse,
+      setNotificationHandler,
+    } = notifications();
+    setNotificationHandler({
+      handleNotification: async () => ({
+        shouldShowBanner: true,
+        shouldShowList: true,
+        shouldPlaySound: true,
+        shouldSetBadge: false,
+      }),
+    });
+    let handled: string | null = null;
+    const handle = (response: NotificationsModule.NotificationResponse) => {
+      const { identifier, content } = response.notification.request;
+      if (identifier === handled) return;
+      handled = identifier;
+      clearLastNotificationResponse();
+      const puntId: unknown = content.data?.puntId;
+      // El que arriba de fora es valida: només un identificador no buit obre la fitxa.
+      if (typeof puntId === 'string' && puntId !== '') listener(puntId);
+    };
+    const last = getLastNotificationResponse();
+    if (last) handle(last);
+    const subscription = addNotificationResponseReceivedListener(handle);
+    return () => subscription.remove();
+  },
+
   /** Avisa quan el sistema canvia el token del dispositiu (ADR-0028). */
   onTokenChange(listener: () => void): () => void {
     if (!pushRepository.isSupported()) return () => {};

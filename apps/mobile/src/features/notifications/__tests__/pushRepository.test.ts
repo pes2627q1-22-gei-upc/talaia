@@ -29,6 +29,10 @@ jest.mock('expo-notifications', () => ({
   setNotificationChannelAsync: jest.fn(async () => null),
   getExpoPushTokenAsync: jest.fn(),
   addPushTokenListener: jest.fn(),
+  addNotificationResponseReceivedListener: jest.fn(),
+  getLastNotificationResponse: jest.fn(() => null),
+  clearLastNotificationResponse: jest.fn(),
+  setNotificationHandler: jest.fn(),
 }));
 jest.mock('@/core/api/httpClient', () => ({
   apiPut: jest.fn(async () => undefined),
@@ -278,5 +282,78 @@ describe('a Expo Go', () => {
     expect(() => isolated.onTokenChange(jest.fn())()).not.toThrow();
     await expect(isolated.registerDevice('Alertes')).rejects.toThrow('not supported');
     await expect(isolated.unregisterDevice()).resolves.toBeUndefined();
+  });
+});
+
+describe('pushRepository.onPointNotificationOpened', () => {
+  const resposta = (identifier: string, data: Record<string, unknown> | null) =>
+    ({
+      actionIdentifier: 'expo.modules.notifications.actions.DEFAULT',
+      notification: { request: { identifier, content: { data } } },
+    }) as unknown as Notifications.NotificationResponse;
+  const remove = jest.fn();
+  let tocada: (response: Notifications.NotificationResponse) => void;
+
+  beforeEach(() => {
+    notifications.getLastNotificationResponse.mockReturnValue(null);
+    notifications.addNotificationResponseReceivedListener.mockImplementation((listener) => {
+      tocada = listener;
+      return { remove };
+    });
+  });
+
+  it('amb l’app oberta, en tocar-la passa el puntId i esborra la resposta', () => {
+    const listener = jest.fn();
+    const stop = pushRepository.onPointNotificationOpened(listener);
+
+    tocada(resposta('n-1', { puntId: 'montsec' }));
+
+    expect(listener).toHaveBeenCalledWith('montsec');
+    expect(notifications.clearLastNotificationResponse).toHaveBeenCalled();
+    stop();
+    expect(remove).toHaveBeenCalled();
+  });
+
+  it('la que ha obert l’app en fred també compta, un sol cop encara que el listener la repeteixi', () => {
+    notifications.getLastNotificationResponse.mockReturnValue(
+      resposta('n-1', { puntId: 'montsec' }),
+    );
+    const listener = jest.fn();
+    pushRepository.onPointNotificationOpened(listener);
+
+    tocada(resposta('n-1', { puntId: 'montsec' }));
+    tocada(resposta('n-2', { puntId: 'prades' }));
+
+    expect(listener.mock.calls).toEqual([['montsec'], ['prades']]);
+  });
+
+  it('sense un puntId vàlid no obre res', () => {
+    const listener = jest.fn();
+    pushRepository.onPointNotificationOpened(listener);
+
+    tocada(resposta('n-1', null));
+    tocada(resposta('n-2', { puntId: '' }));
+    tocada(resposta('n-3', { puntId: 42 }));
+
+    expect(listener).not.toHaveBeenCalled();
+  });
+
+  it('mostra les notificacions amb l’app oberta', async () => {
+    pushRepository.onPointNotificationOpened(jest.fn());
+    const [{ handleNotification }] = notifications.setNotificationHandler.mock.calls[0]! as [
+      { handleNotification: () => Promise<unknown> },
+    ];
+    await expect(handleNotification()).resolves.toEqual({
+      shouldShowBanner: true,
+      shouldShowList: true,
+      shouldPlaySound: true,
+      shouldSetBadge: false,
+    });
+  });
+
+  it('a Expo Go no toca el mòdul natiu', () => {
+    runningInExpoGo.mockReturnValue(true);
+    pushRepository.onPointNotificationOpened(jest.fn())();
+    expect(notifications.addNotificationResponseReceivedListener).not.toHaveBeenCalled();
   });
 });
