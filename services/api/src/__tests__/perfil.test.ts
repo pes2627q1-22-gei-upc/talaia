@@ -28,7 +28,7 @@ beforeAll(async () => {
 });
 
 describe('/api/v1/perfil sense DATABASE_URL', () => {
-  it.each(['post', 'get', 'patch'] as const)(
+  it.each(['post', 'get', 'patch', 'delete'] as const)(
     'amb un JWT vàlid, %s respon 503 database_unavailable',
     async (method) => {
       const res = await request(createApp({ supabaseUrl, jwks }))
@@ -98,5 +98,16 @@ describe('GET i PATCH /api/v1/perfil a l’OpenAPI', () => {
       additionalProperties: false,
       properties: { nom: { type: 'string', minLength: 1, maxLength: 100 } },
     });
+  });
+});
+
+describe('DELETE /api/v1/perfil a l’OpenAPI', () => {
+  it('documenta el 204 sense cos i els errors de les rutes autenticades', async () => {
+    const res = await request(createApp()).get('/api/v1/openapi.json');
+    const operation = res.body.paths['/perfil'].delete;
+    expect(operation.tags).toEqual(['Auth']);
+    expect(operation.security).toEqual([{ BearerSupabase: [] }]);
+    expect(Object.keys(operation.responses).sort()).toEqual(['204', '401', '403', '503']);
+    expect(operation.responses['204'].content).toBeUndefined();
   });
 });

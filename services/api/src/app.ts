@@ -32,6 +32,7 @@ export function createApp({ profileStore, alertes, ...apiDeps }: AppOptions = {}
       getAccountStatus: unavailable,
       listProfiles: unavailable,
       setBlocked: unavailable,
+      deleteAccount: unavailable,
     } satisfies ProfileStore);
   const resolvedAlertes =
     alertes ??
