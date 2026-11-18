@@ -13,10 +13,15 @@ export function RecommendationsSummary({ header }: { header: Header }) {
   const styles = useStyles();
   return (
     <View style={styles.card} accessible accessibilityRole="header">
-      <AppText variant="label" numberOfLines={1}>
+      <AppText variant="label" numberOfLines={header.eventDate ? undefined : 1}>
         {header.title}
       </AppText>
-      <AppText variant="small" color="boira" numberOfLines={1}>
+      {header.eventDate && (
+        <AppText variant="small" color="boira">
+          {header.eventDate}
+        </AppText>
+      )}
+      <AppText variant="small" color="boira" numberOfLines={header.eventDate ? undefined : 1}>
         {header.subtitle}
       </AppText>
     </View>

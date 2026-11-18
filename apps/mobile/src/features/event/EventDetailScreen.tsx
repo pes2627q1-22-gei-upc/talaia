@@ -6,6 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { makeStyles, useTheme } from '@/core/theme/theme';
 import { motion, radii, sizes, spacing, typography } from '@/core/theme/tokens';
 import { AppText } from '@/shared/ui/AppText';
+import { Button } from '@/shared/ui/Button';
 import { PressableScale } from '@/shared/ui/PressableScale';
 import { Skeleton } from '@/shared/ui/Skeleton';
 import { StateMessage } from '@/shared/ui/StateMessage';
@@ -104,6 +105,14 @@ export function EventDetailScreen({ eventId }: { eventId: string }) {
                 <Fact icon={watchIcon} title={vm.howToWatchTitle} text={vm.howToWatch} />
               ) : null}
             </View>
+            <View style={styles.action}>
+              <Button {...vm.recommendations} haptic />
+              {vm.recommendations.message && (
+                <AppText variant="small" color="boira" accessibilityLiveRegion="polite">
+                  {vm.recommendations.message}
+                </AppText>
+              )}
+            </View>
           </Animated.View>
         </ScrollView>
       )}
@@ -145,6 +154,7 @@ const useStyles = makeStyles(({ colors }) => ({
     borderRadius: radii.sm,
     overflow: 'hidden',
   },
+  action: { gap: spacing.sm, marginTop: spacing.sm },
   facts: { gap: spacing.ms },
   fact: { flexDirection: 'row', gap: spacing.ms, alignItems: 'flex-start' },
   factIcon: { width: sizes.icon, height: sizes.icon },

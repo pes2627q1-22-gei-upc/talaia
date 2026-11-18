@@ -9,6 +9,7 @@ export default function CalendarLayout() {
       <Stack.Screen name="index" />
       {/* La capçalera de la fitxa (botó enrere i títol) és d'`EventDetailScreen`. */}
       <Stack.Screen name="[id]" />
+      <Stack.Screen name="recomanacions" />
     </Stack>
   );
 }

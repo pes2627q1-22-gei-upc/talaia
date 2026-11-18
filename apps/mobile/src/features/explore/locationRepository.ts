@@ -53,8 +53,9 @@ export async function placeName(lat: number, lon: number): Promise<string> {
 }
 
 /** Comparteix la ubicació entre Explora i el mapa, sense duplicar peticions. */
-export function useCurrentPlaceQuery() {
+export function useCurrentPlaceQuery(enabled = true) {
   return useQuery({
+    enabled,
     queryKey: CURRENT_PLACE_KEY,
     queryFn: getCurrentPlace,
     staleTime: 5 * 60 * 1000,

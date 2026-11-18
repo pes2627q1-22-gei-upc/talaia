@@ -421,6 +421,44 @@ describe('GET /api/v1/recomanacions?esdevenimentId= (TG-140)', () => {
     expect(res.body).not.toHaveProperty('avis');
   });
 
+  it('sense tempsMaxim retorna sense límit i ordena per qualitat semblant i proximitat', async () => {
+    const repo: RecomanacionsRepository = {
+      puntsDinsRadi: jest.fn(async () => [
+        { id: 'far', nom: 'Llunyà', municipi: '', lat: 42, lon: 1, distanciaM: 150_000 },
+        { id: 'near', nom: 'Proper', municipi: '', lat: 42, lon: 2, distanciaM: 20_000 },
+      ]),
+      indexHores: async () => [
+        {
+          puntId: 'far',
+          hora: '2099-12-15T23:00:00Z',
+          valor: 100,
+          franja: 'ras',
+          factors: { nuvols: 1, sol: 1, foscor: 1, lluna: 1 },
+          foscorEstimada: false,
+        },
+        {
+          puntId: 'near',
+          hora: '2099-12-15T23:00:00Z',
+          valor: 95,
+          franja: 'ras',
+          factors: { nuvols: 1, sol: 1, foscor: 1, lluna: 1 },
+          foscorEstimada: false,
+        },
+      ],
+    };
+    const res = await request(app(repo))
+      .get('/api/v1/recomanacions')
+      .query({ ...ORIGEN, esdevenimentId: ECLIPSI.codi });
+    expect(res.status).toBe(200);
+    expect(res.body.tempsMaxim).toBeNull();
+    expect(res.body.radiKm).toBeNull();
+    expect(repo.puntsDinsRadi).toHaveBeenCalledWith(
+      { lat: Number(ORIGEN.lat), lon: Number(ORIGEN.lon) },
+      null,
+    );
+    expect(res.body.punts.map((p: { id: string }) => p.id)).toEqual(['far', 'near']);
+  });
+
   it('sense índex a la finestra: avis sense_previsio', async () => {
     const res = await request(app({ ...repository, indexHores: async () => [] }))
       .get('/api/v1/recomanacions')
