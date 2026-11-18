@@ -9,11 +9,14 @@ color: green
 
 Comproves que la branca actual compila i passa els tests. No arregles res: informes.
 
-1. **Workspaces afectats:** `git diff --name-only origin/snapshot...HEAD`. Són els del primer nivell que surt a les rutes (`apps/mobile`, `apps/admin`, `services/api`, `services/worker`, `packages/*`). Si hi ha canvis a `packages/*`, compta també tots els workspaces que en depenen.
+1. **Què ha canviat:** `git diff --name-only origin/snapshot...HEAD`.
+   - **Tot el monorepo** si hi ha canvis a `packages/*` (en depenen la resta) o a fitxers de l'arrel que afecten la compilació o els tests (`package.json`, `package-lock.json`, `tsconfig*.json`, `eslint.config.*`, la configuració de Jest o de Babel).
+   - **Si no,** només els workspaces que surten a les rutes: `apps/mobile`, `apps/admin`, `services/api`, `services/worker` i `data`.
 2. **Dependències.** Si `package-lock.json` ha canviat, o si falta `node_modules`, `npm ci`.
-3. **Per a cada workspace afectat:**
-   - `npm run typecheck -w <workspace>`. A `apps/mobile`, si falla per una ruta d'Expo Router, esborra `apps/mobile/.expo/types` i torna-ho a provar un cop.
-   - `npm test -w <workspace> -- --ci`, si el workspace té l'script `test`.
+3. **Typecheck i tests:**
+   - Tot el monorepo: `npm run typecheck` i `npm test` a l'arrel.
+   - Per workspace: `npm run typecheck -w <workspace>` i, si en té l'script, `npm test -w <workspace>`. No hi afegeixis flags de Jest: `data` fa servir `node --test`.
+   - A `apps/mobile`, si el typecheck falla per una ruta d'Expo Router, esborra `apps/mobile/.expo/types` i torna-ho a provar un cop.
 4. **Lint:** `npm run lint` a l'arrel.
 5. **Què tornes:**
    - per a cada pas, `OK` o `FALLA`, amb el nombre de tests que passen sobre el total;
