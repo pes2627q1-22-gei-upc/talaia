@@ -15,6 +15,8 @@ set -eu
 # shellcheck disable=SC2317,SC2329 # la crida el trap d'EXIT
 fallada() {
   echo "$(date -Is) ERROR: el deploy ha fallat ($pas)"
+  # El deploy queda pendent encara que el correu no surti: el cron el torna a provar.
+  [ "$clau" = git-fetch ] || echo "$clau" > "$estat/talaia-pendent"
   [ -f deploy/scripts/avisa.sh ] || return 0
   resum=$(git log -1 --format='%h %s' "$clau" 2>/dev/null || echo "$pas")
   cos=$(mktemp)
@@ -75,18 +77,12 @@ main() {
   timeout 60 git fetch -q origin stable
   objectiu=$(git rev-parse origin/stable)
   clau=$objectiu
-  # Es compara amb l'últim deploy que ha acabat bé, no amb HEAD: si un deploy falla, es torna a provar.
-  if [ "$objectiu" = "$(cat "$estat/talaia-desplegat" 2>/dev/null)" ] && [ -z "${FORCE:-}" ]; then
-    # Cap canvi, però «recuperat» només és cert si el que havia fallat era el fetch. Si s'havia avisat
-    # d'un commit, el que corre és el deploy fallat (un FORCE=1, o `stable` que torna a l'últim bo):
-    # es torna a desplegar, i el «recuperat» només surt si passa el healthcheck.
-    case $(cat "$estat/talaia-avisat" 2>/dev/null || true) in
-      '' | git-fetch)
-        recuperat
-        exit 0
-        ;;
-      *) echo "$(date -Is) l'últim deploy ha fallat: torno a desplegar" ;;
-    esac
+  # Es compara amb l'últim deploy que ha acabat bé. Si n'hi ha un de pendent (ha fallat, també amb
+  # FORCE=1), es torna a desplegar encara que `stable` no hagi canviat.
+  if [ "$objectiu" = "$(cat "$estat/talaia-desplegat" 2>/dev/null)" ] && [ -z "${FORCE:-}" ] \
+    && [ ! -f "$estat/talaia-pendent" ]; then
+    recuperat   # sense deploy pendent, només pot quedar un avís de git-fetch
+    exit 0
   fi
   pas="git reset"
   git reset -q --hard "$objectiu"
@@ -102,6 +98,7 @@ main() {
   pas="docker image prune"
   docker image prune -f > /dev/null
   echo "$objectiu" > "$estat/talaia-desplegat"
+  rm -f "$estat/talaia-pendent"
   echo "$(date -Is) desplegat"
   recuperat
 }
