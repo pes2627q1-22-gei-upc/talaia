@@ -7,6 +7,8 @@ export type * from './indexVisibilitat';
 export type * from './meteo';
 export type * from './notificacions';
 export type * from './perfil';
+export type * from './plans';
 export type * from './punts';
 export type * from './recomanacions';
+export * from './nit';
 export type * from './visibilitat';

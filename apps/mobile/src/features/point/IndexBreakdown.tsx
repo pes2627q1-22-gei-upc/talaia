@@ -1,8 +1,9 @@
 import { Image } from 'expo-image';
 import { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 
-import { colors, sizes, spacing, typography } from '@/core/theme/tokens';
+import { makeStyles, useTheme } from '@/core/theme/theme';
+import { sizes, spacing, typography } from '@/core/theme/tokens';
 import { AppText } from '@/shared/ui/AppText';
 import { Button } from '@/shared/ui/Button';
 import { Skeleton } from '@/shared/ui/Skeleton';
@@ -48,6 +49,7 @@ export function IndexBreakdown({
   retryLabel,
   retry,
 }: Props) {
+  const styles = useStyles();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   // Si l'hora triada desapareix en refrescar l'índex, es torna a la millor.
   const selected =
@@ -96,6 +98,8 @@ export function IndexBreakdown({
 }
 
 function FactorRow({ factor }: { factor: Factor }) {
+  const styles = useStyles();
+  const { colors } = useTheme();
   return (
     <View style={styles.factorRow}>
       <Image source={factorIcons[factor.icon]} style={styles.factorIcon} accessible={false} />
@@ -129,7 +133,7 @@ function FactorRow({ factor }: { factor: Factor }) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(({ colors }) => ({
   section: { gap: spacing.lg },
   factors: { gap: spacing.md },
   factorRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
@@ -144,4 +148,4 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   factorProgress: { height: '100%', borderRadius: spacing.xs },
-});
+}));

@@ -1,8 +1,10 @@
 import { Image } from 'expo-image';
-import { ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { useMemo } from 'react';
+import { ScrollView, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { colors, radii, sizes, spacing } from '@/core/theme/tokens';
+import { makeStyles, useTheme } from '@/core/theme/theme';
+import { radii, sizes, spacing } from '@/core/theme/tokens';
 import { AppText } from '@/shared/ui/AppText';
 import { IndexIndicator } from '@/shared/ui/IndexIndicator';
 import { PressableScale } from '@/shared/ui/PressableScale';
@@ -14,23 +16,24 @@ type Sheet = RecommendationsViewModel['sheet'];
 type Row = Sheet['rows'][number];
 
 const clockIcon = require('@/assets/images/explora/rellotge.svg');
-const carIcon = {
+const carIcon = (stroke: string) => ({
   uri: `data:image/svg+xml;utf8,${encodeURIComponent(`
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
-      stroke="${colors.boira}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      stroke="${stroke}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
       <path d="M5 16.5V12l1.8-4.4A1.6 1.6 0 0 1 8.3 6.6h7.4a1.6 1.6 0 0 1 1.5 1L19 12v4.5"/>
       <path d="M4 12h16v4.5H4z"/>
       <circle cx="7.6" cy="14.2" r=".6"/><circle cx="16.4" cy="14.2" r=".6"/>
       <path d="M6.5 16.5v1.6M17.5 16.5v1.6"/>
     </svg>
   `)}`,
-};
+});
 
 /** Desplegat, el full no passa de la meitat de la pantalla: el mapa s'ha de continuar veient. */
 const MAX_HEIGHT = 0.5;
 
 /** Full fix sota el mapa amb els millors punts (mockup 03). Cada fila obre la fitxa del punt. */
 export function RecommendationsSheet({ sheet }: { sheet: Sheet }) {
+  const styles = useStyles();
   const insets = useSafeAreaInsets();
   const { height } = useWindowDimensions();
 
@@ -110,6 +113,9 @@ export function RecommendationsSheet({ sheet }: { sheet: Sheet }) {
 }
 
 function RecommendationRow({ row }: { row: Row }) {
+  const styles = useStyles();
+  const { colors } = useTheme();
+  const car = useMemo(() => carIcon(colors.boira), [colors.boira]);
   return (
     <PressableScale
       onPress={row.onPress}
@@ -131,7 +137,7 @@ function RecommendationRow({ row }: { row: Row }) {
         </AppText>
         <View style={styles.meta}>
           {row.hour && <Meta icon={clockIcon} text={row.hour} />}
-          <Meta icon={carIcon} text={row.travel} />
+          <Meta icon={car} text={row.travel} />
         </View>
       </View>
       <AppText variant="tag" color="boira">
@@ -142,6 +148,8 @@ function RecommendationRow({ row }: { row: Row }) {
 }
 
 function Meta({ icon, text }: { icon: number | { uri: string }; text: string }) {
+  const styles = useStyles();
+  const { colors } = useTheme();
   return (
     <View style={styles.metaItem}>
       <Image source={icon} tintColor={colors.boira} style={styles.metaIcon} accessible={false} />
@@ -152,7 +160,7 @@ function Meta({ icon, text }: { icon: number | { uri: string }; text: string }) 
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(({ colors }) => ({
   sheet: {
     position: 'absolute',
     left: 0,
@@ -195,4 +203,4 @@ const styles = StyleSheet.create({
   meta: { flexDirection: 'row', flexWrap: 'wrap', columnGap: spacing.md, rowGap: spacing.xs },
   metaItem: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
   metaIcon: { width: sizes.iconSmall, height: sizes.iconSmall },
-});
+}));

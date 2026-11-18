@@ -89,8 +89,9 @@ export function resolConsulta(
 export function resumeix(
   hores: IndexHora[],
 ): Pick<Recomanacio, 'millorHora' | 'mitjana' | 'horesAmbIndex'> {
-  if (hores.length === 0) return { millorHora: null, mitjana: null, horesAmbIndex: 0 };
-  const millorHora = hores.reduce((millor, h) => (h.valor > millor.valor ? h : millor));
+  const [primera, ...resta] = hores;
+  if (!primera) return { millorHora: null, mitjana: null, horesAmbIndex: 0 };
+  const millorHora = resta.reduce((millor, h) => (h.valor > millor.valor ? h : millor), primera);
   const mitjana = Math.round(hores.reduce((suma, h) => suma + h.valor, 0) / hores.length);
   return { millorHora, mitjana, horesAmbIndex: hores.length };
 }

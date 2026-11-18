@@ -6,6 +6,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { queryClient } from '@/core/api/queryClient';
 import { languageReady } from '@/core/i18n';
+import { ThemeProvider } from '@/core/theme/theme';
 import { AuthProvider } from '@/features/auth/AuthProvider';
 import { PushRegistrationProvider } from '@/features/notifications/PushRegistrationProvider';
 
@@ -31,7 +32,9 @@ export function AppProviders({ children }: PropsWithChildren) {
       <SafeAreaProvider>
         <QueryClientProvider client={queryClient}>
           <AuthProvider>
-            <PushRegistrationProvider>{children}</PushRegistrationProvider>
+            <PushRegistrationProvider>
+              <ThemeProvider>{children}</ThemeProvider>
+            </PushRegistrationProvider>
           </AuthProvider>
         </QueryClientProvider>
       </SafeAreaProvider>
