@@ -8,6 +8,7 @@ import type { FavoritsService } from '../favorits/favoritsService';
 import type { BreakdownService } from '../index/breakdownService';
 import { requireAuth, type JwksSource } from '../middleware/auth';
 import { buildOpenApiDocument } from '../openapi';
+import type { PuntsAdminService } from '../punts/puntsAdminService';
 import type { PlansService } from '../plans/plansService';
 import type { PuntsService } from '../punts/puntsService';
 import type { RecomanacionsService } from '../recomanacions/recomanacionsService';
@@ -37,6 +38,8 @@ export type ApiDeps = {
   /** `GET /punts/{id}/index` (TG-104). */
   breakdown?: BreakdownService;
   recomanacions?: RecomanacionsService;
+  /** `/admin/punts` (TG-174): ha de descartar el document del mapa de `punts` a cada canvi. */
+  puntsAdmin?: PuntsAdminService;
   /** `GET /visibilitat` (TG-130): l'índex d'una ubicació qualsevol, calculat al moment. Sense, 503. */
   visibilitat?: VisibilitatService;
   supabaseUrl?: string;
@@ -59,6 +62,7 @@ export function createApiRouter({
   punts,
   breakdown,
   recomanacions,
+  puntsAdmin,
   visibilitat,
   supabaseUrl,
   jwks,
@@ -89,7 +93,7 @@ export function createApiRouter({
   });
   router.use(createAuthRouter({ requireUser, profileStore }));
   router.use(createDispositiusRouter({ requireUser, store: dispositius }));
-  router.use('/admin', createAdminRouter({ requireUser, profileStore }));
+  router.use('/admin', createAdminRouter({ requireUser, profileStore, puntsAdmin }));
   router.use('/alertes', createAlertesRouter({ requireUser, store: alertes }));
   router.use('/favorits', createFavoritsRouter({ requireUser, service: favorits }));
   router.use('/plans', createPlansRouter({ requireUser, service: plans }));

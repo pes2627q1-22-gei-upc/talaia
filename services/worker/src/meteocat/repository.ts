@@ -1,4 +1,4 @@
-import { puntDesDeLonLat, type DB } from '@talaia/db';
+import { estacioXemaMesPropera, puntDesDeLonLat, type DB } from '@talaia/db';
 import type { LecturaXema } from '@talaia/shared';
 import { sql, type Kysely } from 'kysely';
 
@@ -70,14 +70,9 @@ export function createKyselyXemaRepository(db: Kysely<DB>): XemaRepository {
     },
 
     async assignaEstacionsProperes() {
-      // `<->` entre geographies ordena per distància amb l'índex GiST (KNN de PostGIS). Només es
-      // toquen els punts que canvien, perquè el trigger no els renovi `data_actualitzacio`.
-      const mesPropera = sql<string | null>`(
-        select e.codi from estacions_xema e
-        where e.operativa
-        order by e.ubicacio <-> punts_observacio.ubicacio
-        limit 1
-      )`;
+      // La mateixa subconsulta que l'administració de punts (`@talaia/db`). Només es toquen els
+      // punts que canvien, perquè el trigger no els renovi `data_actualitzacio`.
+      const mesPropera = estacioXemaMesPropera(sql.ref('punts_observacio.ubicacio'));
       await db
         .updateTable('puntsObservacio')
         .set({ estacioXema: mesPropera })
