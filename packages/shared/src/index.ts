@@ -9,4 +9,5 @@ export type * from './notificacions';
 export type * from './perfil';
 export type * from './punts';
 export type * from './recomanacions';
+export type * from './rutes';
 export type * from './visibilitat';

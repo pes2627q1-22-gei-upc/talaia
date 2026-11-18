@@ -9,6 +9,9 @@ import { createEsdevenimentsService } from './esdeveniments/esdevenimentsService
 import { createFavoritsRepository } from './favorits/favoritsRepository';
 import { createFavoritsService } from './favorits/favoritsService';
 import { createBreakdownService } from './index/breakdownService';
+import { createMobilicatRoutesClient, MOBILICAT_ROUTES_TIMEOUT_MS } from './mobilicat/routesClient';
+import { createRutesService } from './mobilicat/rutesService';
+import type { RutesService } from './mobilicat/rutesService';
 import { createPuntsRepository } from './punts/puntsRepository';
 import { createDefaultPuntsService } from './punts/puntsService';
 import { createRecomanacionsRepository } from './recomanacions/recomanacionsRepository';
@@ -28,6 +31,7 @@ let alertes;
 let dispositius;
 let esdeveniments;
 let favorits;
+let rutes: RutesService | undefined;
 let sqm;
 if (env.DATABASE_URL) {
   // Un sol pool per a tota l'API.
@@ -40,6 +44,13 @@ if (env.DATABASE_URL) {
   const puntsRepository = createPuntsRepository(db);
   punts = createDefaultPuntsService(puntsRepository);
   breakdown = createBreakdownService(puntsRepository);
+  rutes = createRutesService(
+    puntsRepository,
+    createMobilicatRoutesClient({
+      baseUrl: env.MOBILICAT_ROUTES_BASE_URL,
+      timeoutMs: MOBILICAT_ROUTES_TIMEOUT_MS,
+    }),
+  );
   const esdevenimentsRepository = createEsdevenimentsRepository(db);
   recomanacions = createRecomanacionsService(
     createRecomanacionsRepository(db),
@@ -54,7 +65,7 @@ if (env.DATABASE_URL) {
   sqm = createSqmRepository(db);
 } else {
   console.warn(
-    'Avís: sense DATABASE_URL. /api/v1/health funciona, però /api/v1/punts, /api/v1/punts/{id}/index, /api/v1/recomanacions, /api/v1/perfil (i /perfil/dispositius), /api/v1/alertes, /api/v1/favorits i /api/v1/esdeveniments responen 503. /api/v1/visibilitat funciona amb la foscor estimada.',
+    'Avís: sense DATABASE_URL. /api/v1/health funciona, però /api/v1/punts, /api/v1/punts/{id}/index, /api/v1/punts/{id}/rutes, /api/v1/recomanacions, /api/v1/perfil (i /perfil/dispositius), /api/v1/alertes, /api/v1/favorits i /api/v1/esdeveniments responen 503. /api/v1/visibilitat funciona amb la foscor estimada.',
   );
 }
 
@@ -76,6 +87,7 @@ createApp({
   dispositius,
   esdeveniments,
   favorits,
+  rutes,
 }).listen(env.API_PORT, (error) => {
   if (error) throw error;
   console.log(`Talaia API a http://localhost:${env.API_PORT}/api/v1 (docs: /api/v1/docs)`);

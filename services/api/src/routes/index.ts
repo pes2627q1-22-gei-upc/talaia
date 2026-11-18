@@ -10,6 +10,7 @@ import { requireAuth, type JwksSource } from '../middleware/auth';
 import { buildOpenApiDocument } from '../openapi';
 import type { PuntsService } from '../punts/puntsService';
 import type { RecomanacionsService } from '../recomanacions/recomanacionsService';
+import type { RutesService } from '../mobilicat/rutesService';
 import type { ProfileStore } from '../services/profileService';
 import type { PushDeviceStore } from '../services/pushDeviceService';
 import type { VisibilitatService } from '../visibilitat/visibilitatService';
@@ -24,6 +25,7 @@ import { healthRouter } from './health';
 import { createPuntIndexRouter } from './puntIndex';
 import { createPuntsRouter } from './punts';
 import { createRecomanacionsRouter } from './recomanacions';
+import { createRutesRouter } from './rutes';
 import { createVisibilitatRouter } from './visibilitat';
 
 /**
@@ -48,6 +50,8 @@ export type ApiDeps = {
   apropApiKey?: string;
   /** `POST`, `GET` i `DELETE /favorits` (TG-169). */
   favorits?: FavoritsService;
+  /** `GET /punts/{id}/rutes` (TG-135). */
+  rutes?: RutesService;
 };
 
 /** Router de `/api/v1`: un router per recurs (punts, recomanacions, visibilitat, esdeveniments…). */
@@ -64,11 +68,13 @@ export function createApiRouter({
   esdeveniments,
   apropApiKey,
   favorits,
+  rutes,
 }: ApiDeps & { profileStore: ProfileStore; alertes: AlertesStore }): Router {
   const router = Router();
   router.use('/health', healthRouter);
   router.use('/punts', createPuntsRouter(punts));
   router.use('/punts', createPuntIndexRouter(breakdown));
+  router.use('/punts', createRutesRouter(rutes));
   router.use('/recomanacions', createRecomanacionsRouter(recomanacions));
   router.use('/visibilitat', createVisibilitatRouter(visibilitat));
   router.use(
