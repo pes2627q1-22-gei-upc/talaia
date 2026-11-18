@@ -36,12 +36,27 @@ export type EsdevenimentsRepository = {
   puntReferencia(): Promise<PuntReferencia | undefined>;
 };
 
+/**
+ * Els esdeveniments que exposa l'API (`GET /esdeveniments` i `/esdeveniments/{id}`): rellevants per a
+ * Catalunya, d'un fenomen publicable i d'un dels tipus del contracte. També la fan servir els plans
+ * (TG-156), perquè un pla no pugui apuntar a un esdeveniment que `/esdeveniments/{id}` no retorna.
+ */
+export function esdevenimentsPublics(conn: Db) {
+  return (
+    conn
+      .selectFrom('esdevenimentsAstronomics as e')
+      .innerJoin('fenomensAstronomics as f', 'f.codi', 'e.fenomenCodi')
+      .where('e.rellevantCatalunya', '=', true)
+      .where('f.publicableCalendari', '=', true)
+      // La taula interna és extensible; el contracte públic només exposa els tipus acordats.
+      .where('f.tipusCodi', 'in', [...TIPUS_FENOMEN])
+  );
+}
+
 /** Consultes del calendari i del punt oficial (ADR-0013 i ADR-0026). */
 export function createEsdevenimentsRepository(db: Db): EsdevenimentsRepository {
   const publicEvents = () =>
-    db
-      .selectFrom('esdevenimentsAstronomics as e')
-      .innerJoin('fenomensAstronomics as f', 'f.codi', 'e.fenomenCodi')
+    esdevenimentsPublics(db)
       .leftJoin('fontsAstronomiques as font', 'font.codi', 'e.fontCodi')
       .select([
         'e.codi',
@@ -54,11 +69,7 @@ export function createEsdevenimentsRepository(db: Db): EsdevenimentsRepository {
         'e.textos as textosEsdeveniment',
         'font.organitzacio',
         'e.metodeCalcul',
-      ])
-      .where('e.rellevantCatalunya', '=', true)
-      .where('f.publicableCalendari', '=', true)
-      // La taula interna és extensible; el contracte públic només exposa els tipus acordats.
-      .where('f.tipusCodi', 'in', [...TIPUS_FENOMEN]);
+      ]);
 
   return {
     async list(inici, fi, tipus) {

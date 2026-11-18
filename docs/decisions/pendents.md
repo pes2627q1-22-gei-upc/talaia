@@ -12,6 +12,10 @@ P1, P2, P3, P7 i P8 ja estan decidides: [ADR-0010](0010-eines-app.md). P4: [ADR-
 
 P12: [ADR-0018](0018-formula-index-v1.md). P13: [ADR-0017](0017-cataleg-inicial-punts.md). P15 (Sign in with Apple): [ADR-0016](0016-sign-in-with-apple-ios.md).
 
+| # | Decisió | Notes |
+|---|---|---|
+| P23 | Plans d'un punt esborrat | `plans.punt_id` té `on delete cascade` (TG-156): retirar un punt és una baixa lògica i el pla es conserva (`punt.publicat: false`), però si un punt s'esborra de debò, els seus plans desapareixen i l'esdeveniment del calendari del mòbil (`calendari_event_id`, TG-158) queda orfe. Cal decidir si s'avisa l'usuari, si l'app l'esborra del calendari en sincronitzar, o si s'impedeix esborrar punts amb plans. |
+
 ## Infraestructura i organització
 
 P16 i P17: [ADR-0019](0019-allotjament-i-desplegament.md).

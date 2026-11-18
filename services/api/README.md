@@ -20,7 +20,8 @@ npm run api                   # = npm run dev -w services/api, amb recàrrega
 - Alertes: `GET` i `POST /api/v1/alertes` i `PATCH` i `DELETE /api/v1/alertes/{id}` (cal el JWT de Supabase)
 - Tokens de push: `PUT /api/v1/perfil/dispositius` i `DELETE /api/v1/perfil/dispositius/{token}` (JWT)
 - Favorits: `GET` i `POST /api/v1/favorits` i `DELETE /api/v1/favorits/{puntId}` (cal el JWT de Supabase)
-- Recomanacions: `http://localhost:3000/api/v1/recomanacions?objectiu=cel_estrellat&lat=41.39&lon=2.17&data=<YYYY-MM-DD>&desDe=22&finsA=6&tempsMaxim=150`; «a prop meu»: `…/recomanacions?lat=41.39&lon=2.17`
+- Plans: `POST` i `GET /api/v1/plans` (`?quan=futurs|passats`) i `GET /api/v1/plans/{id}` (cal el JWT de Supabase)
+- Recomanacions: `http://localhost:3000/api/v1/recomanacions?objectiu=cel_estrellat&lat=41.39&lon=2.17&data=<YYYY-MM-DD>&desDe=22&finsA=6&tempsMaxim=150`; «a prop meu»: `…/recomanacions?lat=41.39&lon=2.17`; «on veure-ho»: `…/recomanacions?lat=41.39&lon=2.17&esdevenimentId=leonids-2026`
 - Visibilitat d'una ubicació qualsevol: `http://localhost:3000/api/v1/visibilitat?lat=41.95&lon=1.52` (no cal `DATABASE_URL`; amb `&hora=<ISO 8601>`, una altra hora)
 - Documentació (Swagger UI): <http://localhost:3000/api/v1/docs>
 - OpenAPI: <http://localhost:3000/api/v1/openapi.json>
@@ -41,7 +42,7 @@ Es llegeixen del `.env` de l'**arrel** del repo (`dev` i `start` el carreguen am
 | Variable | Per defecte | Què és |
 |---|---|---|
 | `API_PORT` | `3000` | Port on escolta l'API |
-| `DATABASE_URL` | — | Postgres (`postgresql://…`). **Opcional:** sense ella l'API arrenca amb un avís, `/health` funciona i `/punts`, `/punts/{id}`, `/punts/{id}/index`, `/recomanacions`, `/perfil`, `/perfil/dispositius`, `/admin`, `/alertes` i `/favorits` responen 503 `database_unavailable`, i `/visibilitat` funciona amb la foscor estimada. Amb Supabase local: `postgresql://postgres:postgres@127.0.0.1:54322/postgres` |
+| `DATABASE_URL` | — | Postgres (`postgresql://…`). **Opcional:** sense ella l'API arrenca amb un avís, `/health` funciona i `/punts`, `/punts/{id}`, `/punts/{id}/index`, `/recomanacions`, `/perfil`, `/perfil/dispositius`, `/admin`, `/alertes`, `/favorits` i `/plans` responen 503 `database_unavailable`, i `/visibilitat` funciona amb la foscor estimada. Amb Supabase local: `postgresql://postgres:postgres@127.0.0.1:54322/postgres` |
 | `SUPABASE_URL` | `http://127.0.0.1:54321` | URL del projecte de Supabase. `requireAuth` hi valida els JWT amb el JWKS (`/auth/v1/.well-known/jwks.json`, ADR-0023): 401 si el token és dolent, 503 si Supabase no respon. Al compose de la VM és obligatòria |
 | `OPEN_METEO_BASE_URL` | `https://api.open-meteo.com/v1` | URL base d'Open-Meteo, la mateixa que fa servir el worker: `GET /visibilitat` hi demana la previsió de les ubicacions que no són al catàleg |
 | `APROP_API_KEY` | — | Secret de l'API assignat a Aprop. No s'inclou al repositori ni a l'app; sense configurar-lo, l'accés amb API key retorna 503, però l'accés JWT continua disponible. |
@@ -66,6 +67,7 @@ src/
     dispositius.ts      PUT i DELETE /perfil/dispositius: Expo push tokens (ADR-0028)
     admin.ts            GET /admin/me, GET /admin/usuaris i PATCH /admin/usuaris/{id} (ADR-0029)
     favorits.ts         POST, GET i DELETE /favorits: els punts favorits de l'usuari del JWT (HU25–HU27)
+    plans.ts            POST, GET i GET {id} /plans: els plans d'observació de l'usuari del JWT (HU12)
     puntIndex.ts        GET /punts/{id}/index: desglossament de l'índex per hores i factors (HU04)
     recomanacions.ts    GET /recomanacions (validació de la consulta i OpenAPI)
     adminPunts.ts       /admin/punts: crear, editar i retirar punts (HU39), muntat a admin.ts
@@ -91,8 +93,12 @@ src/
   favorits/
     favoritsRepository.ts  Favorits d'un perfil amb @talaia/db: sempre filtrats pel perfil i pels punts publicats
     favoritsService.ts     Hora en curs de l'índex, 404 si el punt no és publicat i errors de la BD → 503
+  plans/
+    plansRepository.ts  Plans d'un perfil amb @talaia/db: sempre filtrats pel perfil, amb el punt (també si s'ha retirat)
+    plansService.ts     Nom del punt per idioma, 422 si el punt o l'esdeveniment no hi són, 404 i errors de la BD → 503
   recomanacions/
     franja.ts           Franja horària local de Catalunya (Europe/Madrid) → UTC, amb el canvi d'hora
+    finestra.ts         Finestra horària d'un esdeveniment del calendari (codi pur, TG-140)
     rutes.ts            Temps en cotxe ↔ radi en línia recta, fins que hi hagi Mobilicat
     recomanacionsRepository.ts  Punts dins del radi (PostGIS) i índex de la franja
     recomanacionsService.ts     Rànquing: millor hora, mitjana i distància; errors de la base de dades → 503
@@ -189,7 +195,7 @@ El desglossament de l'índex d'un punt per a una nit: una entrada per hora amb e
 - **HTTP:** `Cache-Control: public, max-age=<segons fins a la propera hora>`, com `/punts`: l'índex només canvia quan el worker recalcula.
 - **Comparteix amb `/punts/{id}`** les consultes del repositori (`findPublished`, `indexHores`) i l'esquema `IndexHora` de l'OpenAPI (`src/index/indexSchemas.ts`); la ruta és un router a part (`routes/puntIndex.ts`).
 
-## `GET /recomanacions` (HU01, TG-100; HU02, TG-133)
+## `GET /recomanacions` (HU01, TG-100; HU02, TG-133; HU11, TG-140)
 
 El rànquing de punts per a la consulta de «Què vols veure?» (`ParametresRecomanacions` → `RecomanacionsResposta` a `@talaia/shared`). Només l'origen és obligatori: `lat` i `lon`. La resta és opcional, i el servei l'omple (`resolConsulta`):
 
@@ -200,6 +206,7 @@ El rànquing de punts per a la consulta de «Què vols veure?» (`ParametresReco
 | `desDe`, `finsA` | hores locals de Catalunya, 0–23, diferents; **van juntes** (només una → 400) | la nit sencera, de 12:00 a 12:00 (des de l'hora en curs) |
 | `tempsMaxim` | minuts en cotxe, 1–600 | **60** (≈ 46,2 km) |
 | `limit` | 1–100 | 20 |
+| `esdevenimentId` | el `id` (`codi`) de `GET /esdeveniments/{id}`; **no va amb** `data`, `desDe` ni `finsA` (→ 400) | — |
 
 **«A prop meu»** (HU02): amb només la ubicació de l'usuari, `?lat=41.39&lon=2.17` torna el rànquing de la nit en curs a 60 minuts en cotxe. La resposta porta la `data` i el `tempsMaxim` que s'han fet servir, perquè l'app ensenyi la consulta resolta. La mateixa definició valida i documenta la query (ADR-0011).
 
@@ -209,7 +216,15 @@ El rànquing de punts per a la consulta de «Què vols veure?» (`ParametresReco
 - **Sense índex** (una nit més enllà de la previsió, ~4 dies): 200 amb `millorHora` i `mitjana` a `null` i els punts per distància. L'app hi pot dir «encara no hi ha previsió».
 - **Objectiu:** es valida, però l'índex v1 és el mateix per a tots (ADR-0018). Per a `posta_sol` i `sortida_sol` surt baix, perquè el factor Sol val 0 de dia: l'adaptació per fenomen és d'un sprint posterior.
 
-Errors: paràmetres invàlids → 400 `validation_error`; franja passada → 400 `franja_passada`; sense base de dades → 503. `Cache-Control` fins a la propera hora.
+**«On veure-ho»** (HU11, TG-140): amb `esdevenimentId`, la nit i la franja surten de l'esdeveniment (`finestraEsdeveniment` a `finestra.ts`) i la resposta porta, a més, `esdeveniment` (`{ id, inici, maxim, fi }`). Es combina amb l'origen, `tempsMaxim`, `limit` i `objectiu`.
+
+- **Hores conegudes** (eclipsis, conjuncions: `precisio.inici` i `precisio.fi` d'hora o més fines): la franja és `[inici, fi]`, ampliada a les hores senceres que la toquen (05:30–06:30 → les hores de les 05:00 i les 06:00).
+- **Precisió de dia** (pluges d'estels de setmanes, fases de la Lluna, superllunes): el màxim de tot `[inici, fi]` seria una hora qualsevol dels dies de previsió. Per això, si la **nit del màxim** (la nit de 12:00 a 12:00 que el conté; sense màxim, la del primer dia) és la que toca (`upcomingNight`) o una de posterior, la franja és aquella nit sencera. Si ja ha passat però l'esdeveniment **encara dura** (`fi` ≥ ara), la nit que toca, retallada a `[inici, fi]`: les Leònides (6–30/11) encara es poden mirar el 20/11.
+- **Agregació:** la mateixa que sense esdeveniment: primer l'**índex màxim** de la finestra (`millorHora`: «hi haurà algun moment bo?»), després la mitjana i després la distància.
+- **Errors:** esdeveniment inexistent o no publicable → 404 `event_not_found` (el mateix que `GET /esdeveniments/{id}`); ja acabat (`fi` < ara) → 400 `franja_passada`. Si cap punt del radi té índex a la finestra (més enllà de la previsió), 200 amb els punts per distància i **`avis: 'sense_previsio'`** (`AvisRecomanacions`, una unió de literals perquè l'app en faci un `switch` exhaustiu).
+- Sense `esdevenimentId`, la resposta no canvia: no porta ni `esdeveniment` ni `avis`.
+
+Errors: paràmetres invàlids → 400 `validation_error`; franja passada → 400 `franja_passada`; esdeveniment inexistent → 404 `event_not_found`; sense base de dades → 503. `Cache-Control` fins a la propera hora.
 
 ## `GET /visibilitat` (HU05, TG-130)
 
@@ -268,6 +283,34 @@ Els punts favorits de l'usuari autenticat (tipus `Favorit` i `FavoritNou` a `@ta
 - No hi ha límit de favorits: com a molt, un per punt del catàleg (clau primària `(perfil_id, punt_id)`).
 
 Errors: JWT absent o invàlid → 401 `unauthorized`; compte bloquejat → 403 `account_blocked`; cos o `puntId` invàlids → 400 `validation_error`; usuari sense perfil (no ha fet `POST /perfil`) → 404 `profile_not_found`; `POST` d'un punt que no existeix o no és publicat → 404 `punt_not_found`; sense `DATABASE_URL` o amb la base de dades caiguda → 503 `database_unavailable`.
+
+## `/plans` (HU12 · TG-156)
+
+Els plans d'observació de l'usuari autenticat (tipus `Pla`, `PlaNou` i `QuanPlans` a `@talaia/shared`, taula `plans`). Les tres rutes passen per `requireUser` (JWT de Supabase i compte no bloquejat) i responen amb `Cache-Control: no-store`. El nom del punt segueix `Accept-Language` (ca, es, en; reserva ca), com a `/punts`.
+
+- `POST /plans`: crea el pla i respon 201 amb el mateix `Pla` que el `GET`, punt inclòs, perquè l'app no l'hagi de tornar a demanar. Són obligatoris `puntId` (un punt `PUBLICAT`) i `dataHoraInici`; `esdevenimentId` (l'`id` de `GET /esdeveniments/{id}`, és a dir, el `codi`), `dataHoraFi` (posterior a l'inici), `calendariEventId` (≤ 255) i `notes` (≤ 1000) són opcionals. Les dates són ISO 8601 **amb zona** i es desen en UTC. No es comprova que la data sigui futura: ho fa l'app (TG-157). El cos és estricte: un camp de més (per exemple `perfilId`) és un 400. L'esdeveniment ha de ser un dels que `GET /esdeveniments/{id}` retorna (rellevant per a Catalunya i publicable; `esdevenimentsPublics`), perquè `/recomanacions?esdevenimentId=` no respongui 404 amb el mateix id. Com a molt 20 plans pendents per usuari (`MAX_PLANS_FUTURS`; els passats no hi compten) i un sol pla per punt i hora d'inici (índex únic `plans_perfil_punt_inici_key`): un doble toc a «Crea el pla» no en crea dos. El perfil es bloqueja (`for update`) mentre es crea, com a les alertes.
+- `GET /plans`: tots els plans per data (`[]` si no en té cap). Amb `?quan=futurs`, els que encara no s'han acabat, del més proper al més llunyà. Un pla s'acaba a `dataHoraFi` o, si no en té, al final de la nit que conté l'inici (les 12:00 locals de l'endemà de la nit, com `nightWindow(defaultNight(inici)).to`; `fiEfectiu` a `plansRepository.ts`): un pla «aquesta nit a les 21:00» continua sent futur mentre s'observa. Amb `?quan=passats`, la resta, del més recent al més antic.
+- `GET /plans/{id}`: el pla. Si és d'un altre usuari, respon 404 igual que si no existís, per no revelar-ne l'existència.
+
+```json
+{
+  "id": "60fd5b2e-…",
+  "punt": { "id": "b0ccbb91-…", "nom": "Centre d'Observació de l'Univers", "municipi": "Àger", "publicat": true },
+  "esdevenimentId": "leonides-2026",
+  "dataHoraInici": "2026-11-17T21:00:00.000Z",
+  "dataHoraFi": "2026-11-18T01:00:00.000Z",
+  "calendariEventId": null,
+  "notes": "Portar el trípode",
+  "dataCreacio": "2026-11-16T18:07:31.752Z",
+  "dataActualitzacio": "2026-11-16T18:07:31.752Z"
+}
+```
+
+- **Només els de l'usuari:** el perfil és el que `requireUser` ja ha llegit a partir del `sub` del JWT (`req.account.perfilId`), mai el de la petició, i totes les consultes del repositori hi filtren a l'SQL (`where perfil_id = $1`). Esborrar el compte n'esborra els plans (`on delete cascade`, TG-167).
+- **Punts retirats:** només es pot crear un pla amb un punt `PUBLICAT`, però si el punt es retira després, el pla continua sortint amb `punt.publicat: false`: el `GET` no filtra per l'estat del punt. Si el punt s'esborra de debò, s'esborren els seus plans (vegeu P23 a `docs/decisions/pendents.md`).
+- `PATCH` (TG-161) i `DELETE` (TG-162) encara no hi són.
+
+Errors: JWT absent o invàlid → 401 `unauthorized`; compte bloquejat → 403 `account_blocked`; cos, `quan` o `id` invàlids (també `dataHoraFi` ≤ `dataHoraInici`) → 400 `validation_error`; usuari sense perfil → 404 `profile_not_found`; pla que no és de l'usuari → 404 `plan_not_found`; `POST` amb un punt que no existeix o no és publicat → 422 `punt_not_found`, o amb un esdeveniment que no existeix o no és públic → 422 `event_not_found`; `POST` amb 20 plans pendents → 409 `plan_limit_reached`, o amb un pla al mateix punt i hora → 409 `plan_already_exists`; sense `DATABASE_URL` o amb la base de dades caiguda → 503 `database_unavailable`.
 
 ## Rol d'administrador i comptes bloquejats (TG-177, HU41)
 
@@ -358,7 +401,7 @@ Tota resposta d'error té el format `{ error: { code, message } }`:
 |---|---|---|
 | 400 | `validation_error` | Un esquema zod rebutja l'entrada |
 | 400 | `invalid_json` | El cos no és JSON vàlid |
-| 400 | `franja_passada` | `GET /recomanacions` amb una franja horària que ja ha acabat |
+| 400 | `franja_passada` | `GET /recomanacions` amb una franja horària o un esdeveniment (`esdevenimentId`) que ja ha acabat |
 | 400 | `cannot_block_self` | `PATCH /admin/usuaris/{id}`: un administrador es vol bloquejar a si mateix |
 | 401 | `unauthorized` | Falta el JWT o no és vàlid |
 | 403 | `account_blocked` | El compte està bloquejat (HU41): a qualsevol ruta amb `requireUser`. L'app hi mostra l'avís |
@@ -366,6 +409,7 @@ Tota resposta d'error té el format `{ error: { code, message } }`:
 | 404 | `not_found` | La ruta no existeix |
 | 404 | `usuari_not_found` | `PATCH /admin/usuaris/{id}`: cap perfil amb aquest `id` |
 | 404 | `punt_not_found` | `/punts/{id}`, `/punts/{id}/index` i `POST /favorits`: cap punt publicat amb aquest `id`. `/admin/punts/{id}`: cap punt amb aquest `id` |
+| 404 | `event_not_found` | `GET /esdeveniments/{id}` i `GET /recomanacions?esdevenimentId=`: cap esdeveniment publicable amb aquest `id` |
 | 409 | `slug_already_exists` | `POST /admin/punts`: ja hi ha un punt amb aquest `slug` |
 | 409 | `moderation_required` | `PATCH /admin/punts/{id}`: es vol canviar l'estat d'un punt `PENDENT` o `REBUTJAT`, que es fa des de la moderació |
 | 409 | `reference_point_required` | `PATCH /admin/punts/{id}`: es vol retirar el punt de referència de `/esdeveniments` (ADR-0026) |
