@@ -1,6 +1,6 @@
 # ADR-0035: Avís per correu quan falla el deploy de la VM
 
-**Estat:** Proposada · **Data:** 2026-11-17 · TG-180 · Complementa l'[ADR-0021](0021-deploy-per-pull-des-de-la-vm.md)
+**Estat:** Acceptada · **Data:** 2026-11-17 · TG-180 · Complementa l'[ADR-0021](0021-deploy-per-pull-des-de-la-vm.md)
 
 ## Context
 
@@ -21,7 +21,7 @@ Opcions:
 
 ## Decisió
 
-Opció **A** (proposta, pendent que l'equip la confirmi).
+Opció **A**.
 
 - `desplega.sh` posa un `trap` d'`EXIT` després del `flock`, que només actua si el codi de sortida no és 0. Les sortides normals (lock ocupat, cap canvi) surten amb 0 i no avisen. El trap escriu `ERROR (<pas>)` al log i crida `deploy/scripts/avisa.sh fallada`.
 - **Un sol avís per fallada.** `.git/talaia-avisat` guarda la clau de l'última fallada avisada. La clau és el commit o, si falla el `git fetch` (encara no se sap el commit), el valor fix `git-fetch`. Si la clau coincideix, no s'envia res.
