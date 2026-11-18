@@ -1,0 +1,200 @@
+import type { Esdeveniment } from '@talaia/shared';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { useRouter } from 'expo-router';
+import type { PropsWithChildren } from 'react';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+
+import { ApiError, apiGet, apiPost } from '@/core/api/httpClient';
+import i18n from '@/core/i18n';
+import { asPointResponse } from '@/features/point/__fixtures__/point';
+import { createQueryWrapper } from '@/test-utils/queryWrapper';
+
+import { NewPlanScreen } from '../NewPlanScreen';
+
+jest.mock('@/core/api/httpClient', () => ({
+  ...jest.requireActual('@/core/api/httpClient'),
+  apiGet: jest.fn(),
+  apiPost: jest.fn(),
+}));
+jest.mock('expo-router', () => ({ useRouter: jest.fn() }));
+jest.mock('expo-haptics');
+
+const get = jest.mocked(apiGet);
+const post = jest.mocked(apiPost);
+const back = jest.fn();
+jest.mocked(useRouter).mockReturnValue({ back } as unknown as ReturnType<typeof useRouter>);
+
+const orionides = {
+  id: 'orionides-2026',
+  tipus: 'pluja_estels',
+  nom: 'Oriònides',
+  inici: '2026-10-02T00:00:00Z',
+  fi: '2026-11-07T00:00:00Z',
+  maxim: '2026-10-21T20:00:00Z',
+  descripcio: '',
+  ubicacio: 'global',
+  font: 'IMO',
+} as unknown as Esdeveniment;
+
+const METRICS = {
+  frame: { x: 0, y: 0, width: 393, height: 852 },
+  insets: { top: 59, left: 0, right: 0, bottom: 34 },
+};
+
+function renderScreen() {
+  const QueryWrapper = createQueryWrapper();
+  function Wrapper({ children }: PropsWithChildren) {
+    return (
+      <GestureHandlerRootView>
+        <SafeAreaProvider initialMetrics={METRICS}>
+          <QueryWrapper>{children}</QueryWrapper>
+        </SafeAreaProvider>
+      </GestureHandlerRootView>
+    );
+  }
+  return render(<NewPlanScreen puntId="montsec" inici="2026-10-21T21:15:00Z" />, {
+    wrapper: Wrapper,
+  });
+}
+
+// Pantalla sencera: en paral·lel amb la resta, l'entorn de Skia endarrereix el primer render.
+jest.setTimeout(15_000);
+
+beforeEach(async () => {
+  // Dimecres 21 d'octubre de 2026 a les 18:07; només el rellotge, no els temporitzadors.
+  jest.useFakeTimers({
+    now: new Date(2026, 9, 21, 18, 7),
+    doNotFake: [
+      'setTimeout',
+      'clearTimeout',
+      'setInterval',
+      'clearInterval',
+      'setImmediate',
+      'clearImmediate',
+      'nextTick',
+      'queueMicrotask',
+      'performance',
+      'hrtime',
+      'requestAnimationFrame',
+      'cancelAnimationFrame',
+      'requestIdleCallback',
+      'cancelIdleCallback',
+    ],
+  });
+  get.mockReset();
+  get.mockImplementation((async (path: string) =>
+    path === '/esdeveniments' ? { data: [orionides] } : asPointResponse()) as typeof apiGet);
+  post.mockReset();
+  back.mockReset();
+  await i18n.changeLanguage('ca');
+});
+
+afterEach(() => {
+  jest.useRealTimers();
+});
+
+it('ensenya els blocs del mockup 06 i un esquelet mentre arriba el punt', async () => {
+  let resolvePoint: (value: unknown) => void = () => undefined;
+  get.mockImplementation(((path: string) =>
+    path === '/esdeveniments'
+      ? Promise.resolve({ data: [] })
+      : new Promise<unknown>((resolve) => {
+          resolvePoint = resolve;
+        })) as typeof apiGet);
+  await renderScreen();
+
+  expect(screen.getByRole('header', { name: "Pla d'observació" })).toBeOnTheScreen();
+  expect(screen.getByTestId('plan-point-loading')).toBeOnTheScreen();
+  for (const label of ["Punt d'observació", 'Fenomen', 'Notes']) {
+    expect(screen.getAllByText(label).length).toBeGreaterThan(0);
+  }
+  expect(screen.getByRole('button', { name: "Dia: Dc. 21 d'oct." })).toBeOnTheScreen();
+  expect(screen.getByRole('button', { name: 'Hora de sortida: 23:15' })).toBeOnTheScreen();
+  expect(screen.getByRole('button', { name: 'Fenomen: Cap en concret' })).toBeOnTheScreen();
+  expect(screen.getByRole('button', { name: 'Desa el pla' })).toBeEnabled();
+  // Ni títol ni interruptor del calendari: no hi ha columna `titol` i el calendari és la TG-158.
+  expect(screen.queryByText('Títol')).toBeNull();
+  expect(screen.queryByText('Afegeix-lo al meu calendari')).toBeNull();
+
+  resolvePoint(asPointResponse());
+  expect(await screen.findByText('Serra del Montsec')).toBeOnTheScreen();
+  expect(screen.queryByTestId('plan-point-loading')).toBeNull();
+});
+
+it("l'hora de sortida s'obre en un full amb les rodes d'hora i minuts", async () => {
+  await renderScreen();
+  await fireEvent.press(screen.getByRole('button', { name: 'Hora de sortida: 23:15' }));
+  expect(screen.getByRole('header', { name: 'Hora de sortida' })).toBeOnTheScreen();
+
+  await fireEvent(screen.getByRole('adjustable', { name: 'Hora' }), 'accessibilityAction', {
+    nativeEvent: { actionName: 'decrement' },
+  });
+  expect(screen.getByRole('button', { name: 'Hora de sortida: 22:15' })).toBeOnTheScreen();
+  expect(screen.getByRole('adjustable', { name: 'Minuts' })).toBeOnTheScreen();
+});
+
+it('una hora passada desactiva el botó i ho explica', async () => {
+  await renderScreen();
+  await fireEvent.press(screen.getByRole('button', { name: 'Hora de sortida: 23:15' }));
+  for (let step = 0; step < 6; step += 1) {
+    await fireEvent(screen.getByRole('adjustable', { name: 'Hora' }), 'accessibilityAction', {
+      nativeEvent: { actionName: 'decrement' },
+    });
+  }
+  expect(screen.getByRole('button', { name: 'Hora de sortida: 17:15' })).toBeOnTheScreen();
+  expect(screen.getByRole('alert')).toHaveTextContent(
+    "L'hora de sortida ja ha passat. Tria'n una de més tard.",
+  );
+  expect(screen.getByRole('button', { name: 'Desa el pla' })).toBeDisabled();
+});
+
+it('el fenomen es tria en un full, amb «Cap en concret» primer', async () => {
+  await renderScreen();
+  await fireEvent.press(screen.getByRole('button', { name: 'Fenomen: Cap en concret' }));
+  expect(screen.getByRole('header', { name: 'Què aniràs a veure?' })).toBeOnTheScreen();
+  const options = await screen.findAllByRole('radio');
+  expect(options.map((option) => option.props.accessibilityLabel)).toEqual([
+    'Cap en concret',
+    "Pluja d'estels: Oriònides, Dc. 21 d'oct.",
+  ]);
+  expect(options[0]).toBeSelected();
+
+  await fireEvent.press(options[1]!);
+  expect(
+    screen.getByRole('button', { name: "Fenomen: Pluja d'estels: Oriònides" }),
+  ).toBeOnTheScreen();
+});
+
+it('desa el pla i torna enrere', async () => {
+  post.mockResolvedValue({ id: 'p1' });
+  await renderScreen();
+  await fireEvent.changeText(screen.getByLabelText('Notes'), 'Frontal vermell');
+  await fireEvent.press(screen.getByRole('button', { name: 'Desa el pla' }));
+  await waitFor(() => expect(back).toHaveBeenCalled());
+  expect(post).toHaveBeenCalledWith(
+    '/plans',
+    expect.objectContaining({ puntId: 'montsec', notes: 'Frontal vermell' }),
+  );
+});
+
+it("ensenya l'error de l'API sota el botó", async () => {
+  post.mockRejectedValue(new ApiError(409, 'plan_limit_reached', ''));
+  await renderScreen();
+  await fireEvent.press(screen.getByRole('button', { name: 'Desa el pla' }));
+  expect(await screen.findByRole('alert')).toHaveTextContent(
+    'Has arribat al màxim de 20 plans pendents.',
+  );
+  expect(back).not.toHaveBeenCalled();
+});
+
+it('en castellà, els textos més llargs surten sencers', async () => {
+  await i18n.changeLanguage('es');
+  await renderScreen();
+  expect(screen.getByRole('header', { name: 'Plan de observación' })).toBeOnTheScreen();
+  expect(screen.getByRole('button', { name: 'Fenómeno: Ninguno en concreto' })).toBeOnTheScreen();
+  expect(screen.getByRole('button', { name: 'Hora de salida: 23:15' })).toBeOnTheScreen();
+  expect(screen.getByRole('button', { name: 'Guarda el plan' })).toBeOnTheScreen();
+  // L'etiqueta de la targeta es pot escurçar, però el valor s'ajusta a l'amplada sense tallar-se.
+  expect(screen.getByText('Mié. 21 oct.').props.adjustsFontSizeToFit).toBe(true);
+});
