@@ -79,34 +79,26 @@ correctes, incloent-hi les dues proves afegides durant aquesta revisió.
 - **Menú inferior:** configuració de zona segura d’iOS i Android i recuperació
   del full. Aquestes proves no mesuren la posició real de la nansa al mòbil.
 
-## Comprovació visual pendent
+## Comprovació visual confirmada
 
-La guia exigeix revisar a Expo Go les pantalles modificades. Els tests de Jest
-no demostren que els elements es vegin sencers ni que el menú no tapi la nansa.
-No es marca aquesta part com a validada ni es donen per comprovats els 60 fps.
+La responsable de TG-141, Vinyet (`vinyetam`), confirma el 18/11/2026 que ha
+completat la validació visual de la funcionalitat.
 
-En aquesta sessió s’ha arrencat l’emulador `Pixel_9` (Android API 35), però no hi
-ha Expo Go instal·lat ni cap dispositiu físic connectat. No s’ha executat el flux
-visual de Talaia en aquest entorn.
+| Dada | Validació comunicada |
+| --- | --- |
+| Entorn | Mòbil físic de la responsable |
+| Plataforma | iOS |
+| Idiomes | Català, castellà i anglès |
+| Resultat | Validació visual completada, confirmada per la responsable |
+| Evidència disponible | Confirmació directa a la conversa de treball |
+| Model i versió d’iOS | No especificats |
+| Mida de text | No especificada |
+| Captures o vídeo | No s’ha facilitat cap enllaç |
 
-Per completar la revisió amb una sessió iniciada:
-
-1. Engegar l’API i l’app (`npm run api` i `npm run mobile`).
-2. Calendari → esdeveniment → «On veure-ho»: comprovar que el botó i els textos
-   són accessibles mitjançant desplaçament i que els permisos funcionen.
-3. Revisar el rànquing amb previsió, sense previsió, buit i amb error; obrir un
-   punt, tornar i recuperar la fitxa de l’esdeveniment amb «Enrere».
-4. Plegar el full arrossegant la nansa: ha de quedar **per sobre del menú de
-   pestanyes** i ha de permetre arrossegar cap amunt per reobrir-lo.
-5. Revisar desplaçament de la llista, gestos curts i ràpids, cancel·lació,
-   rotació i canvi de pestanya; repetir amb reducció de moviment i amb
-   VoiceOver/TalkBack.
-6. Revisar textos llargs, pantalla petita, text ampliat i ca/es/en. Confirmar
-   que capçalera, llegenda, botons i full no se superposen ni queden tapats.
-7. Comprovar també la cerca original d’Explora. Revisar fluïdesa en dispositiu
-   físic en mode de producció.
-8. Adjuntar captures o vídeo amb dispositiu, sistema operatiu, idioma, mida de
-   text i resultat. Comprovar iOS i Android quan estiguin disponibles.
+Aquesta confirmació acredita la revisió manual comunicada per la responsable,
+separada de les proves automàtiques executades per l’agent. No s’estén la
+validació manual a Android ni s’atribueix una mesura de 60 fps o una prova amb
+text ampliat que no s’hagi comunicat.
 
 El Quality Gate de SonarCloud (80 % al codi nou, segons `docs/ci.md`) requereix
 una execució remota de CI sobre la PR. La cobertura local i la preparació LCOV
