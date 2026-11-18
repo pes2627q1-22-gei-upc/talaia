@@ -84,15 +84,7 @@
       "sun": "Sol",
       "other": "Conjuncions"
     },
-    "weekdays": [
-      "dl",
-      "dt",
-      "dc",
-      "dj",
-      "dv",
-      "ds",
-      "dg"
-    ],
+    "weekdays": ["dl", "dt", "dc", "dj", "dv", "ds", "dg"],
     "filters": {
       "all": "Tots els fenòmens",
       "meteor": "Pluges d'estels",
@@ -313,15 +305,7 @@
       "rangeHint": "Franja horària",
       "picked": "{{weekday}} {{day}} {{month}}"
     },
-    "weekdays": [
-      "dg.",
-      "dl.",
-      "dt.",
-      "dc.",
-      "dj.",
-      "dv.",
-      "ds."
-    ],
+    "weekdays": ["dg.", "dl.", "dt.", "dc.", "dj.", "dv.", "ds."],
     "calendar": {
       "title": "Tria el dia",
       "close": "Tanca",

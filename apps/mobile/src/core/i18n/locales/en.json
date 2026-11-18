@@ -84,15 +84,7 @@
       "sun": "Sun",
       "other": "Conjunctions"
     },
-    "weekdays": [
-      "Mo",
-      "Tu",
-      "We",
-      "Th",
-      "Fr",
-      "Sa",
-      "Su"
-    ],
+    "weekdays": ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"],
     "filters": {
       "all": "All events",
       "meteor": "Meteor showers",
@@ -313,15 +305,7 @@
       "rangeHint": "Time range",
       "picked": "{{weekday}}, {{month}} {{day}}"
     },
-    "weekdays": [
-      "Sun",
-      "Mon",
-      "Tue",
-      "Wed",
-      "Thu",
-      "Fri",
-      "Sat"
-    ],
+    "weekdays": ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
     "calendar": {
       "title": "Pick a day",
       "close": "Close",
