@@ -13,6 +13,7 @@ export {
   TIME_ZONE,
   UPCOMING_NIGHT_FROM_HOUR,
   defaultNight,
+  localDate,
   nightWindow,
   upcomingNight,
   type NightWindow,

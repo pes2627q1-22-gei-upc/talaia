@@ -78,7 +78,7 @@ La de l'ADR-0028, amb dues columnes més: `alerta_id` (FK a `alertes`, `on delet
 
 ## Conseqüències
 
-- Migració `20261116130000_crea_notificacions_alertes.sql` (després de la d'`alertes`, `20261115200000`): la taula i les columnes `notificacions` i `error_alertes` d'`execucions_worker`. S'ha d'aplicar, amb la d'`alertes` (TG-145), abans del deploy que porti aquest worker.
+- Migració `20261118160000_crea_notificacions_alertes.sql` (després de la d'`alertes`, `20261115200000`, i de les de `snapshot` fins a `plans`): la taula i les columnes `notificacions` i `error_alertes` d'`execucions_worker`. S'ha d'aplicar, amb la d'`alertes` (TG-145), abans del deploy que porti aquest worker.
 - `notificacions_alertes` creix com a molt una fila per alerta i nit bona. Si molesta, es pot purgar com l'índex antic.
 - Tests (TG-155): la finestra (migdia, matinada, estiu i hivern, les nits de 23 i 25 hores i el canvi d'any), els plans (en arribar-hi i a una hora, abans i després del migdia, estiu), la decisió (mínim, 0, radi, alertes inactives, comptes bloquejats, quan avisa, hores passades i de la nit següent, desempats i ordre de les files), la no repetició amb un repositori en memòria que fa de clau primària i amb l'SQL de Kysely, i l'aïllament dels errors dins del recàlcul. Els de l'enviament arriben amb la TG-154.
 - **Pendent de validar amb l'equip:**
