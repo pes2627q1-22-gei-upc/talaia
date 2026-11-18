@@ -29,7 +29,11 @@
     "goToday": "Back to today",
     "events": "Events",
     "allMonth": "View whole month",
-    "relative": { "today": "Today", "tomorrow": "Tomorrow", "past": "Past" },
+    "relative": {
+      "today": "Today",
+      "tomorrow": "Tomorrow",
+      "past": "Past"
+    },
     "filterLabel": "Filter events: {{filter}}",
     "filterTitle": "Filter events",
     "closeFilter": "Close filters",
@@ -336,6 +340,55 @@
     "title": "Alerts",
     "soonTitle": "Coming soon",
     "soonMessage": "Here you'll be able to create alerts so we can tell you when conditions are good for what you want to see.",
+    "create": "New alert",
+    "new": {
+      "title": "New alert",
+      "back": "Back",
+      "goalTitle": "What do you want to see",
+      "originTitle": "Where",
+      "minIndex": {
+        "title": "Minimum index",
+        "value": "{{index}}, {{level}}"
+      },
+      "cta": "Create alert",
+      "saving": "Creating alert…",
+      "errors": {
+        "limit": "You already have the maximum number of alerts. Delete one to create a new one.",
+        "generic": "We couldn't create the alert. Please try again."
+      },
+      "originModes": {
+        "current": "My location",
+        "zone": "A specific area"
+      },
+      "zone": {
+        "title": "Choose the area",
+        "hint": "Move the map until the pin is where you want it.",
+        "map": "Map to choose the area",
+        "confirm": "Choose this area",
+        "naming": "Looking up the name…",
+        "close": "Close",
+        "empty": "No area chosen",
+        "pick": "Choose",
+        "change": "Change",
+        "unnamed": "Chosen area"
+      },
+      "travel": {
+        "title": "Maximum distance",
+        "minutes": "{{minutes}} min",
+        "hours": "{{hours}} h",
+        "hoursMinutes": "{{hours}} h {{minutes}} min"
+      },
+      "notify": {
+        "title": "When we notify you",
+        "onReach": "When it's reached",
+        "atHour": "At a set time",
+        "hourValue": "Same day at {{hour}}",
+        "change": "Change",
+        "hourTitle": "Notification time",
+        "done": "Done",
+        "required": "Choose at least one way to be notified."
+      }
+    },
     "pushDenied": "Notifications are turned off: we won't alert you on your phone when conditions are good. You can turn them on in Settings.",
     "pushUnavailable": "This device can’t receive notifications. The rest of the app works as usual.",
     "openSettings": "Open Settings"

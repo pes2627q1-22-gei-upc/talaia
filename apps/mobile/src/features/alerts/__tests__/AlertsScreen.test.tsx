@@ -1,4 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react-native';
+import { useRouter } from 'expo-router';
 import { Linking } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
@@ -7,6 +8,11 @@ import i18n from '@/core/i18n';
 import { usePushPermission } from '@/features/notifications/PushRegistrationProvider';
 
 import { AlertsScreen } from '../AlertsScreen';
+
+jest.mock('expo-router', () => ({ useRouter: jest.fn() }));
+
+const push = jest.fn();
+jest.mocked(useRouter).mockReturnValue({ push } as unknown as ReturnType<typeof useRouter>);
 
 jest.mock('@/features/notifications/PushRegistrationProvider', () => ({
   usePushPermission: jest.fn(),
@@ -34,13 +40,16 @@ const withPermission = (permission: Permission) =>
   });
 
 describe('AlertsScreen', () => {
-  it('diu que les alertes arriben aviat', async () => {
+  it('diu que la llista arriba aviat i obre «Nova alerta»', async () => {
     await i18n.changeLanguage('ca');
     withPermission('granted');
     await renderScreen();
     expect(screen.getByRole('header', { name: 'Alertes' })).toBeOnTheScreen();
     expect(screen.getByText('Aviat')).toBeOnTheScreen();
     expect(screen.queryByText(/notificacions estan desactivades/)).toBeNull();
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Nova alerta' }));
+    expect(push).toHaveBeenCalledWith('/nova-alerta');
   });
 
   it('sense permís de notificacions, ho indica i continua funcionant (HU17)', async () => {
