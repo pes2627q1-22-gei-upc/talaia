@@ -1,7 +1,8 @@
 import { Image, type ImageSource } from 'expo-image';
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 
-import { colors, radii, sizes, spacing } from '@/core/theme/tokens';
+import { makeStyles, useTheme } from '@/core/theme/theme';
+import { radii, sizes, spacing } from '@/core/theme/tokens';
 import { AppText } from '@/shared/ui/AppText';
 import { PressableScale } from '@/shared/ui/PressableScale';
 import { Skeleton } from '@/shared/ui/Skeleton';
@@ -39,9 +40,13 @@ export function FieldRow({
   chevron = false,
   loadingTestID,
 }: FieldRowProps) {
+  const styles = useStyles();
+  const { name, colors } = useTheme();
+  // Els SVG porten el seu color (la fletxa d'ubicació és blava): en mode nit es tenyeixen tots.
+  const tint = name === 'vermell' ? colors.lluna : undefined;
   const content = (
     <>
-      <Image source={icon} tintColor={iconTint} style={styles.icon} accessible={false} />
+      <Image source={icon} tintColor={iconTint ?? tint} style={styles.icon} accessible={false} />
       {loading ? (
         <View style={styles.value} testID={loadingTestID}>
           <Skeleton width="45%" height={14} />
@@ -57,7 +62,7 @@ export function FieldRow({
         </AppText>
       ) : null}
       {chevron && onPress ? (
-        <Image source={chevronIcon} style={styles.chevron} accessible={false} />
+        <Image source={chevronIcon} tintColor={tint} style={styles.chevron} accessible={false} />
       ) : null}
     </>
   );
@@ -81,7 +86,7 @@ export function FieldRow({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(({ colors }) => ({
   row: {
     height: sizes.field,
     flexDirection: 'row',
@@ -100,4 +105,4 @@ const styles = StyleSheet.create({
     height: sizes.iconSmall,
     transform: [{ rotate: '-90deg' }],
   },
-});
+}));
