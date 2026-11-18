@@ -6,6 +6,7 @@ import { colors, motion, radii, spacing } from '@/core/theme/tokens';
 import { AppText } from '@/shared/ui/AppText';
 import { Button } from '@/shared/ui/Button';
 import { Card } from '@/shared/ui/Card';
+import { PressableScale } from '@/shared/ui/PressableScale';
 import { Screen } from '@/shared/ui/Screen';
 import { Skeleton } from '@/shared/ui/Skeleton';
 import { StateMessage } from '@/shared/ui/StateMessage';
@@ -28,7 +29,7 @@ const bellIcon = {
   )}`,
 };
 
-/** Una alerta: fenomen, resum i interruptor. Una de desactivada s'apaga. */
+/** Una alerta: fenomen i resum (es prem per editar-la) i interruptor. Una de desactivada s'apaga. */
 function AlertRow({ item, index }: { item: AlertItem; index: number }) {
   return (
     <Animated.View
@@ -38,20 +39,28 @@ function AlertRow({ item, index }: { item: AlertItem; index: number }) {
         .withInitialValues({ opacity: 0, transform: [{ translateY: 6 }] })}
     >
       <Card style={styles.row}>
-        <View style={[styles.iconBox, !item.active && styles.off]}>
-          <Image
-            source={GOAL_ICONS[item.goal]}
-            tintColor={colors.pedra}
-            style={styles.icon}
-            accessible={false}
-          />
-        </View>
-        <View style={[styles.text, !item.active && styles.off]} testID={`alert-text-${item.id}`}>
-          <AppText variant="label">{item.name}</AppText>
-          <AppText variant="small" color="boira">
-            {item.summary}
-          </AppText>
-        </View>
+        {/* L'interruptor queda fora del botó: cadascun es prem i es llegeix per separat. */}
+        <PressableScale
+          onPress={item.onPress}
+          accessibilityHint={item.editHint}
+          style={styles.edit}
+          testID={`alert-edit-${item.id}`}
+        >
+          <View style={[styles.iconBox, !item.active && styles.off]}>
+            <Image
+              source={GOAL_ICONS[item.goal]}
+              tintColor={colors.pedra}
+              style={styles.icon}
+              accessible={false}
+            />
+          </View>
+          <View style={[styles.text, !item.active && styles.off]} testID={`alert-text-${item.id}`}>
+            <AppText variant="label">{item.name}</AppText>
+            <AppText variant="small" color="boira">
+              {item.summary}
+            </AppText>
+          </View>
+        </PressableScale>
         <Toggle
           value={item.active}
           onValueChange={item.onToggle}
@@ -140,7 +149,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   icon: { width: ICON, height: ICON },
-  // El text ocupa el que queda i baixa de línia: l'interruptor no es tapa mai.
+  // La part que es prem i el text ocupen el que queda i baixen de línia: l'interruptor no es
+  // tapa mai.
+  edit: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   text: { flex: 1, gap: spacing.xxs },
   off: { opacity: 0.5 },
   create: { marginTop: spacing.sm },

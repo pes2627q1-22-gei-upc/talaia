@@ -387,9 +387,20 @@
         "required": "Tria com a mínim una manera d'avisar-te."
       }
     },
+    "edit": {
+      "title": "Edita l'alerta",
+      "cta": "Desa els canvis",
+      "saving": "Desant els canvis…",
+      "errors": {
+        "generic": "No hem pogut desar els canvis. Torna-ho a provar."
+      },
+      "missingTitle": "No hem trobat aquesta alerta",
+      "missingMessage": "Potser l'has esborrada. Torna a la llista d'alertes."
+    },
     "subtitle": "T'avisem només quan el cel acompanya.",
     "summary": "A menys de {{travel}}, índex de {{index}} o més",
     "toggle": "Alerta de {{name}}",
+    "editHint": "Obre l'alerta per editar-la",
     "toggleError": "No hem pogut canviar l'alerta. Torna-ho a provar.",
     "emptyTitle": "Encara no tens alertes",
     "emptyMessage": "Crea'n una i t'avisarem quan hi hagi bones condicions per al que vols veure.",

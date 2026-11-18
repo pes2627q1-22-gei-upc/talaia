@@ -139,6 +139,24 @@ describe('AlertsScreen', () => {
     expect(push).toHaveBeenCalledWith('/nova-alerta');
   });
 
+  it('prémer l’alerta l’obre per editar-la; l’interruptor és a part i no hi entra', async () => {
+    mockedList.mockResolvedValue([alert({})]);
+    mockedSetActive.mockReturnValue(new Promise(() => undefined));
+    await renderScreen();
+    const row = await screen.findByTestId('alert-edit-a1');
+    expect(row).toHaveProp('accessibilityRole', 'button');
+    expect(row).toHaveProp('accessibilityHint', "Obre l'alerta per editar-la");
+    // La part que es prem ocupa el que queda i no conté l'interruptor.
+    expect(StyleSheet.flatten(row.props.style)).toMatchObject({ flex: 1 });
+    expect(within(row).queryByRole('switch')).toBeNull();
+
+    await fireEvent.press(screen.getByRole('switch', { name: "Alerta de Pluja d'estels" }));
+    expect(push).not.toHaveBeenCalled();
+
+    await fireEvent.press(row);
+    expect(push).toHaveBeenCalledWith({ pathname: '/alerta/[id]', params: { id: 'a1' } });
+  });
+
   it('sense alertes, ho diu i deixa crear-ne una', async () => {
     mockedList.mockResolvedValue([]);
     await renderScreen();

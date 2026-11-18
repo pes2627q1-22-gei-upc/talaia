@@ -387,9 +387,20 @@
         "required": "Elige al menos una forma de avisarte."
       }
     },
+    "edit": {
+      "title": "Edita la alerta",
+      "cta": "Guarda los cambios",
+      "saving": "Guardando los cambios…",
+      "errors": {
+        "generic": "No hemos podido guardar los cambios. Vuelve a intentarlo."
+      },
+      "missingTitle": "No hemos encontrado esta alerta",
+      "missingMessage": "Quizá la has borrado. Vuelve a la lista de alertas."
+    },
     "subtitle": "Te avisamos solo cuando el cielo acompaña.",
     "summary": "A menos de {{travel}}, índice de {{index}} o más",
     "toggle": "Alerta de {{name}}",
+    "editHint": "Abre la alerta para editarla",
     "toggleError": "No hemos podido cambiar la alerta. Vuelve a intentarlo.",
     "emptyTitle": "Aún no tienes alertas",
     "emptyMessage": "Crea una y te avisaremos cuando haya buenas condiciones para lo que quieres ver.",

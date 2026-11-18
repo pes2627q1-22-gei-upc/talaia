@@ -17,6 +17,7 @@ export type PushNotice = {
 
 /**
  * Pestanya «Alertes» (HU19, mockup 10): les alertes de l'usuari amb l'interruptor d'activació.
+ * Prémer una alerta l'obre per editar-la (HU18).
  *
  * HU17, criteri 4: sense permís de notificacions, l'app continua igual i la pantalla d'alertes
  * ho diu. «No demanat» no es mostra: el permís es demana en crear una alerta.
@@ -89,6 +90,8 @@ export function useAlertsViewModel() {
         }),
         active: alert.activa,
         toggleLabel: t('alerts.toggle', { name }),
+        editHint: t('alerts.editHint'),
+        onPress: () => router.push({ pathname: '/alerta/[id]', params: { id: alert.id } }),
         onToggle: (activa: boolean) => toggle.mutate({ id: alert.id, activa }),
       };
     }),

@@ -1,3 +1,4 @@
+import type { Alerta } from '@talaia/shared';
 import { Image } from 'expo-image';
 import type { PropsWithChildren } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
@@ -78,9 +79,12 @@ function SliderField({ title, label, minLabel, maxLabel, color, ...slider }: Sli
   );
 }
 
-/** «Nova alerta» (HU16, mockup 11): s'hi arriba des de la pestanya Alertes. */
-export function NewAlertScreen() {
-  const vm = useNewAlertViewModel();
+/**
+ * «Nova alerta» (HU16, mockup 11): s'hi arriba des de la pestanya Alertes. Amb `alert`, edita
+ * aquella alerta (HU18).
+ */
+export function NewAlertScreen({ alert }: { alert?: Alerta } = {}) {
+  const vm = useNewAlertViewModel(alert);
   const [firstRow, secondRow] = [vm.goals.slice(0, 3), vm.goals.slice(3)];
 
   return (

@@ -156,6 +156,15 @@ describe('useAlertsViewModel', () => {
     expect(result.current.items[1]?.active).toBe(false);
   });
 
+  it('prémer una alerta l’obre per editar-la (HU18)', async () => {
+    mockedList.mockResolvedValue([alert()]);
+    const { result } = await renderViewModel();
+    await waitFor(() => expect(result.current.state).toBe('list'));
+    expect(result.current.items[0]?.editHint).toBe("Obre l'alerta per editar-la");
+    result.current.items[0]?.onPress();
+    expect(push).toHaveBeenCalledWith({ pathname: '/alerta/[id]', params: { id: 'a1' } });
+  });
+
   it('«Nova alerta» obre la pantalla de crear-ne una', async () => {
     mockedList.mockResolvedValue([]);
     const { result } = await renderViewModel();
