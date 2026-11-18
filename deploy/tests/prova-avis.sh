@@ -1,7 +1,9 @@
 #!/bin/sh
 # Prova de deploy/scripts/avisa.sh (TG-180) contra un Mailpit amb STARTTLS obligatori i autenticació,
 # com el Gmail de l'equip: un sol avís per fallada, el de recuperació, cap correu sense configurar i
-# cap error si el servidor no respon. La passa deploy-check.yml; en local només cal Docker i openssl.
+# cap error si el servidor no respon. També prova desplega.sh sencer (el trap) amb Docker i el healthcheck
+# simulats, i que un FORCE=1 fallat no es dona per recuperat sense un deploy bo (#155). La passa
+# deploy-check.yml; en local cal Docker, openssl, jq i git.
 #
 #   sh deploy/tests/prova-avis.sh
 set -eu
@@ -109,6 +111,67 @@ comprova "assumpte" "$(curl -fsS "$API/messages" | jq -r '.messages[0].Subject')
 comprova "esborra l'estat" "$(test -e "$estat" && echo sí || echo no)" no
 sh "$AVISA" recuperat "$dir/ple.env" "$estat" "Deploy recuperat: def456 hotfix" "$dir/cos" > /dev/null
 comprova "sense fallada prèvia, res" "$(total)" 3
+
+# desplega.sh sencer, amb el trap: un clon de prova d'`origin`, docker de mentida i un healthcheck
+# que surt amb el codi de $dir/salut. El curl de l'SMTP (avisa.sh) és el de debò.
+curl_real=$(command -v curl)
+mkdir "$dir/bin"
+printf '#!/bin/sh\necho x >> "%s/docker-crides"\n' "$dir" > "$dir/bin/docker"
+cat > "$dir/bin/curl" <<EOF
+#!/bin/sh
+case "\$*" in
+  *api/v1/health*) exit "\$(cat "$dir/salut")" ;;
+esac
+exec "$curl_real" "\$@"
+EOF
+chmod +x "$dir/bin/docker" "$dir/bin/curl"
+
+git init -q -b stable "$dir/codi"
+mkdir -p "$dir/codi/deploy"
+cp -R "$(dirname "$AVISA")" "$dir/codi/deploy/scripts"
+git -C "$dir/codi" add -A
+git -C "$dir/codi" -c user.name=prova -c user.email=prova@example.com commit -q -m "A: commit de prova"
+git clone -q --bare "$dir/codi" "$dir/origin.git"
+git clone -q -b stable "$dir/origin.git" "$dir/vm"
+desplega() {
+  env PATH="$dir/bin:$PATH" DEPLOY_LOG="$dir/deploy.log" "$@" sh "$dir/vm/deploy/scripts/desplega.sh" \
+    "$dir/ple.env" >> "$dir/deploy.log" 2>&1 || true
+}
+crides() { cat "$dir/docker-crides" 2>/dev/null | wc -l | tr -d ' '; }
+
+echo "desplega.sh: FORCE=1 que falla i passada sense canvis (#155)"
+abans=$(total)
+echo 0 > "$dir/salut"
+desplega
+comprova "deploy bo de A, cap correu" "$(total)" "$abans"
+echo 22 > "$dir/salut"
+desplega FORCE=1
+comprova "FORCE amb el healthcheck que falla, un correu" "$(total)" $((abans + 1))
+comprova "assumpte de fallada" "$(curl -fsS "$API/messages" | jq -r '.messages[0].Subject')" \
+  "[Talaia] Deploy fallat: $(git -C "$dir/vm" log -1 --format='%h %s')"
+docker_abans=$(crides)
+desplega
+comprova "sense canvis i el healthcheck que falla, cap correu (ni «recuperat»)" "$(total)" $((abans + 1))
+comprova "torna a desplegar" "$(crides)" $((docker_abans + 1))
+echo 0 > "$dir/salut"
+desplega
+comprova "healthcheck bo, un correu" "$(total)" $((abans + 2))
+comprova "és el de recuperació" "$(curl -fsS "$API/messages" | jq -r '.messages[0].Subject')" \
+  "[Talaia] Deploy recuperat: $(git -C "$dir/vm" log -1 --format='%h %s')"
+docker_abans=$(crides)
+desplega
+comprova "després, sense canvis: res" "$(total)" $((abans + 2))
+comprova "no torna a desplegar" "$(crides)" "$docker_abans"
+
+echo "desplega.sh: el fetch falla i es recupera"
+git -C "$dir/vm" remote set-url origin "$dir/no-existeix.git"
+desplega
+desplega
+comprova "un sol correu" "$(total)" $((abans + 3))
+comprova "clau git-fetch" "$(cat "$dir/vm/.git/talaia-avisat")" git-fetch
+git -C "$dir/vm" remote set-url origin "$dir/origin.git"
+desplega
+comprova "recuperat sense tornar a desplegar" "$(total)/$(crides)" "$((abans + 4))/$docker_abans"
 
 echo "Ús incorrecte"
 set +e

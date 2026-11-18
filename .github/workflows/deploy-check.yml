@@ -69,6 +69,7 @@ jobs:
 
   # L'avís de deploy fallat (TG-180, ADR-0035) contra un Mailpit amb STARTTLS i autenticació: un sol
   # correu per fallada, el de recuperació, res sense configurar i cap error si el servidor no respon.
+  # També desplega.sh sencer amb el trap (Docker i healthcheck simulats).
   avis:
     runs-on: ubuntu-latest
     timeout-minutes: 5

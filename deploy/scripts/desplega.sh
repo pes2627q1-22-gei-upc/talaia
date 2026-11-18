@@ -77,9 +77,16 @@ main() {
   clau=$objectiu
   # Es compara amb l'últim deploy que ha acabat bé, no amb HEAD: si un deploy falla, es torna a provar.
   if [ "$objectiu" = "$(cat "$estat/talaia-desplegat" 2>/dev/null)" ] && [ -z "${FORCE:-}" ]; then
-    # Torna a anar bé sense deploy nou: el fetch s'ha recuperat o `stable` ha tornat a l'últim bo.
-    recuperat
-    exit 0
+    # Cap canvi, però «recuperat» només és cert si el que havia fallat era el fetch. Si s'havia avisat
+    # d'un commit, el que corre és el deploy fallat (un FORCE=1, o `stable` que torna a l'últim bo):
+    # es torna a desplegar, i el «recuperat» només surt si passa el healthcheck.
+    case $(cat "$estat/talaia-avisat" 2>/dev/null || true) in
+      '' | git-fetch)
+        recuperat
+        exit 0
+        ;;
+      *) echo "$(date -Is) l'últim deploy ha fallat: torno a desplegar" ;;
+    esac
   fi
   pas="git reset"
   git reset -q --hard "$objectiu"
