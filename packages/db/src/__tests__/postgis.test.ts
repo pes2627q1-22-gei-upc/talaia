@@ -8,7 +8,15 @@ import {
   type RawBuilder,
 } from 'kysely';
 import { createDb } from '../createDb';
-import { dinsBbox, dinsRadi, distancia, lat, lon, puntDesDeLonLat } from '../postgis';
+import {
+  dinsBbox,
+  dinsRadi,
+  distancia,
+  estacioXemaMesPropera,
+  lat,
+  lon,
+  puntDesDeLonLat,
+} from '../postgis';
 
 // Compila sense connectar-se enlloc: només comprova l'SQL i els paràmetres.
 const db = new Kysely<unknown>({
@@ -59,6 +67,14 @@ describe('postgis', () => {
       'select st_dwithin("ubicacio", st_setsrid(st_makepoint($1, $2), 4326)::geography, $3) as "v"',
     );
     expect(q.parameters).toEqual([2.17, 41.38, 50_000]);
+  });
+
+  it("estacioXemaMesPropera tria l'estació operativa més propera amb el KNN de PostGIS", () => {
+    const q = compila(estacioXemaMesPropera(puntDesDeLonLat(0.7364, 42.0244)));
+    expect(q.sql.replace(/\s+/g, ' ')).toBe(
+      'select ( select e.codi from estacions_xema e where e.operativa order by e.ubicacio <-> st_setsrid(st_makepoint($1, $2), 4326)::geography limit 1 ) as "v"',
+    );
+    expect(q.parameters).toEqual([0.7364, 42.0244]);
   });
 });
 

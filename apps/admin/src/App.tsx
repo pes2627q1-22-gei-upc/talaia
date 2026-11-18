@@ -162,7 +162,9 @@ export function App() {
                   required
                 />
               </label>
-              <button disabled={busy}>Envia’m un codi</button>
+              <button type="submit" disabled={busy}>
+                Envia’m un codi
+              </button>
             </form>
           ) : (
             <form onSubmit={(event) => void verifyCode(event)}>
@@ -176,7 +178,9 @@ export function App() {
                   required
                 />
               </label>
-              <button disabled={busy}>Verifica el codi</button>
+              <button type="submit" disabled={busy}>
+                Verifica el codi
+              </button>
             </form>
           )}
         </section>

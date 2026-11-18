@@ -5,6 +5,9 @@ import { colors, radii, sizes, spacing, typography } from '@/core/theme/tokens';
 
 import { AppText } from './AppText';
 
+/** Alçada mínima d'un camp de diverses línies. */
+const MULTILINE_MIN_HEIGHT = 96;
+
 type TextFieldProps = Omit<TextInputProps, 'style' | 'placeholderTextColor'> & {
   label: string;
   /** Text d'error sota el camp; també pinta la vora. */
@@ -35,7 +38,12 @@ export function TextField({ label, error, onFocus, onBlur, ...rest }: TextFieldP
           setFocused(false);
           onBlur?.(event);
         }}
-        style={[styles.input, focused && styles.focused, error ? styles.invalid : null]}
+        style={[
+          styles.input,
+          rest.multiline && styles.multiline,
+          focused && styles.focused,
+          error ? styles.invalid : null,
+        ]}
         {...rest}
       />
       {error ? (
@@ -58,6 +66,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.vora,
     backgroundColor: colors.sheet,
+  },
+  /** Diverses línies (les notes d'un pla): unes tres de fondària i el text comença a dalt. */
+  multiline: {
+    minHeight: MULTILINE_MIN_HEIGHT,
+    paddingTop: spacing.ms,
+    paddingBottom: spacing.ms,
+    textAlignVertical: 'top',
   },
   focused: { borderColor: colors.far },
   invalid: { borderColor: colors.tap },

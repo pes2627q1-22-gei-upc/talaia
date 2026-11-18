@@ -16,9 +16,11 @@ npm run api                   # = npm run dev -w services/api, amb recàrrega
 - Detall del fenomen: `GET /api/v1/esdeveniments/{id}` (mateixa autenticació; `Accept-Language: ca|es|en`, amb fallback al català)
 - Desglossament de l'índex d'un punt: `http://localhost:3000/api/v1/punts/{id}/index?nit=2026-10-19` (cal `DATABASE_URL`)
 - Perfil: `GET`, `POST`, `PATCH` i `DELETE /api/v1/perfil` (cal el JWT de Supabase a `Authorization: Bearer`)
+- Administració: `/api/v1/admin/usuaris` i `/api/v1/admin/punts` (JWT d'un compte amb `rol = 'admin'`)
 - Alertes: `GET` i `POST /api/v1/alertes` i `PATCH` i `DELETE /api/v1/alertes/{id}` (cal el JWT de Supabase)
 - Tokens de push: `PUT /api/v1/perfil/dispositius` i `DELETE /api/v1/perfil/dispositius/{token}` (JWT)
 - Favorits: `GET` i `POST /api/v1/favorits` i `DELETE /api/v1/favorits/{puntId}` (cal el JWT de Supabase)
+- Plans: `POST` i `GET /api/v1/plans` (`?quan=futurs|passats`) i `GET /api/v1/plans/{id}` (cal el JWT de Supabase)
 - Recomanacions: `http://localhost:3000/api/v1/recomanacions?objectiu=cel_estrellat&lat=41.39&lon=2.17&data=<YYYY-MM-DD>&desDe=22&finsA=6&tempsMaxim=150`; «a prop meu»: `…/recomanacions?lat=41.39&lon=2.17`; «on veure-ho»: `…/recomanacions?lat=41.39&lon=2.17&esdevenimentId=leonids-2026`
 - Visibilitat d'una ubicació qualsevol: `http://localhost:3000/api/v1/visibilitat?lat=41.95&lon=1.52` (no cal `DATABASE_URL`; amb `&hora=<ISO 8601>`, una altra hora)
 - Documentació (Swagger UI): <http://localhost:3000/api/v1/docs>
@@ -40,7 +42,7 @@ Es llegeixen del `.env` de l'**arrel** del repo (`dev` i `start` el carreguen am
 | Variable | Per defecte | Què és |
 |---|---|---|
 | `API_PORT` | `3000` | Port on escolta l'API |
-| `DATABASE_URL` | — | Postgres (`postgresql://…`). **Opcional:** sense ella l'API arrenca amb un avís, `/health` funciona i `/punts`, `/punts/{id}`, `/punts/{id}/index`, `/recomanacions`, `/perfil`, `/perfil/dispositius`, `/alertes` i `/favorits` responen 503 `database_unavailable`, i `/visibilitat` funciona amb la foscor estimada. Amb Supabase local: `postgresql://postgres:postgres@127.0.0.1:54322/postgres` |
+| `DATABASE_URL` | — | Postgres (`postgresql://…`). **Opcional:** sense ella l'API arrenca amb un avís, `/health` funciona i `/punts`, `/punts/{id}`, `/punts/{id}/index`, `/recomanacions`, `/perfil`, `/perfil/dispositius`, `/admin`, `/alertes`, `/favorits` i `/plans` responen 503 `database_unavailable`, i `/visibilitat` funciona amb la foscor estimada. Amb Supabase local: `postgresql://postgres:postgres@127.0.0.1:54322/postgres` |
 | `SUPABASE_URL` | `http://127.0.0.1:54321` | URL del projecte de Supabase. `requireAuth` hi valida els JWT amb el JWKS (`/auth/v1/.well-known/jwks.json`, ADR-0023): 401 si el token és dolent, 503 si Supabase no respon. Al compose de la VM és obligatòria |
 | `OPEN_METEO_BASE_URL` | `https://api.open-meteo.com/v1` | URL base d'Open-Meteo, la mateixa que fa servir el worker: `GET /visibilitat` hi demana la previsió de les ubicacions que no són al catàleg |
 | `APROP_API_KEY` | — | Secret de l'API assignat a Aprop. No s'inclou al repositori ni a l'app; sense configurar-lo, l'accés amb API key retorna 503, però l'accés JWT continua disponible. |
@@ -65,15 +67,19 @@ src/
     dispositius.ts      PUT i DELETE /perfil/dispositius: Expo push tokens (ADR-0028)
     admin.ts            GET /admin/me, GET /admin/usuaris i PATCH /admin/usuaris/{id} (ADR-0029)
     favorits.ts         POST, GET i DELETE /favorits: els punts favorits de l'usuari del JWT (HU25–HU27)
+    plans.ts            POST, GET i GET {id} /plans: els plans d'observació de l'usuari del JWT (HU12)
     puntIndex.ts        GET /punts/{id}/index: desglossament de l'índex per hores i factors (HU04)
     recomanacions.ts    GET /recomanacions (validació de la consulta i OpenAPI)
+    adminPunts.ts       /admin/punts: crear, editar i retirar punts (HU39), muntat a admin.ts
     visibilitat.ts      GET /visibilitat: índex d'una ubicació qualsevol (X-Cache i OpenAPI)
     query.ts            Helpers de query compartits: números amb missatge en català i paràmetres buits
   punts/
     puntsRepository.ts  Consultes dels punts publicats i del seu índex amb @talaia/db (ADR-0013)
     mapDocument.ts      GeoJSON del mapa i retall per bbox
-    documentCache.ts    Document en memòria amb ETag del contingut (MapDocumentCache)
+    documentCache.ts    Document en memòria amb ETag del contingut (MapDocumentCache), amb invalidate()
     puntsService.ts     Memòria cau i bbox del mapa, i fitxa amb l'índex per hores; errors de la base de dades → 503
+    puntsAdminRepository.ts  Consultes de l'administració: tots els punts, crear i editar (HU39)
+    puntsAdminService.ts     Regles de l'estat, 409 si l'slug existeix, 404, 503, i descarta el document del mapa a cada canvi
   esdeveniments/
     dates.ts            Límits del dia civil de Catalunya convertits a UTC
     esdevenimentsRepository.ts  Consulta Kysely del calendari i el punt oficial
@@ -87,6 +93,9 @@ src/
   favorits/
     favoritsRepository.ts  Favorits d'un perfil amb @talaia/db: sempre filtrats pel perfil i pels punts publicats
     favoritsService.ts     Hora en curs de l'índex, 404 si el punt no és publicat i errors de la BD → 503
+  plans/
+    plansRepository.ts  Plans d'un perfil amb @talaia/db: sempre filtrats pel perfil, amb el punt (també si s'ha retirat)
+    plansService.ts     Nom del punt per idioma, 422 si el punt o l'esdeveniment no hi són, 404 i errors de la BD → 503
   recomanacions/
     franja.ts           Franja horària local de Catalunya (Europe/Madrid) → UTC, amb el canvi d'hora
     finestra.ts         Finestra horària d'un esdeveniment del calendari (codi pur, TG-140)
@@ -151,7 +160,7 @@ credencial absent o invàlida i 503 quan no es pot consultar la base de dades o 
 
 Un sol GeoJSON `FeatureCollection` amb tots els punts `PUBLICAT`: `[lon, lat]` amb 6 decimals i les propietats `id`, `nom`, `municipi` i `index`. `index` és el de l'**hora en curs** que ha desat el worker (TG-99), o `null` si encara no s'ha calculat (l'app pinta el marcador en gris). Porta `deDia: true` quan el Sol encara no s'ha post (factor `sol` 0): l'índex val 0 per l'hora, no pel cel, i l'app també el pinta en gris.
 
-- **Memòria cau:** el document es construeix en memòria i es regenera si té més de 5 minuts. L'`ETag` és un hash del contingut. Les peticions simultànies comparteixen una sola consulta, i si la base de dades falla se serveix l'últim document (503 si no n'hi ha cap).
+- **Memòria cau:** el document es construeix en memòria i es regenera si té més de 5 minuts. L'`ETag` és un hash del contingut. Les peticions simultànies comparteixen una sola consulta, i si la base de dades falla se serveix l'últim document (503 si no n'hi ha cap). Quan l'administració crea, edita o retira un punt (`/admin/punts`), el document es descarta i la petició següent el regenera.
 - **HTTP:** `Cache-Control: public, max-age=<segons fins a la propera hora>`. Amb `If-None-Match` igual a l'`ETag` (també `W/"…"`, que és com el deixa Nginx), 304 sense cos.
 - **`?bbox=minLon,minLat,maxLon,maxLat`:** opcional. Retalla el document en memòria, sense consultar la base de dades. Si és invàlid, 400 `validation_error`.
 - **Hora en curs i versió del worker** (ADR-0012, TG-99): a cada petició, l'API compara l'hora en curs (rellotge de l'API, sense anar a la BD) amb la del document, i si ha canviat el regenera amb l'índex de l'hora nova. A més, com a molt un cop per minut llegeix l'última execució de `execucions_worker` que ha desat algun punt, i si ha canviat també el regenera. L'`ETag` continua sent el hash del contingut.
@@ -278,6 +287,34 @@ Els punts favorits de l'usuari autenticat (tipus `Favorit` i `FavoritNou` a `@ta
 
 Errors: JWT absent o invàlid → 401 `unauthorized`; compte bloquejat → 403 `account_blocked`; cos o `puntId` invàlids → 400 `validation_error`; usuari sense perfil (no ha fet `POST /perfil`) → 404 `profile_not_found`; `POST` d'un punt que no existeix o no és publicat → 404 `punt_not_found`; sense `DATABASE_URL` o amb la base de dades caiguda → 503 `database_unavailable`.
 
+## `/plans` (HU12 · TG-156)
+
+Els plans d'observació de l'usuari autenticat (tipus `Pla`, `PlaNou` i `QuanPlans` a `@talaia/shared`, taula `plans`). Les tres rutes passen per `requireUser` (JWT de Supabase i compte no bloquejat) i responen amb `Cache-Control: no-store`. El nom del punt segueix `Accept-Language` (ca, es, en; reserva ca), com a `/punts`.
+
+- `POST /plans`: crea el pla i respon 201 amb el mateix `Pla` que el `GET`, punt inclòs, perquè l'app no l'hagi de tornar a demanar. Són obligatoris `puntId` (un punt `PUBLICAT`) i `dataHoraInici`; `esdevenimentId` (l'`id` de `GET /esdeveniments/{id}`, és a dir, el `codi`), `dataHoraFi` (posterior a l'inici), `calendariEventId` (≤ 255) i `notes` (≤ 1000) són opcionals. Les dates són ISO 8601 **amb zona** i es desen en UTC. No es comprova que la data sigui futura: ho fa l'app (TG-157). El cos és estricte: un camp de més (per exemple `perfilId`) és un 400. L'esdeveniment ha de ser un dels que `GET /esdeveniments/{id}` retorna (rellevant per a Catalunya i publicable; `esdevenimentsPublics`), perquè `/recomanacions?esdevenimentId=` no respongui 404 amb el mateix id. Com a molt 20 plans pendents per usuari (`MAX_PLANS_FUTURS`; els passats no hi compten) i un sol pla per punt i hora d'inici (índex únic `plans_perfil_punt_inici_key`): un doble toc a «Crea el pla» no en crea dos. El perfil es bloqueja (`for update`) mentre es crea, com a les alertes.
+- `GET /plans`: tots els plans per data (`[]` si no en té cap). Amb `?quan=futurs`, els que encara no s'han acabat, del més proper al més llunyà. Un pla s'acaba a `dataHoraFi` o, si no en té, al final de la nit que conté l'inici (les 12:00 locals de l'endemà de la nit, com `nightWindow(defaultNight(inici)).to`; `fiEfectiu` a `plansRepository.ts`): un pla «aquesta nit a les 21:00» continua sent futur mentre s'observa. Amb `?quan=passats`, la resta, del més recent al més antic.
+- `GET /plans/{id}`: el pla. Si és d'un altre usuari, respon 404 igual que si no existís, per no revelar-ne l'existència.
+
+```json
+{
+  "id": "60fd5b2e-…",
+  "punt": { "id": "b0ccbb91-…", "nom": "Centre d'Observació de l'Univers", "municipi": "Àger", "publicat": true },
+  "esdevenimentId": "leonides-2026",
+  "dataHoraInici": "2026-11-17T21:00:00.000Z",
+  "dataHoraFi": "2026-11-18T01:00:00.000Z",
+  "calendariEventId": null,
+  "notes": "Portar el trípode",
+  "dataCreacio": "2026-11-16T18:07:31.752Z",
+  "dataActualitzacio": "2026-11-16T18:07:31.752Z"
+}
+```
+
+- **Només els de l'usuari:** el perfil és el que `requireUser` ja ha llegit a partir del `sub` del JWT (`req.account.perfilId`), mai el de la petició, i totes les consultes del repositori hi filtren a l'SQL (`where perfil_id = $1`). Esborrar el compte n'esborra els plans (`on delete cascade`, TG-167).
+- **Punts retirats:** només es pot crear un pla amb un punt `PUBLICAT`, però si el punt es retira després, el pla continua sortint amb `punt.publicat: false`: el `GET` no filtra per l'estat del punt. Si el punt s'esborra de debò, s'esborren els seus plans (vegeu P23 a `docs/decisions/pendents.md`).
+- `PATCH` (TG-161) i `DELETE` (TG-162) encara no hi són.
+
+Errors: JWT absent o invàlid → 401 `unauthorized`; compte bloquejat → 403 `account_blocked`; cos, `quan` o `id` invàlids (també `dataHoraFi` ≤ `dataHoraInici`) → 400 `validation_error`; usuari sense perfil → 404 `profile_not_found`; pla que no és de l'usuari → 404 `plan_not_found`; `POST` amb un punt que no existeix o no és publicat → 422 `punt_not_found`, o amb un esdeveniment que no existeix o no és públic → 422 `event_not_found`; `POST` amb 20 plans pendents → 409 `plan_limit_reached`, o amb un pla al mateix punt i hora → 409 `plan_already_exists`; sense `DATABASE_URL` o amb la base de dades caiguda → 503 `database_unavailable`.
+
 ## Rol d'administrador i comptes bloquejats (TG-177, HU41)
 
 `perfils.rol` (`usuari` o `admin`) i `perfils.bloquejat` (ADR-0029). `routes/index.ts` crea un sol `requireUser` (`requireAuth` amb `accountStatus`): valida el JWT i llegeix el perfil, i si el compte està bloquejat respon **403 `account_blocked`**. Totes les rutes d'usuari l'han de fer servir; les rutes públiques (`/health`, `/punts`, `/recomanacions`, `/visibilitat`, `/esdeveniments`) no hi miren. `requireAdmin`, posat al darrere, només deixa passar els administradors: si no, 403 `forbidden`.
@@ -295,6 +332,35 @@ Rutes de `/admin` (tipus `UsuariAdmin` i `UsuariAdminCanvis` a `@talaia/shared`,
 - `PATCH /admin/usuaris/{id}` amb `{ "bloquejat": true | false }`: bloqueja o desbloqueja el compte. L'`id` és el del perfil (`perfils.id`). Torna el compte amb el canvi. Tornar a bloquejar un compte bloquejat no en canvia la data.
 
 Errors: 401 `unauthorized`; 403 `forbidden` (no és admin) o `account_blocked`; 400 `validation_error` (l'`id` no és un UUID o el cos no és vàlid) o `cannot_block_self` (un administrador no es pot bloquejar a si mateix); 404 `usuari_not_found`; 503 sense base de dades.
+
+## Punts des de l'administració (TG-174, HU39)
+
+Rutes de `/admin/punts` per a la web d'administració (TG-175). Van darrere de `requireUser` i `requireAdmin` com la resta de `/admin`, i responen amb `Cache-Control: no-store`. Tipus `PuntAdmin`, `PuntAdminNou` i `PuntAdminCanvis` a `@talaia/shared`.
+
+- `GET /admin/punts`: **tots** els punts per `slug`, també els retirats i els proposats, amb `estat` i `origen`. Són les metadades de la fitxa (`PuntFitxa` sense `index`) més `slug`, `estat`, `origen`, `dataCreacio` i `dataActualitzacio`.
+- `GET /admin/punts/{id}`: un punt en qualsevol estat (el formulari d'edició).
+- `POST /admin/punts`: crea un punt `OFICIAL` (sense creador). Obligatoris: `slug`, `nom`, `municipi`, `descripcio`, `lat` i `lon`; opcionals: `altitud`, `horitzoObert`, `accessibilitat`, `sqm` i `estat` (`PUBLICAT` per defecte, o `DESACTIVAT`). Respon 201 amb el punt i `Location`. Un `slug` que ja existeix → 409 `slug_already_exists`.
+- `PATCH /admin/punts/{id}`: canvia només els camps que s'envien (com a mínim un). L'`slug` no es pot canviar: és la clau del seed i de `/esdeveniments`. `lat` i `lon` van junts.
+
+**Retirar un punt** és `PATCH /admin/punts/{id}` amb `{ "estat": "DESACTIVAT" }`, i `{ "estat": "PUBLICAT" }` el torna a publicar. No hi ha `DELETE`: un punt no s'esborra mai, perquè `index_visibilitat` hi apunta (amb `on delete cascade`) i els favorits i els plans també ho faran. Un punt retirat:
+
+- deixa de sortir a `GET /punts` a la petició següent: el servei descarta el document del mapa (`MapDocumentCache.invalidate()`) en lloc d'esperar els 5 minuts. L'`ETag` canvia, i l'app que tenia el document el torna a baixar com a molt a la propera hora (`Cache-Control`, ADR-0012). Amb més d'una instància de l'API, les altres el regenerarien en 5 minuts com a molt;
+- respon 404 `punt_not_found` a `/punts/{id}` i `/punts/{id}/index`, i no surt a `/recomanacions`: aquestes consultes ja filtren `estat = 'PUBLICAT'` a la base de dades i no en guarden cap còpia;
+- el worker ja no en calcula l'índex: `listPublicats` només llegeix els `PUBLICAT`. Les files que ja tenia a `index_visibilitat` s'hi queden fins que el worker esborra les hores velles; si es torna a publicar, se'n recalcula l'índex a la propera execució.
+
+**Estats.** Aquestes rutes només passen un punt de `PUBLICAT` a `DESACTIVAT` i al revés. Un punt `PENDENT` o `REBUTJAT` (proposat per la comunitat, HU28) només canvia d'estat a la moderació (HU40, TG-220): un `PATCH` amb `estat` respon 409 `moderation_required`, i així no es pot publicar cap proposta sense moderar-la. Les seves dades sí que es poden corregir. Les regles es comproven dins de la mateixa transacció que el canvi, amb la fila bloquejada (`select … for update`).
+
+El punt de referència de `/esdeveniments` (`centre-observacio-univers`, ADR-0026) no es pot retirar: sense ell publicat, el calendari d'Aprop respondria 503. Es pot editar i moure, però `{ "estat": "DESACTIVAT" }` respon 409 `reference_point_required`.
+
+**Validació** (la mateixa que el catàleg, `data/scripts/punts.ts`, i els `check` de la taula): `slug` en `kebab-case` (minúscules sense accents, xifres i guions); `lat` 40,5–42,9 i `lon` 0,15–3,35 (la caixa de Catalunya amb marge, que també atura `lat` i `lon` intercanviades) i, a més, dins del contorn de Catalunya amb 1,5 km de marge (`isInCatalonia`, el mateix de `/visibilitat`, ADR-0031); `altitud` enter de 0 a 3.200 m; `horitzoObert` una llista no buida de direccions (`N`, `NE`… `NW`) sense repeticions, o `null`; `sqm` de 10 a 23 (es desa amb 2 decimals); textos sense els espais dels extrems, no buits i amb un màxim (`nom` i `municipi` 100, `descripcio` 1.000, `accessibilitat` 300). Per buidar un camp opcional, `null`. Un camp desconegut (`origen`, `horitzo`, `slug` al `PATCH`…) és un 400. `estat` només admet `PUBLICAT` i `DESACTIVAT`. La caixa sola deixaria passar Andorra, la Catalunya Nord, la Franja i mar endins: el contorn ho atura amb un 400.
+
+**Foscor, horitzó, estació i índex d'un punt nou.** Sense `sqm`, el punt té la foscor estimada (`foscorEstimada`, ADR-0020) fins que algú la hi posi, i `horitzo` (el perfil de l'ICGC, ADR-0022) queda `null`. L'estació XEMA (`estacio_xema`) és la més propera al moment, amb la mateixa subconsulta que fa servir el worker cada mes (`estacioXemaMesPropera` de `@talaia/db`); si encara no hi ha cap estació carregada, `null`. L'índex és `null` (marcador gris) fins a la propera execució horària del worker.
+
+**Moure un punt.** Si un `PATCH` mou el punt més de 10 m (`MATEIX_LLOC_M`), el que era del lloc d'abans no es conserva, tot en la mateixa transacció: s'esborra l'índex que el worker n'havia calculat (`index_visibilitat`), de manera que el mapa i la fitxa el mostren sense índex (gris) i no amb el d'un altre lloc fins a la propera hora del worker; `horitzo` torna a `null`; l'estació XEMA passa a ser la més propera al lloc nou, i `sqm` torna a `null` llevat que el `PATCH` en porti un de **diferent** del que hi havia. Així, si la web envia el punt sencer en moure'l, l'`sqm` antic que hi viatja no es conserva com si fos del lloc nou. Per desar el mateix `sqm` al lloc nou (la mateixa cel·la d'1 km), cal un segon `PATCH` sense moure'l. A menys de 10 m és el mateix lloc (l'arrodoniment del formulari): només canvien les coordenades. El document del mapa es descarta com a qualsevol canvi.
+
+**Punts del seed.** Els 32 punts del catàleg inicial surten de `data/punts_observacio.geojson` (ADR-0017). Si es torna a aplicar el seed (`supabase db reset` o `db push --include-seed`), en restaura les metadades i la ubicació, però no l'`estat`: un punt retirat continua retirat. Un canvi de metadades d'un punt del seed fet des de l'administració s'ha de copiar també al GeoJSON perquè no es perdi.
+
+Errors: 401 `unauthorized`; 403 `forbidden` o `account_blocked`; 400 `validation_error`; 404 `punt_not_found`; 409 `slug_already_exists` (`POST`), o `moderation_required` o `reference_point_required` (`PATCH`); 503 `database_unavailable`.
 
 ## `/perfil/dispositius` (HU17, TG-152, ADR-0028)
 
@@ -345,8 +411,11 @@ Tota resposta d'error té el format `{ error: { code, message } }`:
 | 403 | `forbidden` | Ruta de `/admin` amb un compte que no és administrador |
 | 404 | `not_found` | La ruta no existeix |
 | 404 | `usuari_not_found` | `PATCH /admin/usuaris/{id}`: cap perfil amb aquest `id` |
-| 404 | `punt_not_found` | `/punts/{id}`, `/punts/{id}/index` i `POST /favorits`: cap punt publicat amb aquest `id` |
+| 404 | `punt_not_found` | `/punts/{id}`, `/punts/{id}/index` i `POST /favorits`: cap punt publicat amb aquest `id`. `/admin/punts/{id}`: cap punt amb aquest `id` |
 | 404 | `event_not_found` | `GET /esdeveniments/{id}` i `GET /recomanacions?esdevenimentId=`: cap esdeveniment publicable amb aquest `id` |
+| 409 | `slug_already_exists` | `POST /admin/punts`: ja hi ha un punt amb aquest `slug` |
+| 409 | `moderation_required` | `PATCH /admin/punts/{id}`: es vol canviar l'estat d'un punt `PENDENT` o `REBUTJAT`, que es fa des de la moderació |
+| 409 | `reference_point_required` | `PATCH /admin/punts/{id}`: es vol retirar el punt de referència de `/esdeveniments` (ADR-0026) |
 | 404 | `profile_not_found` | `/perfil` (`GET` i `PATCH`) i `/favorits`: l'usuari encara no ha fet `POST /perfil` |
 | 422 | `fora_de_catalunya` | `GET /visibilitat`: la ubicació és fora de Catalunya |
 | 422 | `hora_sense_previsio` | `GET /visibilitat`: l'hora no és entre l'hora en curs i 72 hores endavant (o Open-Meteo no l'ha tornat) |
