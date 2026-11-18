@@ -82,10 +82,12 @@ export interface EstacionsXema {
 export interface ExecucionsWorker {
   acabadaEl: Generated<Timestamp>;
   error: string | null;
+  errorAlertes: string | null;
   estat: string;
   hores: Generated<number>;
   id: Generated<Int8>;
   iniciadaEl: Timestamp;
+  notificacions: number | null;
   punts: Generated<number>;
 }
 
@@ -134,6 +136,17 @@ export interface LecturesXema {
   validada: boolean;
   ventDireccio: number | null;
   ventVelocitat: number | null;
+}
+
+export interface NotificacionsAlertes {
+  alertaId: string;
+  dataCreacio: Generated<Timestamp>;
+  enviadaEl: Timestamp | null;
+  hora: Timestamp;
+  index: number;
+  nit: Timestamp;
+  puntId: string;
+  ticketIds: string[] | null;
 }
 
 export interface Perfils {
@@ -199,6 +212,7 @@ export interface DB {
   fontsAstronomiques: FontsAstronomiques;
   indexVisibilitat: IndexVisibilitat;
   lecturesXema: LecturesXema;
+  notificacionsAlertes: NotificacionsAlertes;
   perfils: Perfils;
   plans: Plans;
   puntsObservacio: PuntsObservacio;

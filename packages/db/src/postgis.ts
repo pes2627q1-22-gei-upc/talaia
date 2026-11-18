@@ -40,12 +40,13 @@ export function distancia(a: Expression<string>, b: Expression<string>): RawBuil
 
 /**
  * Cert si `a` és a `metres` o menys de `b`. `st_dwithin` sobre `geography` mesura sobre
- * l'esferoide i fa servir l'índex GIST de la columna.
+ * l'esferoide i fa servir l'índex GIST de la columna. `metres` pot ser una expressió, p. ex. el
+ * radi de cada alerta (TG-153).
  */
 export function dinsRadi(
   a: Expression<string>,
   b: Expression<string>,
-  metres: number,
+  metres: number | Expression<number>,
 ): RawBuilder<boolean> {
   return sql<boolean>`st_dwithin(${a}, ${b}, ${metres})`;
 }

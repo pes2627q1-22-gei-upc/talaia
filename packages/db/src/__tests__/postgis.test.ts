@@ -69,6 +69,11 @@ describe('postgis', () => {
     expect(q.parameters).toEqual([2.17, 41.38, 50_000]);
   });
 
+  it('dinsRadi accepta un radi que surt de la consulta (el de cada alerta)', () => {
+    const q = compila(dinsRadi(sql.ref('origen'), ubicacio, sql<number>`"radi_km" * 1000`));
+    expect(q.sql).toBe('select st_dwithin("origen", "ubicacio", "radi_km" * 1000) as "v"');
+    expect(q.parameters).toEqual([]);
+  });
   it("estacioXemaMesPropera tria l'estació operativa més propera amb el KNN de PostGIS", () => {
     const q = compila(estacioXemaMesPropera(puntDesDeLonLat(0.7364, 42.0244)));
     expect(q.sql.replace(/\s+/g, ' ')).toBe(
