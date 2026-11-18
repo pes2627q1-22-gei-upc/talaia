@@ -74,6 +74,7 @@ describe('JWT auth i perfil en el primer accés', () => {
     getAccountStatus: jest.fn(async () => null),
     listProfiles: jest.fn(async () => []),
     setBlocked: jest.fn(async () => null),
+    deleteAccount: jest.fn(async () => undefined),
   };
 
   let privateKey: CryptoKey;
@@ -96,6 +97,7 @@ describe('JWT auth i perfil en el primer accés', () => {
     profileStore.ensureProfile.mockClear();
     profileStore.getProfile.mockClear();
     profileStore.updateProfile.mockClear();
+    profileStore.deleteAccount.mockClear();
   });
 
   type TokenOptions = {
@@ -242,6 +244,32 @@ describe('JWT auth i perfil en el primer accés', () => {
       for (const res of responses) expect(res.status).toBe(401);
       expect(profileStore.getProfile).not.toHaveBeenCalled();
       expect(profileStore.updateProfile).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('DELETE /perfil (HU38)', () => {
+    it("esborra el compte de l'usuari del JWT i respon 204 sense cos", async () => {
+      const res = await request(jwtApp)
+        .delete('/api/v1/perfil')
+        .set('Authorization', `Bearer ${await signToken()}`);
+      expect(res.status).toBe(204);
+      expect(res.text).toBe('');
+      expect(profileStore.deleteAccount).toHaveBeenCalledWith('user-123');
+    });
+
+    it('sense JWT respon 401 i no esborra res', async () => {
+      const res = await request(jwtApp).delete('/api/v1/perfil');
+      expect(res.status).toBe(401);
+      expect(profileStore.deleteAccount).not.toHaveBeenCalled();
+    });
+
+    it('si la base de dades falla, respon 500 amb el format uniforme', async () => {
+      profileStore.deleteAccount.mockRejectedValueOnce(new Error('connexió perduda'));
+      const res = await request(jwtApp)
+        .delete('/api/v1/perfil')
+        .set('Authorization', `Bearer ${await signToken()}`);
+      expect(res.status).toBe(500);
+      expect(res.body.error.code).toBe('internal_error');
     });
   });
 

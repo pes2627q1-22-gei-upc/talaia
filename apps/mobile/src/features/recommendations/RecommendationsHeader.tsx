@@ -1,6 +1,7 @@
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 
-import { colors, radii, sizes, spacing } from '@/core/theme/tokens';
+import { makeStyles, useTheme } from '@/core/theme/theme';
+import { radii, sizes, spacing } from '@/core/theme/tokens';
 import { AppText } from '@/shared/ui/AppText';
 
 import type { RecommendationsViewModel } from './useRecommendationsViewModel';
@@ -9,6 +10,7 @@ type Header = RecommendationsViewModel['header'];
 
 /** La cerca que ha portat aquí («Pluja d'estels, aquesta nit · Des de Girona…»), mockup 03. */
 export function RecommendationsSummary({ header }: { header: Header }) {
+  const styles = useStyles();
   return (
     <View style={styles.card} accessible accessibilityRole="header">
       <AppText variant="label" numberOfLines={1}>
@@ -23,6 +25,8 @@ export function RecommendationsSummary({ header }: { header: Header }) {
 
 /** Què vol dir el color dels marcadors. */
 export function IndexLegend({ items }: { items: Header['legend'] }) {
+  const styles = useStyles();
+  const { colors } = useTheme();
   return (
     <View style={styles.legend}>
       {items.map((item) => (
@@ -35,7 +39,7 @@ export function IndexLegend({ items }: { items: Header['legend'] }) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(({ colors }) => ({
   card: {
     flex: 1,
     gap: spacing.xxs,
@@ -60,4 +64,4 @@ const styles = StyleSheet.create({
     backgroundColor: colors.sheet,
   },
   dot: { width: sizes.legendDot, height: sizes.legendDot, borderRadius: radii.pill },
-});
+}));

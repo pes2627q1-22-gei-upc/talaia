@@ -1,0 +1,358 @@
+import type { Alerta } from '@talaia/shared';
+import { QueryClient } from '@tanstack/react-query';
+import { act, renderHook, waitFor } from '@testing-library/react-native';
+import { useRouter } from 'expo-router';
+
+import { ApiError } from '@/core/api/httpClient';
+import i18n from '@/core/i18n';
+import { getCurrentPlace, placeName } from '@/features/explore/locationRepository';
+import { camera } from '@/features/map/useMapViewModel';
+import { createQueryWrapper } from '@/test-utils/queryWrapper';
+
+import { alertsRepository } from '../alertsRepository';
+import { useNewAlertViewModel } from '../useNewAlertViewModel';
+
+jest.mock('expo-router', () => ({ useRouter: jest.fn() }));
+jest.mock('@/features/explore/locationRepository', () => {
+  const { useQuery } = jest.requireActual('@tanstack/react-query');
+  const { CURRENT_PLACE_KEY } = jest.requireActual('@/features/explore/locationKeys');
+  const getCurrentPlace = jest.fn();
+  return {
+    getCurrentPlace,
+    placeName: jest.fn(),
+    useCurrentPlaceQuery: () =>
+      useQuery({ queryKey: CURRENT_PLACE_KEY, queryFn: getCurrentPlace, retry: false }),
+  };
+});
+jest.mock('../alertsRepository', () => ({
+  ...jest.requireActual('../alertsRepository'),
+  alertsRepository: { create: jest.fn(), list: jest.fn(), update: jest.fn() },
+}));
+
+const back = jest.fn();
+jest.mocked(useRouter).mockReturnValue({ back } as unknown as ReturnType<typeof useRouter>);
+const mockedPlace = jest.mocked(getCurrentPlace);
+const mockedName = jest.mocked(placeName);
+const mockedCreate = jest.mocked(alertsRepository.create);
+const mockedUpdate = jest.mocked(alertsRepository.update);
+const BARCELONA = {
+  status: 'ready',
+  place: { name: 'Barcelona', lat: 41.387412, lon: 2.168569 },
+} as const;
+
+function renderViewModel() {
+  return renderHook(() => useNewAlertViewModel(), { wrapper: createQueryWrapper() });
+}
+
+async function readyViewModel() {
+  mockedPlace.mockResolvedValue(BARCELONA);
+  const rendered = await renderViewModel();
+  await waitFor(() => expect(rendered.result.current.cta.disabled).toBe(false));
+  return rendered;
+}
+
+describe('useNewAlertViewModel', () => {
+  beforeEach(async () => {
+    back.mockReset();
+    mockedPlace.mockReset();
+    mockedName.mockReset();
+    mockedCreate.mockReset();
+    mockedUpdate.mockReset();
+    await i18n.changeLanguage('ca');
+  });
+
+  it('arrenca com el mockup: cel estrellat, la meva ubicació, 2 h 30 min, 75 i a les 18:00', async () => {
+    mockedPlace.mockReturnValue(new Promise(() => undefined));
+    const { result } = await renderViewModel();
+    const vm = result.current;
+
+    expect(vm.title).toBe('Nova alerta');
+    expect(vm.goals.find((goal) => goal.selected)?.id).toBe('cel_estrellat');
+    expect(vm.originModes.options).toEqual(['La meva ubicació', 'Una zona concreta']);
+    expect(vm.originModes.selectedIndex).toBe(0);
+    expect(vm.origin.state).toBe('loading');
+    expect(vm.travel.label).toBe('2 h 30 min');
+    expect(vm.minIndex).toMatchObject({ label: '75, cel ras', color: 'ras' });
+    expect(vm.notifyOptions.map((option) => [option.label, option.selected])).toEqual([
+      ["Quan s'hi arribi", false],
+      ['A una hora', true],
+    ]);
+    expect(vm.notifyHour?.label).toBe('El mateix dia a les 18:00');
+    expect(vm.cta).toMatchObject({ label: "Crea l'alerta", disabled: true });
+    expect(vm.error).toBeNull();
+  });
+
+  it('el valor de l’índex porta el nom i el color de la franja', async () => {
+    const { result } = await readyViewModel();
+    await act(() => result.current.minIndex.onChange(40));
+    expect(result.current.minIndex).toMatchObject({ label: '40, justet', color: 'jus' });
+    await act(() => result.current.minIndex.onChange(35));
+    expect(result.current.minIndex).toMatchObject({ label: '35, tapat', color: 'tap' });
+  });
+
+  it('no deixa triar els fenòmens que encara no tenen índex', async () => {
+    const { result } = await readyViewModel();
+    const posta = result.current.goals.find((goal) => goal.id === 'posta_sol');
+    expect(posta).toMatchObject({ disabled: true, badge: 'Aviat' });
+    await act(() => posta?.onPress());
+    expect(result.current.goals.find((goal) => goal.selected)?.id).toBe('cel_estrellat');
+  });
+
+  it('crea l’alerta amb el temps convertit a km i els avisos, i torna enrere', async () => {
+    mockedCreate.mockResolvedValue({} as never);
+    const { result } = await readyViewModel();
+
+    await act(() => result.current.goals.find((goal) => goal.id === 'via_lactia')?.onPress());
+    await act(() => result.current.travel.onChange(240));
+    await act(() => result.current.minIndex.onChange(85));
+    await act(() => result.current.notifyOptions[0]?.onPress());
+    await act(() => result.current.hourSheet.onChange(21));
+    await act(() => result.current.cta.onPress());
+
+    await waitFor(() => expect(back).toHaveBeenCalledTimes(1));
+    expect(mockedCreate.mock.calls[0]?.[0]).toEqual({
+      objectiu: 'via_lactia',
+      origen: { lat: 41.387, lon: 2.169 },
+      // 4 h a 60 km/h amb el desviament ×1,3 de les recomanacions.
+      distanciaMaxKm: 185,
+      indexMinim: 85,
+      avisaEnArribar: true,
+      horaAvis: 21,
+    });
+  });
+
+  it('només en arribar a l’índex: sense hora, i sense cap avís no es pot crear', async () => {
+    mockedCreate.mockResolvedValue({} as never);
+    const { result } = await readyViewModel();
+
+    await act(() => result.current.notifyOptions[1]?.onPress());
+    expect(result.current.notifyHour).toBeNull();
+    expect(result.current.notifyHint).toBe("Tria com a mínim una manera d'avisar-te.");
+    expect(result.current.cta.disabled).toBe(true);
+
+    await act(() => result.current.notifyOptions[0]?.onPress());
+    expect(result.current.notifyHint).toBeNull();
+    await act(() => result.current.cta.onPress());
+    await waitFor(() => expect(mockedCreate).toHaveBeenCalledTimes(1));
+    expect(mockedCreate.mock.calls[0]?.[0]).toMatchObject({
+      avisaEnArribar: true,
+      horaAvis: null,
+    });
+  });
+
+  it('una zona concreta: obre el mapa, en pren el centre i el nom, i hi crea l’alerta', async () => {
+    mockedName.mockResolvedValue('Berga');
+    mockedCreate.mockResolvedValue({} as never);
+    const { result } = await readyViewModel();
+
+    await act(() => result.current.originModes.onChange(1));
+    expect(result.current.zoneSheet.visible).toBe(true);
+    // El mapa comença on és l'usuari.
+    expect(result.current.zoneSheet.center).toEqual({ lat: 41.387412, lon: 2.168569 });
+    expect(result.current.cta.disabled).toBe(true);
+
+    await act(() => result.current.zoneSheet.onCenterChange({ lat: 42.1034, lon: 1.8456 }));
+    await act(() => result.current.zoneSheet.confirm.onPress());
+    await waitFor(() => expect(result.current.zoneSheet.visible).toBe(false));
+    expect(mockedName).toHaveBeenCalledWith(42.1034, 1.8456);
+    expect(result.current.origin).toMatchObject({ label: 'Berga', hint: 'Canvia' });
+
+    await act(() => result.current.cta.onPress());
+    await waitFor(() => expect(mockedCreate).toHaveBeenCalledTimes(1));
+    expect(mockedCreate.mock.calls[0]?.[0].origen).toEqual({ lat: 42.103, lon: 1.846 });
+  });
+
+  it('moure el mapa, tancar-lo sense triar i reobrir-lo desa el centre que es veu', async () => {
+    mockedName.mockResolvedValue('Barcelona');
+    const { result } = await readyViewModel();
+    await act(() => result.current.originModes.onChange(1));
+    await act(() => result.current.zoneSheet.onCenterChange({ lat: 42.1034, lon: 1.8456 }));
+    await act(() => result.current.zoneSheet.onClose());
+
+    await act(() => result.current.origin.onPress?.());
+    expect(result.current.zoneSheet.center).toEqual({ lat: 41.387412, lon: 2.168569 });
+    await act(() => result.current.zoneSheet.confirm.onPress());
+    await waitFor(() => expect(result.current.zoneSheet.visible).toBe(false));
+    expect(mockedName).toHaveBeenCalledWith(41.387412, 2.168569);
+  });
+
+  it('si la ubicació arriba amb el mapa obert, confirmar sense moure’l desa el centre que es veu', async () => {
+    let locate: (value: typeof BARCELONA) => void = () => undefined;
+    mockedPlace.mockReturnValue(new Promise((resolve) => (locate = resolve)));
+    mockedName.mockResolvedValue('');
+    const { result } = await renderViewModel();
+    await act(() => result.current.originModes.onChange(1));
+    const shown = { lat: camera.center[1], lon: camera.center[0] };
+    expect(result.current.zoneSheet.center).toEqual(shown);
+
+    await act(async () => locate(BARCELONA));
+    await waitFor(() => expect(result.current.zoneSheet.zoom).toBe(10));
+    await act(() => result.current.zoneSheet.confirm.onPress());
+    await waitFor(() => expect(result.current.zoneSheet.visible).toBe(false));
+    expect(mockedName).toHaveBeenCalledWith(shown.lat, shown.lon);
+  });
+
+  it('el nom d’una zona confirmada i tancada no desa res ni tanca el mapa reobert', async () => {
+    let name: (value: string) => void = () => undefined;
+    mockedName.mockReturnValueOnce(new Promise((resolve) => (name = resolve)));
+    const { result } = await readyViewModel();
+    await act(() => result.current.originModes.onChange(1));
+    await act(() => result.current.zoneSheet.onCenterChange({ lat: 42.1034, lon: 1.8456 }));
+    await act(() => result.current.zoneSheet.confirm.onPress());
+    await act(() => result.current.zoneSheet.onClose());
+    await act(() => result.current.origin.onPress?.());
+
+    await act(async () => name('Berga'));
+    expect(result.current.zoneSheet.visible).toBe(true);
+    expect(result.current.zoneSheet.confirm.disabled).toBe(false);
+    expect(result.current.origin).toMatchObject({ label: 'Cap zona triada' });
+  });
+
+  it('si es tanca el mapa sense triar, no hi ha zona i no es pot crear', async () => {
+    const { result } = await readyViewModel();
+    await act(() => result.current.originModes.onChange(1));
+    await act(() => result.current.zoneSheet.onClose());
+    expect(result.current.origin).toMatchObject({ label: 'Cap zona triada', hint: 'Tria-la' });
+    expect(result.current.cta.disabled).toBe(true);
+
+    await act(() => result.current.originModes.onChange(0));
+    expect(result.current.cta.disabled).toBe(false);
+  });
+
+  it('mentre desa, el botó diu «Creant…» i no es pot tornar a prémer', async () => {
+    mockedCreate.mockReturnValue(new Promise(() => undefined));
+    const { result } = await readyViewModel();
+
+    await act(() => result.current.cta.onPress());
+    await waitFor(() => expect(result.current.cta.label).toBe("Creant l'alerta…"));
+    expect(result.current.cta.disabled).toBe(true);
+    await act(() => result.current.cta.onPress());
+    expect(mockedCreate).toHaveBeenCalledTimes(1);
+  });
+
+  it('si ja té el màxim d’alertes, ho diu i es queda a la pantalla', async () => {
+    mockedCreate.mockRejectedValue(new ApiError(409, 'alert_limit_reached', 'Massa alertes'));
+    const { result } = await readyViewModel();
+
+    await act(() => result.current.cta.onPress());
+    await waitFor(() => expect(result.current.error).toMatch(/màxim d'alertes/));
+    expect(back).not.toHaveBeenCalled();
+    expect(result.current.cta.disabled).toBe(false);
+  });
+
+  it('qualsevol altre error demana tornar-ho a provar', async () => {
+    mockedCreate.mockRejectedValue(new Error('network'));
+    const { result } = await readyViewModel();
+
+    await act(() => result.current.cta.onPress());
+    await waitFor(() =>
+      expect(result.current.error).toBe("No hem pogut crear l'alerta. Torna-ho a provar."),
+    );
+  });
+
+  it('sense ubicació no es pot crear', async () => {
+    mockedPlace.mockResolvedValue({ status: 'denied', canAskAgain: true });
+    const { result } = await renderViewModel();
+    await waitFor(() => expect(result.current.origin.state).toBe('denied'));
+    expect(result.current.cta.disabled).toBe(true);
+    await act(() => result.current.cta.onPress());
+    expect(mockedCreate).not.toHaveBeenCalled();
+  });
+
+  describe('editar una alerta (HU18)', () => {
+    const SAVED: Alerta = {
+      id: 'a1',
+      objectiu: 'pluja_estels',
+      origen: { lat: 42.1, lon: 1.845 },
+      distanciaMaxKm: 115,
+      indexMinim: 60,
+      avisaEnArribar: true,
+      horaAvis: null,
+      activa: true,
+      dataCreacio: '2026-11-12T19:00:00Z',
+      dataActualitzacio: '2026-11-12T19:00:00Z',
+    };
+
+    async function editViewModel() {
+      mockedPlace.mockResolvedValue(BARCELONA);
+      mockedName.mockResolvedValue('Berga');
+      const rendered = await renderHook(() => useNewAlertViewModel(SAVED), {
+        wrapper: createQueryWrapper(),
+      });
+      await waitFor(() => expect(rendered.result.current.origin.label).toBe('Berga'));
+      return rendered;
+    }
+
+    it('arrenca amb els valors desats i l’origen com a zona amb el seu nom', async () => {
+      const { result } = await editViewModel();
+      const vm = result.current;
+
+      expect(vm.title).toBe("Edita l'alerta");
+      expect(vm.goals.find((goal) => goal.selected)?.id).toBe('pluja_estels');
+      expect(vm.originModes.selectedIndex).toBe(1);
+      expect(mockedName).toHaveBeenCalledWith(42.1, 1.845);
+      expect(vm.zoneSheet.center).toEqual({ lat: 42.1, lon: 1.845 });
+      expect(vm.travel.label).toBe('2 h 30 min');
+      expect(vm.minIndex.label).toBe('60, justet');
+      expect(vm.notifyOptions.map((option) => option.selected)).toEqual([true, false]);
+      expect(vm.notifyHour).toBeNull();
+      // Sense cap canvi no hi ha res a desar.
+      expect(vm.cta).toMatchObject({ label: 'Desa els canvis', disabled: true });
+    });
+
+    it('desa només el que canvia amb PATCH, invalida la llista i torna enrere', async () => {
+      const invalidate = jest.spyOn(QueryClient.prototype, 'invalidateQueries');
+      mockedUpdate.mockResolvedValue({} as never);
+      const { result } = await editViewModel();
+
+      await act(() => result.current.goals.find((goal) => goal.id === 'via_lactia')?.onPress());
+      await act(() => result.current.minIndex.onChange(80));
+      expect(result.current.cta.disabled).toBe(false);
+      await act(() => result.current.cta.onPress());
+
+      await waitFor(() => expect(back).toHaveBeenCalledTimes(1));
+      expect(mockedCreate).not.toHaveBeenCalled();
+      expect(mockedUpdate).toHaveBeenCalledWith('a1', { objectiu: 'via_lactia', indexMinim: 80 });
+      expect(invalidate).toHaveBeenCalledWith({ queryKey: ['alertes'] });
+      invalidate.mockRestore();
+    });
+
+    it('canviar a la meva ubicació i a una hora també es desa', async () => {
+      mockedUpdate.mockResolvedValue({} as never);
+      const { result } = await editViewModel();
+
+      await act(() => result.current.originModes.onChange(0));
+      await act(() => result.current.notifyOptions[1]?.onPress());
+      await act(() => result.current.travel.onChange(240));
+      await act(() => result.current.cta.onPress());
+
+      await waitFor(() => expect(mockedUpdate).toHaveBeenCalledTimes(1));
+      expect(mockedUpdate).toHaveBeenCalledWith('a1', {
+        origen: { lat: 41.387, lon: 2.169 },
+        distanciaMaxKm: 185,
+        horaAvis: 18,
+      });
+    });
+
+    it('tornar al valor desat deixa el botó desactivat', async () => {
+      const { result } = await editViewModel();
+      await act(() => result.current.minIndex.onChange(80));
+      expect(result.current.cta.disabled).toBe(false);
+      await act(() => result.current.minIndex.onChange(60));
+      expect(result.current.cta.disabled).toBe(true);
+    });
+
+    it('si el PATCH falla, ho diu i es queda a la pantalla', async () => {
+      mockedUpdate.mockRejectedValue(new Error('network'));
+      const { result } = await editViewModel();
+
+      await act(() => result.current.minIndex.onChange(80));
+      await act(() => result.current.cta.onPress());
+
+      await waitFor(() =>
+        expect(result.current.error).toBe('No hem pogut desar els canvis. Torna-ho a provar.'),
+      );
+      expect(back).not.toHaveBeenCalled();
+    });
+  });
+});

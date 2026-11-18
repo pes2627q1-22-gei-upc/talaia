@@ -1,6 +1,6 @@
 import * as Location from 'expo-location';
 
-import { getCurrentPlace } from '../locationRepository';
+import { getCurrentPlace, PLACE_NAME_TIMEOUT_MS, placeName } from '../locationRepository';
 
 jest.mock('expo-location', () => ({
   PermissionStatus: { GRANTED: 'granted', DENIED: 'denied' },
@@ -60,5 +60,17 @@ describe('getCurrentPlace', () => {
       status: 'ready',
       place: { name: '', lat: 41.98, lon: 2.82 },
     });
+  });
+});
+
+describe('placeName', () => {
+  afterEach(() => jest.useRealTimers());
+
+  it('si el geocodificador es penja, deixa el nom buit al cap de poc', async () => {
+    jest.useFakeTimers();
+    location.reverseGeocodeAsync.mockReturnValue(new Promise(() => undefined));
+    const name = placeName(41.39, 2.17);
+    jest.advanceTimersByTime(PLACE_NAME_TIMEOUT_MS);
+    await expect(name).resolves.toBe('');
   });
 });

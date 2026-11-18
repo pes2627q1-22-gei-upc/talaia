@@ -1,9 +1,10 @@
 import { Image } from 'expo-image';
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 import { GestureHandlerRootView, ScrollView } from 'react-native-gesture-handler';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { colors, radii, sizes, spacing } from '@/core/theme/tokens';
+import { makeStyles, useTheme } from '@/core/theme/theme';
+import { radii, sizes, spacing } from '@/core/theme/tokens';
 import { AppText } from '@/shared/ui/AppText';
 import { MonthCalendar } from '@/shared/ui/MonthCalendar';
 import { PressableScale } from '@/shared/ui/PressableScale';
@@ -16,6 +17,8 @@ import { useCalendarViewModel } from './useCalendarViewModel';
 
 /** Calendari mensual de fenòmens (HU09, mockup 08). */
 export function CalendarScreen() {
+  const styles = useStyles();
+  const { colors } = useTheme();
   const vm = useCalendarViewModel();
 
   return (
@@ -226,7 +229,7 @@ export function CalendarScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(({ colors }) => ({
   screen: { flex: 1, backgroundColor: colors.nit },
   content: {
     paddingHorizontal: spacing.ml,
@@ -372,4 +375,4 @@ const styles = StyleSheet.create({
     backgroundColor: colors.vel,
     borderRadius: radii.pill,
   },
-});
+}));

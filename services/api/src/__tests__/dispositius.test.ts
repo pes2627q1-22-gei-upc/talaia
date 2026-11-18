@@ -39,6 +39,7 @@ const profileStore = (bloquejat = false): ProfileStore => ({
   getAccountStatus: async () => ({ perfilId: 'perfil-1', rol: 'usuari', bloquejat }),
   listProfiles: notUsed,
   setBlocked: notUsed,
+  deleteAccount: notUsed,
 });
 
 function setup(registered = true, bloquejat = false) {

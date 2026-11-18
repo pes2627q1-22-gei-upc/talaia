@@ -50,3 +50,6 @@ yarn-error.log*
 
 # Claude Code (configuració personal)
 .claude/settings.local.json
+.claude/agent-memory-local/
+.claude/worktrees/
+CLAUDE.local.md

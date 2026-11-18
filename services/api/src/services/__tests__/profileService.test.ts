@@ -83,6 +83,25 @@ describe('createDatabaseProfileStore.ensureProfile', () => {
     await expect(createDatabaseProfileStore(db).ensureProfile(MARIA)).rejects.toThrow();
   });
 
+  it("amb el JWT d'un compte ja esborrat, 401 en lloc d'un 500 de la clau forana", async () => {
+    const { db } = fakeDb();
+    const foreignKey = Object.assign(new Error('violates foreign key constraint'), {
+      code: '23503',
+    });
+    jest.spyOn(db.getExecutor(), 'executeQuery').mockRejectedValueOnce(foreignKey);
+    await expect(createDatabaseProfileStore(db).ensureProfile(MARIA)).rejects.toMatchObject({
+      status: 401,
+      code: 'unauthorized',
+    });
+  });
+
+  it('qualsevol altre error de la base de dades es propaga tal qual', async () => {
+    const { db } = fakeDb();
+    const down = new Error('connect ECONNREFUSED');
+    jest.spyOn(db.getExecutor(), 'executeQuery').mockRejectedValueOnce(down);
+    await expect(createDatabaseProfileStore(db).ensureProfile(MARIA)).rejects.toBe(down);
+  });
+
   describe('el nom del perfil nou', () => {
     const nomInserit = async (user: AuthenticatedUser, hints?: { nom?: string }) => {
       const { db, queries } = fakeDb([FILA]);
@@ -258,5 +277,15 @@ describe('createDatabaseProfileStore.setBlocked', () => {
   it('torna null si el perfil no existeix', async () => {
     const { db } = fakeDb([]);
     await expect(createDatabaseProfileStore(db).setBlocked('perfil-x', true)).resolves.toBeNull();
+  });
+});
+
+describe('createDatabaseProfileStore.deleteAccount', () => {
+  it("esborra l'usuari d'Auth: la resta cau en cascada", async () => {
+    const { db, queries } = fakeDb([]);
+    await expect(createDatabaseProfileStore(db).deleteAccount(MARIA.id)).resolves.toBeUndefined();
+    expect(queries).toHaveLength(1);
+    expect(queries[0]?.sql).toBe('delete from auth.users where id = $1');
+    expect(queries[0]?.parameters).toEqual([MARIA.id]);
   });
 });

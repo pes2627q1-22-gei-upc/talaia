@@ -1,6 +1,7 @@
 import { Text, type TextProps } from 'react-native';
 
-import { type ColorToken, colors, type TypographyToken, typography } from '@/core/theme/tokens';
+import { useTheme } from '@/core/theme/theme';
+import { type ColorToken, type TypographyToken, typography } from '@/core/theme/tokens';
 
 type AppTextProps = TextProps & {
   variant?: TypographyToken;
@@ -9,5 +10,6 @@ type AppTextProps = TextProps & {
 
 /** Text amb la tipografia i el color del tema. Cap pantalla posa `fontSize` ni `fontFamily` a mà. */
 export function AppText({ variant = 'body', color = 'lluna', style, ...rest }: AppTextProps) {
+  const { colors } = useTheme();
   return <Text style={[typography[variant], { color: colors[color] }, style]} {...rest} />;
 }
