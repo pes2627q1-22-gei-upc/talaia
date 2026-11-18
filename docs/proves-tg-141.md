@@ -143,3 +143,12 @@ Validació amb Node 22.23.3 i `npm ci`: app **100 suites, 714 tests**; API
 lint i format correctes, amb els avisos d'i18n i ts-jest ja documentats.
 El typecheck de l'app s'ha repetit després d'apartar els tipus locals generats
 d'Expo Router, desfasats amb les rutes noves de snapshot.
+
+Després de la fusió de la PR #131 a snapshot (`50eff61`), s'han combinat les
+cerques d'Explora, A prop meu i esdeveniments al parser, repositori i ViewModel.
+El mapa conserva el botó flotant, el selector d'origen i la zona segura del
+rànquing. Es conserven els tests de les dues branques i es comprova que el full
+d'A prop meu es pot plegar i recuperar. Resultat: **101 suites i 735 tests de
+l'app correctes**, typecheck i lint de l'app i format del repositori correctes.
+També s'ha incorporat snapshot a `67f0988` (avisos de desplegament), sense
+conflictes ni canvis addicionals a l'app.
