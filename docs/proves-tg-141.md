@@ -131,3 +131,15 @@ continua sent una API experimental; cal revisar-la en actualitzar la dependènci
 No s'han aportat captures/vídeo, model, versió d'iOS ni mida de text. La revisió
 visual de l'estat passat afegit en aquesta correcció queda pendent. El registre
 amb el format de `docs/testing-ui.md` és a `docs/testing-ui-inventari.md`.
+
+## Fusió de snapshot i resolució de conflictes
+
+Integrat `origin/snapshot` a `e82a923`. El conflicte de `RecommendationsSheet`
+es resol conservant els gestos, les distàncies i l'error sense reintent de
+TG-141, i els estils i la icona del cotxe adaptats al tema de TG-239.
+
+Validació amb Node 22.23.3 i `npm ci`: app **100 suites, 714 tests**; API
+**42 suites, 843 tests**; tots correctes. Typecheck de tots els workspaces,
+lint i format correctes, amb els avisos d'i18n i ts-jest ja documentats.
+El typecheck de l'app s'ha repetit després d'apartar els tipus locals generats
+d'Expo Router, desfasats amb les rutes noves de snapshot.

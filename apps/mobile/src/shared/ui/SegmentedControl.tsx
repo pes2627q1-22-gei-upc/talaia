@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useReducedMotion,
@@ -7,7 +7,8 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-import { colors, motion, radii, spacing } from '@/core/theme/tokens';
+import { makeStyles } from '@/core/theme/theme';
+import { motion, radii, spacing } from '@/core/theme/tokens';
 
 import { AppText } from './AppText';
 import { PressableScale } from './PressableScale';
@@ -31,6 +32,7 @@ export function SegmentedControl({
   onChange,
   onReselect,
 }: SegmentedControlProps) {
+  const styles = useStyles();
   const reduceMotion = useReducedMotion();
   const [width, setWidth] = useState(0);
   const segment = width > 0 ? (width - INSET * (options.length + 1)) / options.length : 0;
@@ -76,7 +78,7 @@ export function SegmentedControl({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(({ colors }) => ({
   container: {
     flexDirection: 'row',
     gap: INSET,
@@ -100,4 +102,4 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-});
+}));

@@ -18,6 +18,11 @@ export type PuntsService = {
   getMapDocument(bbox?: Bbox, acceptLanguage?: string): Promise<VersionedMapDocument>;
   /** La fitxa d'un punt publicat amb l'índex de l'hora en curs i de les `hores` següents. */
   getFitxa(id: string, hores: number, now?: Date, acceptLanguage?: string): Promise<PuntFitxa>;
+  /**
+   * El catàleg ha canviat (administració, TG-174): la petició següent a `/punts` regenera el
+   * document. La fitxa i les recomanacions no en tenen cap còpia: ja llegeixen la base de dades.
+   */
+  invalidateMapDocument(): void;
 };
 
 /** Inici de l'hora en curs (UTC): és la `hora` amb què el worker desa l'índex. */
@@ -71,6 +76,10 @@ export function createPuntsService(
       }
       return { ...puntLocalitzat(punt, acceptLanguage), index: splitIndexHores(files, horaActual) };
     },
+
+    invalidateMapDocument() {
+      cache.invalidate();
+    },
   };
 }
 
@@ -106,6 +115,11 @@ export function createDefaultPuntsService(
           caches.set(preferencies, cache);
         }
         return cache.get();
+      },
+      // Un canvi del catàleg (TG-174) val per a tots els idiomes: cap document no es pot quedar amb
+      // el punt d'abans.
+      invalidate: () => {
+        for (const cache of caches.values()) cache.invalidate();
       },
     },
     repository,

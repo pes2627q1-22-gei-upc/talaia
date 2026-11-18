@@ -14,7 +14,8 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { gradients, motion, radii, sizes, spacing } from '@/core/theme/tokens';
+import { useTheme } from '@/core/theme/theme';
+import { motion, radii, sizes, spacing } from '@/core/theme/tokens';
 import { AppText } from '@/shared/ui/AppText';
 import { Button } from '@/shared/ui/Button';
 
@@ -84,6 +85,7 @@ function Logo({ t, label }: { t: SharedValue<number>; label: string }) {
 
 /** Benvinguda i accés (HU35, mockup 01). Google i Apple hi inicien sessió; el correu, a part. */
 export function WelcomeScreen() {
+  const { gradients } = useTheme();
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
   const [contentHeight, setContentHeight] = useState(0);

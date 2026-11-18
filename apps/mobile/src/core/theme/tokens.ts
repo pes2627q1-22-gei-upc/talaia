@@ -65,6 +65,55 @@ export const pointMapColors = {
   markerHalo: '#5FD4C42E',
 } as const;
 
+/**
+ * Mode nit (ADR-0032): vermell sobre negre, perquè el blau i el verd trenquen l'adaptació de l'ull a
+ * la foscor. Només el canal vermell, text ≥ 4,5:1 i accents ≥ 3:1 sobre totes les superfícies: ho
+ * comprova `__tests__/palettes.test.ts`. Les pantalles no llegeixen aquestes constants: fan servir
+ * `useTheme()` i `makeStyles()` (`theme.tsx`).
+ */
+export const colorsVermell = {
+  nit: '#000000',
+  card: '#0F0000',
+  sheet: '#120000',
+  vel: '#170000',
+  crep: '#1C0000',
+  linia: '#2E0000',
+  vora: '#5A0000',
+  lluna: '#FF0000',
+  boira: '#F20000',
+  far: '#FF0000',
+  ubicacio: '#FF0000',
+  ras: '#FF0000',
+  jus: '#DC0000',
+  tap: '#BE0000',
+  pedra: '#C80000',
+  fenomenEstels: '#C80000',
+  fenomenLluna: '#C80000',
+  fenomenSol: '#C80000',
+  fenomenConjuncio: '#C80000',
+} as const satisfies Record<ColorToken, string>;
+
+export const gradientsVermell = {
+  cel: { colors: ['#000000', '#0A0000', '#170000'], locations: gradients.cel.locations },
+  pointMapFade: {
+    colors: ['transparent', 'transparent', '#00000033', colorsVermell.nit],
+    locations: gradients.pointMapFade.locations,
+  },
+  statusScrim: {
+    colors: [colorsVermell.nit, 'transparent'],
+    locations: gradients.statusScrim.locations,
+  },
+  eventSky: { colors: ['#1C0000', '#000000'], locations: gradients.eventSky.locations },
+  eventHorizon: { colors: ['#00000000', '#000000'], locations: gradients.eventHorizon.locations },
+} as const;
+
+export const pointMapColorsVermell = {
+  shadow: '#00000047',
+  markerPulse: '#FF0000B8',
+  markerGlow: '#FF0000B3',
+  markerHalo: '#FF00002E',
+} as const;
+
 export const spacing = {
   /** Entre un títol i el seu subtítol. */
   xxs: 2,

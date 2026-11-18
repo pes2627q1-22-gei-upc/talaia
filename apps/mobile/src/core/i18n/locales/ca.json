@@ -171,8 +171,6 @@
     "createPlan": "Crea un pla",
     "mapsErrorTitle": "No hem pogut obrir el mapa",
     "mapsErrorMessage": "Torna-ho a provar d'aquí a un moment.",
-    "planSoonTitle": "Plans, aviat",
-    "planSoonMessage": "La creació de plans encara no està disponible.",
     "timezone": "Hora local de Catalunya · Europe/Madrid",
     "noHours": "Encara no hi ha previsió per a aquesta nit.",
     "hourA11y": "{{time}}: índex {{value}} de 100, {{level}}",
@@ -339,8 +337,6 @@
   },
   "alerts": {
     "title": "Alertes",
-    "soonTitle": "Aviat",
-    "soonMessage": "Aquí podràs crear alertes perquè t'avisem quan hi hagi bones condicions per al que vols veure.",
     "create": "Nova alerta",
     "new": {
       "title": "Nova alerta",
@@ -390,6 +386,25 @@
         "required": "Tria com a mínim una manera d'avisar-te."
       }
     },
+    "edit": {
+      "title": "Edita l'alerta",
+      "cta": "Desa els canvis",
+      "saving": "Desant els canvis…",
+      "errors": {
+        "generic": "No hem pogut desar els canvis. Torna-ho a provar."
+      },
+      "missingTitle": "No hem trobat aquesta alerta",
+      "missingMessage": "Potser l'has esborrada. Torna a la llista d'alertes."
+    },
+    "subtitle": "T'avisem només quan el cel acompanya.",
+    "summary": "A menys de {{travel}}, índex de {{index}} o més",
+    "toggle": "Alerta de {{name}}",
+    "editHint": "Obre l'alerta per editar-la",
+    "toggleError": "No hem pogut canviar l'alerta. Torna-ho a provar.",
+    "emptyTitle": "Encara no tens alertes",
+    "emptyMessage": "Crea'n una i t'avisarem quan hi hagi bones condicions per al que vols veure.",
+    "errorTitle": "No hem pogut carregar les alertes",
+    "retry": "Torna-ho a provar",
     "pushDenied": "Les notificacions estan desactivades: no t'avisarem al mòbil quan hi hagi bones condicions. Pots activar-les a la configuració.",
     "pushUnavailable": "Aquest dispositiu no pot rebre notificacions. La resta de l'app funciona igual.",
     "openSettings": "Obre la configuració"
@@ -484,6 +499,56 @@
     "emptyCatalog": "Encara no hi ha punts disponibles",
     "hideRanking": "Amaga el rànquing",
     "showRanking": "Mostra el rànquing"
+  },
+  "plans": {
+    "new": {
+      "header": "Nou pla",
+      "title": "Pla d'observació",
+      "point": "Punt d'observació",
+      "pointA11y": "Punt d'observació: {{name}}, {{municipality}}",
+      "pointUnavailable": "No hem pogut carregar el punt",
+      "day": "Dia",
+      "dayValue": "{{weekday}} {{day}} {{month}}",
+      "monthsShort": [
+        "de gen.",
+        "de febr.",
+        "de març",
+        "d'abr.",
+        "de maig",
+        "de juny",
+        "de jul.",
+        "d'ag.",
+        "de set.",
+        "d'oct.",
+        "de nov.",
+        "de des."
+      ],
+      "time": "Hora de sortida",
+      "hour": "Hora",
+      "minute": "Minuts",
+      "past": "L'hora de sortida ja ha passat. Tria'n una de més tard.",
+      "event": "Fenomen",
+      "eventValue": "{{type}}: {{name}}",
+      "noEvent": "Cap en concret",
+      "eventSheet": "Què aniràs a veure?",
+      "noEvents": "No hi ha cap fenomen del calendari al voltant d'aquest dia.",
+      "eventsError": "No hem pogut carregar els fenòmens",
+      "retry": "Torna-ho a provar",
+      "notes": "Notes",
+      "notesPlaceholder": "Roba d'abric, frontal vermell…",
+      "save": "Desa el pla",
+      "saving": "Desant…",
+      "dateSheet": "Tria el dia",
+      "timeSheet": "Hora de sortida",
+      "done": "Fet",
+      "close": "Tanca",
+      "errors": {
+        "alreadyExists": "Ja tens un pla en aquest punt a aquesta hora.",
+        "limitReached": "Has arribat al màxim de 20 plans pendents.",
+        "pointGone": "Aquest punt ja no està disponible.",
+        "generic": "No hem pogut desar el pla. Torna-ho a provar d'aquí a un moment."
+      }
+    }
   },
   "notifications": {
     "channelName": "Alertes del cel"

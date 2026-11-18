@@ -3,6 +3,7 @@ import type { Rol } from '@talaia/shared';
 import { sql } from 'kysely';
 
 import type { AuthenticatedUser } from '../middleware/auth';
+import { ApiError } from '../middleware/errors';
 
 export type ProfileRecord = {
   id: string;
@@ -36,9 +37,17 @@ export type ProfileStore = {
   listProfiles: () => Promise<ProfileRecord[]>;
   /** Bloqueja o desbloqueja el perfil `perfilId` (`perfils.id`); `null` si no existeix. */
   setBlocked: (perfilId: string, bloquejat: boolean) => Promise<ProfileRecord | null>;
+  /**
+   * Esborra l'usuari de Supabase Auth i, en cascada, totes les seves dades (HU38, RGPD). No falla
+   * si l'usuari ja no hi era: el `DELETE` és idempotent.
+   */
+  deleteAccount: (authUserId: string) => Promise<void>;
 };
 
 type Db = ReturnType<typeof createDb>;
+
+/** Codi d'error de Postgres quan una clau forana no troba la fila a què apunta. */
+const FOREIGN_KEY_VIOLATION = '23503';
 
 /** Perfils a la base de dades. Rep el pool de `server.ts`, el mateix que fan servir els punts. */
 export function createDatabaseProfileStore(db: Db): ProfileStore {
@@ -63,7 +72,15 @@ export function createDatabaseProfileStore(db: Db): ProfileStore {
         })
         .onConflict((oc) => oc.column('authUserId').doNothing())
         .returningAll()
-        .executeTakeFirst();
+        .executeTakeFirst()
+        .catch((error: unknown) => {
+          // El JWT d'un compte esborrat (DELETE /perfil) val fins que caduca, però el seu
+          // `auth.users` ja no hi és i la clau forana rebutja el perfil nou.
+          if ((error as { code?: unknown }).code === FOREIGN_KEY_VIOLATION) {
+            throw new ApiError(401, 'unauthorized', 'El compte ja no existeix');
+          }
+          throw error;
+        });
 
       if (inserted) {
         return { created: true, profile: deserializeProfile(inserted) };
@@ -128,6 +145,15 @@ export function createDatabaseProfileStore(db: Db): ProfileStore {
         .returningAll()
         .executeTakeFirst();
       return row ? deserializeProfile(row) : null;
+    },
+
+    async deleteAccount(authUserId) {
+      // Sense service role key a l'API: l'usuari de `DATABASE_URL` (`postgres`) pot esborrar a
+      // `auth.users`. La resta cau en cascada: `auth.users` → sessions, refresh tokens i
+      // identitats; `perfils` → alertes, dispositius push… Els punts que hagi creat es queden al
+      // catàleg sense creador (`creador_id` → null). Una taula nova amb dades de l'usuari ha de
+      // penjar de `perfils` amb `on delete cascade`.
+      await sql`delete from auth.users where id = ${authUserId}`.execute(db);
     },
   };
 }

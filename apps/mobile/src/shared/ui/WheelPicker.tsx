@@ -1,7 +1,7 @@
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { memo, useEffect, useRef, useState } from 'react';
-import { type NativeScrollEvent, type NativeSyntheticEvent, StyleSheet, View } from 'react-native';
+import { type NativeScrollEvent, type NativeSyntheticEvent, View } from 'react-native';
 import Animated, {
   type SharedValue,
   useAnimatedRef,
@@ -11,7 +11,8 @@ import Animated, {
 } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 
-import { colors, radii } from '@/core/theme/tokens';
+import { makeStyles, useTheme } from '@/core/theme/theme';
+import { radii } from '@/core/theme/tokens';
 
 import { AppText } from './AppText';
 
@@ -43,6 +44,7 @@ const WheelItem = memo(function WheelItem({
   label: string;
   y: SharedValue<number>;
 }) {
+  const styles = useStyles();
   // Cada fila gira com si fos sobre un cilindre: com més lluny del centre, més inclinada i fosa.
   const style = useAnimatedStyle(() => {
     const offset = Math.max(-3, Math.min(3, (index * WHEEL_ITEM - y.get()) / WHEEL_ITEM));
@@ -72,6 +74,8 @@ export function WheelPicker({
   band = true,
   testID,
 }: WheelPickerProps) {
+  const styles = useStyles();
+  const { colors } = useTheme();
   const count = values.length;
   const indexOf = (v: number) => CENTER * count + Math.max(0, values.indexOf(v));
   const data = Array.from({ length: count * REPEAT }, (_, i) => values[i % count] ?? 0);
@@ -181,7 +185,7 @@ export function WheelPicker({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(({ colors }) => ({
   wheel: { height: WHEEL_HEIGHT, flex: 1, overflow: 'hidden' },
   content: { paddingVertical: WHEEL_ITEM * 2 },
   item: { height: WHEEL_ITEM, alignItems: 'center', justifyContent: 'center' },
@@ -197,4 +201,4 @@ const styles = StyleSheet.create({
   fade: { position: 'absolute', right: 0, left: 0, height: WHEEL_ITEM * 1.6 },
   top: { top: 0 },
   bottom: { bottom: 0 },
-});
+}));

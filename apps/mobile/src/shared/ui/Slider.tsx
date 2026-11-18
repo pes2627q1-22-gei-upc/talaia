@@ -1,6 +1,6 @@
 import * as Haptics from 'expo-haptics';
 import { useEffect, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   useAnimatedStyle,
@@ -10,7 +10,8 @@ import Animated, {
 } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 
-import { type ColorToken, colors, motion, radii } from '@/core/theme/tokens';
+import { makeStyles, useTheme } from '@/core/theme/theme';
+import { type ColorToken, motion, radii } from '@/core/theme/tokens';
 
 type SliderProps = {
   value: number;
@@ -57,6 +58,8 @@ export function Slider({
   testID = 'slider',
   segments,
 }: SliderProps) {
+  const styles = useStyles();
+  const { colors } = useTheme();
   const reduceMotion = useReducedMotion();
   const [width, setWidth] = useState(0);
   const track = Math.max(0, width - EDGE * 2);
@@ -157,7 +160,7 @@ export function Slider({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(({ colors }) => ({
   container: { height: HEIGHT, justifyContent: 'center' },
   track: {
     height: TRACK,
@@ -181,4 +184,4 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 4,
   },
-});
+}));
