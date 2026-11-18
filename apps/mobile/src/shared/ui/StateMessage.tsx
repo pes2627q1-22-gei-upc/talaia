@@ -1,7 +1,8 @@
 import { Image, type ImageSource } from 'expo-image';
 import { StyleSheet, View } from 'react-native';
 
-import { colors, sizes, spacing } from '@/core/theme/tokens';
+import { useTheme } from '@/core/theme/theme';
+import { sizes, spacing } from '@/core/theme/tokens';
 
 import { AppText } from './AppText';
 import { Button } from './Button';
@@ -19,6 +20,7 @@ type StateMessageProps = {
 
 /** Estat buit o d'error d'una pantalla o d'una secció. */
 export function StateMessage({ title, message, action, icon, fill }: StateMessageProps) {
+  const { colors } = useTheme();
   return (
     <View style={[styles.container, fill && styles.fill]} accessibilityLiveRegion="polite">
       {icon ? (

@@ -3,7 +3,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { colors, gradients, radii, sizes, spacing } from '@/core/theme/tokens';
+import { makeStyles, useTheme } from '@/core/theme/theme';
+import { radii, sizes, spacing } from '@/core/theme/tokens';
 import { AppText } from '@/shared/ui/AppText';
 
 const radiant = require('@/assets/images/event/radiant.svg');
@@ -44,6 +45,8 @@ type EventSkyProps = {
 
 /** Targeta del cel de la fitxa (mockup 09): el radiant amb la icona del fenomen, sobre l'horitzó. */
 export function EventSky({ seed, icon, meteors, caption }: EventSkyProps) {
+  const styles = useStyles();
+  const { colors, gradients } = useTheme();
   const stars = useMemo(() => {
     const next = random(seed);
     return Array.from({ length: STARS }, () => {
@@ -102,7 +105,7 @@ export function EventSky({ seed, icon, meteors, caption }: EventSkyProps) {
 
 const half = sizes.eventRadiant / 2;
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(({ colors }) => ({
   card: {
     height: sizes.eventSky,
     borderRadius: radii.lg,
@@ -133,4 +136,4 @@ const styles = StyleSheet.create({
   },
   horizon: { position: 'absolute', left: 0, right: 0, bottom: 0, height: sizes.eventHorizon },
   caption: { position: 'absolute', right: spacing.ms, bottom: spacing.sm, maxWidth: '60%' },
-});
+}));

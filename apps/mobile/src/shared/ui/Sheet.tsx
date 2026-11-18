@@ -1,5 +1,5 @@
 import { type PropsWithChildren, useEffect, useState } from 'react';
-import { Modal, Pressable, StyleSheet, View } from 'react-native';
+import { Modal, Pressable, View } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useReducedMotion,
@@ -9,7 +9,8 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { scheduleOnRN } from 'react-native-worklets';
 
-import { colors, motion, radii, spacing } from '@/core/theme/tokens';
+import { makeStyles } from '@/core/theme/theme';
+import { motion, radii, spacing } from '@/core/theme/tokens';
 
 import { AppText } from './AppText';
 
@@ -29,6 +30,7 @@ const BACKDROP = 0.6;
  * tocar fora o amb el botó enrere d'Android. Amb «reduir moviment», només una fosa.
  */
 export function Sheet({ visible, onClose, title, closeLabel, children }: SheetProps) {
+  const styles = useStyles();
   const reduceMotion = useReducedMotion();
   const insets = useSafeAreaInsets();
   const [mounted, setMounted] = useState(visible);
@@ -90,7 +92,7 @@ export function Sheet({ visible, onClose, title, closeLabel, children }: SheetPr
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(({ colors }) => ({
   fill: { flex: 1 },
   backdrop: {
     position: 'absolute',
@@ -122,4 +124,4 @@ const styles = StyleSheet.create({
     borderRadius: radii.pill,
     backgroundColor: colors.vora,
   },
-});
+}));
