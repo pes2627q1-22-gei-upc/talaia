@@ -8,7 +8,8 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-import { colors, motion, radii } from '@/core/theme/tokens';
+import { useTheme } from '@/core/theme/theme';
+import { motion, radii } from '@/core/theme/tokens';
 
 type SkeletonProps = {
   height: number;
@@ -18,6 +19,7 @@ type SkeletonProps = {
 
 /** Esquelet de càrrega: ocupa el mateix espai que el contingut i batega en opacitat. */
 export function Skeleton({ height, width = '100%', radius = 'sm' }: SkeletonProps) {
+  const { colors } = useTheme();
   const reduceMotion = useReducedMotion();
   const opacity = useSharedValue(1);
 

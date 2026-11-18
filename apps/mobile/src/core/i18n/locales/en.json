@@ -29,7 +29,11 @@
     "goToday": "Back to today",
     "events": "Events",
     "allMonth": "View whole month",
-    "relative": { "today": "Today", "tomorrow": "Tomorrow", "past": "Past" },
+    "relative": {
+      "today": "Today",
+      "tomorrow": "Tomorrow",
+      "past": "Past"
+    },
     "filterLabel": "Filter events: {{filter}}",
     "filterTitle": "Filter events",
     "closeFilter": "Close filters",
@@ -166,8 +170,6 @@
     "createPlan": "Create a plan",
     "mapsErrorTitle": "Could not open maps",
     "mapsErrorMessage": "Please try again in a moment.",
-    "planSoonTitle": "Plans coming soon",
-    "planSoonMessage": "Plan creation is not available yet.",
     "timezone": "Local time in Catalonia · Europe/Madrid",
     "noHours": "There's no forecast for tonight yet.",
     "hourA11y": "{{time}}: index {{value}} out of 100, {{level}}",
@@ -334,8 +336,74 @@
   },
   "alerts": {
     "title": "Alerts",
-    "soonTitle": "Coming soon",
-    "soonMessage": "Here you'll be able to create alerts so we can tell you when conditions are good for what you want to see.",
+    "create": "New alert",
+    "new": {
+      "title": "New alert",
+      "back": "Back",
+      "goalTitle": "What do you want to see",
+      "originTitle": "Where",
+      "minIndex": {
+        "title": "Minimum index",
+        "value": "{{index}}, {{level}}"
+      },
+      "cta": "Create alert",
+      "saving": "Creating alert…",
+      "errors": {
+        "limit": "You already have the maximum number of alerts. Delete one to create a new one.",
+        "generic": "We couldn't create the alert. Please try again."
+      },
+      "originModes": {
+        "current": "My location",
+        "zone": "A specific area"
+      },
+      "zone": {
+        "title": "Choose the area",
+        "hint": "Move the map until the pin is where you want it.",
+        "map": "Map to choose the area",
+        "confirm": "Choose this area",
+        "naming": "Looking up the name…",
+        "close": "Close",
+        "empty": "No area chosen",
+        "pick": "Choose",
+        "change": "Change",
+        "unnamed": "Chosen area"
+      },
+      "travel": {
+        "title": "Maximum distance",
+        "minutes": "{{minutes}} min",
+        "hours": "{{hours}} h",
+        "hoursMinutes": "{{hours}} h {{minutes}} min"
+      },
+      "notify": {
+        "title": "When we notify you",
+        "onReach": "When it's reached",
+        "atHour": "At a set time",
+        "hourValue": "Same day at {{hour}}",
+        "change": "Change",
+        "hourTitle": "Notification time",
+        "done": "Done",
+        "required": "Choose at least one way to be notified."
+      }
+    },
+    "edit": {
+      "title": "Edit alert",
+      "cta": "Save changes",
+      "saving": "Saving changes…",
+      "errors": {
+        "generic": "We couldn't save the changes. Try again."
+      },
+      "missingTitle": "We couldn't find this alert",
+      "missingMessage": "You may have deleted it. Go back to your alerts."
+    },
+    "subtitle": "We only notify you when the sky plays along.",
+    "summary": "Within {{travel}}, index {{index}} or higher",
+    "toggle": "{{name}} alert",
+    "editHint": "Opens the alert to edit it",
+    "toggleError": "We couldn't change the alert. Please try again.",
+    "emptyTitle": "No alerts yet",
+    "emptyMessage": "Create one and we'll let you know when conditions are good for what you want to see.",
+    "errorTitle": "We couldn't load your alerts",
+    "retry": "Try again",
     "pushDenied": "Notifications are turned off: we won't alert you on your phone when conditions are good. You can turn them on in Settings.",
     "pushUnavailable": "This device can’t receive notifications. The rest of the app works as usual.",
     "openSettings": "Open Settings"
@@ -418,6 +486,56 @@
     "byCar": "{{travel}} by car",
     "collapseSheet": "Collapse the list",
     "expandSheet": "Expand the list"
+  },
+  "plans": {
+    "new": {
+      "header": "New plan",
+      "title": "Stargazing plan",
+      "point": "Viewpoint",
+      "pointA11y": "Viewpoint: {{name}}, {{municipality}}",
+      "pointUnavailable": "We couldn't load the viewpoint",
+      "day": "Day",
+      "dayValue": "{{weekday}} {{day}} {{month}}",
+      "monthsShort": [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul",
+        "Aug",
+        "Sep",
+        "Oct",
+        "Nov",
+        "Dec"
+      ],
+      "time": "Departure time",
+      "hour": "Hour",
+      "minute": "Minutes",
+      "past": "That departure time has already passed. Pick a later one.",
+      "event": "Sky event",
+      "eventValue": "{{type}}: {{name}}",
+      "noEvent": "Nothing in particular",
+      "eventSheet": "What are you going to see?",
+      "noEvents": "There are no calendar events around this day.",
+      "eventsError": "We couldn't load the sky events",
+      "retry": "Try again",
+      "notes": "Notes",
+      "notesPlaceholder": "Warm clothes, red headlamp…",
+      "save": "Save plan",
+      "saving": "Saving…",
+      "dateSheet": "Pick a day",
+      "timeSheet": "Departure time",
+      "done": "Done",
+      "close": "Close",
+      "errors": {
+        "alreadyExists": "You already have a plan at this viewpoint at this time.",
+        "limitReached": "You've reached the limit of 20 upcoming plans.",
+        "pointGone": "This viewpoint is no longer available.",
+        "generic": "We couldn't save the plan. Try again in a moment."
+      }
+    }
   },
   "notifications": {
     "channelName": "Sky alerts"

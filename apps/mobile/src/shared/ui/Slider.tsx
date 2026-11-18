@@ -1,6 +1,6 @@
 import * as Haptics from 'expo-haptics';
 import { useEffect, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   useAnimatedStyle,
@@ -10,7 +10,8 @@ import Animated, {
 } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 
-import { colors, motion, radii } from '@/core/theme/tokens';
+import { makeStyles, useTheme } from '@/core/theme/theme';
+import { type ColorToken, motion, radii } from '@/core/theme/tokens';
 
 type SliderProps = {
   value: number;
@@ -23,6 +24,11 @@ type SliderProps = {
   accessibilityValueText: string;
   /** Base dels identificadors dels gestos als tests (`<testID>-pan`, `<testID>-tap`). */
   testID?: string;
+  /**
+   * Pista pintada per trams fixos (p. ex. les franges de l'índex) en lloc de la part plena en `far`.
+   * Cada tram acaba a `until` (en les unitats del valor), on comença el següent; l'últim arriba a `max`.
+   */
+  segments?: readonly { until: number; color: ColorToken }[];
 };
 
 /** Mides del Figma (mockup 02): pista de 6 amb 4 de marge, control de 24 dins una franja de 28. */
@@ -50,7 +56,10 @@ export function Slider({
   accessibilityLabel,
   accessibilityValueText,
   testID = 'slider',
+  segments,
 }: SliderProps) {
+  const styles = useStyles();
+  const { colors } = useTheme();
   const reduceMotion = useReducedMotion();
   const [width, setWidth] = useState(0);
   const track = Math.max(0, width - EDGE * 2);
@@ -128,8 +137,22 @@ export function Slider({
         onLayout={(event) => setWidth(event.nativeEvent.layout.width)}
         style={styles.container}
       >
-        <View style={[styles.track, { width: track }]}>
-          <Animated.View style={[styles.fill, fill]} />
+        <View style={[styles.track, segments && styles.segmented, { width: track }]}>
+          {segments ? (
+            segments.map((segment, index) => {
+              const from = index === 0 ? min : (segments[index - 1]?.until ?? min);
+              const to = index === segments.length - 1 ? max : segment.until;
+              return (
+                <View
+                  key={segment.until}
+                  testID={`${testID}-segment`}
+                  style={{ flex: to - from, backgroundColor: colors[segment.color] }}
+                />
+              );
+            })
+          ) : (
+            <Animated.View style={[styles.fill, fill]} />
+          )}
         </View>
         <Animated.View style={[styles.thumb, thumb]} />
       </View>
@@ -137,7 +160,7 @@ export function Slider({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(({ colors }) => ({
   container: { height: HEIGHT, justifyContent: 'center' },
   track: {
     height: TRACK,
@@ -146,6 +169,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     backgroundColor: colors.crep,
   },
+  segmented: { flexDirection: 'row' },
   fill: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, backgroundColor: colors.far },
   thumb: {
     position: 'absolute',
@@ -160,4 +184,4 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 4,
   },
-});
+}));

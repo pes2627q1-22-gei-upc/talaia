@@ -13,9 +13,11 @@ jest.mock('../pointRepository', () => ({
   usePointBreakdownQuery: jest.fn(),
 }));
 jest.mock('../PointLocationMap', () => () => null);
+const mockPush = jest.fn();
 jest.mock('expo-router', () => ({
   ...jest.requireActual('expo-router'),
   useFocusEffect: (effect: () => void) => jest.requireActual('react').useEffect(effect, [effect]),
+  useRouter: () => ({ push: mockPush }),
 }));
 
 const detail = jest.mocked(usePointDetailQuery);
@@ -98,14 +100,23 @@ it('informa si Maps no es pot obrir', async () => {
   );
 });
 
-it('Crea un pla mostra l’avís provisional de la funcionalitat', async () => {
-  const alert = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+it('Crea un pla obre el pla amb la millor franja de la nit, inici i final (TG-157)', async () => {
+  mockPush.mockReset();
   await render(page());
   await fireEvent.press(screen.getByRole('button', { name: 'Crea un pla' }));
-  expect(alert).toHaveBeenCalledWith(
-    'Plans, aviat',
-    'La creació de plans encara no està disponible.',
-  );
+  expect(mockPush).toHaveBeenCalledWith({
+    pathname: '/pla/nou',
+    // Una sola hora bona: la franja dura una hora.
+    params: { puntId: 'montsec', inici: '2026-10-18T23:00:00Z', fi: '2026-10-19T00:00:00.000Z' },
+  });
+});
+
+it('sense cap bona franja, Crea un pla només porta el punt', async () => {
+  mockPush.mockReset();
+  setHours({ data: asBreakdown(point, [{ ...hour, valor: 20, franja: 'tap' }]) });
+  await render(page());
+  await fireEvent.press(screen.getByRole('button', { name: 'Crea un pla' }));
+  expect(mockPush).toHaveBeenCalledWith({ pathname: '/pla/nou', params: { puntId: 'montsec' } });
 });
 
 it('de dia explica per què no hi ha índex nocturn a la targeta', async () => {

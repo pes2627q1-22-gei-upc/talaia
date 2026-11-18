@@ -1,6 +1,7 @@
 import { StyleSheet, View } from 'react-native';
 
-import { type ColorToken, colors, radii, spacing } from '@/core/theme/tokens';
+import { useTheme } from '@/core/theme/theme';
+import { type ColorToken, radii, spacing } from '@/core/theme/tokens';
 import { AppText } from '@/shared/ui/AppText';
 import { Button } from '@/shared/ui/Button';
 import { Card } from '@/shared/ui/Card';
@@ -15,6 +16,7 @@ const statusColor: Record<ApiStatus, ColorToken> = {
 
 /** View de l'indicador d'estat de l'API: només pinta el que li dona el ViewModel. */
 export function ApiStatusCard() {
+  const { colors } = useTheme();
   const vm = useApiStatusViewModel();
   return (
     <Card style={styles.card}>
