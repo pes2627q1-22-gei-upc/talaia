@@ -1,4 +1,4 @@
-import type { Esdeveniment, PlaNou } from '@talaia/shared';
+import type { Esdeveniment, Pla, PlaNou } from '@talaia/shared';
 
 import { ACCOUNT_BLOCKED } from '@/core/api/accountBlocked';
 import { ApiError } from '@/core/api/httpClient';
@@ -168,4 +168,78 @@ export function planErrorKey(error: unknown): PlanErrorKey | null {
     default:
       return 'generic';
   }
+}
+
+/** `/esdeveniments` no admet més de 366 dies per consulta. */
+const MAX_EVENT_RANGE_DAYS = 365;
+
+/**
+ * Dies (`YYYY-MM-DD`, hora de Catalunya) que cal demanar a `/esdeveniments` per posar nom als
+ * fenòmens d'una llista de plans, en una sola crida. La llista arriba de l'API amb el pla més
+ * proper a avui primer: si els plans amb fenomen s'escampen més d'un any, es demana l'any que
+ * comença (o acaba) en aquest pla, i els que en queden fora surten sense nom de fenomen.
+ * `null` si cap pla no va lligat a un fenomen.
+ */
+export function planEventsRange(plans: Pla[]): { from: string; to: string } | null {
+  const days = plans
+    .filter((plan) => plan.esdevenimentId !== null)
+    .map((plan) => cataloniaDate(plan.dataHoraInici));
+  const anchor = days[0];
+  if (anchor === undefined) return null;
+  const inRange = days.filter(
+    (day) => Math.abs(Date.parse(day) - Date.parse(anchor)) <= MAX_EVENT_RANGE_DAYS * 86_400_000,
+  );
+  const sorted = [...inRange].sort();
+  return { from: sorted[0]!, to: sorted[sorted.length - 1]! };
+}
+
+/**
+ * Article d'un municipi que el català contrau amb la preposició: «al Pont de Suert», «als
+ * Hostalets», però «a Prades» o «a l'Escala».
+ */
+export type PlaceArticle = 'el' | 'els' | null;
+
+export function splitPlaceArticle(municipi: string): { article: PlaceArticle; name: string } {
+  const match = /^(els?)\s+(.+)$/i.exec(municipi.trim());
+  if (!match) return { article: null, name: municipi.trim() };
+  return { article: match[1]!.toLowerCase() as 'el' | 'els', name: match[2]! };
+}
+
+/** Una fila d'«Els meus plans» (mockup 13), sense textos: els posa el ViewModel amb l'i18n. */
+export type PlanRow = {
+  id: string;
+  puntId: string;
+  /** Dia del mes de la sortida, amb dues xifres («02»), a la zona del mòbil. */
+  day: string;
+  /** Mes de la sortida (0–11), a la zona del mòbil. */
+  month: number;
+  /** Hora de sortida «HH:MM», a la zona del mòbil, i l'hora sola (per a «a la 01:00»). */
+  time: string;
+  hour: number;
+  /** Nom del fenomen (`/esdeveniments`); `null` si el pla no en té o no s'ha trobat. */
+  phenomenon: string | null;
+  place: { article: PlaceArticle; name: string };
+  pointName: string;
+  /** El punt s'ha retirat: la fitxa ja no hi és i la fila no es pot obrir. */
+  retired: boolean;
+};
+
+/**
+ * Dades d'una fila: el dia i l'hora de sortida en hora del mòbil (com «Crea un pla», que les
+ * desa amb `localToIso`), el fenomen pel seu `codi` i el municipi del punt.
+ */
+export function planRow(plan: Pla, eventNames: ReadonlyMap<string, string>): PlanRow {
+  const start = new Date(plan.dataHoraInici);
+  return {
+    id: plan.id,
+    puntId: plan.punt.id,
+    day: pad(start.getDate()),
+    month: start.getMonth(),
+    time: formatTime(start.getHours(), start.getMinutes()),
+    hour: start.getHours(),
+    phenomenon: plan.esdevenimentId ? (eventNames.get(plan.esdevenimentId) ?? null) : null,
+    place: splitPlaceArticle(plan.punt.municipi),
+    pointName: plan.punt.nom,
+    retired: !plan.punt.publicat,
+  };
 }

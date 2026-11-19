@@ -129,7 +129,8 @@
       "es": "Castellano",
       "en": "Inglés"
     },
-    "account": "Cuenta"
+    "account": "Cuenta",
+    "plans": "Mis planes"
   },
   "apiStatus": {
     "title": "Estado del servidor",
@@ -571,6 +572,42 @@
         "pointGone": "Este punto ya no está disponible.",
         "generic": "No hemos podido guardar el plan. Vuelve a intentarlo en un momento."
       }
+    },
+    "list": {
+      "header": "Mis planes",
+      "title": "Mis planes",
+      "upcoming": "Próximos",
+      "past": "Pasados",
+      "months": [
+        "ENE",
+        "FEB",
+        "MAR",
+        "ABR",
+        "MAY",
+        "JUN",
+        "JUL",
+        "AGO",
+        "SEP",
+        "OCT",
+        "NOV",
+        "DIC"
+      ],
+      "starrySky": "Cielo estrellado",
+      "rowTitle": "{{phenomenon}} en {{place}}",
+      "rowTitle_el": "{{phenomenon}} en El {{place}}",
+      "rowTitle_els": "{{phenomenon}} en Els {{place}}",
+      "departure": "Salida a las {{time}}, {{point}}",
+      "departure_single": "Salida a la {{time}}, {{point}}",
+      "retired": "Este punto ya no está disponible.",
+      "a11y": "{{title}}. {{day}} {{month}}. {{subtitle}}",
+      "openHint": "Abre la ficha del punto",
+      "emptyUpcomingTitle": "Aún no tienes ningún plan",
+      "emptyUpcomingMessage": "Busca un buen sitio en Explora y crea un plan desde su ficha.",
+      "emptyPastTitle": "Aún no tienes planes pasados",
+      "emptyPastMessage": "Cuando haya pasado la hora de un plan, lo encontrarás aquí.",
+      "create": "Encuentra un sitio",
+      "errorTitle": "No hemos podido cargar los planes",
+      "retry": "Vuelve a intentarlo"
     }
   },
   "notifications": {

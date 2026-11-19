@@ -10,7 +10,11 @@ import {
   isFuture,
   localToIso,
   planErrorKey,
+  planEventsRange,
+  planRow,
+  splitPlaceArticle,
 } from '../planModel';
+import { plan } from '../__fixtures__/plans';
 
 const MINUTE = 60 * 1000;
 const HOUR = 60 * MINUTE;
@@ -207,5 +211,90 @@ describe('planErrorKey', () => {
 
   it('el compte bloquejat ja el mostra AccountBlockedScreen', () => {
     expect(planErrorKey(new ApiError(403, 'account_blocked', ''))).toBeNull();
+  });
+});
+
+describe('«Els meus plans» (TG-160)', () => {
+  const names = new Map([['orionides-2026', 'Oriònides']]);
+
+  it('una fila sense fenomen: data i hora de sortida locals, municipi i punt', () => {
+    expect(planRow(plan(), names)).toEqual({
+      id: 'p1',
+      puntId: 'montsec',
+      day: '21',
+      month: 9,
+      time: '23:15',
+      hour: 23,
+      phenomenon: null,
+      place: { article: null, name: 'Àger' },
+      pointName: 'Serra del Montsec',
+      retired: false,
+    });
+  });
+
+  it('amb fenomen, el nom surt del seu codi; un codi desconegut queda sense nom', () => {
+    expect(planRow(plan({ esdevenimentId: 'orionides-2026' }), names).phenomenon).toBe('Oriònides');
+    expect(planRow(plan({ esdevenimentId: 'altre' }), names).phenomenon).toBeNull();
+  });
+
+  it("un pla que creua la mitjanit surt el dia i a l'hora de la sortida, amb o sense final", () => {
+    const crossing = {
+      // 2 de novembre a les 23:30 (CET, UTC+1) fins a la 01:30 de l'endemà.
+      dataHoraInici: '2026-11-02T22:30:00.000Z',
+      dataHoraFi: '2026-11-03T00:30:00.000Z',
+    };
+    expect(planRow(plan(crossing), names)).toMatchObject({ day: '02', month: 10, time: '23:30' });
+    expect(planRow(plan({ ...crossing, dataHoraFi: null }), names)).toMatchObject({
+      day: '02',
+      time: '23:30',
+    });
+    // Sortida a la una: la vista diu «a la 01:00».
+    expect(planRow(plan({ dataHoraInici: '2026-11-03T00:00:00.000Z' }), names)).toMatchObject({
+      day: '03',
+      time: '01:00',
+      hour: 1,
+    });
+  });
+
+  it('un punt retirat es marca: la fila no es pot obrir', () => {
+    const retired = plan({ punt: { ...plan().punt, publicat: false } });
+    expect(planRow(retired, names).retired).toBe(true);
+  });
+
+  it("separa l'article que el català contrau («al Pont de Suert», «als Hostalets»)", () => {
+    expect(splitPlaceArticle('El Pont de Suert')).toEqual({ article: 'el', name: 'Pont de Suert' });
+    expect(splitPlaceArticle('Els Hostalets de Pierola')).toEqual({
+      article: 'els',
+      name: 'Hostalets de Pierola',
+    });
+    expect(splitPlaceArticle('Prades')).toEqual({ article: null, name: 'Prades' });
+    expect(splitPlaceArticle("L'Escala")).toEqual({ article: null, name: "L'Escala" });
+    expect(splitPlaceArticle('Elna')).toEqual({ article: null, name: 'Elna' });
+  });
+
+  describe('planEventsRange', () => {
+    it('sense cap pla amb fenomen, no cal demanar res', () => {
+      expect(planEventsRange([plan()])).toBeNull();
+      expect(planEventsRange([])).toBeNull();
+    });
+
+    it('els dies (de Catalunya) dels plans amb fenomen, en una sola consulta', () => {
+      const plans = [
+        plan({ id: 'a', esdevenimentId: 'x', dataHoraInici: '2026-10-21T21:15:00Z' }),
+        plan({ id: 'b', dataHoraInici: '2026-10-01T20:00:00Z' }),
+        // A les 23:30 locals del 2 de novembre: a Catalunya encara és dia 2.
+        plan({ id: 'c', esdevenimentId: 'y', dataHoraInici: '2026-11-02T22:30:00Z' }),
+      ];
+      expect(planEventsRange(plans)).toEqual({ from: '2026-10-21', to: '2026-11-02' });
+    });
+
+    it("no passa dels 366 dies de /esdeveniments: es queda amb l'any del primer pla", () => {
+      const plans = [
+        plan({ id: 'a', esdevenimentId: 'x', dataHoraInici: '2026-11-20T21:00:00Z' }),
+        plan({ id: 'b', esdevenimentId: 'y', dataHoraInici: '2027-08-12T21:00:00Z' }),
+        plan({ id: 'c', esdevenimentId: 'z', dataHoraInici: '2028-01-03T21:00:00Z' }),
+      ];
+      expect(planEventsRange(plans)).toEqual({ from: '2026-11-20', to: '2027-08-12' });
+    });
   });
 });

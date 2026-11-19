@@ -129,7 +129,8 @@
       "es": "Spanish",
       "en": "English"
     },
-    "account": "Account"
+    "account": "Account",
+    "plans": "My plans"
   },
   "apiStatus": {
     "title": "Server status",
@@ -571,6 +572,42 @@
         "pointGone": "This viewpoint is no longer available.",
         "generic": "We couldn't save the plan. Try again in a moment."
       }
+    },
+    "list": {
+      "header": "My plans",
+      "title": "My plans",
+      "upcoming": "Upcoming",
+      "past": "Past",
+      "months": [
+        "JAN",
+        "FEB",
+        "MAR",
+        "APR",
+        "MAY",
+        "JUN",
+        "JUL",
+        "AUG",
+        "SEP",
+        "OCT",
+        "NOV",
+        "DEC"
+      ],
+      "starrySky": "Starry sky",
+      "rowTitle": "{{phenomenon}} in {{place}}",
+      "rowTitle_el": "{{phenomenon}} in El {{place}}",
+      "rowTitle_els": "{{phenomenon}} in Els {{place}}",
+      "departure": "Leaving at {{time}}, {{point}}",
+      "departure_single": "Leaving at {{time}}, {{point}}",
+      "retired": "This spot is no longer available.",
+      "a11y": "{{title}}. {{month}} {{day}}. {{subtitle}}",
+      "openHint": "Opens the spot's page",
+      "emptyUpcomingTitle": "You don't have any plans yet",
+      "emptyUpcomingMessage": "Find a good spot in Explore and create a plan from its page.",
+      "emptyPastTitle": "No past plans yet",
+      "emptyPastMessage": "Once a plan's time has passed, you'll find it here.",
+      "create": "Find a spot",
+      "errorTitle": "We couldn't load your plans",
+      "retry": "Try again"
     }
   },
   "notifications": {

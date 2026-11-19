@@ -129,7 +129,8 @@
       "es": "Castellà",
       "en": "Anglès"
     },
-    "account": "Compte"
+    "account": "Compte",
+    "plans": "Els meus plans"
   },
   "apiStatus": {
     "title": "Estat del servidor",
@@ -571,6 +572,42 @@
         "pointGone": "Aquest punt ja no està disponible.",
         "generic": "No hem pogut desar el pla. Torna-ho a provar d'aquí a un moment."
       }
+    },
+    "list": {
+      "header": "Els meus plans",
+      "title": "Els meus plans",
+      "upcoming": "Propers",
+      "past": "Passats",
+      "months": [
+        "GEN",
+        "FEB",
+        "MAR",
+        "ABR",
+        "MAIG",
+        "JUNY",
+        "JUL",
+        "AG",
+        "SET",
+        "OCT",
+        "NOV",
+        "DES"
+      ],
+      "starrySky": "Cel estrellat",
+      "rowTitle": "{{phenomenon}} a {{place}}",
+      "rowTitle_el": "{{phenomenon}} al {{place}}",
+      "rowTitle_els": "{{phenomenon}} als {{place}}",
+      "departure": "Sortida a les {{time}}, {{point}}",
+      "departure_single": "Sortida a la {{time}}, {{point}}",
+      "retired": "Aquest punt ja no està disponible.",
+      "a11y": "{{title}}. {{day}} {{month}}. {{subtitle}}",
+      "openHint": "Obre la fitxa del punt",
+      "emptyUpcomingTitle": "Encara no tens cap pla",
+      "emptyUpcomingMessage": "Busca un bon lloc a Explora i crea un pla des de la seva fitxa.",
+      "emptyPastTitle": "Encara no tens plans passats",
+      "emptyPastMessage": "Quan hagi passat l'hora d'un pla, el trobaràs aquí.",
+      "create": "Troba un lloc",
+      "errorTitle": "No hem pogut carregar els plans",
+      "retry": "Torna-ho a provar"
     }
   },
   "notifications": {
