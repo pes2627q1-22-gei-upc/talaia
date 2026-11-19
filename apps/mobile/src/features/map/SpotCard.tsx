@@ -1,5 +1,5 @@
 import { Image } from 'expo-image';
-import { ActivityIndicator, View } from 'react-native';
+import { View } from 'react-native';
 
 import { makeStyles, useTheme } from '@/core/theme/theme';
 import { radii, sizes, spacing } from '@/core/theme/tokens';
@@ -7,6 +7,7 @@ import { AppText } from '@/shared/ui/AppText';
 import { Button } from '@/shared/ui/Button';
 import { IndexIndicator } from '@/shared/ui/IndexIndicator';
 import { PressableScale } from '@/shared/ui/PressableScale';
+import { Skeleton } from '@/shared/ui/Skeleton';
 
 import type { SpotState } from './useMapSpot';
 
@@ -85,11 +86,14 @@ export function SpotCard({ card }: { card: SpotCardModel }) {
       )}
 
       {state.kind === 'loading' && (
-        <View style={styles.row} accessible accessibilityState={{ busy: true }}>
-          <ActivityIndicator size="small" color={colors.far} testID="spot-loading" />
-          <AppText variant="label" color="boira">
-            {state.label}
-          </AppText>
+        <View
+          style={styles.row}
+          accessible
+          accessibilityLabel={state.label}
+          accessibilityState={{ busy: true }}
+          testID="spot-loading"
+        >
+          <Skeleton height={sizes.button} radius="md" />
         </View>
       )}
 

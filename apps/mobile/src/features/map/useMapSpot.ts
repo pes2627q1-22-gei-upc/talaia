@@ -22,8 +22,8 @@ export function distanceKm(a: Spot, b: Spot): number {
   return 2 * EARTH_RADIUS_KM * Math.asin(Math.sqrt(h));
 }
 
-// ponytail: la mateixa estimació que l'API (`services/api/src/recomanacions/rutes.ts`: 60 km/h i
-// ×1,3 de desviament). Quan arribi Mobilicat, el temps l'haurà de donar l'API.
+// La mateixa estimació que l'API (`services/api/src/recomanacions/rutes.ts`: 60 km/h i ×1,3 de
+// desviament), repetida a propòsit. Quan arribi Mobilicat, el temps l'haurà de donar l'API.
 export const travelMinutes = (km: number) => Math.round(((km * 1.3) / 60) * 60);
 
 export type SpotState =
@@ -73,20 +73,9 @@ export function useMapSpot(place: Place | null) {
         action: { label: t('map.spot.calculate'), onPress: () => setRequested(true) },
       };
     }
-    if (query.data) {
-      const { index, deDia } = query.data;
-      const notes = [
-        ...(deDia ? [t('map.spot.daytime')] : []),
-        ...(index.foscorEstimada ? [t('map.spot.estimated')] : []),
-      ];
-      return {
-        kind: 'result',
-        index: deDia ? null : { valor: index.valor, franja: index.franja },
-        at: t('map.spot.at', { time: localTime(index.hora) }),
-        notes,
-      };
-    }
-    if (query.isError) {
+    // Abans que les dades: si no s'ha pogut renovar el resultat en canviar d'hora, l'antic ja no
+    // és de l'hora en curs. Mentre es reintenta, es carrega.
+    if (query.isError && !query.isFetching) {
       const code = query.error instanceof ApiError ? query.error.code : null;
       if (code === 'fora_de_catalunya') {
         return {
@@ -109,6 +98,19 @@ export function useMapSpot(place: Place | null) {
         title: t('map.spot.error.title'),
         description: t('map.spot.error.description'),
         action: { label: t('map.retry'), onPress: () => void query.refetch() },
+      };
+    }
+    if (query.data && !query.isError) {
+      const { index, deDia } = query.data;
+      const notes = [
+        ...(deDia ? [t('map.spot.daytime')] : []),
+        ...(index.foscorEstimada ? [t('map.spot.estimated')] : []),
+      ];
+      return {
+        kind: 'result',
+        index: deDia ? null : { valor: index.valor, franja: index.franja },
+        at: t('map.spot.at', { time: localTime(index.hora) }),
+        notes,
       };
     }
     return { kind: 'loading', label: t('map.spot.loading') };

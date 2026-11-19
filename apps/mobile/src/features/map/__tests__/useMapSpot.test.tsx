@@ -10,6 +10,7 @@ import type { Spot } from '../visibilityRepository';
 let mockQuery: {
   data?: VisibilitatUbicacio;
   isError: boolean;
+  isFetching: boolean;
   error: unknown;
   refetch: jest.Mock;
 };
@@ -43,7 +44,13 @@ function press(card: ReturnType<typeof useMapSpot>['card']) {
 describe('useMapSpot (HU05, mockup 04)', () => {
   beforeEach(async () => {
     await i18n.changeLanguage('ca');
-    mockQuery = { data: undefined, isError: false, error: null, refetch: jest.fn() };
+    mockQuery = {
+      data: undefined,
+      isError: false,
+      isFetching: false,
+      error: null,
+      refetch: jest.fn(),
+    };
     mockUseVisibilityQuery.mockClear();
   });
 
@@ -143,6 +150,28 @@ describe('useMapSpot (HU05, mockup 04)', () => {
       expect(mockQuery.refetch).toHaveBeenCalledTimes(retry ? 1 : 0);
     },
   );
+
+  it('si no es pot renovar en canviar d’hora, no ensenya l’índex vell com el de l’hora en curs', async () => {
+    mockQuery = {
+      ...mockQuery,
+      data: result(),
+      isError: true,
+      error: new ApiError(503, 'meteo_unavailable', ''),
+    };
+    const { result: hook } = await renderHook(() => useMapSpot(barcelona));
+    await act(async () => hook.current.pick(42.01, 1.31));
+    await act(async () => press(hook.current.card));
+    expect(hook.current.card?.state).toMatchObject({
+      kind: 'problem',
+      title: "No hem pogut calcular l'índex",
+      action: { label: expect.any(String) },
+    });
+
+    mockQuery = { ...mockQuery, isFetching: true };
+    await act(async () => hook.current.pick(42.01, 1.31));
+    await act(async () => press(hook.current.card));
+    expect(hook.current.card?.state.kind).toBe('loading');
+  });
 
   it('es tanca', async () => {
     const { result: hook } = await renderHook(() => useMapSpot(barcelona));

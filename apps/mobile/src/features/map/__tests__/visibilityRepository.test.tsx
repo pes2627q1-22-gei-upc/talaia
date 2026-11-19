@@ -1,11 +1,11 @@
 import type { VisibilitatUbicacio } from '@talaia/shared';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { cleanup, renderHook, waitFor } from '@testing-library/react-native';
+import { act, cleanup, renderHook, waitFor } from '@testing-library/react-native';
 import type { PropsWithChildren } from 'react';
 
 import { ApiError, apiGet } from '@/core/api/httpClient';
 
-import { type Spot, useVisibilityQuery } from '../visibilityRepository';
+import { millisecondsUntilNextHour, type Spot, useVisibilityQuery } from '../visibilityRepository';
 
 jest.mock('@/core/api/httpClient', () => ({
   ...jest.requireActual('@/core/api/httpClient'),
@@ -47,19 +47,46 @@ describe('visibilityRepository', () => {
     expect(mockedApiGet).not.toHaveBeenCalled();
   });
 
-  it('demana la cel·la de 0,01° i un segon toc a la mateixa cel·la surt de la memòria', async () => {
+  it('envia el lloc tal com s’ha tocat, i el mateix lloc surt de la memòria', async () => {
+    // L'API mira si és a Catalunya abans d'arrodonir: (41.3251, 2.1851) hi és, la cel·la
+    // (41.33, 2.19) no.
     mockedApiGet.mockResolvedValue(response);
-    const first = await renderHook(() => useVisibilityQuery({ lat: 42.0112, lon: 1.3089 }), {
-      wrapper: QueryWrapper,
-    });
+    const spot: Spot = { lat: 41.3251, lon: 2.1851 };
+    const first = await renderHook(() => useVisibilityQuery(spot), { wrapper: QueryWrapper });
     await waitFor(() => expect(first.result.current.data).toEqual(response));
-    expect(mockedApiGet).toHaveBeenCalledWith('/visibilitat', { lat: 42.01, lon: 1.31 });
+    expect(mockedApiGet).toHaveBeenCalledWith('/visibilitat', { lat: 41.3251, lon: 2.1851 });
 
-    const second = await renderHook(() => useVisibilityQuery({ lat: 42.0089, lon: 1.3132 }), {
+    const second = await renderHook(() => useVisibilityQuery({ ...spot }), {
       wrapper: QueryWrapper,
     });
     expect(second.result.current.data).toEqual(response);
     expect(mockedApiGet).toHaveBeenCalledTimes(1);
+  });
+
+  it('amb la targeta oberta, en canviar d’hora torna a demanar l’índex', async () => {
+    jest.useFakeTimers({ now: new Date('2026-11-16T20:59:00Z') });
+    try {
+      const next = { ...response, index: { ...response.index, hora: '2026-11-16T21:00:00Z' } };
+      mockedApiGet.mockResolvedValueOnce(response).mockResolvedValueOnce(next);
+      const { result } = await renderHook(() => useVisibilityQuery({ lat: 42.0112, lon: 1.3089 }), {
+        wrapper: QueryWrapper,
+      });
+      await act(() => jest.advanceTimersByTimeAsync(0));
+      expect(result.current.data).toEqual(response);
+
+      await act(() => jest.advanceTimersByTimeAsync(60_000));
+      expect(mockedApiGet).toHaveBeenCalledTimes(1);
+      await act(() => jest.advanceTimersByTimeAsync(30_000));
+      expect(mockedApiGet).toHaveBeenCalledTimes(2);
+      await waitFor(() => expect(result.current.data).toEqual(next));
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it('el canvi d’hora porta 30 s de marge', () => {
+    expect(millisecondsUntilNextHour(Date.parse('2026-11-16T20:59:00Z'))).toBe(90_000);
+    expect(millisecondsUntilNextHour(Date.parse('2026-11-16T21:00:00Z'))).toBe(3_630_000);
   });
 
   it('no reintenta sol: cada consulta compta per al límit horari', async () => {
