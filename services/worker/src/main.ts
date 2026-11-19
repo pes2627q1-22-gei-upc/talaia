@@ -1,6 +1,6 @@
 /**
  * Procés llarg del worker (TG-99, ADR-0024): recalcula l'índex en arrencar i cada hora amb
- * node-cron, dins del contenidor, i després avalua les alertes (TG-153, ADR-0033). És el `CMD` del
+ * node-cron, dins del contenidor, i després avalua les alertes i n'envia les notificacions (TG-153, TG-154, ADR-0033). És el `CMD` del
  * Dockerfile (`dist/main.js`). La lògica és a `recalcul/`, a `alertes/` i, la de la XEMA, a
  * `meteocat/planificacio.ts`; aquí només hi ha el cablejat (pool, cron i senyals).
  *
@@ -11,6 +11,8 @@ import { createOpenMeteoClient } from '@talaia/index';
 import cron from 'node-cron';
 
 import { createAlertsStep } from './alertes/avaluacio';
+import { createKyselyEnviamentRepository } from './alertes/enviamentRepository';
+import { createExpoPushClient } from './alertes/expoPush';
 import { createKyselyAlertesRepository } from './alertes/repository';
 import { loadEnv } from './config/env';
 import { planificaXema } from './meteocat/planificacio';
@@ -42,8 +44,18 @@ const meteo = createOpenMeteoClient({
   llocsPerPeticio: PUNTS_PER_LOT,
   timeoutMs: 30_000,
 });
-// Les alertes s'avaluen dins de cada execució, amb l'índex ja desat. La TG-154 hi afegirà l'enviament.
-const alertes = createAlertsStep(createKyselyAlertesRepository(db));
+// Les alertes s'avaluen dins de cada execució, amb l'índex ja desat, i, amb `ENVIA_PUSH=true`, les
+// notificacions pendents s'envien per Expo Push (TG-154).
+const alertes = createAlertsStep(
+  createKyselyAlertesRepository(db),
+  env.ENVIA_PUSH
+    ? {
+        repository: createKyselyEnviamentRepository(db),
+        push: createExpoPushClient({ accessToken: env.EXPO_ACCESS_TOKEN }),
+      }
+    : undefined,
+);
+if (!env.ENVIA_PUSH) console.log('[worker] ENVIA_PUSH no és true: no s’envien notificacions push');
 const executor = createExecutor((senyal) =>
   recalculaIndex({ ...createKyselyRecalculRepositories(db), meteo, alertes, senyal }),
 );

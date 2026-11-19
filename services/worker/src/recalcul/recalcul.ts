@@ -29,8 +29,11 @@ export type ExecucioWorker = {
   errorAlertes?: string;
 };
 
-/** El que torna el pas d'alertes (TG-153): les notificacions noves que ha desat. */
-export type ResumAlertes = { notificacions: number };
+/**
+ * El que torna el pas d'alertes (TG-153): les notificacions noves que ha desat i, si l'enviament
+ * (TG-154) ha fallat en part, l'error, que va a `errorAlertes`.
+ */
+export type ResumAlertes = { notificacions: number; errorEnviament?: string };
 
 /** Ports del recàlcul: la base de dades als repositoris de Kysely, la memòria als tests. */
 export type RecalculDeps = {
@@ -164,7 +167,8 @@ export async function recalculaIndex({
   let resumAlertes: Pick<ExecucioWorker, 'notificacions' | 'errorAlertes'> = {};
   if (alertes && resum.punts > 0 && !senyal?.aborted) {
     try {
-      resumAlertes = { notificacions: (await alertes(ara())).notificacions };
+      const { notificacions, errorEnviament } = await alertes(ara());
+      resumAlertes = { notificacions, ...(errorEnviament ? { errorAlertes: errorEnviament } : {}) };
     } catch (error) {
       console.error("[worker] l'avaluació de les alertes ha fallat", error);
       resumAlertes = { errorAlertes: missatge(error) };
