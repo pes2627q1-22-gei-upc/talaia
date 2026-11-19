@@ -3,21 +3,12 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import { Trans } from 'react-i18next';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 import Animated, { FadeIn, ReduceMotion, useReducedMotion } from 'react-native-reanimated';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import {
-  colors,
-  fonts,
-  gradients,
-  motion,
-  pointMapColors,
-  radii,
-  sizes,
-  spacing,
-  typography,
-} from '@/core/theme/tokens';
+import { makeStyles, useTheme } from '@/core/theme/theme';
+import { fonts, motion, radii, sizes, spacing, typography } from '@/core/theme/tokens';
 import { AppText } from '@/shared/ui/AppText';
 import { Button } from '@/shared/ui/Button';
 import { Card } from '@/shared/ui/Card';
@@ -30,13 +21,6 @@ import PointLocationMap from './PointLocationMap';
 import { usePointDetailViewModel } from './usePointDetailViewModel';
 
 const appear = FadeIn.duration(motion.base).reduceMotion(ReduceMotion.System);
-const mapPalette = {
-  background: colors.nit,
-  text: colors.boira,
-  link: colors.lluna,
-  marker: colors.ras,
-  ...pointMapColors,
-};
 const mapMetrics = {
   touch: sizes.touch,
   icon: sizes.icon,
@@ -51,13 +35,25 @@ const planIcon = require('@/assets/images/point/plan.svg');
 
 /** TG-93 / mockup 05, amb el desglossament d'aquesta nit (TG-105). Rutes i plans, altres històries. */
 export function PointDetailScreen({ pointId }: { pointId: string }) {
+  const styles = useStyles();
+  const { colors, gradients, pointMapColors } = useTheme();
+  const mapPalette = useMemo(
+    () => ({
+      background: colors.nit,
+      text: colors.boira,
+      link: colors.lluna,
+      marker: colors.ras,
+      ...pointMapColors,
+    }),
+    [colors, pointMapColors],
+  );
   const vm = usePointDetailViewModel(pointId);
   const insets = useSafeAreaInsets();
   // El mapa passa per sota de la barra d'estat i del botó enrere: hi sumem la zona segura perquè
   // la part que es veu sota la capçalera continuï sent la del mockup.
   const mapStyle = useMemo(
     () => [styles.map, { height: sizes.pointMap + insets.top }],
-    [insets.top],
+    [styles.map, insets.top],
   );
   const metrics = useMemo(() => ({ ...mapMetrics, top: insets.top }), [insets.top]);
   const reduceMotion = useReducedMotion();
@@ -275,7 +271,7 @@ export function PointDetailScreen({ pointId }: { pointId: string }) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(({ colors }) => ({
   root: { flex: 1, backgroundColor: colors.nit },
   scroll: { paddingBottom: spacing.lg },
   actions: {
@@ -344,4 +340,4 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.ms,
     paddingVertical: spacing.xs,
   },
-});
+}));

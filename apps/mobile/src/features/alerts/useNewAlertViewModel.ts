@@ -1,7 +1,7 @@
-import type { ObjectiuObservacio } from '@talaia/shared';
+import type { Alerta, AlertaCanvis, AlertaNova, ObjectiuObservacio } from '@talaia/shared';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { ApiError } from '@/core/api/httpClient';
@@ -20,7 +20,15 @@ import { nightStyle } from '@/features/map/style/nightStyle';
 import { camera } from '@/features/map/useMapViewModel';
 
 import { ALERT_LIMIT_REACHED, ALERTS_KEY, alertsRepository } from './alertsRepository';
-import { bandOf, DEFAULT_NOTIFY_HOUR, INDEX_BANDS, MIN_INDEX, travelToKm } from './newAlertModel';
+import {
+  alertChanges,
+  bandOf,
+  DEFAULT_NOTIFY_HOUR,
+  INDEX_BANDS,
+  kmToTravel,
+  MIN_INDEX,
+  travelToKm,
+} from './newAlertModel';
 
 type Coordinates = { lat: number; lon: number };
 type Zone = Coordinates & { name: string };
@@ -31,23 +39,32 @@ type OriginMode = (typeof ORIGIN_MODES)[number];
 /** Prou a prop per triar un municipi quan el mapa ja surt centrat en un lloc. */
 const ZONE_ZOOM = 10;
 
-/** «Nova alerta» (HU16, mockup 11): fenomen, des d'on, fins on, índex mínim i quan avisar. */
-export function useNewAlertViewModel() {
+/**
+ * «Nova alerta» (HU16, mockup 11): fenomen, des d'on, fins on, índex mínim i quan avisar.
+ *
+ * Amb `saved`, la mateixa pantalla edita aquella alerta (HU18): arrenca amb els seus valors, l'origen
+ * desat surt com a zona i desa només el que canvia amb `PATCH /alertes/{id}`.
+ */
+export function useNewAlertViewModel(saved?: Alerta) {
   const { t } = useTranslation();
   const router = useRouter();
   const queryClient = useQueryClient();
 
-  const [goal, setGoal] = useState<ObjectiuObservacio>('cel_estrellat');
-  const [originMode, setOriginMode] = useState<OriginMode>('current');
-  const [zone, setZone] = useState<Zone | null>(null);
+  const mode = saved ? 'edit' : 'new';
+  const [goal, setGoal] = useState<ObjectiuObservacio>(saved?.objectiu ?? 'cel_estrellat');
+  const [originMode, setOriginMode] = useState<OriginMode>(saved ? 'zone' : 'current');
+  // El nom de l'origen desat no es guarda: es busca a sota, com quan es tria una zona.
+  const [zone, setZone] = useState<Zone | null>(saved ? { ...saved.origen, name: '' } : null);
   const [zoneOpen, setZoneOpen] = useState(false);
   const [zoneDraft, setZoneDraft] = useState<Coordinates | null>(null);
   const [zoneNaming, setZoneNaming] = useState(false);
-  const [travel, setTravel] = useState<number>(TRAVEL.initial);
-  const [minIndex, setMinIndex] = useState<number>(MIN_INDEX.initial);
-  const [notifyOnReach, setNotifyOnReach] = useState(false);
-  const [notifyAtHour, setNotifyAtHour] = useState(true);
-  const [notifyHour, setNotifyHour] = useState(DEFAULT_NOTIFY_HOUR);
+  const [travel, setTravel] = useState<number>(
+    saved ? kmToTravel(saved.distanciaMaxKm) : TRAVEL.initial,
+  );
+  const [minIndex, setMinIndex] = useState<number>(saved?.indexMinim ?? MIN_INDEX.initial);
+  const [notifyOnReach, setNotifyOnReach] = useState(saved?.avisaEnArribar ?? false);
+  const [notifyAtHour, setNotifyAtHour] = useState(saved ? saved.horaAvis !== null : true);
+  const [notifyHour, setNotifyHour] = useState(saved?.horaAvis ?? DEFAULT_NOTIFY_HOUR);
   const [hourOpen, setHourOpen] = useState(false);
   const { origin: current, place } = useOriginField();
 
@@ -60,37 +77,81 @@ export function useNewAlertViewModel() {
   const originPoint: Coordinates | null = originMode === 'current' ? place : zone;
   const notifyChosen = notifyOnReach || notifyAtHour;
 
-  const create = useMutation({
-    mutationFn: alertsRepository.create,
+  // Busca el nom de l'origen desat i el posa a la zona si encara és aquell punt.
+  const savedLat = saved?.origen.lat;
+  const savedLon = saved?.origen.lon;
+  useEffect(() => {
+    if (savedLat === undefined || savedLon === undefined) return;
+    let current = true;
+    void placeName(savedLat, savedLon).then((name) => {
+      if (!current || !name) return;
+      setZone((zone) =>
+        zone?.lat === savedLat && zone.lon === savedLon ? { ...zone, name } : zone,
+      );
+    });
+    return () => {
+      current = false;
+    };
+  }, [savedLat, savedLon]);
+
+  const form: AlertaNova | null = originPoint
+    ? {
+        objectiu: goal,
+        // Tres decimals (~100 m): prou per a un radi en km i no guarda on viu l'usuari exactament.
+        origen: { lat: roundCoord(originPoint.lat), lon: roundCoord(originPoint.lon) },
+        distanciaMaxKm: travelToKm(travel),
+        indexMinim: minIndex,
+        avisaEnArribar: notifyOnReach,
+        horaAvis: notifyAtHour ? notifyHour : null,
+      }
+    : null;
+  // En editar, només el que ha canviat; sense cap canvi, no hi ha res a desar.
+  const changes = saved && form ? alertChanges(saved, form, travel) : null;
+  const unchanged = changes !== null && Object.keys(changes).length === 0;
+
+  const save = useMutation({
+    mutationFn: (request: { id: string; changes: AlertaCanvis } | { alert: AlertaNova }) =>
+      'id' in request
+        ? alertsRepository.update(request.id, request.changes)
+        : alertsRepository.create(request.alert),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ALERTS_KEY });
       router.back();
     },
   });
 
+  const canSave = form !== null && notifyChosen && !unchanged && !save.isPending;
   const submit = () => {
-    if (!originPoint || !notifyChosen || create.isPending) return;
-    create.mutate({
-      objectiu: goal,
-      // Tres decimals (~100 m): prou per a un radi en km i no guarda on viu l'usuari exactament.
-      origen: { lat: roundCoord(originPoint.lat), lon: roundCoord(originPoint.lon) },
-      distanciaMaxKm: travelToKm(travel),
-      indexMinim: minIndex,
-      avisaEnArribar: notifyOnReach,
-      horaAvis: notifyAtHour ? notifyHour : null,
-    });
+    if (!canSave) return;
+    save.mutate(saved && changes ? { id: saved.id, changes } : { alert: form });
   };
 
-  // Cada cop que s'obre, el mapa torna a `mapStart`: un centre mogut i descartat no s'hi pot desar.
+  // Cada confirmació té un número; obrir o tancar el mapa el canvia, i la resposta del nom d'una
+  // confirmació antiga ja no desa la zona ni tanca el mapa.
+  const namingRequest = useRef(0);
+
+  // Cada cop que s'obre, el mapa torna a `mapStart` i n'agafa el centre com a esborrany: un centre
+  // mogut i descartat no s'hi pot desar, i si després arriba la ubicació, el mapa (que no es mou)
+  // i el que es desa continuen sent el mateix punt.
   const openZone = () => {
-    setZoneDraft(null);
+    namingRequest.current += 1;
+    setZoneNaming(false);
+    setZoneDraft(mapStart.center);
     setZoneOpen(true);
+  };
+
+  const closeZone = () => {
+    namingRequest.current += 1;
+    setZoneNaming(false);
+    setZoneOpen(false);
   };
 
   const confirmZone = async () => {
     const picked = zoneDraft ?? mapStart.center;
+    const request = ++namingRequest.current;
     setZoneNaming(true);
     const name = await placeName(picked.lat, picked.lon);
+    if (request !== namingRequest.current) return;
     setZone({ ...picked, name });
     setZoneNaming(false);
     setZoneOpen(false);
@@ -118,14 +179,14 @@ export function useNewAlertViewModel() {
       : t('alerts.new.travel.hours', { hours });
   const band = bandOf(minIndex);
 
-  const error = !create.error
+  const error = !save.error
     ? null
-    : create.error instanceof ApiError && create.error.code === ALERT_LIMIT_REACHED
+    : save.error instanceof ApiError && save.error.code === ALERT_LIMIT_REACHED
       ? t('alerts.new.errors.limit')
-      : t('alerts.new.errors.generic');
+      : t(`alerts.${mode}.errors.generic`);
 
   return {
-    title: t('alerts.new.title'),
+    title: t(`alerts.${mode}.title`),
     back: { label: t('alerts.new.back'), onPress: () => router.back() },
     goalTitle: t('alerts.new.goalTitle'),
     goals: GRID_GOALS.map((id) => {
@@ -169,7 +230,7 @@ export function useNewAlertViewModel() {
         onPress: () => void confirmZone(),
       },
       closeLabel: t('alerts.new.zone.close'),
-      onClose: () => setZoneOpen(false),
+      onClose: closeZone,
     },
     travel: {
       title: t('alerts.new.travel.title'),
@@ -233,8 +294,8 @@ export function useNewAlertViewModel() {
     },
     error,
     cta: {
-      label: create.isPending ? t('alerts.new.saving') : t('alerts.new.cta'),
-      disabled: !originPoint || !notifyChosen || create.isPending,
+      label: save.isPending ? t(`alerts.${mode}.saving`) : t(`alerts.${mode}.cta`),
+      disabled: !canSave,
       onPress: submit,
     },
   };

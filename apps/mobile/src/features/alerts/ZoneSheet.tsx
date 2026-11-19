@@ -1,6 +1,8 @@
+import { useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { colors, radii, spacing } from '@/core/theme/tokens';
+import { makeStyles, useTheme } from '@/core/theme/theme';
+import { radii, spacing } from '@/core/theme/tokens';
 import { camera } from '@/features/map/useMapViewModel';
 import { AppText } from '@/shared/ui/AppText';
 import { Button } from '@/shared/ui/Button';
@@ -15,7 +17,6 @@ const MAP_HEIGHT = 360;
 /** L'agulla: un anell `far` amb un punt al mig, just al centre del mapa. */
 const PIN = 22;
 const PIN_DOT = 6;
-const chrome = { background: colors.nit, text: colors.boira, link: colors.lluna };
 
 /** Full per triar «Una zona concreta»: es mou el mapa sota l'agulla i es confirma. */
 export function ZoneSheet({
@@ -31,6 +32,12 @@ export function ZoneSheet({
   onClose,
   closeLabel,
 }: ZoneSheetProps) {
+  const styles = useStyles();
+  const { colors } = useTheme();
+  const chrome = useMemo(
+    () => ({ background: colors.nit, text: colors.boira, link: colors.lluna }),
+    [colors],
+  );
   return (
     <Sheet visible={visible} onClose={onClose} title={title} closeLabel={closeLabel}>
       <AppText variant="small" color="boira">
@@ -68,7 +75,7 @@ export function ZoneSheet({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(({ colors }) => ({
   map: {
     height: MAP_HEIGHT,
     borderRadius: radii.md,
@@ -93,4 +100,4 @@ const styles = StyleSheet.create({
     borderRadius: PIN_DOT / 2,
     backgroundColor: colors.far,
   },
-});
+}));

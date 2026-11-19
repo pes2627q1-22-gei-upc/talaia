@@ -1,7 +1,8 @@
 import { memo } from 'react';
-import { FlatList, StyleSheet, View } from 'react-native';
+import { FlatList, View } from 'react-native';
 
-import { colors, sizes, spacing, typography } from '@/core/theme/tokens';
+import { makeStyles, useTheme } from '@/core/theme/theme';
+import { sizes, spacing, typography } from '@/core/theme/tokens';
 import { AppText } from '@/shared/ui/AppText';
 import { PressableScale } from '@/shared/ui/PressableScale';
 
@@ -27,6 +28,8 @@ export const HourlyChart = memo(function HourlyChart({
   const hasBestWindow = hours.some((hour) => hour.isBest);
   // S'obre amb l'hora triada a la vista (la millor de la nit pot ser a la matinada, fora de la
   // pantalla), amb un parell de columnes abans perquè es vegi d'on ve.
+  const styles = useStyles();
+  const { colors } = useTheme();
   const initialScrollIndex = Math.max(0, hours.findIndex((hour) => hour.id === selectedHourId) - 2);
 
   return (
@@ -114,7 +117,7 @@ export const HourlyChart = memo(function HourlyChart({
   );
 });
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(({ colors }) => ({
   section: { gap: spacing.sm },
   chartList: { marginTop: -spacing.xs },
   chart: { gap: spacing.xs, paddingTop: spacing.xs, paddingBottom: spacing.sm },
@@ -152,4 +155,4 @@ const styles = StyleSheet.create({
     textShadowRadius: 2,
   },
   bar: { width: '100%', borderTopLeftRadius: spacing.xs, borderTopRightRadius: spacing.xs },
-});
+}));

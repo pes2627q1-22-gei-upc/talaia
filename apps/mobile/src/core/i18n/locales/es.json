@@ -19,7 +19,17 @@
     "retry": "Volver a intentar",
     "back": "Atrás",
     "daytime": "Es de día",
-    "daytimeHint": "El índice cuenta a partir del anochecer. Hasta entonces, los puntos salen en gris."
+    "daytimeHint": "El índice cuenta a partir del anochecer. Hasta entonces, los puntos salen en gris.",
+    "origin": "Punto de salida",
+    "nearby": "Muestra los mejores puntos cerca de ti",
+    "pick": {
+      "title": "Toca el mapa para elegir desde dónde sales",
+      "denied": "No tenemos tu ubicación: buscaremos los mejores puntos cerca del lugar que toques.",
+      "error": "No hemos encontrado dónde estás: buscaremos los mejores puntos cerca del lugar que toques.",
+      "allow": "Permitir la ubicación",
+      "settings": "Abrir Ajustes",
+      "close": "Cerrar"
+    }
   },
   "calendar": {
     "title": "Calendario",
@@ -108,7 +118,8 @@
     "notFoundMessage": "Puede que ya no esté disponible. Vuelve al calendario y elige otro.",
     "errorTitle": "No hemos podido cargar el evento",
     "errorMessage": "Comprueba la conexión y vuelve a intentarlo.",
-    "retry": "Volver a intentar"
+    "retry": "Volver a intentar",
+    "whereToWatch": "Dónde verlo"
   },
   "profile": {
     "title": "Perfil",
@@ -170,8 +181,6 @@
     "createPlan": "Crea un plan",
     "mapsErrorTitle": "No hemos podido abrir el mapa",
     "mapsErrorMessage": "Vuelve a intentarlo dentro de un momento.",
-    "planSoonTitle": "Planes, próximamente",
-    "planSoonMessage": "La creación de planes aún no está disponible.",
     "timezone": "Hora local de Cataluña · Europe/Madrid",
     "noHours": "Todavía no hay previsión para esta noche.",
     "hourA11y": "{{time}}: índice {{value}} de 100, {{level}}",
@@ -338,8 +347,6 @@
   },
   "alerts": {
     "title": "Alertas",
-    "soonTitle": "Pronto",
-    "soonMessage": "Aquí podrás crear alertas para que te avisemos cuando haya buenas condiciones para lo que quieres ver.",
     "create": "Nueva alerta",
     "new": {
       "title": "Nueva alerta",
@@ -389,6 +396,25 @@
         "required": "Elige al menos una forma de avisarte."
       }
     },
+    "edit": {
+      "title": "Edita la alerta",
+      "cta": "Guarda los cambios",
+      "saving": "Guardando los cambios…",
+      "errors": {
+        "generic": "No hemos podido guardar los cambios. Vuelve a intentarlo."
+      },
+      "missingTitle": "No hemos encontrado esta alerta",
+      "missingMessage": "Quizá la has borrado. Vuelve a la lista de alertas."
+    },
+    "subtitle": "Te avisamos solo cuando el cielo acompaña.",
+    "summary": "A menos de {{travel}}, índice de {{index}} o más",
+    "toggle": "Alerta de {{name}}",
+    "editHint": "Abre la alerta para editarla",
+    "toggleError": "No hemos podido cambiar la alerta. Vuelve a intentarlo.",
+    "emptyTitle": "Aún no tienes alertas",
+    "emptyMessage": "Crea una y te avisaremos cuando haya buenas condiciones para lo que quieres ver.",
+    "errorTitle": "No hemos podido cargar las alertas",
+    "retry": "Volver a intentarlo",
     "pushDenied": "Las notificaciones están desactivadas: no te avisaremos en el móvil cuando haya buenas condiciones. Puedes activarlas en los ajustes.",
     "pushUnavailable": "Este dispositivo no puede recibir notificaciones. El resto de la app funciona igual.",
     "openSettings": "Abrir ajustes"
@@ -453,7 +479,9 @@
       "tomorrow": "mañana por la noche"
     },
     "from": "Desde {{place}}, hasta {{travel}}",
+    "from_vowel": "Desde {{place}}, hasta {{travel}}",
     "fromHere": "Desde donde estás, hasta {{travel}}",
+    "fromPicked": "Desde el punto elegido, hasta {{travel}}",
     "duration": {
       "minutes": "{{minutes}} min",
       "hours": "{{hours}} h",
@@ -465,12 +493,85 @@
     "loading": "Buscando los mejores puntos…",
     "error": "No hemos podido cargar las recomendaciones",
     "empty": "No hay ningún punto a menos de {{travel}}",
+    "empty_vowel": "No hay ningún punto a menos de {{travel}}",
     "emptyHint": "Amplía la distancia o elige otra noche.",
     "noIndex": "Aún sin previsión",
     "bestHour": "Mejor hora: {{hour}}",
     "byCar": "{{travel}} en coche",
     "collapseSheet": "Plegar la lista",
-    "expandSheet": "Desplegar la lista"
+    "expandSheet": "Desplegar la lista",
+    "noEventForecast": "Todavía no hay previsión para este evento. Los puntos se muestran por distancia; consulta el índice cuando se acerque la fecha.",
+    "emptyEventHint": "Vuelve a intentarlo más adelante.",
+    "eventRanking": "Ranking de mejores puntos",
+    "qualityDistanceHint": "Priorizamos los niveles de visibilidad: cielo despejado, justo y cubierto. Dentro de cada nivel, combinamos el índice y la proximidad.",
+    "distance": "{{km}} km en línea recta",
+    "fromUnlimited": "Desde {{place}} · sin límite de distancia",
+    "fromUnlimited_vowel": "Desde {{place}} · sin límite de distancia",
+    "pastWindow": "Esta franja de observación ya ha terminado. Elige otro evento u otra noche.",
+    "fromHereUnlimited": "Desde donde estás · sin límite de distancia",
+    "emptyCatalog": "Todavía no hay puntos disponibles",
+    "hideRanking": "Oculta el ranking",
+    "showRanking": "Muestra el ranking",
+    "nearby": {
+      "label": "Cerca de mí",
+      "title": "Cerca de mí, {{when}}",
+      "best": "Mejores puntos cerca",
+      "here": "Desde donde estás",
+      "picked": "Desde el punto elegido",
+      "place": "Desde {{place}}",
+      "place_vowel": "Desde {{place}}",
+      "emptyHint": "Para ir más lejos, elige la distancia en «¿Qué quieres ver?»."
+    }
+  },
+  "plans": {
+    "new": {
+      "header": "Nuevo plan",
+      "title": "Plan de observación",
+      "point": "Punto de observación",
+      "pointA11y": "Punto de observación: {{name}}, {{municipality}}",
+      "pointUnavailable": "No hemos podido cargar el punto",
+      "day": "Día",
+      "dayValue": "{{weekday}} {{day}} {{month}}",
+      "monthsShort": [
+        "ene.",
+        "feb.",
+        "mar.",
+        "abr.",
+        "may.",
+        "jun.",
+        "jul.",
+        "ago.",
+        "sept.",
+        "oct.",
+        "nov.",
+        "dic."
+      ],
+      "time": "Hora de salida",
+      "hour": "Hora",
+      "minute": "Minutos",
+      "past": "La hora de salida ya ha pasado. Elige una más tarde.",
+      "event": "Fenómeno",
+      "eventValue": "{{type}}: {{name}}",
+      "noEvent": "Ninguno en concreto",
+      "eventSheet": "¿Qué vas a ver?",
+      "noEvents": "No hay ningún fenómeno del calendario alrededor de este día.",
+      "eventsError": "No hemos podido cargar los fenómenos",
+      "retry": "Vuelve a intentarlo",
+      "notes": "Notas",
+      "notesPlaceholder": "Ropa de abrigo, frontal rojo…",
+      "save": "Guarda el plan",
+      "saving": "Guardando…",
+      "dateSheet": "Elige el día",
+      "timeSheet": "Hora de salida",
+      "done": "Hecho",
+      "close": "Cerrar",
+      "errors": {
+        "alreadyExists": "Ya tienes un plan en este punto a esta hora.",
+        "limitReached": "Has llegado al máximo de 20 planes pendientes.",
+        "pointGone": "Este punto ya no está disponible.",
+        "generic": "No hemos podido guardar el plan. Vuelve a intentarlo en un momento."
+      }
+    }
   },
   "notifications": {
     "channelName": "Alertas del cielo"

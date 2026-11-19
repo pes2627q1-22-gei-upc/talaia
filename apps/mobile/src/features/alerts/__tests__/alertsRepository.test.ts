@@ -1,8 +1,12 @@
-import { apiGet, apiPost } from '@/core/api/httpClient';
+import { apiGet, apiPatch, apiPost } from '@/core/api/httpClient';
 
 import { alertsRepository } from '../alertsRepository';
 
-jest.mock('@/core/api/httpClient', () => ({ apiGet: jest.fn(), apiPost: jest.fn() }));
+jest.mock('@/core/api/httpClient', () => ({
+  apiGet: jest.fn(),
+  apiPatch: jest.fn(),
+  apiPost: jest.fn(),
+}));
 
 const NEW_ALERT = {
   objectiu: 'cel_estrellat',
@@ -27,5 +31,18 @@ describe('alertsRepository', () => {
     jest.mocked(apiGet).mockResolvedValue([]);
     await expect(alertsRepository.list()).resolves.toEqual([]);
     expect(apiGet).toHaveBeenCalledWith('/alertes');
+  });
+
+  it('activa o desactiva una alerta amb PATCH /alertes/{id} i només { activa }', async () => {
+    const saved = { id: 'a1', ...NEW_ALERT, activa: false };
+    jest.mocked(apiPatch).mockResolvedValue(saved);
+    await expect(alertsRepository.setActive('a1', false)).resolves.toBe(saved);
+    expect(apiPatch).toHaveBeenCalledWith('/alertes/a1', { activa: false });
+  });
+
+  it('els canvis només porten els camps que canvien i l’id va codificat a la ruta', async () => {
+    jest.mocked(apiPatch).mockResolvedValue({});
+    await alertsRepository.update('a/1', { indexMinim: 80, horaAvis: null });
+    expect(apiPatch).toHaveBeenCalledWith('/alertes/a%2F1', { indexMinim: 80, horaAvis: null });
   });
 });

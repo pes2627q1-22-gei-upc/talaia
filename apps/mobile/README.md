@@ -42,6 +42,7 @@ src/
     i18n/               i18next: ca (per defecte), es, en; claus tipades
     providers/          AppProviders (SafeArea, React Query, i18n)
     theme/tokens.ts     Tokens del design system (colors, espaiats, radis, mides)
+    theme/theme.tsx     Tema actual (normal o vermell): ThemeProvider, useTheme, makeStyles
   shared/ui/            Components de presentació reutilitzables
   test-utils/           Ajudes per als tests (createQueryWrapper)
 ```
@@ -204,7 +205,7 @@ i [Expo SecureStore](https://docs.expo.dev/versions/latest/sdk/securestore/).
 
 - **MVVM:** cap pantalla ni ViewModel crida `fetch`; només els Repository, a través de `core/api`.
 - **i18n:** cap text a les pantalles; tot via `t('…')`. Una clau nova va als tres fitxers de `core/i18n/locales/` (hi ha un test que ho comprova).
-- **Tokens:** cap color, mida ni espaiat a mà; tot de `core/theme/tokens.ts`.
+- **Tokens:** cap color, mida ni espaiat a mà; tot de `core/theme/tokens.ts`. Els colors canvien amb el mode nit (ADR-0032): es llegeixen amb `useTheme()` i els estils es fan amb `const useStyles = makeStyles(({ colors }) => ({ … }))` (`core/theme/theme.tsx`), no amb `StyleSheet.create` i `colors` en carregar el mòdul.
 - Rutes en català (`/punt/[id]`, `/calendari`) i identificadors de codi en anglès.
 
 ## Mòdul de referència: `features/apiStatus`
@@ -230,7 +231,7 @@ Per a una feature `xxx` (identificadors en anglès) amb ruta `/ruta-en-catala`:
 1. **Tipus.** Si la resposta és un tipus de domini, és (o s'afegeix) a `packages/shared`: `import type { Esdeveniment } from '@talaia/shared'`.
 2. **Repository** `src/features/xxx/xxxRepository.ts`: `fetchXxx()` crida `apiGet<T>('/recurs')` i `useXxxQuery()` l'embolica amb `useQuery` i una clau pròpia (`['recurs', filtres]`). És l'únic fitxer de la feature que coneix l'API.
 3. **ViewModel** `useXxxViewModel.ts`: crida el hook del Repository i retorna el que la View pinta: textos ja traduïts, dades ja formatades, l'estat (`loading`/`ok`/`error`) i les accions.
-4. **View** `XxxScreen.tsx`: `const vm = useXxxViewModel();` i només JSX. Esquelet amb `Screen` i els components base de `shared/ui` (`AppText`, `Button`, `Card`, `Chip`, `IndexIndicator`…; taula a `docs/design-system.md`); colors, mides i espaiats de `core/theme/tokens`.
+4. **View** `XxxScreen.tsx`: `const vm = useXxxViewModel();` i només JSX. Esquelet amb `Screen` i els components base de `shared/ui` (`AppText`, `Button`, `Card`, `Chip`, `IndexIndicator`…; taula a `docs/design-system.md`); mides i espaiats de `core/theme/tokens`, i colors de `useTheme()` o `makeStyles()`.
 5. **Ruta** a `src/app/` (o a `src/app/(tabs)/` si és una pestanya): un fitxer prim que només retorna `<XxxScreen />`. Amb paràmetres, mira `src/app/punt/[id].tsx`.
 6. **Textos**: les claus noves als tres fitxers de `core/i18n/locales/` (ca, es, en). Són tipades: una clau inexistent no compila, i un test comprova que els tres idiomes tenen les mateixes.
 7. **Tests** a `src/features/xxx/__tests__/`: copia els d'`apiStatus`. Només se simula `apiGet` (`jest.mock('@/core/api/httpClient', …)`) i el proveïdor de consultes és `createQueryWrapper()`.
@@ -264,3 +265,29 @@ Les proves automàtiques del perfil cobreixen els botons, la selecció i els tex
 en ca/es/en. `httpClient.test.ts` cobreix la capçalera, i `localizedQueries.test.tsx`
 comprova que canviar d’idioma renova les dades i que tornar-hi reutilitza només la
 memòria cau corresponent. Aquestes proves no substitueixen la inspecció visual al dispositiu.
+
+### «On veure-ho» des del calendari (TG-141)
+
+La fitxa de l’esdeveniment ofereix «On veure-ho». En prémer-lo, obté la ubicació
+actual i obre `/calendari/recomanacions` dins de la mateixa pila: «Enrere» torna a
+la fitxa. Es reutilitza el rànquing del mapa, considerant tots els punts publicats
+sense tall fix de distància. Els permisos denegats i els errors d’ubicació es mostren a la fitxa i es
+poden reintentar; si el permís està bloquejat, el botó obre la configuració.
+
+La consulta envia `esdevenimentId` (el codi de l’esdeveniment) i l’origen, sense
+`data`, `desDe` ni `finsA`: l’API resol la nit i la finestra horària (TG-140).
+El nom i la data de la ruta són context de presentació; en arribar la resposta,
+la nit mostrada és la que ha resolt l’API. Amb `avis: 'sense_previsio'`, es mostra
+«Rànquing de millors punts», l’avís de manca de previsió i els punts per distància, sense
+destacar-ne cap com el millor per observar. Textos en ca/es/en.
+
+Amb previsió, l’API prioritza el nivell de qualitat ras/jus/tap i, dins de
+cada nivell, combina índex i proximitat: resta un punt per cada 30 km, fins a 10
+punts, només per ordenar. Per exemple, un 100 a 150 km passa davant d’un 95 a 20 km. La pantalla mostra l’índex, la distància en línia
+recta i el temps aproximat en cotxe. El nom i la nit de l’esdeveniment es mantenen
+visibles. Es consideren tots els candidats abans de retornar els 20 primers
+(`limit` de l’API). Arrossegant la nansa cap avall es plega el rànquing;
+cap amunt es recupera sense perdre la cerca. No hi ha cap botó visible per
+amagar-lo. La nansa manté una acció accessible equivalent per a VoiceOver/TalkBack.
+
+Proves i comprovacions pendents: [registre de TG-141](../../docs/proves-tg-141.md).

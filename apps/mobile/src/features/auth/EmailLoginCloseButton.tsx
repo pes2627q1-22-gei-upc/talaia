@@ -1,15 +1,17 @@
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { colors, sizes, spacing } from '@/core/theme/tokens';
+import { useTheme } from '@/core/theme/theme';
+import { sizes, spacing } from '@/core/theme/tokens';
 import { PressableScale } from '@/shared/ui/PressableScale';
 
-const closeIcon = {
+const closeIcon = (stroke: string) => ({
   uri: `data:image/svg+xml;utf8,${encodeURIComponent(
-    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="${colors.lluna}" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>`,
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="${stroke}" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>`,
   )}`,
-};
+});
 const closeStyle = {
   width: sizes.touch,
   height: sizes.touch,
@@ -24,6 +26,8 @@ const closeIconStyle = { width: sizes.icon, height: sizes.icon };
  */
 export function EmailLoginCloseButton() {
   const { t } = useTranslation();
+  const { colors } = useTheme();
+  const icon = useMemo(() => closeIcon(colors.lluna), [colors.lluna]);
   return (
     <PressableScale
       onPress={() => router.back()}
@@ -31,7 +35,7 @@ export function EmailLoginCloseButton() {
       hitSlop={spacing.sm}
       style={closeStyle}
     >
-      <Image source={closeIcon} style={closeIconStyle} accessible={false} />
+      <Image source={icon} style={closeIconStyle} accessible={false} />
     </PressableScale>
   );
 }

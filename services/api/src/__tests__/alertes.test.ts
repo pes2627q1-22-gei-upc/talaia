@@ -37,6 +37,7 @@ const profileStore: ProfileStore = {
   getAccountStatus: async (authUserId) => COMPTES[authUserId] ?? null,
   listProfiles: noCal,
   setBlocked: noCal,
+  deleteAccount: noCal,
 };
 
 const NOVA: AlertaNova = {
