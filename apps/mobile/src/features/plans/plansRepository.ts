@@ -1,7 +1,7 @@
-import type { EsdevenimentsResponse, Pla, PlaNou } from '@talaia/shared';
+import type { CalendariPla, EsdevenimentsResponse, Pla, PlaNou } from '@talaia/shared';
 import { useQuery } from '@tanstack/react-query';
 
-import { apiGet, apiPost } from '@/core/api/httpClient';
+import { apiGet, apiPost, apiPut } from '@/core/api/httpClient';
 
 import { eventWindow } from './planModel';
 
@@ -12,6 +12,9 @@ export const PLANS_KEY = ['plans'] as const;
 export const plansRepository = {
   create(plan: PlaNou): Promise<Pla> {
     return apiPost<Pla>('/plans', plan);
+  },
+  linkCalendar(id: string, link: CalendariPla): Promise<void> {
+    return apiPut<void>(`/plans/${encodeURIComponent(id)}/calendari`, link);
   },
 };
 

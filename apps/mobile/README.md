@@ -291,3 +291,21 @@ cap amunt es recupera sense perdre la cerca. No hi ha cap botó visible per
 amagar-lo. La nansa manté una acció accessible equivalent per a VoiceOver/TalkBack.
 
 Proves i comprovacions pendents: [registre de TG-141](../../docs/proves-tg-141.md).
+
+### Calendari del mòbil (TG-158)
+
+«Pla d’observació» inclou «Afegeix-lo al meu calendari», desactivat inicialment.
+En activar-lo es demana permís i es pot triar entre els calendaris modificables,
+amb el nom del calendari i del compte. Si es tria un calendari de Google amb
+sincronització activada al sistema, l’esdeveniment també apareix a Google Calendar.
+
+Primer es desa el pla (`POST /plans`), després es crea l’esdeveniment i es vincula
+amb `PUT /plans/{id}/calendari`. Conté el punt, el fenomen si s’ha triat, les notes,
+la sortida i el final de la franja; sense final explícit, acaba al migdia de
+després de la nit, igual que a l’API. Un error de calendari conserva el pla i
+ofereix reintent o continuar. Si només falla el PUT, el reintent reutilitza l’id
+natiu mentre la pantalla continua oberta. No hi ha sincronització contínua.
+
+Quan el calendari no està disponible, l’opció queda desactivada i el pla es pot
+desar igualment. Textos i permisos en ca/es/en. La prova real dels permisos,
+del desament al calendari i de la sincronització de Google queda pendent al mòbil.

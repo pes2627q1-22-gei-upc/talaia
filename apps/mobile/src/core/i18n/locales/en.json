@@ -571,6 +571,28 @@
         "pointGone": "This viewpoint is no longer available.",
         "generic": "We couldn't save the plan. Try again in a moment."
       }
+    },
+    "calendar": {
+      "label": "Add it to my calendar",
+      "hint": "Choose a calendar on your phone. If it belongs to your Google account and syncing is enabled, it will also appear in Google Calendar.",
+      "unavailable": "Calendar access is unavailable in this environment. You can still save the plan.",
+      "loading": "Loading calendars…",
+      "denied": "Calendar permission is needed. Grant permission or turn this option off to save just the plan.",
+      "loadError": "We couldn’t load your calendars. Try again or turn this option off.",
+      "empty": "There are no writable calendars. Set up a calendar on your phone and try again, or turn this option off.",
+      "settings": "Open settings",
+      "target": "Destination calendar",
+      "choose": "Choose a calendar",
+      "eventTitle": "Talaia · {{point}}",
+      "eventTitleWithPhenomenon": "{{phenomenon}} · {{point}}",
+      "savedTitle": "Plan saved",
+      "adding": "Your plan is saved to your account. We’re adding it to your calendar…",
+      "continue": "Continue",
+      "syncErrors": {
+        "create": "Your plan is saved, but we couldn’t add it to your calendar. Retry or continue with your saved plan.",
+        "link": "Your plan and calendar event are saved, but we couldn’t link them. Retry to complete the link.",
+        "denied": "Your plan is saved, but calendar permission is missing. Grant permission and retry, or continue with your saved plan."
+      }
     }
   },
   "notifications": {

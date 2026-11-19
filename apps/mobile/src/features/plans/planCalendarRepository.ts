@@ -1,0 +1,71 @@
+import { isRunningInExpoGo, requireOptionalNativeModule } from 'expo';
+import type * as CalendarModule from 'expo-calendar';
+import * as Device from 'expo-device';
+import { Platform } from 'react-native';
+
+import type { PlanCalendarEvent } from './planCalendarModel';
+
+export type DeviceCalendar = { id: string; title: string; account: string };
+export type CalendarAccess =
+  | { status: 'ready'; calendars: DeviceCalendar[] }
+  | { status: 'denied'; canAskAgain: boolean }
+  | { status: 'unavailable' };
+
+export class CalendarPermissionError extends Error {
+  constructor(public readonly canAskAgain: boolean) {
+    super('calendar_permission_denied');
+  }
+}
+
+let calendarModule: typeof CalendarModule | null = null;
+
+function calendar(): typeof CalendarModule {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports -- Expo Go no porta CalendarNext (SDK 58).
+  calendarModule ??= require('expo-calendar') as typeof CalendarModule;
+  return calendarModule;
+}
+
+async function permission() {
+  const current = await calendar().getCalendarPermissions();
+  return !current.granted && current.canAskAgain
+    ? calendar().requestCalendarPermissions()
+    : current;
+}
+
+/** Només llegeix metadades dels calendaris i crea esdeveniments; no llegeix esdeveniments personals. */
+export const planCalendarRepository = {
+  isSupported(): boolean {
+    return (
+      (Platform.OS === 'ios' || Platform.OS === 'android') &&
+      Device.isDevice &&
+      !isRunningInExpoGo() &&
+      requireOptionalNativeModule('CalendarNext') !== null
+    );
+  },
+
+  async requestCalendars(): Promise<CalendarAccess> {
+    if (!planCalendarRepository.isSupported()) return { status: 'unavailable' };
+    const access = await permission();
+    if (!access.granted) return { status: 'denied', canAskAgain: access.canAskAgain };
+    const calendars = await calendar().getCalendars(calendar().EntityTypes.EVENT);
+    return {
+      status: 'ready',
+      calendars: calendars
+        .filter((item) => item.allowsModifications)
+        .map((item) => ({
+          id: item.id,
+          title: item.title,
+          account: item.source?.name || item.ownerAccount || '',
+        })),
+    };
+  },
+
+  async createEvent(calendarId: string, event: PlanCalendarEvent): Promise<string> {
+    if (!planCalendarRepository.isSupported()) throw new Error('calendar_unavailable');
+    const access = await permission();
+    if (!access.granted) throw new CalendarPermissionError(access.canAskAgain);
+    const target = await calendar().ExpoCalendar.get(calendarId);
+    if (!target.allowsModifications) throw new Error('calendar_read_only');
+    return (await target.createEvent(event)).id;
+  },
+};
