@@ -6,6 +6,7 @@ import { eventAppearance, eventTypeLabelKey } from '@/features/calendar/phenomen
 
 import { eventSchedule, type Night } from './eventModel';
 import { useEventQuery } from './eventRepository';
+import { useEventRecommendations } from './useEventRecommendations';
 
 const capitalize = (text: string) => text.charAt(0).toLocaleUpperCase() + text.slice(1);
 
@@ -18,6 +19,7 @@ const oneOClock = (time: string) => (time.startsWith('01:') ? 'oneOClock' : unde
 export function useEventDetailViewModel(eventId: string) {
   const { t, i18n } = useTranslation();
   const query = useEventQuery(eventId, i18n.resolvedLanguage ?? 'ca');
+  const recommendations = useEventRecommendations(query.data);
   const common = {
     headerTitle: t('event.title'),
     backLabel: t('event.back'),
@@ -98,6 +100,7 @@ export function useEventDetailViewModel(eventId: string) {
     ...common,
     status: 'ok' as const,
     name: event.nom,
+    recommendations: { ...recommendations, onPress: () => void recommendations.onPress(dateLabel) },
     typeLabel: capitalize(t(`calendar.types.${eventTypeLabelKey(event.tipus)}`)),
     dateLabel,
     whenTitle: t('event.when'),

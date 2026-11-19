@@ -3,6 +3,8 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { ApiError } from '@/core/api/httpClient';
+
 import { addDays, dayParts, nightOf, travelParts } from '../explore/exploreModel';
 import { EMPTY_MAP_POINTS } from '../map/pointMarkers';
 
@@ -57,13 +59,13 @@ export function useRecommendationsViewModel() {
       : t('recommendations.duration.hours', { hours });
   };
 
-  // «A prop meu» no tria la nit ni la distància: les diu l'API en respondre (TG-133).
-  const nearby = nearbyOrigin(params);
+  const eventSearch = !!query.esdevenimentId;
+  const nearby = eventSearch ? null : nearbyOrigin(params);
   const night = query.data ?? data?.data;
   const minutes = query.tempsMaxim ?? data?.tempsMaxim;
   const tonight = nightOf(new Date());
   const when = (() => {
-    if (!night) return null;
+    if (!night) return eventSearch ? (params.eventWhen ?? t('event.title')) : null;
     if (night === tonight) return t('recommendations.when.tonight');
     if (night === addDays(tonight, 1)) return t('recommendations.when.tomorrow');
     const { weekday, day } = dayParts(night);
@@ -72,18 +74,24 @@ export function useRecommendationsViewModel() {
     const month = months[Number(night.slice(5, 7)) - 1];
     return t('explore.when.picked', { weekday: weekdays[weekday], day, month });
   })();
-  const travel = minutes === undefined ? null : duration(minutes);
-  const title = nearby
-    ? when
-      ? t('recommendations.nearby.title', { when })
-      : t('recommendations.nearby.label')
-    : t('recommendations.title', {
-        goal: t(`explore.goals.${query.objectiu ?? 'cel_estrellat'}`),
-        when,
-      });
+  const travel = minutes == null ? null : duration(minutes);
+  const title = eventSearch
+    ? (params.eventName ?? t('event.title'))
+    : nearby
+      ? when
+        ? t('recommendations.nearby.title', { when })
+        : t('recommendations.nearby.label')
+      : t('recommendations.title', {
+          goal: t(`explore.goals.${query.objectiu ?? 'cel_estrellat'}`),
+          when,
+        });
   const subtitle = (() => {
     const place = params.lloc;
     if (!travel) {
+      if (eventSearch)
+        return place
+          ? t('recommendations.fromUnlimited', { place, context: elision(place) })
+          : t('recommendations.fromHereUnlimited');
       if (place) return t('recommendations.nearby.place', { place, context: elision(place) });
       return t(
         nearby === 'triat' ? 'recommendations.nearby.picked' : 'recommendations.nearby.here',
@@ -94,6 +102,7 @@ export function useRecommendationsViewModel() {
       travel,
     });
   })();
+  const pastWindow = result.error instanceof ApiError && result.error.code === 'franja_passada';
 
   const punts = data?.punts ?? [];
   const rows = (expanded ? punts : punts.slice(0, VISIBLE_ROWS)).map((punt, position) => {
@@ -101,6 +110,13 @@ export function useRecommendationsViewModel() {
     const rank = ordinal(position + 1, i18n.language);
     const hour = millorHora ? localTime(millorHora.hora) : null;
     const time = duration(punt.tempsEstimat);
+    const distance = eventSearch
+      ? t('recommendations.distance', {
+          km: new Intl.NumberFormat(i18n.resolvedLanguage ?? 'ca', {
+            maximumFractionDigits: 1,
+          }).format(punt.distanciaKm),
+        })
+      : null;
     const index = millorHora
       ? t('index.a11y', {
           value: millorHora.valor,
@@ -113,12 +129,14 @@ export function useRecommendationsViewModel() {
       index: millorHora,
       hour,
       travel: time,
+      distance,
       rank,
-      highlighted: position === 0,
+      highlighted: position === 0 && data?.avis !== 'sense_previsio',
       accessibilityLabel: [
         `${rank}: ${punt.nom}`,
         index,
         hour && t('recommendations.bestHour', { hour }),
+        distance,
         t('recommendations.byCar', { travel: time }),
       ]
         .filter(Boolean)
@@ -141,25 +159,55 @@ export function useRecommendationsViewModel() {
     bounds,
     header: {
       title,
+      eventDate: eventSearch ? when : null,
       subtitle,
       legend: LEGEND.map((franja) => ({ franja, label: t(`index.level.${franja}`) })),
     },
     sheet: {
-      title: when ? t('recommendations.best', { when }) : t('recommendations.nearby.best'),
+      title: eventSearch
+        ? t('recommendations.eventRanking')
+        : when
+          ? t('recommendations.best', { when })
+          : t('recommendations.nearby.best'),
+      notice:
+        data?.avis === 'sense_previsio'
+          ? t('recommendations.noEventForecast')
+          : eventSearch
+            ? t('recommendations.qualityDistanceHint')
+            : null,
       state,
       rows,
       loadingLabel: t('recommendations.loading'),
-      errorLabel: t('recommendations.error'),
+      errorLabel: t(pastWindow ? 'recommendations.pastWindow' : 'recommendations.error'),
+      canRetry: !pastWindow,
       retryLabel: t('map.retry'),
       onRetry: () => void result.refetch(),
-      emptyTitle: travel ? t('recommendations.empty', { travel, context: elision(travel) }) : '',
-      // «A prop meu» no deixa triar la distància: per anar més lluny, «Què vols veure?».
-      emptyHint: t(nearby ? 'recommendations.nearby.emptyHint' : 'recommendations.emptyHint'),
+      emptyTitle: travel
+        ? t('recommendations.empty', { travel, context: elision(travel) })
+        : eventSearch
+          ? t('recommendations.emptyCatalog')
+          : '',
+      emptyHint: t(
+        eventSearch
+          ? 'recommendations.emptyEventHint'
+          : nearby
+            ? 'recommendations.nearby.emptyHint'
+            : 'recommendations.emptyHint',
+      ),
       collapsed,
-      collapseLabel: t(collapsed ? 'recommendations.expandSheet' : 'recommendations.collapseSheet'),
+      collapseLabel: t(
+        eventSearch
+          ? collapsed
+            ? 'recommendations.showRanking'
+            : 'recommendations.hideRanking'
+          : collapsed
+            ? 'recommendations.expandSheet'
+            : 'recommendations.collapseSheet',
+      ),
+      onSetCollapsed: setCollapsed,
       onToggleCollapsed: () => setCollapsed((value) => !value),
       toggle:
-        !collapsed && punts.length > VISIBLE_ROWS
+        punts.length > VISIBLE_ROWS
           ? {
               label: t(expanded ? 'recommendations.showLess' : 'recommendations.showAll'),
               onPress: () => setExpanded((value) => !value),

@@ -55,7 +55,9 @@ export type ParametresRecomanacions = Pick<ConsultaRecomanacions, 'origen'> &
      * «On veure-ho» des de la fitxa d'un fenomen (HU11, TG-140): el `codi` de
      * `GET /api/v1/esdeveniments/{id}` (el mateix que `PlaNou.esdevenimentId`). La franja i la nit
      * surten de l'esdeveniment (`RecomanacionsResposta.esdeveniment`), així que no va amb `data`,
-     * `desDe` ni `finsA`.
+     * `desDe` ni `finsA`. Sense `tempsMaxim`, considera tots els punts publicats;
+     * amb índex, combina qualitat i proximitat: dins del mateix nivell ras/jus/tap,
+     * resta 1 punt per cada 30 km, fins a 10, només per ordenar.
      */
     esdevenimentId?: string;
   };
@@ -97,21 +99,22 @@ export type Recomanacio = PuntObservacio & {
 export type RecomanacionsResposta = {
   /** La nit que s'ha fet servir (`YYYY-MM-DD`): la de la consulta o, si no n'hi havia, la que toca. */
   data: string;
-  /** El temps en cotxe que s'ha fet servir, en minuts: el de la consulta o 60 per defecte. */
-  tempsMaxim: number;
-  /** Radi en línia recta que s'ha fet servir per a `tempsMaxim`, en km (1 decimal). */
-  radiKm: number;
+  /** Minuts màxims en cotxe; `null` si la cerca per esdeveniment no limita la distància. */
+  tempsMaxim: number | null;
+  /** Radi en línia recta, en km (1 decimal); `null` sense límit de distància. */
+  radiKm: number | null;
   /**
    * Hores de la franja que entren al rànquing, `[desDe, finsA)` en ISO 8601 UTC. Si la franja ja
    * ha començat, `desDe` és l'hora en curs.
    */
   franja: { desDe: string; finsA: string };
-  /** Quants punts publicats hi ha dins del radi, abans d'aplicar `limit`. */
+  /** Punts candidats abans de `limit`: dins del radi o tot el catàleg si no hi ha límit. */
   total: number;
   /**
    * Els `limit` primers punts publicats dins del radi, de millor a pitjor: per `millorHora`,
-   * després per `mitjana` i després per distància. Els que no tenen índex (més enllà de la
-   * previsió) van al final.
+   * després per `mitjana` i després per distància. Amb esdeveniment, primer el nivell
+   * ras/jus/tap i la puntuació índex − min(10, km/30); després, distància, índex exacte
+   * i mitjana. No es modifica l’índex real. Els que no tenen índex van al final per distància.
    */
   punts: Recomanacio[];
   /**

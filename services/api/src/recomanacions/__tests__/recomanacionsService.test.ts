@@ -8,6 +8,7 @@ import type {
   RecomanacionsRepository,
 } from '../recomanacionsRepository';
 import {
+  compareEventRecommendations,
   createRecomanacionsService,
   type EsdevenimentsFont,
   LIMIT_PER_DEFECTE,
@@ -48,7 +49,7 @@ const ABANS = new Date('2026-12-15T10:20:00Z');
 const H = (n: number) => new Date(Date.parse('2026-12-15T21:00:00Z') + n * HORA_MS).toISOString();
 
 function fakeRepository(punts: PuntCandidat[], index: IndexHoraPunt[], error?: Error) {
-  const crides: { radi?: number; origen?: unknown; rang?: [string[], Date, Date] } = {};
+  const crides: { radi?: number | null; origen?: unknown; rang?: [string[], Date, Date] } = {};
   const repository: RecomanacionsRepository = {
     async puntsDinsRadi(origen, metres) {
       if (error) throw error;
@@ -370,6 +371,71 @@ describe('recomanacionsService.getRecomanacions amb esdevenimentId (TG-140)', ()
     expect(res).not.toHaveProperty('avis');
   });
 
+  it('sense tempsMaxim considera tot el catàleg i prioritza la proximitat entre índexs semblants', async () => {
+    const { repository, crides } = fakeRepository(
+      [punt('lluny', 150_000), punt('prop', 20_000), punt('sense-index', 1_000)],
+      [
+        { puntId: 'lluny', ...hora(N(0), 87) },
+        { puntId: 'prop', ...hora(N(0), 85) },
+      ],
+    );
+    const res = await createRecomanacionsService(
+      repository,
+      undefined,
+      font(LEONIDES).esdeveniments,
+    ).getRecomanacions({ ...ORIGEN, esdevenimentId: LEONIDES.codi }, ARA);
+    expect(crides.radi).toBeNull();
+    expect(crides.rang?.[0]).toEqual(['lluny', 'prop', 'sense-index']);
+    expect(res.tempsMaxim).toBeNull();
+    expect(res.radiKm).toBeNull();
+    expect(res.punts.map((p) => p.id)).toEqual(['prop', 'lluny', 'sense-index']);
+    expect(res.punts[0]?.distanciaKm).toBe(20);
+    expect(res.punts[1]?.distanciaKm).toBe(150);
+  });
+
+  it('manté la prioritat de qualitat entre franges i aplica limit després de combinar índex i distància', async () => {
+    const { repository } = fakeRepository(
+      [
+        punt('baix-prop', 100),
+        punt('bo-prop', 20_000),
+        punt('bo-lluny', 150_000),
+        punt('millor', 300_000),
+      ],
+      [
+        { puntId: 'baix-prop', ...hora(N(0), 39) },
+        { puntId: 'bo-prop', ...hora(N(0), 85) },
+        { puntId: 'bo-lluny', ...hora(N(0), 87) },
+        { puntId: 'millor', ...hora(N(0), 95) },
+      ],
+    );
+    const res = await createRecomanacionsService(
+      repository,
+      undefined,
+      font(LEONIDES).esdeveniments,
+    ).getRecomanacions({ ...ORIGEN, esdevenimentId: LEONIDES.codi, limit: 2 }, ARA);
+    expect(res.total).toBe(4);
+    expect(res.punts.map((p) => p.id)).toEqual(['millor', 'bo-prop']);
+  });
+
+  it('amb 30 km per punt, el 100 a 150 km guanya el 95 a 20 km i conserva els índexs reals', async () => {
+    const { repository } = fakeRepository(
+      [punt('cent', 150_000), punt('noranta-cinc', 20_000)],
+      [
+        { puntId: 'cent', ...hora(N(0), 100) },
+        { puntId: 'noranta-cinc', ...hora(N(0), 95) },
+      ],
+    );
+    const res = await createRecomanacionsService(
+      repository,
+      undefined,
+      font(LEONIDES).esdeveniments,
+    ).getRecomanacions({ ...ORIGEN, esdevenimentId: LEONIDES.codi }, ARA);
+    expect(res.punts.map((p) => [p.id, p.millorHora?.valor])).toEqual([
+      ['cent', 100],
+      ['noranta-cinc', 95],
+    ]);
+  });
+
   it('respecta el radi de tempsMaxim i el limit', async () => {
     const punts = Array.from({ length: 5 }, (_, k) => punt(`p${k}`, 1_000 * (k + 1)));
     const { repository, crides } = fakeRepository(punts, [{ puntId: 'p0', ...hora(N(0), 50) }]);
@@ -496,5 +562,96 @@ describe('recomanacionsService.getRecomanacions amb esdevenimentId (TG-140)', ()
     ).getRecomanacions(CONSULTA, ABANS);
     expect(res).not.toHaveProperty('esdeveniment');
     expect(res).not.toHaveProperty('avis');
+  });
+});
+
+describe('ordre estable del rànquing d’esdeveniments', () => {
+  const recommendation = (id: string, value: number | null, distance: number) => ({
+    ...punt(id, distance * 1000),
+    distanciaKm: distance,
+    tempsEstimat: 20,
+    millorHora: value === null ? null : hora(H(0), value),
+    mitjana: value,
+    horesAmbIndex: value === null ? 0 : 1,
+  });
+
+  it('la puntuació contínua i els desempats donen el mateix ordre amb entrades diferents', () => {
+    const points = [
+      recommendation('a', 87, 150),
+      recommendation('b', 85, 20),
+      recommendation('c', 83, 1),
+      recommendation('d', 87, 20),
+      recommendation('e', 87, 20),
+      recommendation('f', null, 1),
+      recommendation('g', null, 2),
+      recommendation('h', 100, 300),
+      recommendation('i', 0, 2),
+    ];
+    const expected = ['h', 'd', 'e', 'b', 'c', 'a', 'i', 'f', 'g'];
+    for (const input of [
+      points,
+      [...points].reverse(),
+      [...points.slice(3), ...points.slice(0, 3)],
+    ]) {
+      expect([...input].sort(compareEventRecommendations).map((p) => p.id)).toEqual(expected);
+    }
+  });
+
+  it.each([
+    [39, 40],
+    [69, 70],
+  ])('el %i proper no avança el %i de la franja superior', (low, high) => {
+    expect(
+      compareEventRecommendations(
+        recommendation('prop', low, 1),
+        recommendation('lluny', high, 300),
+      ),
+    ).toBeGreaterThan(0);
+  });
+
+  it.each([
+    [89, 90],
+    [99, 100],
+    [84, 85],
+  ])(
+    'el %i a 20 km avança el %i a 150 km, sense salts artificials entre índexs semblants',
+    (near, far) => {
+      expect(
+        compareEventRecommendations(
+          recommendation('prop', near, 20),
+          recommendation('lluny', far, 150),
+        ),
+      ).toBeLessThan(0);
+    },
+  );
+
+  it('limita la penalització a 10 punts perquè una diferència gran d’índex continuï pesant', () => {
+    expect(
+      compareEventRecommendations(recommendation('bo', 100, 1000), recommendation('prop', 89, 0)),
+    ).toBeLessThan(0);
+  });
+
+  it('amb la mateixa puntuació ajustada prioritza la distància', () => {
+    expect(
+      compareEventRecommendations(recommendation('prop', 93, 60), recommendation('lluny', 95, 120)),
+    ).toBeLessThan(0);
+  });
+
+  it('dona una mica més de pes a l’índex en una comparació ajustada', () => {
+    expect(
+      compareEventRecommendations(
+        recommendation('millor-index', 95, 65),
+        recommendation('mes-prop', 93, 20),
+      ),
+    ).toBeLessThan(0);
+  });
+
+  it('el 100 a 102,8 km guanya el 92 a 63 km amb el pes acordat', () => {
+    expect(
+      compareEventRecommendations(
+        recommendation('cent', 100, 102.8),
+        recommendation('noranta-dos', 92, 63),
+      ),
+    ).toBeLessThan(0);
   });
 });

@@ -1,5 +1,7 @@
 import { render, screen } from '@testing-library/react-native';
+import { processColor } from 'react-native';
 
+import { FieldRow } from '@/features/explore/FieldRow';
 import { Chip } from '@/shared/ui/Chip';
 import { Screen } from '@/shared/ui/Screen';
 
@@ -38,5 +40,20 @@ describe('ThemeProvider', () => {
       backgroundColor: '#FF0000',
     });
     expect(screen.getByText('Lluna')).toHaveStyle({ color: '#000000' });
+  });
+
+  it('en mode nit, els camps es pinten amb la paleta i tenyeixen les icones SVG', async () => {
+    await render(
+      <ThemeProvider name="vermell">
+        <FieldRow icon={1} label="Barcelona" hint="Ubicació actual" />
+      </ThemeProvider>,
+    );
+    expect(screen.getByLabelText('Barcelona, Ubicació actual')).toHaveStyle({
+      backgroundColor: '#0F0000',
+    });
+    // expo-image rep el color ja processat (ARGB).
+    expect(JSON.stringify(screen.toJSON())).toContain(
+      `"tintColor":${String(processColor('#FF0000'))}`,
+    );
   });
 });

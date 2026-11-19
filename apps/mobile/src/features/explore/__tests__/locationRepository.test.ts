@@ -1,6 +1,14 @@
+import { act, renderHook } from '@testing-library/react-native';
 import * as Location from 'expo-location';
 
-import { getCurrentPlace, PLACE_NAME_TIMEOUT_MS, placeName } from '../locationRepository';
+import { createQueryWrapper } from '@/test-utils/queryWrapper';
+
+import {
+  getCurrentPlace,
+  PLACE_NAME_TIMEOUT_MS,
+  placeName,
+  useCurrentPlaceQuery,
+} from '../locationRepository';
 
 jest.mock('expo-location', () => ({
   PermissionStatus: { GRANTED: 'granted', DENIED: 'denied' },
@@ -73,4 +81,22 @@ describe('placeName', () => {
     jest.advanceTimersByTime(PLACE_NAME_TIMEOUT_MS);
     await expect(name).resolves.toBe('');
   });
+});
+
+it('la consulta de «On veure-ho» no demana permís fins que l’usuari la dispara', async () => {
+  jest.clearAllMocks();
+  location.requestForegroundPermissionsAsync.mockResolvedValue({
+    status: 'denied',
+    canAskAgain: true,
+  } as Location.LocationPermissionResponse);
+  const { result } = await renderHook(() => useCurrentPlaceQuery(false), {
+    wrapper: createQueryWrapper(),
+  });
+  expect(location.requestForegroundPermissionsAsync).not.toHaveBeenCalled();
+  await act(async () => {
+    const response = await result.current.refetch();
+    expect(response.data).toEqual({ status: 'denied', canAskAgain: true });
+  });
+  expect(location.requestForegroundPermissionsAsync).toHaveBeenCalledTimes(1);
+  expect(location.getCurrentPositionAsync).not.toHaveBeenCalled();
 });

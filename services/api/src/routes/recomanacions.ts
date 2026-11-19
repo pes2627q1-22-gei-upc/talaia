@@ -88,7 +88,7 @@ const queryShape = (numero: Numero) => {
     })
       .optional()
       .meta({
-        description: `Temps màxim en cotxe, en minuts. Per defecte, ${TEMPS_MAXIM_PER_DEFECTE} («A prop meu»)`,
+        description: `Temps màxim en cotxe, en minuts. Amb esdevenimentId, sense límit si s’omet; en la resta de cerques, ${TEMPS_MAXIM_PER_DEFECTE} per defecte`,
         example: 150,
       }),
     esdevenimentId: z
@@ -142,12 +142,14 @@ const RecomanacionsSchema: z.ZodType<RecomanacionsResposta> = z
     tempsMaxim: z
       .number()
       .int()
+      .nullable()
       .meta({
-        description: `Temps en cotxe que s'ha fet servir, en minuts: el de la consulta o ${TEMPS_MAXIM_PER_DEFECTE}`,
+        description: `Temps màxim en cotxe, en minuts. Null amb esdevenimentId sense límit de distància; altrament, el valor explícit o ${TEMPS_MAXIM_PER_DEFECTE}`,
         example: TEMPS_MAXIM_PER_DEFECTE,
       }),
-    radiKm: z.number().meta({
-      description: 'Radi en línia recta que correspon a `tempsMaxim` (60 km/h, desviament ×1,3)',
+    radiKm: z.number().nullable().meta({
+      description:
+        'Radi en línia recta (60 km/h, desviament ×1,3); null si no es limita la distància',
       example: 115.4,
     }),
     franja: z.object({ desDe: z.string(), finsA: z.string() }).meta({
@@ -186,7 +188,7 @@ const RecomanacionsSchema: z.ZodType<RecomanacionsResposta> = z
       )
       .meta({
         description:
-          'Els `limit` primers punts publicats dins del radi, ordenats per `millorHora` (l’índex màxim de la franja), `mitjana` i distància. Els que no tenen índex, al final.',
+          'Els `limit` primers punts publicats dins del radi, ordenats per `millorHora` (l’índex màxim de la franja), `mitjana` i distància. Amb esdevenimentId, primer per nivell ras/jus/tap i, dins de cada nivell, per índex − min(10, km/30); després, distància, índex exacte, mitjana i id. Els índexs de la resposta són els reals. Els que no tenen índex, al final per distància.',
       }),
     esdeveniment: z
       .object({
@@ -218,7 +220,7 @@ registry.registerPath({
     `a ${TEMPS_MAXIM_PER_DEFECTE} minuts en cotxe. ` +
     "Ordena els punts publicats dins del radi per l'índex de visibilitat v1 de la franja horària (ADR-0018). " +
     "L'índex és el mateix per a tots els objectius fins que s'adapti per fenomen. " +
-    "Amb `esdevenimentId` («On veure-ho», HU11), la franja és la finestra de l'esdeveniment i el rànquing va per l'índex màxim d'aquesta finestra (`millorHora`). " +
+    "Amb `esdevenimentId` («On veure-ho», HU11), la franja és la finestra de l'esdeveniment i el rànquing combina qualitat i proximitat: dins del mateix nivell ras/jus/tap, es resta un punt d’índex per cada 30 km, fins a 10 punts, només per ordenar. Sense `tempsMaxim` es consideren tots els punts publicats, abans d’aplicar `limit`. " +
     'El radi surt de `tempsMaxim` amb una estimació en línia recta fins que hi hagi el servei de rutes de Mobilicat. ' +
     '`Cache-Control` privat fins a la propera hora: la consulta porta la ubicació de qui la fa.',
   request: { query: QueryDoc },

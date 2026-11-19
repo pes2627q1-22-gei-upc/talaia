@@ -16,10 +16,23 @@ import { twoDigitHours } from '../point/pointModel';
  */
 export type RecommendationParams = Partial<
   Record<
-    'objectiu' | 'lat' | 'lon' | 'data' | 'desDe' | 'finsA' | 'tempsMaxim' | 'lloc' | 'aprop',
+    | 'objectiu'
+    | 'lat'
+    | 'lon'
+    | 'data'
+    | 'desDe'
+    | 'finsA'
+    | 'tempsMaxim'
+    | 'lloc'
+    | 'aprop'
+    | 'esdevenimentId'
+    | 'eventName'
+    | 'eventWhen',
     string
   >
 >;
+
+export type RecommendationQuery = ParametresRecomanacions;
 
 export type NearbyOrigin = 'aqui' | 'triat';
 
@@ -39,6 +52,24 @@ const isGoal = (value: string | undefined): value is ObjectiuObservacio =>
 export function parseQuery(params: RecommendationParams): ParametresRecomanacions | null {
   const number = (value?: string) => (value ? Number(value) : Number.NaN);
   const origen = { lat: number(params.lat), lon: number(params.lon) };
+  if (params.esdevenimentId !== undefined) {
+    const lat = params.lat?.trim() ? Number(params.lat) : Number.NaN;
+    const lon = params.lon?.trim() ? Number(params.lon) : Number.NaN;
+    const tempsMaxim = params.tempsMaxim === undefined ? undefined : Number(params.tempsMaxim);
+    if (
+      !params.esdevenimentId.trim() ||
+      ![lat, lon].every(Number.isFinite) ||
+      (tempsMaxim !== undefined && !Number.isFinite(tempsMaxim))
+    )
+      return null;
+    if (params.data !== undefined || params.desDe !== undefined || params.finsA !== undefined)
+      return null;
+    return {
+      esdevenimentId: params.esdevenimentId,
+      origen: { lat, lon },
+      ...(tempsMaxim !== undefined ? { tempsMaxim } : {}),
+    };
+  }
   if (nearbyOrigin(params)) {
     return Number.isFinite(origen.lat) && Number.isFinite(origen.lon) ? { origen } : null;
   }

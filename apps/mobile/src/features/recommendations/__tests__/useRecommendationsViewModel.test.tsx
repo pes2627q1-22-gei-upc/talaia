@@ -67,6 +67,19 @@ describe('useRecommendationsViewModel', () => {
     });
   });
 
+  it.each([
+    ['ca', 'Igualada', "Des d'Igualada · sense límit de distància"],
+    ['ca', 'Àger', "Des d'Àger · sense límit de distància"],
+    ['ca', 'Vic', 'Des de Vic · sense límit de distància'],
+    ['es', 'Igualada', 'Desde Igualada · sin límite de distancia'],
+    ['en', 'Igualada', 'From Igualada · no distance limit'],
+  ])('origen sense límit en %s: %s', async (language, lloc, subtitle) => {
+    await i18n.changeLanguage(language);
+    mockParams = { esdevenimentId: 'leonids-2026', lat: '41.98', lon: '2.82', lloc };
+    const { result } = await renderHook(() => useRecommendationsViewModel());
+    expect(result.current?.header.subtitle).toBe(subtitle);
+  });
+
   describe('«A prop meu» (HU02)', () => {
     const resolta = (overrides: Partial<RecomanacionsResposta> = {}): RecomanacionsResposta => ({
       data: nightOf(new Date()),

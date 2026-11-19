@@ -15,7 +15,10 @@ jest.mock('@/core/api/httpClient', () => ({
   apiGet: jest.fn(),
 }));
 jest.mock('expo-router', () => ({
-  router: { canGoBack: jest.fn(() => true), back: jest.fn(), replace: jest.fn() },
+  router: { canGoBack: jest.fn(() => true), back: jest.fn(), replace: jest.fn(), push: jest.fn() },
+}));
+jest.mock('../../explore/locationRepository', () => ({
+  useCurrentPlaceQuery: jest.fn(() => ({ isFetching: false, isError: false, refetch: jest.fn() })),
 }));
 const get = jest.mocked(apiGet);
 

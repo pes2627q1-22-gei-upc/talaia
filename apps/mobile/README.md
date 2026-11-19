@@ -266,3 +266,29 @@ Les proves automàtiques del perfil cobreixen els botons, la selecció i els tex
 en ca/es/en. `httpClient.test.ts` cobreix la capçalera, i `localizedQueries.test.tsx`
 comprova que canviar d’idioma renova les dades i que tornar-hi reutilitza només la
 memòria cau corresponent. Aquestes proves no substitueixen la inspecció visual al dispositiu.
+
+### «On veure-ho» des del calendari (TG-141)
+
+La fitxa de l’esdeveniment ofereix «On veure-ho». En prémer-lo, obté la ubicació
+actual i obre `/calendari/recomanacions` dins de la mateixa pila: «Enrere» torna a
+la fitxa. Es reutilitza el rànquing del mapa, considerant tots els punts publicats
+sense tall fix de distància. Els permisos denegats i els errors d’ubicació es mostren a la fitxa i es
+poden reintentar; si el permís està bloquejat, el botó obre la configuració.
+
+La consulta envia `esdevenimentId` (el codi de l’esdeveniment) i l’origen, sense
+`data`, `desDe` ni `finsA`: l’API resol la nit i la finestra horària (TG-140).
+El nom i la data de la ruta són context de presentació; en arribar la resposta,
+la nit mostrada és la que ha resolt l’API. Amb `avis: 'sense_previsio'`, es mostra
+«Rànquing de millors punts», l’avís de manca de previsió i els punts per distància, sense
+destacar-ne cap com el millor per observar. Textos en ca/es/en.
+
+Amb previsió, l’API prioritza el nivell de qualitat ras/jus/tap i, dins de
+cada nivell, combina índex i proximitat: resta un punt per cada 30 km, fins a 10
+punts, només per ordenar. Per exemple, un 100 a 150 km passa davant d’un 95 a 20 km. La pantalla mostra l’índex, la distància en línia
+recta i el temps aproximat en cotxe. El nom i la nit de l’esdeveniment es mantenen
+visibles. Es consideren tots els candidats abans de retornar els 20 primers
+(`limit` de l’API). Arrossegant la nansa cap avall es plega el rànquing;
+cap amunt es recupera sense perdre la cerca. No hi ha cap botó visible per
+amagar-lo. La nansa manté una acció accessible equivalent per a VoiceOver/TalkBack.
+
+Proves i comprovacions pendents: [registre de TG-141](../../docs/proves-tg-141.md).

@@ -9,7 +9,8 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-import { colors, motion, radii, sizes } from '@/core/theme/tokens';
+import { makeStyles } from '@/core/theme/theme';
+import { motion, radii, sizes } from '@/core/theme/tokens';
 
 type ToggleProps = {
   value: boolean;
@@ -37,6 +38,7 @@ export function Toggle({
   disabled,
   testID,
 }: ToggleProps) {
+  const styles = useStyles();
   const reduceMotion = useReducedMotion();
   const progress = useSharedValue(value ? 1 : 0);
 
@@ -75,7 +77,7 @@ export function Toggle({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(({ colors }) => ({
   track: {
     width: WIDTH,
     height: HEIGHT,
@@ -93,4 +95,4 @@ const styles = StyleSheet.create({
     borderRadius: KNOB / 2,
     backgroundColor: colors.lluna,
   },
-});
+}));
