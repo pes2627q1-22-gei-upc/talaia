@@ -147,7 +147,8 @@
     "notFoundMessage": "Pot haver deixat d'estar disponible. Torna al calendari i tria'n un altre.",
     "errorTitle": "No hem pogut carregar l'esdeveniment",
     "errorMessage": "Comprova la connexió i torna-ho a provar.",
-    "retry": "Torna-ho a provar"
+    "retry": "Torna-ho a provar",
+    "whereToWatch": "On veure-ho"
   },
   "profile": {
     "title": "Perfil",
@@ -528,6 +529,18 @@
     "byCar": "{{travel}} en cotxe",
     "collapseSheet": "Plega la llista",
     "expandSheet": "Desplega la llista",
+    "noEventForecast": "Encara no hi ha previsió per a aquest esdeveniment. Els punts es mostren per distància; consulta l'índex quan s'acosti la data.",
+    "emptyEventHint": "Torna-ho a provar més endavant.",
+    "eventRanking": "Rànquing de millors punts",
+    "qualityDistanceHint": "Prioritzem els nivells de visibilitat: cel ras, just i tapat. Dins de cada nivell, combinem l'índex i la proximitat.",
+    "distance": "{{km}} km en línia recta",
+    "fromUnlimited": "Des de {{place}} · sense límit de distància",
+    "fromUnlimited_vowel": "Des d'{{place}} · sense límit de distància",
+    "pastWindow": "Aquesta franja d'observació ja ha acabat. Tria un altre esdeveniment o una altra nit.",
+    "fromHereUnlimited": "Des d'on ets · sense límit de distància",
+    "emptyCatalog": "Encara no hi ha punts disponibles",
+    "hideRanking": "Amaga el rànquing",
+    "showRanking": "Mostra el rànquing",
     "nearby": {
       "label": "A prop meu",
       "title": "A prop meu, {{when}}",

@@ -147,7 +147,8 @@
     "notFoundMessage": "Puede que ya no esté disponible. Vuelve al calendario y elige otro.",
     "errorTitle": "No hemos podido cargar el evento",
     "errorMessage": "Comprueba la conexión y vuelve a intentarlo.",
-    "retry": "Volver a intentar"
+    "retry": "Volver a intentar",
+    "whereToWatch": "Dónde verlo"
   },
   "profile": {
     "title": "Perfil",
@@ -528,6 +529,18 @@
     "byCar": "{{travel}} en coche",
     "collapseSheet": "Plegar la lista",
     "expandSheet": "Desplegar la lista",
+    "noEventForecast": "Todavía no hay previsión para este evento. Los puntos se muestran por distancia; consulta el índice cuando se acerque la fecha.",
+    "emptyEventHint": "Vuelve a intentarlo más adelante.",
+    "eventRanking": "Ranking de mejores puntos",
+    "qualityDistanceHint": "Priorizamos los niveles de visibilidad: cielo despejado, justo y cubierto. Dentro de cada nivel, combinamos el índice y la proximidad.",
+    "distance": "{{km}} km en línea recta",
+    "fromUnlimited": "Desde {{place}} · sin límite de distancia",
+    "fromUnlimited_vowel": "Desde {{place}} · sin límite de distancia",
+    "pastWindow": "Esta franja de observación ya ha terminado. Elige otro evento u otra noche.",
+    "fromHereUnlimited": "Desde donde estás · sin límite de distancia",
+    "emptyCatalog": "Todavía no hay puntos disponibles",
+    "hideRanking": "Oculta el ranking",
+    "showRanking": "Muestra el ranking",
     "nearby": {
       "label": "Cerca de mí",
       "title": "Cerca de mí, {{when}}",

@@ -14,6 +14,15 @@ describe('recomanacionsRepository.puntsDinsRadi', () => {
     expect(queries[0]?.parameters).toEqual([2.17, 41.38, 'PUBLICAT', 2.17, 41.38, 115_400]);
   });
 
+  it('sense radi consulta tots els punts publicats, mantenint les distàncies i l’ordre', async () => {
+    const { db, queries } = fakeDb();
+    await createRecomanacionsRepository(db).puntsDinsRadi({ lat: 41.38, lon: 2.17 }, null);
+    expect(queries[0]?.sql).toContain('st_distance(');
+    expect(queries[0]?.sql).not.toContain('st_dwithin(');
+    expect(queries[0]?.sql).toContain('where "estat" = $3 order by "distancia_m"');
+    expect(queries[0]?.parameters).toEqual([2.17, 41.38, 'PUBLICAT']);
+  });
+
   it('retorna la distància en metres com a number', async () => {
     const fila = {
       id: 'a',

@@ -147,7 +147,8 @@
     "notFoundMessage": "It may no longer be available. Go back to the calendar and choose another one.",
     "errorTitle": "Could not load this event",
     "errorMessage": "Check your connection and try again.",
-    "retry": "Try again"
+    "retry": "Try again",
+    "whereToWatch": "Where to watch"
   },
   "profile": {
     "title": "Profile",
@@ -528,6 +529,18 @@
     "byCar": "{{travel}} by car",
     "collapseSheet": "Collapse the list",
     "expandSheet": "Expand the list",
+    "noEventForecast": "There is no forecast for this event yet. Spots are shown by distance; check the index closer to the date.",
+    "emptyEventHint": "Try again later.",
+    "eventRanking": "Best spots ranking",
+    "qualityDistanceHint": "We prioritise visibility levels: clear, fair and overcast. Within each level, we combine the index and proximity.",
+    "distance": "{{km}} km in a straight line",
+    "fromUnlimited": "From {{place}} · no distance limit",
+    "fromUnlimited_vowel": "From {{place}} · no distance limit",
+    "pastWindow": "This observation window has ended. Choose another event or another night.",
+    "fromHereUnlimited": "From your location · no distance limit",
+    "emptyCatalog": "No spots available yet",
+    "hideRanking": "Hide ranking",
+    "showRanking": "Show ranking",
     "nearby": {
       "label": "Near me",
       "title": "Near me, {{when}}",

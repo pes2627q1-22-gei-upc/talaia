@@ -1,6 +1,7 @@
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 
-import { colors, radii, spacing } from '@/core/theme/tokens';
+import { makeStyles } from '@/core/theme/theme';
+import { radii, spacing } from '@/core/theme/tokens';
 import { AppText } from '@/shared/ui/AppText';
 import { Button } from '@/shared/ui/Button';
 import { Sheet } from '@/shared/ui/Sheet';
@@ -30,6 +31,7 @@ export function DepartureTimeSheet({
   onMinuteChange,
   onClose,
 }: DepartureTimeSheetProps) {
+  const styles = useStyles();
   return (
     <Sheet visible={visible} onClose={onClose} title={title} closeLabel={doneLabel}>
       <View style={styles.row}>
@@ -65,7 +67,7 @@ export function DepartureTimeSheet({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(({ colors }) => ({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -83,4 +85,4 @@ const styles = StyleSheet.create({
     borderRadius: radii.field,
     backgroundColor: colors.crep,
   },
-});
+}));
