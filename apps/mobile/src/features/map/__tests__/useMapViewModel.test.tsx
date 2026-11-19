@@ -31,6 +31,11 @@ jest.mock('../../explore/locationRepository', () => ({
   useCurrentPlaceQuery: () => mockLocation,
 }));
 
+// L'índex d'un lloc triat (HU05) es prova a useMapSpot i a MapScreen.
+jest.mock('../visibilityRepository', () => ({
+  useVisibilityQuery: () => ({ data: undefined, isError: false, error: null, refetch: jest.fn() }),
+}));
+
 // Sense cerca a la ruta («Mostra el mapa»): el rànquing es prova a MapScreen i al seu ViewModel.
 jest.mock('../../recommendations/useRecommendationsViewModel', () => ({
   useRecommendationsViewModel: () => null,
@@ -143,7 +148,6 @@ describe('«A prop meu» des del mapa (HU02)', () => {
       loading: false,
     });
     expect(result.current.picker).toBeNull();
-    expect(result.current.onMapPress).toBeUndefined();
     await act(async () => result.current.nearby?.onPress());
     expect(router.push).toHaveBeenCalledWith({
       pathname: '/recomanacions',
@@ -194,7 +198,10 @@ describe('«A prop meu» des del mapa (HU02)', () => {
       params: { aprop: 'triat', lat: '41.981', lon: '2.825' },
     });
     expect(result.current.picker).toBeNull();
-    expect(result.current.onMapPress).toBeUndefined();
+    // Ja no tria l'origen: un altre toc tria un lloc per veure'n l'índex (HU05).
+    await act(async () => result.current.onMapPress?.(41.5, 2));
+    expect(router.push).toHaveBeenCalledTimes(1);
+    expect(result.current.spot).not.toBeNull();
   });
 
   it('si el sistema encara ho deixa, torna a demanar el permís; i es pot tancar', async () => {
@@ -282,5 +289,55 @@ describe('«A prop meu» des del mapa (HU02)', () => {
     mockParams = { aprop: 'aqui', lat: '41.981', lon: '2.825' };
     const { result: here } = await renderHook(() => useMapViewModel());
     expect(here.current.origin).toBeNull();
+  });
+});
+
+describe('punt triat al mapa (HU05, mockup 04)', () => {
+  const ready: CurrentPlace = {
+    status: 'ready',
+    place: { lat: 41.38712, lon: 2.16994, name: 'Barcelona' },
+  };
+
+  beforeEach(async () => {
+    mockParams = {};
+    mockPoints = [];
+    jest.mocked(router.push).mockClear();
+    await i18n.changeLanguage('ca');
+  });
+
+  it('sense cerca, un toc al mapa tria el lloc: el marca i la targeta substitueix «A prop meu»', async () => {
+    mockLocation = { data: ready, isError: false, refetch: jest.fn() };
+    const { result } = await renderHook(() => useMapViewModel());
+    expect(result.current.hint).toEqual({
+      title: 'Tria un punt al mapa',
+      subtitle: "Toca on vulguis per veure'n l'índex",
+    });
+    expect(result.current.spot).toBeNull();
+    await act(async () => result.current.onMapPress?.(42.01, 1.31));
+    expect(result.current.spot).toMatchObject({ title: 'Punt triat al mapa' });
+    expect(result.current.nearby).toBeNull();
+    expect(result.current.origin).toEqual({
+      lat: 42.01,
+      lon: 1.31,
+      label: 'Punt triat',
+      color: colors.far,
+    });
+    expect(router.push).not.toHaveBeenCalled();
+    await act(async () => result.current.spot?.onClose());
+    expect(result.current.spot).toBeNull();
+    expect(result.current.origin).toBeNull();
+    expect(result.current.nearby?.label).toBe('A prop meu');
+  });
+
+  it('un toc mentre «A prop meu» busca la ubicació la deixa córrer', async () => {
+    let arrive!: (value: { data: CurrentPlace; isError: boolean }) => void;
+    const refetch = jest.fn(() => new Promise((resolve) => (arrive = resolve)));
+    mockLocation = { data: undefined, isError: false, refetch };
+    const { result } = await renderHook(() => useMapViewModel());
+    await act(async () => result.current.nearby?.onPress());
+    await act(async () => result.current.onMapPress?.(42.01, 1.31));
+    await act(async () => arrive({ data: ready, isError: false }));
+    expect(router.push).not.toHaveBeenCalled();
+    expect(result.current.spot).not.toBeNull();
   });
 });

@@ -5,12 +5,13 @@ import { useTranslation } from 'react-i18next';
 
 import { ApiError } from '@/core/api/httpClient';
 
-import { addDays, dayParts, nightOf, travelParts } from '../explore/exploreModel';
+import { addDays, dayParts, nightOf } from '../explore/exploreModel';
 import { EMPTY_MAP_POINTS } from '../map/pointMarkers';
 
 import {
   boundsOf,
   elision,
+  formatTravel,
   localTime,
   nearbyOrigin,
   ordinal,
@@ -51,13 +52,7 @@ export function useRecommendationsViewModel() {
 
   if (!query) return null;
 
-  const duration = (total: number) => {
-    const { hours, minutes } = travelParts(total);
-    if (!hours) return t('recommendations.duration.minutes', { minutes });
-    return minutes
-      ? t('recommendations.duration.hoursMinutes', { hours, minutes })
-      : t('recommendations.duration.hours', { hours });
-  };
+  const duration = (total: number) => formatTravel(t, total);
 
   const eventSearch = !!query.esdevenimentId;
   const nearby = eventSearch ? null : nearbyOrigin(params);
