@@ -111,7 +111,10 @@ function decimalSenseExponent(value: number): string {
 
 function urlPer(baseUrl: string, query: MobilicatRoutesQuery): URL {
   const url = new URL(baseUrl);
-  url.pathname = `${url.pathname.replace(/\/+$/, '')}/routes`;
+  const basePath = url.pathname;
+  let pathLength = basePath.length;
+  while (pathLength > 0 && basePath[pathLength - 1] === '/') pathLength -= 1;
+  url.pathname = `${basePath.slice(0, pathLength)}/routes`;
   url.search = '';
   url.hash = '';
   url.searchParams.set(

@@ -40,6 +40,7 @@ describe('createMobilicatRoutesClient', () => {
   it.each([
     ['https://api.mobili.cat', 'https://api.mobili.cat/routes'],
     ['https://host.example/api/v1/', 'https://host.example/api/v1/routes'],
+    ['https://host.example/api/v1///', 'https://host.example/api/v1/routes'],
   ])(
     'afegeix /routes a la URL base %s sense descartar-ne el camí',
     async (baseUrl, expectedUrl) => {
