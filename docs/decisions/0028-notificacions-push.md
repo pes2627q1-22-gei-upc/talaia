@@ -101,4 +101,12 @@ Opcions:
 - **Comptes (P20):**
   - Firebase va al compte de Google de l'equip, i les credencials de FCM i d'APNs, a EAS (`owner: talaia.pes`).
   - Si les credencials es revoquen, els *receipts* tornen `InvalidCredentials`: cal tornar-les a pujar amb `eas credentials`.
-- **Per a més endavant:** franja silenciosa (de nit, ara s'envia quan toca el recàlcul), idioma de la notificació segons el perfil i reintent d'un enviament fallit.
+- **Per a més endavant:** franja silenciosa (de nit, ara s'envia quan toca el recàlcul) i idioma de la notificació segons el perfil.
+
+## Actualització 2026-11-18 (TG-154)
+
+- **Al worker, `fetch` i no `expo-server-sdk`:** amb unes poques notificacions per hora n'hi ha prou amb un `POST` de com a molt 100 missatges (`services/worker/src/alertes/expoPush.ts`). Ens estalviem una dependència ESM que demana Node ≥ 22.12, i els reintents ja els fa l'execució horària.
+- **Reintent d'un enviament fallit, sense duplicats:** ja no es perd la nit. A cada execució, abans d'enviar, es **reserven** les files de `notificacions_alertes` sense `enviada_el` (un sol `update … set enviada_el = now() where enviada_el is null … returning`) la millor hora de les quals encara no ha passat, d'alertes actives, comptes no bloquejats i punts publicats, i on l'índex actual d'aquella hora encara arriba al mínim (el text porta aquest índex). Les que Expo accepta per a algun dispositiu es queden enviades amb els `ticket_ids`; les altres es desfan i es reintenten a l'execució següent. Així, ni una execució solapada (un altre worker contra la mateixa BD) ni un error de la BD després d'enviar no notifiquen dues vegades; si falla desfer una reserva, aquella nit es perd.
+- **`ENVIA_PUSH`:** el worker només envia amb `ENVIA_PUSH=true`, que el compose de la VM activa per defecte. Un worker local amb la BD compartida avalua però no notifica usuaris reals.
+- **Receipts:** de moment només es mira el *ticket*. Un `DeviceNotRegistered` al ticket esborra el token; la lectura dels *receipts* queda per a més endavant.
+- **App:** a l'SDK 58, `getLastNotificationResponse()` i `clearLastNotificationResponse()` (síncrones) són les vigents; les versions `Async` són les obsoletes. El *hook* (`useOpenNotifiedPoint`) és a `(tabs)/_layout.tsx`, al costat de `useSessionGate`, i només escolta amb la sessió a `signedIn`.
