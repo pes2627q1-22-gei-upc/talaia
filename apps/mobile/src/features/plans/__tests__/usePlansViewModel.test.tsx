@@ -169,6 +169,53 @@ it('si els fenòmens no arriben, la llista surt igualment sense els noms', async
   expect(result.current.upcoming.rows[0]!.title).toBe('Cel estrellat a Àger');
 });
 
+it('en tornar a «Propers», els passats es queden carregats i no es tornen a demanar', async () => {
+  const { result } = await renderVm();
+  await waitFor(() => expect(result.current.upcoming.state).toBe('ready'));
+  await act(async () => result.current.tabs[1]!.onSelect());
+  await waitFor(() => expect(result.current.past.state).toBe('ready'));
+  await act(async () => result.current.tabs[0]!.onSelect());
+  expect(result.current.tab).toBe('futurs');
+  expect(result.current.tabs.map((tab) => tab.selected)).toEqual([true, false]);
+  expect(result.current.past.rows).toHaveLength(1);
+  expect(plansCalls('passats')).toBe(1);
+});
+
+it('mentre arriben els noms dels fenòmens, la llista surt amb esquelets', async () => {
+  let resolveEvents: (value: unknown) => void = () => undefined;
+  get.mockImplementation((async (path: string, query?: Record<string, unknown>) =>
+    path === '/esdeveniments'
+      ? new Promise<unknown>((resolve) => {
+          resolveEvents = resolve;
+        })
+      : respond()(path, query as never)) as typeof apiGet);
+  const { result } = await renderVm();
+  await waitFor(() => expect(plansCalls('futurs')).toBe(1));
+  await waitFor(() =>
+    expect(get).toHaveBeenCalledWith('/esdeveniments', expect.anything(), expect.anything()),
+  );
+  expect(result.current.upcoming).toMatchObject({ state: 'loading', rows: [] });
+  await act(async () => resolveEvents({ data: [orionides] }));
+  await waitFor(() => expect(result.current.upcoming.state).toBe('ready'));
+  expect(result.current.upcoming.rows[0]!.title).toBe('Oriònides a Àger');
+});
+
+it('un error dels passats no afecta els propers', async () => {
+  get.mockImplementation(respond({ futurs: upcoming, passats: new ApiError(500, 'internal', '') }));
+  const { result } = await renderVm();
+  await act(async () => result.current.tabs[1]!.onSelect());
+  await waitFor(() => expect(result.current.past.state).toBe('error'));
+  await waitFor(() => expect(result.current.upcoming.state).toBe('ready'));
+  expect(result.current.past.empty.title).toBeTruthy();
+});
+
+it('obrir una fila que ja no és a cap llista no fa res', async () => {
+  const { result } = await renderVm();
+  await waitFor(() => expect(result.current.upcoming.state).toBe('ready'));
+  result.current.onOpen({ id: 'no-hi-es' });
+  expect(push).not.toHaveBeenCalled();
+});
+
 it('crear un pla (invalidar PLANS_KEY) refresca les llistes ja carregades', async () => {
   const { result, client } = await renderVm();
   await waitFor(() => expect(result.current.upcoming.state).toBe('ready'));

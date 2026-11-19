@@ -44,6 +44,34 @@ describe('localToIso', () => {
   it('sense minuts, en punt', () => {
     expect(localToIso('2026-10-21', 22)).toBe('2026-10-21T20:00:00.000Z');
   });
+
+  // Les nits del canvi d'hora: l'hora local es converteix amb el desplaçament d'aquell moment.
+  it("la nit del 24 al 25/10/2026 (fi de l'horari d'estiu, 03:00 → 02:00)", () => {
+    expect(localToIso('2026-10-24', 23)).toBe('2026-10-24T21:00:00.000Z');
+    expect(localToIso('2026-10-25', 1, 30)).toBe('2026-10-24T23:30:00.000Z');
+    // Les 02:30 hi són dues vegades: es pren la primera (encara a l'estiu).
+    expect(localToIso('2026-10-25', 2, 30)).toBe('2026-10-25T00:30:00.000Z');
+    expect(localToIso('2026-10-25', 4)).toBe('2026-10-25T03:00:00.000Z');
+  });
+
+  it("la nit del 27 al 28/3/2027 (inici de l'horari d'estiu, 02:00 → 03:00)", () => {
+    expect(localToIso('2027-03-27', 23)).toBe('2027-03-27T22:00:00.000Z');
+    // Les 02:30 no existeixen: passen a les 03:30 d'estiu, com fa el rellotge del mòbil.
+    expect(localToIso('2027-03-28', 2, 30)).toBe('2027-03-28T01:30:00.000Z');
+    expect(localToIso('2027-03-28', 4)).toBe('2027-03-28T02:00:00.000Z');
+  });
+
+  it("una fila d'«Els meus plans» mostra la mateixa hora local que es va triar, també aquestes nits", () => {
+    for (const [date, hour] of [
+      ['2026-10-25', 1],
+      ['2026-10-25', 4],
+      ['2027-03-28', 4],
+      ['2027-03-27', 23],
+    ] as const) {
+      const row = planRow(plan({ dataHoraInici: localToIso(date, hour) }), new Map());
+      expect([row.day, row.time]).toEqual([date.slice(8), `${String(hour).padStart(2, '0')}:00`]);
+    }
+  });
 });
 
 describe('initialDeparture', () => {

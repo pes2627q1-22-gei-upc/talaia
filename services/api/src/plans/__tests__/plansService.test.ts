@@ -62,6 +62,17 @@ describe('plansService', () => {
     expect(repo.findById).toHaveBeenCalledWith(PERFIL, PLA);
   });
 
+  it('sense rellotge injectat, fa servir l’hora actual', async () => {
+    jest.useFakeTimers({ now: ARA });
+    try {
+      const repo = repository();
+      await createPlansService(repo).list(PERFIL, 'passats');
+      expect(repo.list).toHaveBeenCalledWith(PERFIL, 'passats', ARA);
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
   it('retorna el pla amb el nom del punt en l’idioma de l’usuari, sense els textos', async () => {
     const repo = repository();
     await expect(service(repo).create(PERFIL, NOU, 'es')).resolves.toEqual({
