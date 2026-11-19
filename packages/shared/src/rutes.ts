@@ -1,5 +1,6 @@
 /** Modes de transport que pot retornar el servei de rutes de Mobilicat. */
-export type ModeRuta = 'WALK' | 'BIKE' | 'BIKE_SHARE' | 'CAR' | 'PUBLIC_TRANSPORT';
+export const MODES_RUTA = ['WALK', 'BIKE', 'BIKE_SHARE', 'CAR', 'PUBLIC_TRANSPORT'] as const;
+export type ModeRuta = (typeof MODES_RUTA)[number];
 
 /** Informació mínima d'un tram per identificar els modes d'una alternativa. */
 export type TramRuta = {

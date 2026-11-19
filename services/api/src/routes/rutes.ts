@@ -1,10 +1,12 @@
-import type { RutesPunt } from '@talaia/shared';
-import { Router } from 'express';
+import { MODES_RUTA, type RutesPunt } from '@talaia/shared';
+import { Router, type RequestHandler } from 'express';
 import { z } from 'zod';
 
 import type { RutesService } from '../mobilicat/rutesService';
+import type { AuthenticatedRequest } from '../middleware/auth';
 import { ApiError } from '../middleware/errors';
 import { ErrorSchema, registry } from '../openapi';
+import { ERRORS_AUTH } from './auth';
 import { numeroAmb, senseBuits, type Numero } from './query';
 
 const queryShape = (numero: Numero) =>
@@ -35,7 +37,7 @@ const ParamsSchema = z.object({
 
 const TramRutaSchema = z.object({
   sequence: z.number().int().nonnegative(),
-  mode: z.enum(['WALK', 'BIKE', 'BIKE_SHARE', 'CAR', 'PUBLIC_TRANSPORT']),
+  mode: z.enum(MODES_RUTA),
   transitMode: z.string().optional(),
   lineShortName: z.string().nullable().optional(),
   lineLongName: z.string().nullable().optional(),
@@ -69,7 +71,8 @@ registry.registerPath({
   tags: ['Punts'],
   summary: 'Alternatives de ruta des de la ubicació de l’usuari fins a un punt',
   description:
-    'Consulta Mobilicat amb sortida a l’instant actual, els cinc modes disponibles i fins a cinc alternatives. `destacada` és la primera alternativa retornada (la que arriba abans amb `DEPART_AT`). `sense_rutes` és una resposta vàlida sense alternatives; `no_disponible` indica que Mobilicat no ha respost o ha retornat un error. La fallada del servei de rutes no afecta la fitxa `GET /punts/{id}`. Mobilicat demana almenys cinc segons entre consultes del mateix dispositiu.',
+    'Requereix l’usuari autenticat. Consulta Mobilicat amb sortida a l’instant actual, els cinc modes disponibles i fins a cinc alternatives. `destacada` és la primera alternativa retornada (la que arriba abans amb `DEPART_AT`). `sense_rutes` és una resposta vàlida sense alternatives; `no_disponible` indica que Mobilicat no ha respost o ha retornat un error. La fallada del servei de rutes no afecta la fitxa `GET /punts/{id}`. Mobilicat demana almenys cinc segons entre consultes del mateix dispositiu; Talaia aplica aquest interval per compte i globalment des de la seva instància d’API.',
+  security: [{ BearerSupabase: [] }],
   request: {
     params: ParamsSchema,
     query: QueryDoc,
@@ -82,6 +85,7 @@ registry.registerPath({
       }),
       content: { 'application/json': { schema: RutesPuntSchema } },
     },
+    ...ERRORS_AUTH,
     400: {
       description: '`id`, `lat` o `lon` invàlids (`validation_error`)',
       content: { 'application/json': { schema: ErrorSchema } },
@@ -90,20 +94,36 @@ registry.registerPath({
       description: 'No hi ha cap punt publicat amb aquest `id` (`punt_not_found`)',
       content: { 'application/json': { schema: ErrorSchema } },
     },
+    429: {
+      description:
+        'S’ha assolit l’interval mínim de cinc segons entre consultes del compte o de la instància. `Retry-After` indica quan es pot tornar a provar.',
+      headers: z.object({
+        'Retry-After': z.string().meta({ description: 'Segons que falten per poder consultar' }),
+      }),
+      content: { 'application/json': { schema: ErrorSchema } },
+    },
     503: {
-      description: 'Sense accés a la base de dades (`database_unavailable`)',
+      description:
+        'No es pot validar el JWT o no hi ha accés a la base de dades (`database_unavailable`)',
       content: { 'application/json': { schema: ErrorSchema } },
     },
   },
 });
 
 /** Sense servei (no hi ha `DATABASE_URL`), la ruta respon `503 database_unavailable`. */
-export function createRutesRouter(service: RutesService | undefined): Router {
+export function createRutesRouter(
+  service: RutesService | undefined,
+  requireUser: RequestHandler,
+): Router {
   const router = Router();
 
-  router.get('/:id/rutes', async (req, res) => {
+  router.get('/:id/rutes', requireUser, async (req, res) => {
     const { id } = ParamsSchema.parse(req.params);
     const origen = QuerySchema.parse(req.query);
+    const usuariId = (req as AuthenticatedRequest).user?.id;
+    if (!usuariId) {
+      throw new ApiError(401, 'unauthorized', 'Falta el token JWT de Supabase');
+    }
     if (!service) {
       throw new ApiError(
         503,
@@ -111,7 +131,7 @@ export function createRutesRouter(service: RutesService | undefined): Router {
         "L'API no té DATABASE_URL: no es pot consultar el punt de destinació",
       );
     }
-    const resposta = await service.getRutes(id, origen);
+    const resposta = await service.getRutes(id, origen, usuariId);
     res.set('Cache-Control', 'private, no-store');
     res.json(resposta);
   });

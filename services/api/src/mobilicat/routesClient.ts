@@ -1,13 +1,8 @@
+import { MODES_RUTA } from '@talaia/shared';
 import { z } from 'zod';
 
 /** Modes que accepta `GET /routes` de Mobilicat. */
-export const MobilicatModeSchema = z.enum([
-  'WALK',
-  'BIKE',
-  'BIKE_SHARE',
-  'CAR',
-  'PUBLIC_TRANSPORT',
-]);
+export const MobilicatModeSchema = z.enum(MODES_RUTA);
 export type MobilicatMode = z.infer<typeof MobilicatModeSchema>;
 
 export const MobilicatTimePreferenceSchema = z.enum(['ARRIVE_BY', 'DEPART_AT']);
@@ -88,26 +83,8 @@ export class MobilicatRoutesError extends Error {
 
 export const MOBILICAT_ROUTES_TIMEOUT_MS = 5_000;
 
-/** Escriu els nombres decimals sense notació exponencial, que `/routes` no accepta. */
-function decimalSenseExponent(value: number): string {
-  const text = String(value);
-  if (!/[eE]/.test(text)) return text;
-
-  const [mantissa = '0', exponentText = '0'] = text.toLowerCase().split('e');
-  const exponent = Number(exponentText);
-  const negatiu = mantissa.startsWith('-');
-  const absolut = negatiu ? mantissa.slice(1) : mantissa;
-  const [enter = '0', decimals = ''] = absolut.split('.');
-  const digits = enter + decimals;
-  const punt = enter.length + exponent;
-  const decimal =
-    punt <= 0
-      ? `0.${'0'.repeat(-punt)}${digits}`
-      : punt >= digits.length
-        ? `${digits}${'0'.repeat(punt - digits.length)}`
-        : `${digits.slice(0, punt)}.${digits.slice(punt)}`;
-  return `${negatiu ? '-' : ''}${decimal}`;
-}
+/** `/routes` rep coordenades decimals; sis decimals equivalen a una precisió d'uns 11 cm. */
+const coordenadaDecimal = (value: number): string => value.toFixed(6);
 
 function urlPer(baseUrl: string, query: MobilicatRoutesQuery): URL {
   const url = new URL(baseUrl);
@@ -119,11 +96,11 @@ function urlPer(baseUrl: string, query: MobilicatRoutesQuery): URL {
   url.hash = '';
   url.searchParams.set(
     'from',
-    `${decimalSenseExponent(query.from.lat)},${decimalSenseExponent(query.from.lon)}`,
+    `${coordenadaDecimal(query.from.lat)},${coordenadaDecimal(query.from.lon)}`,
   );
   url.searchParams.set(
     'to',
-    `${decimalSenseExponent(query.to.lat)},${decimalSenseExponent(query.to.lon)}`,
+    `${coordenadaDecimal(query.to.lat)},${coordenadaDecimal(query.to.lon)}`,
   );
   url.searchParams.set('time', query.time);
   url.searchParams.set('timePreference', query.timePreference);

@@ -5,6 +5,8 @@ import { createRutesService } from '../rutesService';
 import type { PuntDetall, PuntsRepository } from '../../punts/puntsRepository';
 
 const ID = '6f1c2b7e-3a9d-4c58-9e0b-2d7f1a4c8b35';
+const USUARI_A = 'usuari-a';
+const USUARI_B = 'usuari-b';
 const PUNT: PuntDetall = {
   id: ID,
   nom: 'Observatori del Montsec',
@@ -59,7 +61,7 @@ describe('createRutesService', () => {
     const now = new Date('2026-11-18T10:00:00.000Z');
     const service = createRutesService(repositoryWith(), client, { now: () => now });
 
-    const result = await service.getRutes(ID, { lat: 41.3851, lon: 2.1734 });
+    const result = await service.getRutes(ID, { lat: 41.3851, lon: 2.1734 }, USUARI_A);
 
     expect(getRoutes).toHaveBeenCalledWith({
       from: { lat: 41.385, lon: 2.173 },
@@ -90,7 +92,7 @@ describe('createRutesService', () => {
     const { client, getRoutes } = clientWith([]);
     const service = createRutesService(repositoryWith(), client);
 
-    await expect(service.getRutes(ID, { lat: 41, lon: 2 })).resolves.toEqual({
+    await expect(service.getRutes(ID, { lat: 41, lon: 2 }, USUARI_A)).resolves.toEqual({
       estat: 'sense_rutes',
       destacada: null,
       alternatives: [],
@@ -104,7 +106,7 @@ describe('createRutesService', () => {
     jest.spyOn(console, 'error').mockImplementation(() => {});
     const service = createRutesService(repositoryWith(), client);
 
-    await expect(service.getRutes(ID, { lat: 41, lon: 2 })).resolves.toEqual({
+    await expect(service.getRutes(ID, { lat: 41, lon: 2 }, USUARI_A)).resolves.toEqual({
       estat: 'no_disponible',
       destacada: null,
       alternatives: [],
@@ -115,7 +117,7 @@ describe('createRutesService', () => {
     const { client, getRoutes } = clientWith();
     const service = createRutesService(repositoryWith({ punt: undefined }), client);
 
-    await expect(service.getRutes(ID, { lat: 41, lon: 2 })).rejects.toMatchObject({
+    await expect(service.getRutes(ID, { lat: 41, lon: 2 }, USUARI_A)).rejects.toMatchObject({
       status: 404,
       code: 'punt_not_found',
     } satisfies Partial<ApiError>);
@@ -130,10 +132,39 @@ describe('createRutesService', () => {
       client,
     );
 
-    await expect(service.getRutes(ID, { lat: 41, lon: 2 })).rejects.toMatchObject({
+    await expect(service.getRutes(ID, { lat: 41, lon: 2 }, USUARI_A)).rejects.toMatchObject({
       status: 503,
       code: 'database_unavailable',
     });
     expect(getRoutes).not.toHaveBeenCalled();
+  });
+
+  it('limita les consultes a Mobilicat per usuari i globalment a cinc segons', async () => {
+    const { client, getRoutes } = clientWith();
+    let instant = Date.parse('2026-11-19T12:00:00.000Z');
+    const service = createRutesService(repositoryWith(), client, {
+      now: () => new Date(instant),
+    });
+
+    await service.getRutes(ID, { lat: 41, lon: 2 }, USUARI_A);
+
+    instant += 1_000;
+    await expect(service.getRutes(ID, { lat: 41, lon: 2 }, USUARI_B)).rejects.toMatchObject({
+      status: 429,
+      code: 'too_many_requests',
+      headers: { 'Retry-After': '4' },
+    } satisfies Partial<ApiError>);
+    expect(getRoutes).toHaveBeenCalledTimes(1);
+
+    instant += 4_000;
+    await service.getRutes(ID, { lat: 41, lon: 2 }, USUARI_B);
+
+    instant += 1_000;
+    await expect(service.getRutes(ID, { lat: 41, lon: 2 }, USUARI_B)).rejects.toMatchObject({
+      status: 429,
+      code: 'too_many_requests',
+      headers: { 'Retry-After': '4' },
+    } satisfies Partial<ApiError>);
+    expect(getRoutes).toHaveBeenCalledTimes(2);
   });
 });

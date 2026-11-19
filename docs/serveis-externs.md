@@ -181,7 +181,7 @@ continua carregant `GET /api/v1/punts/{id}`. Per a distància i temps, demana a 
 GET /api/v1/punts/6f1c2b7e-3a9d-4c58-9e0b-2d7f1a4c8b35/rutes?lat=41.3851&lon=2.1734
 ```
 
-No requereix autenticació. `id` és el UUID d'un punt publicat; `lat` i `lon` són coordenades
+Requereix autenticació Talaia. `id` és el UUID d'un punt publicat; `lat` i `lon` són coordenades
 WGS84 de l'origen. Abans d'enviar-les a Mobilicat, l'API les arrodoneix a tres decimals (uns 100 m
 de precisió) per no transmetre la ubicació exacta del dispositiu. Talaia resol la destinació del
 catàleg i fa una sola consulta a Mobilicat amb l'instant actual en UTC, `DEPART_AT`, els cinc modes
@@ -235,12 +235,20 @@ ruta d'aquell mode.
 | `sense_rutes` | `destacada: null`, `alternatives: []` | Indicar que no s'han trobat propostes per a aquesta consulta; conservar la fitxa. |
 | `no_disponible` | `destacada: null`, `alternatives: []`; HTTP 200 | Indicar que distància i temps no estan disponibles; conservar la fitxa. |
 
-Un `id` o unes coordenades invàlides donen 400 `validation_error`; un punt que ja no sigui públic
-respon 404 `punt_not_found`, i una fallada de base de dades respon 503 `database_unavailable`.
-L'error extern, el timeout, el 501, el 503 o una resposta malformada de Mobilicat es transformen en
-`estat: no_disponible`: no han de fer desaparèixer la fitxa del punt.
+JWT absent o invàlid dona 401 `unauthorized`; un compte bloquejat dona 403 `account_blocked`; un
+`id` o unes coordenades invàlides donen 400 `validation_error`; un punt que ja no sigui públic
+respon 404 `punt_not_found`, una consulta massa aviat dona 429 `too_many_requests` amb
+`Retry-After`, i una fallada d'autenticació o de base de dades respon 503 `service_unavailable` o
+`database_unavailable`. L'error extern, el timeout, el 501, el 503 o una resposta malformada de
+Mobilicat es transformen en `estat: no_disponible`: no han de fer desaparèixer la fitxa del punt.
 
-TG-136 ha d'evitar peticions duplicades mentre n'hi ha una en curs i esperar almenys **5 segons
-entre consultes del mateix dispositiu**, tal com demana Mobilicat. L'API de Talaia no imposa aquest
-límit per dispositiu; l'app és qui ha de controlar la freqüència. El botó «Com arribar» continua
-obrint el deep link del mapa instal·lat al mòbil.
+Mobilicat demana almenys **5 segons entre consultes del mateix dispositiu**. Com que les peticions
+surten de l'API de Talaia, l'API aplica l'interval tant per compte com globalment des de la seva
+instància; aquesta és la interpretació conservadora si Mobilicat identifica el client pel servidor
+que origina les peticions. La consulta rebutjada abans d'arribar al proveïdor respon 429
+`too_many_requests` amb `Retry-After`; no es presenta com una fallada de Mobilicat i la fitxa continua
+independent. El límit global actual permet fins a 12 consultes per minut compartides entre usuaris.
+El comptador és en memòria i pressuposa una sola instància d'API, com al desplegament actual. Si
+s'afegeixen rèpliques, caldrà fer-lo compartit. TG-136 també ha d'evitar duplicats mentre una
+consulta és en curs i respectar `Retry-After`. El botó «Com arribar» continua obrint el deep link
+del mapa instal·lat al mòbil.

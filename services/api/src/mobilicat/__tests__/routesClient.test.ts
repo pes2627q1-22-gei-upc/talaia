@@ -66,8 +66,8 @@ describe('createMobilicatRoutesClient', () => {
 
     const [input, init] = fetchMock.mock.calls[0] ?? [];
     const url = new URL(String(input));
-    expect(url.searchParams.get('from')).toBe('41.3851,2.1734');
-    expect(url.searchParams.get('to')).toBe('41.4036,2.1744');
+    expect(url.searchParams.get('from')).toBe('41.385100,2.173400');
+    expect(url.searchParams.get('to')).toBe('41.403600,2.174400');
     expect(url.searchParams.get('time')).toBe(QUERY.time);
     expect(url.searchParams.get('timePreference')).toBe('ARRIVE_BY');
     expect(url.searchParams.get('modes')).toBe('BIKE,WALK');
@@ -86,13 +86,13 @@ describe('createMobilicatRoutesClient', () => {
 
     await client.getRoutes({
       ...QUERY,
-      from: { lat: 0.0000001, lon: -0.0000001 },
-      to: { lat: 0.0000002, lon: -0.0000002 },
+      from: { lat: 0.0000009, lon: -0.0000009 },
+      to: { lat: 0.0000012, lon: -0.0000012 },
     });
 
     const url = new URL(String(fetchMock.mock.calls[0]?.[0]));
-    expect(url.searchParams.get('from')).toBe('0.0000001,-0.0000001');
-    expect(url.searchParams.get('to')).toBe('0.0000002,-0.0000002');
+    expect(url.searchParams.get('from')).toBe('0.000001,-0.000001');
+    expect(url.searchParams.get('to')).toBe('0.000001,-0.000001');
     expect(url.search).not.toMatch(/[eE][+-]?\d/);
   });
 

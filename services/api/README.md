@@ -46,7 +46,7 @@ Es llegeixen del `.env` de l'**arrel** del repo (`dev` i `start` el carreguen am
 | `DATABASE_URL` | — | Postgres (`postgresql://…`). **Opcional:** sense ella l'API arrenca amb un avís, `/health` funciona i `/punts`, `/punts/{id}`, `/punts/{id}/index`, `/punts/{id}/rutes`, `/recomanacions`, `/perfil`, `/perfil/dispositius`, `/admin`, `/alertes`, `/favorits` i `/plans` responen 503 `database_unavailable`, i `/visibilitat` funciona amb la foscor estimada. Amb Supabase local: `postgresql://postgres:postgres@127.0.0.1:54322/postgres` |
 | `SUPABASE_URL` | `http://127.0.0.1:54321` | URL del projecte de Supabase. `requireAuth` hi valida els JWT amb el JWKS (`/auth/v1/.well-known/jwks.json`, ADR-0023): 401 si el token és dolent, 503 si Supabase no respon. Al compose de la VM és obligatòria |
 | `OPEN_METEO_BASE_URL` | `https://api.open-meteo.com/v1` | URL base d'Open-Meteo, la mateixa que fa servir el worker: `GET /visibilitat` hi demana la previsió de les ubicacions que no són al catàleg |
-| `MOBILICAT_ROUTES_BASE_URL` | `https://api.mobili.cat` | URL base del servei de rutes de Mobilicat. Sense autenticació. L'API hi afegeix `GET /routes` |
+| `MOBILICAT_ROUTES_BASE_URL` | `https://api.mobili.cat` | URL base del servei de rutes de Mobilicat. La petició de Talaia a Mobilicat no requereix autenticació. L'API hi afegeix `GET /routes` |
 | `APROP_API_KEY` | — | Secret de l'API assignat a Aprop. No s'inclou al repositori ni a l'app; sense configurar-lo, l'accés amb API key retorna 503, però l'accés JWT continua disponible. |
 
 Una variable nova s'afegeix a l'esquema de `src/config/env.ts` i a `.env.example`. Cap secret al repo.
@@ -205,8 +205,9 @@ El desglossament de l'índex d'un punt per a una nit: una entrada per hora amb e
 
 Consulta separada de la fitxa: l'app envia l'origen de la ubicació actual del dispositiu i l'API
 resol el destí amb les coordenades del punt publicat. La fitxa `GET /punts/{id}` no crida
-Mobilicat; si el proveïdor falla, la fitxa es continua mostrant. La ruta no requereix autenticació
-i porta `Cache-Control: private, no-store`, perquè la query conté la ubicació de l'usuari.
+Mobilicat; si el proveïdor falla, la fitxa es continua mostrant. La consulta de rutes requereix
+autenticació Talaia per no exposar públicament un intermediari cap a Mobilicat, i porta
+`Cache-Control: private, no-store`, perquè la query conté la ubicació de l'usuari.
 
 ```http
 GET /api/v1/punts/6f1c2b7e-3a9d-4c58-9e0b-2d7f1a4c8b35/rutes?lat=41.3851&lon=2.1734
@@ -236,11 +237,19 @@ No es recalculen els totals a partir dels trams.
 | `sense_rutes` | `null` i `[]` | Mobilicat ha respost 200 amb `routes: []`; no s'han trobat propostes amb aquests modes i aquest horari. |
 | `no_disponible` | `null` i `[]` | Timeout, error HTTP (inclòs el 501 mentre l'endpoint del proveïdor no estigui activat), error de xarxa o resposta invàlida. La ruta de Talaia respon 200 amb aquest estat parcial. |
 
-Un UUID invàlid o coordenades fora de rang donen 400 `validation_error`; un punt no publicat dona
-404 `punt_not_found`; un error de base de dades dona 503 `database_unavailable`. L'endpoint de
-Mobilicat té un timeout inicial de **5 s** i Talaia no hi fa reintents automàtics. Mobilicat demana
-almenys **5 s entre consultes del mateix dispositiu**: TG-136 ha d'evitar duplicats mentre una
-consulta és en curs i no tornar-la a demanar abans d'aquest interval.
+Un JWT absent o invàlid dona 401 `unauthorized`; un compte bloquejat dona 403 `account_blocked`;
+un UUID invàlid o coordenades fora de rang donen 400 `validation_error`; un punt no publicat dona
+404 `punt_not_found`; un error de base de dades dona 503 `database_unavailable`. Talaia respon 429
+`too_many_requests` amb `Retry-After` si el compte o la instància ha de respectar l'interval mínim
+de **5 s** abans de consultar de nou. Mobilicat té un timeout inicial de **5 s** i Talaia no hi fa
+reintents automàtics.
+
+El limitador en memòria aplica els cinc segons per compte i globalment: totes les persones usuàries
+comparteixen el límit global de la instància (fins a 12 consultes per minut). Això assumeix que
+Mobilicat veu la instància de Talaia com un únic dispositiu i compleix la interpretació més estricta
+de la seva instrucció. El desplegament actual té una sola instància d'API; si s'afegeixen rèpliques,
+caldrà coordinar el limitador amb un magatzem compartit. TG-136 ha d'evitar duplicats mentre una
+consulta és en curs i respectar també `Retry-After`.
 
 ## `GET /recomanacions` (HU01, TG-100; HU02, TG-133; HU11, TG-140)
 
@@ -380,7 +389,7 @@ Errors: JWT absent o invàlid → 401 `unauthorized`; compte bloquejat → 403 `
 
 ## Rol d'administrador i comptes bloquejats (TG-177, HU41)
 
-`perfils.rol` (`usuari` o `admin`) i `perfils.bloquejat` (ADR-0029). `routes/index.ts` crea un sol `requireUser` (`requireAuth` amb `accountStatus`): valida el JWT i llegeix el perfil, i si el compte està bloquejat respon **403 `account_blocked`**. Totes les rutes d'usuari l'han de fer servir; les rutes públiques (`/health`, `/punts`, `/punts/{id}/rutes`, `/recomanacions`, `/visibilitat`, `/esdeveniments`) no hi miren. `requireAdmin`, posat al darrere, només deixa passar els administradors: si no, 403 `forbidden`.
+`perfils.rol` (`usuari` o `admin`) i `perfils.bloquejat` (ADR-0029). `routes/index.ts` crea un sol `requireUser` (`requireAuth` amb `accountStatus`): valida el JWT i llegeix el perfil, i si el compte està bloquejat respon **403 `account_blocked`**. Totes les rutes d'usuari l'han de fer servir; les rutes públiques (`/health`, `/punts`, `/punts/{id}`, `/punts/{id}/index`, `/recomanacions`, `/visibilitat`, `/esdeveniments`) no hi miren. `GET /punts/{id}/rutes` també fa servir `requireUser` per protegir la quota compartida de Mobilicat. `requireAdmin`, posat al darrere, només deixa passar els administradors: si no, 403 `forbidden`.
 
 Per fer administrador algú, al SQL Editor de Supabase:
 
