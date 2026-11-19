@@ -51,6 +51,8 @@ Quan s'observa, l'app passa a vermell sobre negre: el blau i el verd trenquen l'
 - **El text principal i el secundari surten gairebé iguals:** el contrast màxim sobre el negre és 5,25:1. La jerarquia la fan la mida i el pes.
 - **Les franges de l'índex i les categories del calendari no es distingeixen pel color.** Al costat sempre hi ha d'haver el número o el text.
 - **Com es fa servir:** les pantalles no importen `colors`: fan servir `useTheme()` i `makeStyles()` (`core/theme/theme.tsx`), i així es tornen a pintar quan canvia el tema.
+- **Icones SVG:** els SVG porten el seu color. Una icona que no té `tintColor` el pren de `useNightTint()`, que en mode nit dona `lluna` (o `nit` amb `useNightTint('nit')`, sobre un botó `primary`) i en el tema normal no fa res.
+- **Mapes:** les DOM components (`NightMap`, `PointLocationMapContent` i `ZonePickerMap`) no veuen el tema. Reben `night`, posen `filter: grayscale(1)` al contenidor de MapLibre i, fora del contenidor, una capa `#FF0000` amb `mix-blend-mode: multiply` (`core/theme/nightMap.ts`).
 
 ## Tipografia
 

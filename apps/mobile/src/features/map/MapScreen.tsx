@@ -5,6 +5,7 @@ import Animated, { FadeInDown, FadeOutDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SafeAreaView as NativeSafeAreaView } from 'react-native-screens/experimental';
 
+import { useTheme } from '@/core/theme/theme';
 import { colors, motion, radii, sizes, spacing } from '@/core/theme/tokens';
 import { AppText } from '@/shared/ui/AppText';
 import { PressableScale } from '@/shared/ui/PressableScale';
@@ -102,6 +103,7 @@ const exitDown = FadeOutDown.duration(motion.fast).easing(motion.exit);
  */
 export function MapScreen() {
   const vm = useMapViewModel();
+  const night = useTheme().name === 'vermell';
   // Android ja reserva l’espai de les pestanyes; a iOS el menú se superposa al mapa.
   const RankingSafeArea = Platform.OS === 'ios' ? NativeSafeAreaView : View;
   const insets = useSafeAreaInsets();
@@ -130,6 +132,7 @@ export function MapScreen() {
   return (
     <View style={styles.container}>
       <NightMap
+        night={night}
         mapStyle={vm.mapStyle}
         camera={vm.camera}
         chrome={chrome}

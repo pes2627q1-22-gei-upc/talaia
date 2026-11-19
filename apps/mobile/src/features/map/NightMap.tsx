@@ -8,6 +8,7 @@ import type { StyleSpecification } from 'maplibre-gl';
 import { useEffect, useRef } from 'react';
 
 import '@/core/map/maplibreWorker';
+import { NIGHT_MAP_FILTER, NIGHT_MAP_TINT } from '@/core/theme/nightMap';
 
 import {
   bindClusterInteraction,
@@ -48,6 +49,8 @@ type NightMapProps = {
   mapStyle: StyleSpecification;
   camera: MapCamera;
   chrome: MapChrome;
+  /** Mode nit (ADR-0032): el mapa passa a vermell amb un filtre. */
+  night?: boolean;
   accessibilityLabel: string;
   userLocation: { lat: number; lon: number } | null;
   userHeading: number | null;
@@ -76,6 +79,7 @@ export default function NightMap({
   mapStyle,
   camera,
   chrome,
+  night = false,
   accessibilityLabel,
   points,
   userLocation,
@@ -348,8 +352,14 @@ export default function NightMap({
         ref={container}
         role="region"
         aria-label={accessibilityLabel}
-        style={{ position: 'fixed', inset: 0, background: chrome.background }}
+        style={{
+          position: 'fixed',
+          inset: 0,
+          background: chrome.background,
+          filter: night ? NIGHT_MAP_FILTER : undefined,
+        }}
       />
+      {night && <div aria-hidden style={{ position: 'fixed', ...NIGHT_MAP_TINT }} />}
     </>
   );
 }

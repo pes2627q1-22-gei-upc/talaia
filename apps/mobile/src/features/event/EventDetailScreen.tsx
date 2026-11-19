@@ -3,7 +3,7 @@ import { ScrollView, View } from 'react-native';
 import Animated, { FadeIn, ReduceMotion } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { makeStyles, useTheme } from '@/core/theme/theme';
+import { makeStyles, useNightTint, useTheme } from '@/core/theme/theme';
 import { motion, radii, sizes, spacing, typography } from '@/core/theme/tokens';
 import { AppText } from '@/shared/ui/AppText';
 import { Button } from '@/shared/ui/Button';
@@ -34,9 +34,15 @@ function Fact({
   text: string;
 }) {
   const styles = useStyles();
+  const nightTint = useNightTint();
   return (
     <View style={styles.fact}>
-      <Image source={icon} tintColor={tint} style={styles.factIcon} accessible={false} />
+      <Image
+        source={icon}
+        tintColor={tint ?? nightTint}
+        style={styles.factIcon}
+        accessible={false}
+      />
       <View style={styles.factCopy}>
         <AppText variant="label">{title}</AppText>
         <AppText variant="small" color="boira">
@@ -49,6 +55,7 @@ function Fact({
 
 /** Fitxa d'un esdeveniment del calendari (HU10, mockup 09). El mite, el millor lloc i els plans són d'altres històries. */
 export function EventDetailScreen({ eventId }: { eventId: string }) {
+  const nightTint = useNightTint();
   const styles = useStyles();
   const { colors } = useTheme();
   const vm = useEventDetailViewModel(eventId);
@@ -56,7 +63,12 @@ export function EventDetailScreen({ eventId }: { eventId: string }) {
     <SafeAreaView style={styles.root}>
       <View style={styles.header}>
         <PressableScale onPress={vm.back} accessibilityLabel={vm.backLabel} style={styles.back}>
-          <Image source={backIcon} style={styles.backIcon} accessible={false} />
+          <Image
+            tintColor={nightTint}
+            source={backIcon}
+            style={styles.backIcon}
+            accessible={false}
+          />
         </PressableScale>
         <AppText variant="label" numberOfLines={1} style={styles.headerTitle}>
           {vm.headerTitle}

@@ -257,3 +257,18 @@ it('marca el punt de sortida triat i el treu quan ja no n’hi ha', async () => 
   await act(async () => root.render(<NightMap {...props} origin={null} />));
   expect(marker!.remove).toHaveBeenCalledTimes(1);
 });
+
+it('en mode nit, filtra el mapa a grisos i hi posa la capa vermella fora del filtre', async () => {
+  await act(async () => root.render(<NightMap {...props} />));
+  const region = host.querySelector<HTMLDivElement>('[role="region"]');
+  expect(region?.style.filter).toBe('');
+  expect(host.querySelector('[aria-hidden]')).toBeNull();
+
+  await act(async () => root.render(<NightMap {...props} night />));
+  expect(region?.style.filter).toBe('grayscale(1)');
+  const tint = host.querySelector<HTMLDivElement>('[aria-hidden]');
+  expect(tint?.style.mixBlendMode).toBe('multiply');
+  expect(tint?.style.pointerEvents).toBe('none');
+  // La capa no pot ser dins del contenidor filtrat: també sortiria en gris.
+  expect(region?.contains(tint ?? null)).toBe(false);
+});

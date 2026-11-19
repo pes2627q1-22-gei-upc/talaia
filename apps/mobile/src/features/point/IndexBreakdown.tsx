@@ -2,7 +2,7 @@ import { Image } from 'expo-image';
 import { useState } from 'react';
 import { View } from 'react-native';
 
-import { makeStyles, useTheme } from '@/core/theme/theme';
+import { makeStyles, useNightTint, useTheme } from '@/core/theme/theme';
 import { sizes, spacing, typography } from '@/core/theme/tokens';
 import { AppText } from '@/shared/ui/AppText';
 import { Button } from '@/shared/ui/Button';
@@ -98,11 +98,17 @@ export function IndexBreakdown({
 }
 
 function FactorRow({ factor }: { factor: Factor }) {
+  const nightTint = useNightTint();
   const styles = useStyles();
   const { colors } = useTheme();
   return (
     <View style={styles.factorRow}>
-      <Image source={factorIcons[factor.icon]} style={styles.factorIcon} accessible={false} />
+      <Image
+        tintColor={nightTint}
+        source={factorIcons[factor.icon]}
+        style={styles.factorIcon}
+        accessible={false}
+      />
       <View style={styles.factorContent}>
         <View style={styles.factorHeading}>
           <View style={styles.factorCopy}>

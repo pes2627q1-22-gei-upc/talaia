@@ -1,11 +1,12 @@
 import type { Alerta } from '@talaia/shared';
 import { Image } from 'expo-image';
 import type { PropsWithChildren } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { type ColorToken, colors, motion, radii, sizes, spacing } from '@/core/theme/tokens';
+import { makeStyles, useNightTint } from '@/core/theme/theme';
+import { type ColorToken, motion, radii, sizes, spacing } from '@/core/theme/tokens';
 import { FieldRow } from '@/features/explore/FieldRow';
 import { GoalCard } from '@/features/explore/GoalCard';
 import { AppText } from '@/shared/ui/AppText';
@@ -56,6 +57,7 @@ type SliderFieldProps = {
 
 /** Títol i valor a dalt, barra i límits a sota (com «Fins a quina distància» d'Explora). */
 function SliderField({ title, label, minLabel, maxLabel, color, ...slider }: SliderFieldProps) {
+  const styles = useStyles();
   return (
     <>
       <View style={[styles.sliderHeader, styles.sectionTitle]}>
@@ -84,6 +86,8 @@ function SliderField({ title, label, minLabel, maxLabel, color, ...slider }: Sli
  * aquella alerta (HU18).
  */
 export function NewAlertScreen({ alert }: { alert?: Alerta } = {}) {
+  const styles = useStyles();
+  const nightTint = useNightTint();
   const vm = useNewAlertViewModel(alert);
   const [firstRow, secondRow] = [vm.goals.slice(0, 3), vm.goals.slice(3)];
 
@@ -98,7 +102,12 @@ export function NewAlertScreen({ alert }: { alert?: Alerta } = {}) {
                 accessibilityLabel={vm.back.label}
                 style={styles.back}
               >
-                <Image source={backIcon} style={styles.backIcon} accessible={false} />
+                <Image
+                  tintColor={nightTint}
+                  source={backIcon}
+                  style={styles.backIcon}
+                  accessible={false}
+                />
               </PressableScale>
               <AppText variant="display" accessibilityRole="header" style={styles.shrink}>
                 {vm.title}
@@ -211,7 +220,7 @@ export function NewAlertScreen({ alert }: { alert?: Alerta } = {}) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(({ colors }) => ({
   root: { flex: 1, backgroundColor: colors.nit },
   safeArea: { flex: 1 },
   content: { paddingHorizontal: spacing.ml, paddingTop: spacing.sm, paddingBottom: spacing.xl },
@@ -243,4 +252,4 @@ const styles = StyleSheet.create({
   limits: { flexDirection: 'row', justifyContent: 'space-between' },
   error: { marginTop: spacing.ml },
   cta: { marginTop: spacing.ml },
-});
+}));
