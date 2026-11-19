@@ -258,17 +258,19 @@ it('marca el punt de sortida triat i el treu quan ja no n’hi ha', async () => 
   expect(marker!.remove).toHaveBeenCalledTimes(1);
 });
 
-it('en mode nit, filtra el mapa a grisos i hi posa la capa vermella fora del filtre', async () => {
+it('en mode nit, només passa a grisos el canvas i hi posa la capa vermella a sobre', async () => {
+  const canvasRule = '.maplibregl-canvas { filter: grayscale(1); }';
   await act(async () => root.render(<NightMap {...props} />));
-  const region = host.querySelector<HTMLDivElement>('[role="region"]');
-  expect(region?.style.filter).toBe('');
+  expect(host.querySelector('style')?.textContent).not.toContain(canvasRule);
   expect(host.querySelector('[aria-hidden]')).toBeNull();
 
   await act(async () => root.render(<NightMap {...props} night />));
-  expect(region?.style.filter).toBe('grayscale(1)');
+  // Els marcadors HTML, l'atribució i els controls ja van amb la paleta vermella: el gris els
+  // apagaria. El filtre només és per al canvas, i cap contenidor no en porta.
+  expect(host.querySelector('style')?.textContent).toContain(canvasRule);
+  const region = host.querySelector<HTMLDivElement>('[role="region"]');
+  expect(region?.style.filter).toBe('');
   const tint = host.querySelector<HTMLDivElement>('[aria-hidden]');
   expect(tint?.style.mixBlendMode).toBe('multiply');
   expect(tint?.style.pointerEvents).toBe('none');
-  // La capa no pot ser dins del contenidor filtrat: també sortiria en gris.
-  expect(region?.contains(tint ?? null)).toBe(false);
 });

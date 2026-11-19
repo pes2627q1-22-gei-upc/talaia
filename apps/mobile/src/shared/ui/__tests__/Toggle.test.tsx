@@ -1,6 +1,13 @@
 import { fireEvent, render, screen } from '@testing-library/react-native';
 
+import { ThemeProvider } from '@/core/theme/theme';
+
 import { Toggle } from '../Toggle';
+
+jest.mock('expo-brightness', () => ({
+  getBrightnessAsync: jest.fn().mockResolvedValue(0.5),
+  setBrightnessAsync: jest.fn().mockResolvedValue(undefined),
+}));
 
 describe('Toggle', () => {
   it('és un interruptor accessible que avisa del valor contrari', async () => {
@@ -24,5 +31,21 @@ describe('Toggle', () => {
     expect(toggle).toBeDisabled();
     await fireEvent.press(toggle);
     expect(onValueChange).not.toHaveBeenCalled();
+  });
+
+  it('en mode nit, el control encès es veu sobre la pista vermella', async () => {
+    const knobOnRed = '"backgroundColor":"#000000"';
+    const { rerender } = await render(
+      <ThemeProvider name="vermell">
+        <Toggle value={false} onValueChange={jest.fn()} accessibilityLabel="Alerta" />
+      </ThemeProvider>,
+    );
+    expect(JSON.stringify(screen.toJSON())).not.toContain(knobOnRed);
+    await rerender(
+      <ThemeProvider name="vermell">
+        <Toggle value onValueChange={jest.fn()} accessibilityLabel="Alerta" />
+      </ThemeProvider>,
+    );
+    expect(JSON.stringify(screen.toJSON())).toContain(knobOnRed);
   });
 });

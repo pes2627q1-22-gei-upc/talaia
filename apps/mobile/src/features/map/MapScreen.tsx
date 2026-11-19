@@ -16,8 +16,6 @@ import { RecommendationsSheet } from '../recommendations/RecommendationsSheet';
 import NightMap from './NightMap';
 import { useMapViewModel } from './useMapViewModel';
 
-const chrome = { background: colors.nit, text: colors.boira, link: colors.lluna };
-
 /**
  * Marges de l'enquadrament (mockup 03): la capçalera i la llegenda a dalt, i el full a baix (obert
  * o plegat). A dalt i als costats, també l'espai del marcador, que es dibuixa per sobre del punt.
@@ -103,7 +101,15 @@ const exitDown = FadeOutDown.duration(motion.fast).easing(motion.exit);
  */
 export function MapScreen() {
   const vm = useMapViewModel();
-  const night = useTheme().name === 'vermell';
+  const { name, colors: theme } = useTheme();
+  const night = name === 'vermell';
+  // Els controls i els marcadors HTML queden fora del filtre del mode nit: van amb el tema. Les capes
+  // del canvas (`markerPalette`) les passa a vermell el filtre, i van amb la paleta normal.
+  const chrome = useMemo(
+    () => ({ background: theme.nit, text: theme.boira, link: theme.lluna }),
+    [theme],
+  );
+  const origin = vm.origin && { ...vm.origin, color: theme.far };
   // Android ja reserva l’espai de les pestanyes; a iOS el menú se superposa al mapa.
   const RankingSafeArea = Platform.OS === 'ios' ? NativeSafeAreaView : View;
   const insets = useSafeAreaInsets();
@@ -141,14 +147,14 @@ export function MapScreen() {
         userHeading={vm.userHeading}
         locationActive={vm.locationActive}
         userLocationLabel={vm.userLocationLabel}
-        userLocationColor={colors.ubicacio}
+        userLocationColor={theme.ubicacio}
         points={vm.points}
         markerPalette={markerPalette}
         onPointPress={vm.openPoint}
         cluster={!recommendations}
         fit={fit}
         onMapPress={vm.onMapPress}
-        origin={vm.origin}
+        origin={origin}
         dom={{
           // Transparent: un WKWebView opac pinta blanc fins que la pàgina fa el primer dibuix.
           // Mentrestant es veu el fons nit del contenidor.

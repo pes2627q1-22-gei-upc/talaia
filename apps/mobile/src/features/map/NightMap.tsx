@@ -8,7 +8,7 @@ import type { StyleSpecification } from 'maplibre-gl';
 import { useEffect, useRef } from 'react';
 
 import '@/core/map/maplibreWorker';
-import { NIGHT_MAP_FILTER, NIGHT_MAP_TINT } from '@/core/theme/nightMap';
+import { NIGHT_MAP_CSS, NIGHT_MAP_TINT } from '@/core/theme/nightMap';
 
 import {
   bindClusterInteraction,
@@ -347,6 +347,7 @@ export default function NightMap({
         .maplibregl-ctrl-attrib { background-color: ${chrome.background} !important; color: ${chrome.text}; }
         .maplibregl-ctrl-attrib a { color: ${chrome.link}; }
         .maplibregl-ctrl-attrib-button { background-color: transparent !important; filter: invert(1); }
+        ${night ? NIGHT_MAP_CSS : ''}
       `}</style>
       <div
         ref={container}
@@ -356,7 +357,6 @@ export default function NightMap({
           position: 'fixed',
           inset: 0,
           background: chrome.background,
-          filter: night ? NIGHT_MAP_FILTER : undefined,
         }}
       />
       {night && <div aria-hidden style={{ position: 'fixed', ...NIGHT_MAP_TINT }} />}

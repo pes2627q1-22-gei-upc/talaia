@@ -5,7 +5,7 @@ import type { StyleSpecification } from 'maplibre-gl';
 import { useEffect, useRef, useState } from 'react';
 
 import '@/core/map/maplibreWorker';
-import { NIGHT_MAP_FILTER, NIGHT_MAP_TINT } from '@/core/theme/nightMap';
+import { NIGHT_MAP_CSS, NIGHT_MAP_TINT } from '@/core/theme/nightMap';
 import { ATTRIBUTION } from '@/features/map/style/nightStyle';
 
 type Props = {
@@ -238,11 +238,9 @@ export default function PointLocationMapContent({
         @media (prefers-reduced-motion: reduce) {
           .talaia-point-marker::before { animation: none; }
         }
+        ${night ? NIGHT_MAP_CSS : ''}
       `}</style>
-      <div
-        ref={container}
-        style={{ position: 'absolute', inset: 0, filter: night ? NIGHT_MAP_FILTER : undefined }}
-      />
+      <div ref={container} style={{ position: 'absolute', inset: 0 }} />
       {night && <div aria-hidden style={{ position: 'absolute', ...NIGHT_MAP_TINT }} />}
       {
         <div
