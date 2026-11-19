@@ -214,6 +214,9 @@ GET /api/v1/punts/6f1c2b7e-3a9d-4c58-9e0b-2d7f1a4c8b35/rutes?lat=41.3851&lon=2.1
 
 `id` ha de ser un UUID publicat. `lat` i `lon` són coordenades WGS84 de l'origen, amb latitud
 entre −90 i 90 i longitud entre −180 i 180. Cal `DATABASE_URL` per resoldre el destí.
+Abans d'enviar l'origen a Mobilicat, Talaia arrodoneix les coordenades a tres decimals (uns 100 m
+de precisió) per no transmetre la ubicació exacta del dispositiu. Les hores de les alternatives es
+retornen en UTC amb el sufix `Z`.
 
 Per cada consulta, l'API fa una sola petició a Mobilicat amb l'instant actual en UTC,
 `timePreference=DEPART_AT`, els modes `WALK,BIKE,BIKE_SHARE,CAR,PUBLIC_TRANSPORT` i `limit=5`.

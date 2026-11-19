@@ -10,11 +10,13 @@ import { numeroAmb, senseBuits, type Numero } from './query';
 const queryShape = (numero: Numero) =>
   z.object({
     lat: numero('lat ha de ser un número entre -90 i 90', { min: -90, max: 90 }).meta({
-      description: 'Latitud de l’origen de l’usuari (WGS84)',
+      description:
+        'Latitud de l’origen de l’usuari (WGS84); Talaia l’arrodoneix a tres decimals abans d’enviar-la a Mobilicat',
       example: 41.3851,
     }),
     lon: numero('lon ha de ser un número entre -180 i 180', { min: -180, max: 180 }).meta({
-      description: 'Longitud de l’origen de l’usuari (WGS84)',
+      description:
+        'Longitud de l’origen de l’usuari (WGS84); Talaia l’arrodoneix a tres decimals abans d’enviar-la a Mobilicat',
       example: 2.1734,
     }),
   });
@@ -41,8 +43,12 @@ const TramRutaSchema = z.object({
 });
 
 const AlternativaRutaSchema = z.object({
-  sortida: z.iso.datetime(),
-  arribada: z.iso.datetime(),
+  sortida: z.iso.datetime({ offset: true }).meta({
+    description: 'Instant ISO 8601 normalitzat a UTC (sufix Z)',
+  }),
+  arribada: z.iso.datetime({ offset: true }).meta({
+    description: 'Instant ISO 8601 normalitzat a UTC (sufix Z)',
+  }),
   duradaSegons: z.number().int().nonnegative(),
   distanciaMetres: z.number().int().nonnegative(),
   transbordaments: z.number().int().nonnegative(),

@@ -10,6 +10,13 @@ import type { PuntsRepository } from '../punts/puntsRepository';
 
 const MODES = ['WALK', 'BIKE', 'BIKE_SHARE', 'CAR', 'PUBLIC_TRANSPORT'] as const;
 const LIMIT = 5;
+const PRECISIO_COORDENADES = 3;
+
+/** Minimitza la precisió de la ubicació enviada a Mobilicat (aproximadament 100 m). */
+function arrodoneixCoordenada(value: number): number {
+  const escala = 10 ** PRECISIO_COORDENADES;
+  return Math.round(value * escala) / escala;
+}
 
 export type RutesService = {
   getRutes(puntId: string, origen: { lat: number; lon: number }): Promise<RutesPunt>;
@@ -22,8 +29,8 @@ export type RutesServiceOptions = {
 
 function alternativaDe(route: MobilicatRoute): AlternativaRuta {
   return {
-    sortida: route.startTime,
-    arribada: route.endTime,
+    sortida: new Date(route.startTime).toISOString(),
+    arribada: new Date(route.endTime).toISOString(),
     duradaSegons: route.durationSeconds,
     distanciaMetres: route.distanceMeters,
     transbordaments: route.transfers,
@@ -65,7 +72,10 @@ export function createRutesService(
       let routes: MobilicatRoute[];
       try {
         routes = await client.getRoutes({
-          from: origen,
+          from: {
+            lat: arrodoneixCoordenada(origen.lat),
+            lon: arrodoneixCoordenada(origen.lon),
+          },
           to: { lat: punt.lat, lon: punt.lon },
           time: now().toISOString(),
           timePreference: 'DEPART_AT',

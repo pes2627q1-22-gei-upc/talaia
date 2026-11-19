@@ -22,7 +22,7 @@ export const MobilicatRoutesQuerySchema = z
   .object({
     from: CoordinatesSchema,
     to: CoordinatesSchema,
-    time: z.iso.datetime(),
+    time: z.iso.datetime({ offset: true }),
     timePreference: MobilicatTimePreferenceSchema,
     modes: z.array(MobilicatModeSchema).min(1).max(5),
     limit: z.number().int().min(1).max(5),
@@ -42,9 +42,13 @@ const MobilicatStretchSchema = z.object({
   agencyName: z.string().nullable().optional(),
 });
 
+const MobilicatDateTimeSchema = z.iso
+  .datetime({ offset: true })
+  .transform((value) => new Date(value).toISOString());
+
 const MobilicatRouteSchema = z.object({
-  startTime: z.iso.datetime(),
-  endTime: z.iso.datetime(),
+  startTime: MobilicatDateTimeSchema,
+  endTime: MobilicatDateTimeSchema,
   durationSeconds: z.number().int().nonnegative(),
   distanceMeters: z.number().int().nonnegative(),
   walkDistanceMeters: z.number().int().nonnegative(),
@@ -106,7 +110,10 @@ function decimalSenseExponent(value: number): string {
 }
 
 function urlPer(baseUrl: string, query: MobilicatRoutesQuery): URL {
-  const url = new URL('/routes', baseUrl);
+  const url = new URL(baseUrl);
+  url.pathname = `${url.pathname.replace(/\/+$/, '')}/routes`;
+  url.search = '';
+  url.hash = '';
   url.searchParams.set(
     'from',
     `${decimalSenseExponent(query.from.lat)},${decimalSenseExponent(query.from.lon)}`,
@@ -157,6 +164,11 @@ export function createMobilicatRoutesClient({
       }
 
       if (!response.ok) {
+        try {
+          await response.body?.cancel();
+        } catch {
+          // La cancel·lació només allibera recursos; no ha d'amagar l'error HTTP original.
+        }
         throw new MobilicatRoutesError(
           'http',
           `Mobilicat ha respost ${response.status}`,
@@ -166,7 +178,7 @@ export function createMobilicatRoutesClient({
 
       const body: unknown = await response.json().catch(() => undefined);
       const parsed = MobilicatRoutesResponseSchema.safeParse(body);
-      if (!parsed.success || parsed.data.routes.length > query.limit) {
+      if (!parsed.success) {
         throw new MobilicatRoutesError(
           'invalid_response',
           'Mobilicat ha retornat una resposta de rutes invàlida',
@@ -174,7 +186,7 @@ export function createMobilicatRoutesClient({
         );
       }
 
-      return parsed.data.routes;
+      return parsed.data.routes.slice(0, query.limit);
     },
   };
 }

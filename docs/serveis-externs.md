@@ -182,9 +182,11 @@ GET /api/v1/punts/6f1c2b7e-3a9d-4c58-9e0b-2d7f1a4c8b35/rutes?lat=41.3851&lon=2.1
 ```
 
 No requereix autenticació. `id` és el UUID d'un punt publicat; `lat` i `lon` són coordenades
-WGS84 de l'origen. Talaia resol la destinació del catàleg i fa una sola consulta a Mobilicat amb
-l'instant actual en UTC, `DEPART_AT`, els cinc modes i `limit=5`. No repeteix automàticament la
-consulta. La ubicació forma part de la query i la resposta porta `Cache-Control: private, no-store`.
+WGS84 de l'origen. Abans d'enviar-les a Mobilicat, l'API les arrodoneix a tres decimals (uns 100 m
+de precisió) per no transmetre la ubicació exacta del dispositiu. Talaia resol la destinació del
+catàleg i fa una sola consulta a Mobilicat amb l'instant actual en UTC, `DEPART_AT`, els cinc modes
+i `limit=5`. No repeteix automàticament la consulta. La ubicació forma part de la query i la
+resposta porta `Cache-Control: private, no-store`.
 
 La resposta `RutesPunt` a `@talaia/shared` conserva fins a cinc alternatives en l'ordre de
 Mobilicat. Cada alternativa conté `sortida`, `arribada`, `duradaSegons`, `distanciaMetres`,
