@@ -44,12 +44,18 @@ const meteo = createOpenMeteoClient({
   llocsPerPeticio: PUNTS_PER_LOT,
   timeoutMs: 30_000,
 });
-// Les alertes s'avaluen dins de cada execució, amb l'índex ja desat, i les notificacions
-// pendents s'envien per Expo Push (TG-154).
-const alertes = createAlertsStep(createKyselyAlertesRepository(db), {
-  repository: createKyselyEnviamentRepository(db),
-  push: createExpoPushClient({ accessToken: env.EXPO_ACCESS_TOKEN }),
-});
+// Les alertes s'avaluen dins de cada execució, amb l'índex ja desat, i, amb `ENVIA_PUSH=true`, les
+// notificacions pendents s'envien per Expo Push (TG-154).
+const alertes = createAlertsStep(
+  createKyselyAlertesRepository(db),
+  env.ENVIA_PUSH
+    ? {
+        repository: createKyselyEnviamentRepository(db),
+        push: createExpoPushClient({ accessToken: env.EXPO_ACCESS_TOKEN }),
+      }
+    : undefined,
+);
+if (!env.ENVIA_PUSH) console.log('[worker] ENVIA_PUSH no és true: no s’envien notificacions push');
 const executor = createExecutor((senyal) =>
   recalculaIndex({ ...createKyselyRecalculRepositories(db), meteo, alertes, senyal }),
 );

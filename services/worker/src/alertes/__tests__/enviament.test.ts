@@ -22,31 +22,40 @@ const pendent = (canvis: Partial<NotificacioPendent> = {}): NotificacioPendent =
 });
 
 /**
- * La taula en memòria: les files sense `enviada_el` amb hora ≥ `desDe` són les pendents, com fa
- * la consulta de Kysely (els altres filtres es proven amb l'SQL).
+ * La taula en memòria: `claim` reserva les files sense `enviada_el` amb hora ≥ `desDe`, com fa
+ * l'`update` de Kysely (els altres filtres es proven amb l'SQL). `enviades` són les que tenen
+ * tickets desats.
  */
 function repositoriEnMemoria(
   files: NotificacioPendent[],
   dispositius: { perfilId: string; token: string }[],
 ) {
+  const reserves = new Map<string, Date>();
   const enviades = new Map<string, { ticketIds: string[]; enviadaEl: Date }>();
   const clau = (n: Pick<NotificacioPendent, 'alertaId' | 'nit'>) => `${n.alertaId}|${n.nit}`;
   let tokens = [...dispositius];
   const repository: EnviamentRepository = {
-    pending: jest.fn(async (desDe: Date) =>
-      files.filter((n) => !enviades.has(clau(n)) && Date.parse(n.hora) >= desDe.getTime()),
-    ),
+    claim: jest.fn(async (desDe: Date, reservadaEl: Date) => {
+      const lliures = files.filter(
+        (n) => !reserves.has(clau(n)) && Date.parse(n.hora) >= desDe.getTime(),
+      );
+      for (const n of lliures) reserves.set(clau(n), reservadaEl);
+      return lliures;
+    }),
     tokens: jest.fn(async (perfilIds: string[]) =>
       tokens.filter((t) => perfilIds.includes(t.perfilId)),
     ),
-    markSent: jest.fn(async (n, ticketIds, enviadaEl) => {
-      enviades.set(clau(n), { ticketIds, enviadaEl });
+    saveTickets: jest.fn(async (n, ticketIds) => {
+      enviades.set(clau(n), { ticketIds, enviadaEl: reserves.get(clau(n))! });
+    }),
+    release: jest.fn(async (n, reservadaEl) => {
+      if (reserves.get(clau(n))?.getTime() === reservadaEl.getTime()) reserves.delete(clau(n));
     }),
     deleteTokens: jest.fn(async (esborrar: string[]) => {
       tokens = tokens.filter((t) => !esborrar.includes(t.token));
     }),
   };
-  return { repository, enviades, tokens: () => tokens };
+  return { repository, enviades, reserves, tokens: () => tokens };
 }
 
 /** Expo fals: respon amb `resposta(missatge)` o llança l'error de la petició. */
@@ -79,6 +88,13 @@ describe('pushMessage', () => {
     });
   });
 
+  it('a la 01:00, però a les 00:00 i a les 02:00', () => {
+    const body = (hora: string) => pushMessage(pendent({ hora }), 't').body;
+    expect(body('2026-11-12T00:00:00.000Z')).toContain('75 a la 01:00.');
+    expect(body('2026-11-11T23:00:00.000Z')).toContain('75 a les 00:00.');
+    expect(body('2026-11-12T01:00:00.000Z')).toContain('75 a les 02:00.');
+  });
+
   it('les hores de matinada porten el zero davant', () => {
     expect(pushMessage(pendent({ hora: '2026-11-12T02:00:00.000Z' }), 't').body).toContain(
       'a les 03:00',
@@ -103,7 +119,7 @@ describe('sendPendingNotifications', () => {
       tokensEsborrats: 0,
       errors: [],
     });
-    expect(repository.pending).toHaveBeenCalledWith(new Date('2026-11-11T19:00:00.000Z'));
+    expect(repository.claim).toHaveBeenCalledWith(new Date('2026-11-11T19:00:00.000Z'), ARA);
     expect(repository.tokens).toHaveBeenCalledWith(['perfil-1']);
     expect(push.send).toHaveBeenCalledWith([
       pushMessage(pendent(), 'ExponentPushToken[mobil]'),
@@ -136,7 +152,7 @@ describe('sendPendingNotifications', () => {
 
   it("un perfil sense tokens no rep res, i la notificació queda pendent fins que n'hi ha", async () => {
     const files = [pendent()];
-    const { repository, enviades } = repositoriEnMemoria(files, []);
+    const { repository, enviades, reserves } = repositoriEnMemoria(files, []);
     const push = expoFals();
 
     await expect(sendPendingNotifications(repository, push, ARA)).resolves.toMatchObject({
@@ -144,6 +160,8 @@ describe('sendPendingNotifications', () => {
     });
     expect(push.send).not.toHaveBeenCalled();
     expect(enviades.size).toBe(0);
+    // La reserva es desfà: torna a ser pendent.
+    expect(reserves.size).toBe(0);
 
     // L'usuari activa les notificacions: a l'execució següent, abans de la millor hora, la rep.
     const ambToken = repositoriEnMemoria(files, [{ perfilId: 'perfil-1', token: 'a' }]);
@@ -257,6 +275,82 @@ describe('sendPendingNotifications', () => {
     expect(jest.mocked(push.send).mock.calls.map(([lot]) => lot.length)).toEqual([100, 50]);
     expect(enviades.size).toBe(50);
   });
+
+  it('dues execucions alhora (dos workers contra la mateixa BD) no envien la mateixa dues vegades', async () => {
+    const { repository } = repositoriEnMemoria([pendent()], [{ perfilId: 'perfil-1', token: 'a' }]);
+    const push = expoFals();
+
+    const [primera, segona] = await Promise.all([
+      sendPendingNotifications(repository, push, ARA),
+      sendPendingNotifications(repository, push, ARA),
+    ]);
+
+    expect(primera.enviades + segona.enviades).toBe(1);
+    expect(push.send).toHaveBeenCalledTimes(1);
+  });
+
+  it('si desar els tickets falla, no la torna a enviar a la següent execució', async () => {
+    const { repository } = repositoriEnMemoria([pendent()], [{ perfilId: 'perfil-1', token: 'a' }]);
+    jest.mocked(repository.saveTickets).mockRejectedValueOnce(new Error('timeout'));
+    const push = expoFals();
+
+    await expect(sendPendingNotifications(repository, push, ARA)).resolves.toEqual({
+      enviades: 1,
+      tokensEsborrats: 0,
+      errors: ['timeout'],
+    });
+    await sendPendingNotifications(repository, push, new Date('2026-11-11T20:05:00.000Z'));
+    expect(push.send).toHaveBeenCalledTimes(1);
+  });
+
+  it('si esborrar els tokens morts falla, les enviades queden desades i l’error al resum', async () => {
+    const { repository, enviades } = repositoriEnMemoria(
+      [pendent()],
+      [
+        { perfilId: 'perfil-1', token: 'mort' },
+        { perfilId: 'perfil-1', token: 'viu' },
+      ],
+    );
+    jest.mocked(repository.deleteTokens).mockRejectedValueOnce(new Error('connection terminated'));
+    const push = expoFals((m) =>
+      m.to === 'mort'
+        ? { status: 'error', message: 'not registered', error: 'DeviceNotRegistered' }
+        : { status: 'ok', id: 'ticket' },
+    );
+
+    await expect(sendPendingNotifications(repository, push, ARA)).resolves.toEqual({
+      enviades: 1,
+      tokensEsborrats: 0,
+      errors: ['connection terminated'],
+    });
+    expect(enviades.size).toBe(1);
+  });
+
+  it('si no es poden llegir els tokens, no envia res i desfà les reserves', async () => {
+    const { repository, reserves } = repositoriEnMemoria([pendent()], []);
+    jest.mocked(repository.tokens).mockRejectedValueOnce(new Error('timeout'));
+    const push = expoFals();
+
+    await expect(sendPendingNotifications(repository, push, ARA)).resolves.toMatchObject({
+      enviades: 0,
+      errors: ['timeout'],
+    });
+    expect(push.send).not.toHaveBeenCalled();
+    expect(reserves.size).toBe(0);
+  });
+
+  it('si desfer una reserva falla, aquella nit es perd però les altres es desfan', async () => {
+    const { repository, reserves } = repositoriEnMemoria(
+      [pendent({ alertaId: 'alerta-1' }), pendent({ alertaId: 'alerta-2' })],
+      [],
+    );
+    jest.mocked(repository.release).mockRejectedValueOnce(new Error('timeout'));
+
+    await expect(sendPendingNotifications(repository, expoFals(), ARA)).resolves.toMatchObject({
+      errors: ['timeout'],
+    });
+    expect([...reserves.keys()]).toEqual(['alerta-1|2026-11-11']);
+  });
 });
 
 describe('createAlertsStep · enviament (TG-154)', () => {
@@ -296,7 +390,7 @@ describe('createAlertsStep · enviament (TG-154)', () => {
 
   it('un error de la base de dades en enviar també va a errorEnviament', async () => {
     const { repository } = repositoriEnMemoria([], []);
-    jest.mocked(repository.pending).mockRejectedValueOnce(new Error('connection terminated'));
+    jest.mocked(repository.claim).mockRejectedValueOnce(new Error('connection terminated'));
 
     await expect(
       createAlertsStep(avaluacio, { repository, push: expoFals() })(ARA),

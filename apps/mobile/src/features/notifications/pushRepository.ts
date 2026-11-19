@@ -153,20 +153,11 @@ export const pushRepository = {
   },
 
   /**
-   * Avisa amb el `puntId` quan l'usuari toca una notificació d'una alerta (TG-154, ADR-0028), també
-   * la que ha obert l'app en fred (`getLastNotificationResponse`). Cada resposta es fa servir un
-   * sol cop: s'esborra en llegir-la, i si el listener rep la mateixa de l'arrencada, no es repeteix.
-   * Amb l'app oberta, les notificacions també es mostren (si no, Expo no les ensenya).
+   * Amb l'app oberta, les notificacions també es mostren: si no, Expo no les ensenya (TG-154).
    */
-  onPointNotificationOpened(listener: (puntId: string) => void): () => void {
-    if (!pushRepository.isSupported()) return () => {};
-    const {
-      addNotificationResponseReceivedListener,
-      clearLastNotificationResponse,
-      getLastNotificationResponse,
-      setNotificationHandler,
-    } = notifications();
-    setNotificationHandler({
+  showNotificationsWhileOpen(): void {
+    if (!pushRepository.isSupported()) return;
+    notifications().setNotificationHandler({
       handleNotification: async () => ({
         shouldShowBanner: true,
         shouldShowList: true,
@@ -174,6 +165,20 @@ export const pushRepository = {
         shouldSetBadge: false,
       }),
     });
+  },
+
+  /**
+   * Avisa amb el `puntId` quan l'usuari toca una notificació d'una alerta (TG-154, ADR-0028), també
+   * la que ha obert l'app en fred (`getLastNotificationResponse`). Cada resposta es fa servir un
+   * sol cop: s'esborra en llegir-la, i si el listener rep la mateixa de l'arrencada, no es repeteix.
+   */
+  onPointNotificationOpened(listener: (puntId: string) => void): () => void {
+    if (!pushRepository.isSupported()) return () => {};
+    const {
+      addNotificationResponseReceivedListener,
+      clearLastNotificationResponse,
+      getLastNotificationResponse,
+    } = notifications();
     let handled: string | null = null;
     const handle = (response: NotificationsModule.NotificationResponse) => {
       const { identifier, content } = response.notification.request;

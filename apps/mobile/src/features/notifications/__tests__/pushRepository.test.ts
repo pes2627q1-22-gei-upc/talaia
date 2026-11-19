@@ -338,8 +338,21 @@ describe('pushRepository.onPointNotificationOpened', () => {
     expect(listener).not.toHaveBeenCalled();
   });
 
-  it('mostra les notificacions amb l’app oberta', async () => {
+  it('no configura com es mostren les notificacions', () => {
     pushRepository.onPointNotificationOpened(jest.fn());
+    expect(notifications.setNotificationHandler).not.toHaveBeenCalled();
+  });
+
+  it('a Expo Go no toca el mòdul natiu', () => {
+    runningInExpoGo.mockReturnValue(true);
+    pushRepository.onPointNotificationOpened(jest.fn())();
+    expect(notifications.addNotificationResponseReceivedListener).not.toHaveBeenCalled();
+  });
+});
+
+describe('pushRepository.showNotificationsWhileOpen', () => {
+  it('mostra les notificacions amb l’app oberta', async () => {
+    pushRepository.showNotificationsWhileOpen();
     const [{ handleNotification }] = notifications.setNotificationHandler.mock.calls[0]! as [
       { handleNotification: () => Promise<unknown> },
     ];
@@ -353,7 +366,7 @@ describe('pushRepository.onPointNotificationOpened', () => {
 
   it('a Expo Go no toca el mòdul natiu', () => {
     runningInExpoGo.mockReturnValue(true);
-    pushRepository.onPointNotificationOpened(jest.fn())();
-    expect(notifications.addNotificationResponseReceivedListener).not.toHaveBeenCalled();
+    pushRepository.showNotificationsWhileOpen();
+    expect(notifications.setNotificationHandler).not.toHaveBeenCalled();
   });
 });

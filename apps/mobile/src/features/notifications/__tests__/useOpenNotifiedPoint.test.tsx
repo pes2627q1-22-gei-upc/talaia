@@ -9,7 +9,7 @@ jest.mock('expo-router', () => {
   return { router, useRouter: () => router };
 });
 jest.mock('../pushRepository', () => ({
-  pushRepository: { onPointNotificationOpened: jest.fn() },
+  pushRepository: { onPointNotificationOpened: jest.fn(), showNotificationsWhileOpen: jest.fn() },
 }));
 
 const onOpened = jest.mocked(pushRepository.onPointNotificationOpened);
@@ -35,9 +35,11 @@ it('sense sessió no escolta res; quan n’hi ha, sí, i en desmuntar-se deixa d
     { initialProps: { enabled: false } },
   );
   expect(onOpened).not.toHaveBeenCalled();
+  expect(pushRepository.showNotificationsWhileOpen).not.toHaveBeenCalled();
 
   await rerender({ enabled: true });
   expect(onOpened).toHaveBeenCalledTimes(1);
+  expect(pushRepository.showNotificationsWhileOpen).toHaveBeenCalledTimes(1);
 
   await unmount();
   expect(stop).toHaveBeenCalled();
