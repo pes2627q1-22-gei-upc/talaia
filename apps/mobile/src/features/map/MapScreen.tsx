@@ -5,8 +5,8 @@ import Animated, { FadeInDown, FadeOutDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SafeAreaView as NativeSafeAreaView } from 'react-native-screens/experimental';
 
-import { useTheme } from '@/core/theme/theme';
-import { colors, motion, radii, sizes, spacing } from '@/core/theme/tokens';
+import { makeStyles, themes, useTheme } from '@/core/theme/theme';
+import { motion, radii, sizes, spacing } from '@/core/theme/tokens';
 import { AppText } from '@/shared/ui/AppText';
 import { PressableScale } from '@/shared/ui/PressableScale';
 
@@ -26,21 +26,24 @@ const FIT_BOTTOM = 390;
 const FIT_BOTTOM_COLLAPSED = 170;
 const FIT_SIDE = 44;
 
+// Les capes del canvas van amb la paleta normal: en mode nit, el filtre les passa a vermell (ADR-0032).
+const { colors: normal } = themes.normal;
 const markerPalette = {
-  background: colors.nit,
-  clusterBackground: colors.crep,
-  clusterBorder: colors.vora,
-  text: colors.lluna,
-  unknown: colors.boira,
-  ras: colors.ras,
-  jus: colors.jus,
-  tap: colors.tap,
+  background: normal.nit,
+  clusterBackground: normal.crep,
+  clusterBorder: normal.vora,
+  text: normal.lluna,
+  unknown: normal.boira,
+  ras: normal.ras,
+  jus: normal.jus,
+  tap: normal.tap,
 };
 
+// Les icones porten el traç negre: el color el posa `tintColor`, perquè canvia amb el tema.
 const retryIcon = {
   uri: `data:image/svg+xml;utf8,${encodeURIComponent(`
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-      fill="none" stroke="${colors.far}" stroke-width="1.8"
+      fill="none" stroke="#000" stroke-width="1.8"
       stroke-linecap="round" stroke-linejoin="round">
       <path d="M11 19.7A7.7 7.7 0 1 1 18.7 12V14.7"/>
       <path d="M16.6 12.6L18.7 14.7L20.8 12.6"/>
@@ -51,18 +54,18 @@ const retryIcon = {
 const backIcon = {
   uri: `data:image/svg+xml;utf8,${encodeURIComponent(`
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-      fill="none" stroke="${colors.lluna}" stroke-width="2"
+      fill="none" stroke="#000" stroke-width="2"
       stroke-linecap="round" stroke-linejoin="round">
       <path d="M14.5 6L8.5 12L14.5 18"/>
     </svg>
   `)}`,
 };
 
-/** La fletxa de navegació de «Des d'on surts» (mockup 02), del color de la ubicació. */
+/** La fletxa de navegació de «Des d'on surts» (mockup 02), del color de la ubicació (`ubicacio`). */
 const nearbyIcon = {
   uri: `data:image/svg+xml;utf8,${encodeURIComponent(`
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 22 22"
-      fill="none" stroke="${colors.ubicacio}" stroke-width="1.83"
+      fill="none" stroke="#000" stroke-width="1.83"
       stroke-linecap="round" stroke-linejoin="round">
       <path d="M2.75 10.08L19.25 2.75L11.92 19.25L10.08 11.92L2.75 10.08Z"/>
     </svg>
@@ -73,7 +76,7 @@ const nearbyIcon = {
 const pinIcon = {
   uri: `data:image/svg+xml;utf8,${encodeURIComponent(`
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-      fill="none" stroke="${colors.far}" stroke-width="1.8"
+      fill="none" stroke="#000" stroke-width="1.8"
       stroke-linecap="round" stroke-linejoin="round">
       <path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11Z"/>
       <circle cx="12" cy="10" r="2.3"/>
@@ -84,7 +87,7 @@ const pinIcon = {
 const closeIcon = {
   uri: `data:image/svg+xml;utf8,${encodeURIComponent(`
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-      fill="none" stroke="${colors.boira}" stroke-width="1.8" stroke-linecap="round">
+      fill="none" stroke="#000" stroke-width="1.8" stroke-linecap="round">
       <path d="M7 7L17 17M17 7L7 17"/>
     </svg>
   `)}`,
@@ -102,10 +105,10 @@ const exitDown = FadeOutDown.duration(motion.fast).easing(motion.exit);
  */
 export function MapScreen() {
   const vm = useMapViewModel();
+  const styles = useStyles();
   const { name, colors: theme } = useTheme();
   const night = name === 'vermell';
-  // Els controls i els marcadors HTML queden fora del filtre del mode nit: van amb el tema. Les capes
-  // del canvas (`markerPalette`) les passa a vermell el filtre, i van amb la paleta normal.
+  // Els controls i els marcadors HTML queden fora del filtre del mode nit: van amb el tema.
   const chrome = useMemo(
     () => ({ background: theme.nit, text: theme.boira, link: theme.lluna }),
     [theme],
@@ -174,7 +177,12 @@ export function MapScreen() {
             accessibilityLabel={vm.back.label}
             style={styles.back}
           >
-            <Image source={backIcon} style={styles.backIcon} accessible={false} />
+            <Image
+              source={backIcon}
+              tintColor={theme.lluna}
+              style={styles.backIcon}
+              accessible={false}
+            />
           </PressableScale>
           {recommendations && <RecommendationsSummary header={recommendations.header} />}
           {vm.hint && (
@@ -209,7 +217,12 @@ export function MapScreen() {
                   <AppText variant="label" style={styles.retryText}>
                     {vm.retryLabel}
                   </AppText>
-                  <Image source={retryIcon} style={styles.retryIcon} accessible={false} />
+                  <Image
+                    source={retryIcon}
+                    tintColor={theme.far}
+                    style={styles.retryIcon}
+                    accessible={false}
+                  />
                 </PressableScale>
               </View>
             ) : (
@@ -218,7 +231,7 @@ export function MapScreen() {
                   <ActivityIndicator
                     testID="map-loading-indicator"
                     size="small"
-                    color={colors.far}
+                    color={theme.far}
                     accessibilityElementsHidden
                     importantForAccessibility="no"
                   />
@@ -267,11 +280,16 @@ export function MapScreen() {
               <ActivityIndicator
                 testID="nearby-loading"
                 size="small"
-                color={colors.ubicacio}
+                color={theme.ubicacio}
                 style={styles.nearbyIcon}
               />
             ) : (
-              <Image source={nearbyIcon} style={styles.nearbyIcon} accessible={false} />
+              <Image
+                source={nearbyIcon}
+                tintColor={theme.ubicacio}
+                style={styles.nearbyIcon}
+                accessible={false}
+              />
             )}
             <AppText variant="label">{vm.nearby.label}</AppText>
           </PressableScale>
@@ -295,7 +313,12 @@ export function MapScreen() {
         >
           <View style={styles.pickerRow}>
             <View style={styles.pickerBadge}>
-              <Image source={pinIcon} style={styles.pickerIcon} accessible={false} />
+              <Image
+                source={pinIcon}
+                tintColor={theme.far}
+                style={styles.pickerIcon}
+                accessible={false}
+              />
             </View>
             <View style={styles.noticeText}>
               <AppText variant="label" accessibilityRole="header">
@@ -320,7 +343,12 @@ export function MapScreen() {
               hitSlop={spacing.ms}
               style={styles.pickerClose}
             >
-              <Image source={closeIcon} style={styles.closeIcon} accessible={false} />
+              <Image
+                source={closeIcon}
+                tintColor={theme.boira}
+                style={styles.closeIcon}
+                accessible={false}
+              />
             </PressableScale>
           </View>
         </Animated.View>
@@ -329,7 +357,7 @@ export function MapScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(({ colors }) => ({
   container: { flex: 1, backgroundColor: colors.nit, overflow: 'hidden' },
   rankingViewport: { flex: 1, overflow: 'hidden' },
   top: { position: 'absolute', left: spacing.md, right: spacing.md, gap: spacing.ms },
@@ -424,4 +452,4 @@ const styles = StyleSheet.create({
     borderColor: colors.vora,
     backgroundColor: colors.sheet,
   },
-});
+}));

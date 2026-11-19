@@ -3,10 +3,12 @@ import { router } from 'expo-router';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { GestureHandlerRootView, State } from 'react-native-gesture-handler';
 import { fireGestureHandler, getByGestureTestId } from 'react-native-gesture-handler/jest-utils';
-import { Platform, StyleSheet, View } from 'react-native';
+import { Platform, processColor, StyleSheet, View } from 'react-native';
 
 import { ApiError } from '@/core/api/httpClient';
 import i18n from '@/core/i18n';
+import { ThemeProvider } from '@/core/theme/theme';
+import { colors, colorsVermell } from '@/core/theme/tokens';
 
 import { nightOf } from '../../explore/exploreModel';
 import type { RecommendationParams } from '../../recommendations/recommendationsModel';
@@ -17,6 +19,13 @@ import { nightStyle } from '../style/nightStyle';
 import { camera } from '../useMapViewModel';
 
 let mockParams: RecommendationParams = {};
+jest.mock('expo-brightness', () => ({
+  getBrightnessAsync: jest.fn().mockResolvedValue(0.5),
+  setBrightnessAsync: jest.fn().mockResolvedValue(undefined),
+  isUsingSystemBrightnessAsync: jest.fn().mockResolvedValue(true),
+  restoreSystemBrightnessAsync: jest.fn().mockResolvedValue(undefined),
+}));
+
 jest.mock('expo-router', () => ({
   router: { push: jest.fn(), back: jest.fn() },
   useLocalSearchParams: () => mockParams,
@@ -122,6 +131,34 @@ describe('MapScreen', () => {
       expect(router.back).toHaveBeenCalledTimes(1);
     },
   );
+
+  it('en mode nit, els controls van amb el tema i les capes del canvas amb la paleta normal', async () => {
+    await render(
+      <ThemeProvider name="vermell">
+        <MapScreen />
+      </ThemeProvider>,
+      { wrapper: GestureHandlerRootView },
+    );
+    expect(mockNightMap).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        night: true,
+        chrome: {
+          background: colorsVermell.nit,
+          text: colorsVermell.boira,
+          link: colorsVermell.lluna,
+        },
+        userLocationColor: colorsVermell.ubicacio,
+        markerPalette: expect.objectContaining({ background: colors.nit, text: colors.lluna }),
+      }),
+    );
+    expect(screen.getByRole('button', { name: i18n.t('map.back') })).toHaveStyle({
+      backgroundColor: colorsVermell.sheet,
+    });
+    // expo-image rep el color ja processat (ARGB).
+    expect(JSON.stringify(screen.toJSON())).toContain(
+      `"tintColor":${String(processColor(colorsVermell.lluna))}`,
+    );
+  });
 
   it("passa l'estil nocturn, la càmera i l'etiqueta accessible al mapa", async () => {
     await render(<MapScreen />, { wrapper: GestureHandlerRootView });
