@@ -177,5 +177,5 @@ Estil nocturn propi sobre les tessel·les vectorials de l'ICGC, recolorit amb aq
 ## Regles
 
 - Cap color, mida de font o espaiat escrit a mà a les pantalles: sempre des dels tokens del tema.
-- Contrast mínim WCAG AA per al text.
+- Contrast mínim WCAG AA per al text: ho comprova `core/theme/__tests__/contrast.test.ts` (RNF05, `docs/rnf.md`). `tap` sobre `crep` (3,9:1) només val per a text gran.
 - Tots els textos visibles passen per i18n.

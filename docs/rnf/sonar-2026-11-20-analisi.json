@@ -1,0 +1,13 @@
+{
+  "paging": { "pageIndex": 1, "pageSize": 1, "total": 12 },
+  "analyses": [
+    {
+      "key": "834d42f8-2a91-4e77-a106-03af57f9aa2b",
+      "date": "2026-11-20T14:12:24+0000",
+      "events": [{ "key": "AaH5TgO5QqslI-Q2pTPQ", "category": "VERSION", "name": "not provided" }],
+      "projectVersion": "not provided",
+      "manualNewCodePeriodBaseline": false,
+      "revision": "48ff4c61c4e602e98fdcd263c652abf89fdd9f3f"
+    }
+  ]
+}

@@ -97,6 +97,10 @@ jobs:
         if: ${{ !cancelled() && matrix.check == 'tests' }}
         run: npm run test:sm
 
+      - name: Tests dels scripts de mesura dels RNF
+        if: ${{ !cancelled() && matrix.check == 'tests' }}
+        run: npm run test:rnf
+
       - name: Tests de la preparació de cobertura
         if: ${{ !cancelled() && matrix.check == 'tests' }}
         run: node --test scripts/ci/*.test.mjs
