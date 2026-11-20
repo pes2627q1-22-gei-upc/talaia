@@ -602,6 +602,28 @@
         "generic": "No hem pogut desar el pla. Torna-ho a provar d'aquí a un moment."
       }
     },
+    "calendar": {
+      "label": "Afegeix-lo al meu calendari",
+      "hint": "Tria un calendari del mòbil. Si és del teu compte de Google i té la sincronització activada, també apareixerà a Google Calendar.",
+      "unavailable": "El calendari no està disponible en aquest entorn. Pots desar el pla igualment.",
+      "loading": "Carregant els calendaris…",
+      "denied": "No tenim permís per accedir al calendari. Dona el permís o desactiva aquesta opció per desar només el pla.",
+      "loadError": "No hem pogut carregar els calendaris. Torna-ho a provar o desactiva aquesta opció.",
+      "empty": "No hi ha cap calendari modificable. Configura un calendari al mòbil i torna-ho a provar, o desactiva aquesta opció.",
+      "settings": "Obre la configuració",
+      "target": "Calendari de destinació",
+      "choose": "Tria el calendari",
+      "eventTitle": "Talaia · {{point}}",
+      "eventTitleWithPhenomenon": "{{phenomenon}} · {{point}}",
+      "savedTitle": "Pla desat",
+      "adding": "El pla ja està desat al teu compte. L’estem afegint al calendari…",
+      "continue": "Continua",
+      "syncErrors": {
+        "create": "El pla està desat, però no l’hem pogut afegir al calendari. Pots reintentar-ho o continuar amb el pla desat.",
+        "link": "El pla i l’esdeveniment del calendari estan desats, però no els hem pogut vincular. Torna-ho a provar per completar el vincle.",
+        "denied": "El pla està desat, però falta el permís de calendari. Pots donar-lo i reintentar-ho, o continuar amb el pla desat."
+      }
+    },
     "list": {
       "header": "Els meus plans",
       "title": "Els meus plans",

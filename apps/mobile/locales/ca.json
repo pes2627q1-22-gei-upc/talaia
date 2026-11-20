@@ -1,5 +1,7 @@
 {
   "ios": {
-    "NSLocationWhenInUseUsageDescription": "Talaia fa servir la teva ubicació per recomanar-te els millors llocs per mirar el cel a prop d'on ets."
+    "NSLocationWhenInUseUsageDescription": "Talaia fa servir la teva ubicació per recomanar-te els millors llocs per mirar el cel a prop d'on ets.",
+    "NSCalendarsUsageDescription": "Talaia accedeix als teus calendaris per deixar-te triar on afegir els plans d’observació.",
+    "NSCalendarsFullAccessUsageDescription": "Talaia accedeix als teus calendaris per deixar-te triar on afegir els plans d’observació."
   }
 }
