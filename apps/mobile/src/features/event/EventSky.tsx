@@ -3,7 +3,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { makeStyles, useTheme } from '@/core/theme/theme';
+import { makeStyles, useNightTint, useTheme } from '@/core/theme/theme';
 import { radii, sizes, spacing } from '@/core/theme/tokens';
 import { AppText } from '@/shared/ui/AppText';
 
@@ -45,6 +45,7 @@ type EventSkyProps = {
 
 /** Targeta del cel de la fitxa (mockup 09): el radiant amb la icona del fenomen, sobre l'horitzó. */
 export function EventSky({ seed, icon, meteors, caption }: EventSkyProps) {
+  const nightTint = useNightTint();
   const styles = useStyles();
   const { colors, gradients } = useTheme();
   const stars = useMemo(() => {
@@ -87,7 +88,7 @@ export function EventSky({ seed, icon, meteors, caption }: EventSkyProps) {
               />
             ))
           : null}
-        <Image source={radiant} style={styles.ring} accessible={false} />
+        <Image tintColor={nightTint} source={radiant} style={styles.ring} accessible={false} />
         {/* La icona del fenomen, en `far` com al mockup. */}
         <Image source={icon} tintColor={colors.far} style={styles.icon} accessible={false} />
       </View>

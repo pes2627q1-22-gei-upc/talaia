@@ -158,7 +158,8 @@
       "es": "Castellà",
       "en": "Anglès"
     },
-    "account": "Compte"
+    "account": "Compte",
+    "plans": "Els meus plans"
   },
   "apiStatus": {
     "title": "Estat del servidor",
@@ -622,6 +623,28 @@
         "link": "El pla i l’esdeveniment del calendari estan desats, però no els hem pogut vincular. Torna-ho a provar per completar el vincle.",
         "denied": "El pla està desat, però falta el permís de calendari. Pots donar-lo i reintentar-ho, o continuar amb el pla desat."
       }
+    },
+    "list": {
+      "header": "Els meus plans",
+      "title": "Els meus plans",
+      "upcoming": "Propers",
+      "past": "Passats",
+      "starrySky": "Cel estrellat",
+      "rowTitle": "{{phenomenon}} a {{place}}",
+      "rowTitle_el": "{{phenomenon}} al {{place}}",
+      "rowTitle_els": "{{phenomenon}} als {{place}}",
+      "departure": "Sortida a les {{time}}, {{point}}",
+      "departure_single": "Sortida a la {{time}}, {{point}}",
+      "retired": "Aquest punt ja no està disponible.",
+      "a11y": "{{title}}. {{day}} {{month}}. {{subtitle}}",
+      "openHint": "Obre la fitxa del punt",
+      "emptyUpcomingTitle": "Encara no tens cap pla",
+      "emptyUpcomingMessage": "Busca un bon lloc a Explora i crea un pla des de la seva fitxa.",
+      "emptyPastTitle": "Encara no tens plans passats",
+      "emptyPastMessage": "Quan hagi passat l'hora d'un pla, el trobaràs aquí.",
+      "create": "Troba un lloc",
+      "errorTitle": "No hem pogut carregar els plans",
+      "retry": "Torna-ho a provar"
     }
   },
   "notifications": {

@@ -72,12 +72,12 @@ export function Toggle({
       style={styles.track}
     >
       <Animated.View style={[styles.fill, fill]} />
-      <Animated.View style={[styles.knob, knob]} />
+      <Animated.View style={[styles.knob, value && styles.knobOn, knob]} />
     </Pressable>
   );
 }
 
-const useStyles = makeStyles(({ colors }) => ({
+const useStyles = makeStyles(({ name, colors }) => ({
   track: {
     width: WIDTH,
     height: HEIGHT,
@@ -95,4 +95,6 @@ const useStyles = makeStyles(({ colors }) => ({
     borderRadius: KNOB / 2,
     backgroundColor: colors.lluna,
   },
+  // En mode nit, `ras` i `lluna` són el mateix vermell: encès, el control seria invisible.
+  knobOn: { backgroundColor: name === 'vermell' ? colors.nit : colors.lluna },
 }));

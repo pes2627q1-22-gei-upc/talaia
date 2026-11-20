@@ -158,7 +158,8 @@
       "es": "Castellano",
       "en": "Inglés"
     },
-    "account": "Cuenta"
+    "account": "Cuenta",
+    "plans": "Mis planes"
   },
   "apiStatus": {
     "title": "Estado del servidor",
@@ -622,6 +623,28 @@
         "link": "El plan y el evento del calendario están guardados, pero no hemos podido vincularlos. Inténtalo de nuevo para completar el vínculo.",
         "denied": "El plan está guardado, pero falta el permiso de calendario. Puedes concederlo y reintentarlo, o continuar con el plan guardado."
       }
+    },
+    "list": {
+      "header": "Mis planes",
+      "title": "Mis planes",
+      "upcoming": "Próximos",
+      "past": "Pasados",
+      "starrySky": "Cielo estrellado",
+      "rowTitle": "{{phenomenon}} en {{place}}",
+      "rowTitle_el": "{{phenomenon}} en el {{place}}",
+      "rowTitle_els": "{{phenomenon}} en els {{place}}",
+      "departure": "Salida a las {{time}}, {{point}}",
+      "departure_single": "Salida a la {{time}}, {{point}}",
+      "retired": "Este punto ya no está disponible.",
+      "a11y": "{{title}}. {{day}} {{month}}. {{subtitle}}",
+      "openHint": "Abre la ficha del punto",
+      "emptyUpcomingTitle": "Aún no tienes ningún plan",
+      "emptyUpcomingMessage": "Busca un buen sitio en Explora y crea un plan desde su ficha.",
+      "emptyPastTitle": "Aún no tienes planes pasados",
+      "emptyPastMessage": "Cuando haya pasado la hora de un plan, lo encontrarás aquí.",
+      "create": "Encuentra un sitio",
+      "errorTitle": "No hemos podido cargar los planes",
+      "retry": "Vuelve a intentarlo"
     }
   },
   "notifications": {

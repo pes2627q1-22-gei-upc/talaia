@@ -2,7 +2,12 @@ import type { PlaNou } from '@talaia/shared';
 
 import { apiGet, apiPost, apiPut } from '@/core/api/httpClient';
 
-import { fetchPlanEvents, PLANS_KEY, plansRepository } from '../plansRepository';
+import {
+  fetchEventsBetween,
+  fetchPlanEvents,
+  PLANS_KEY,
+  plansRepository,
+} from '../plansRepository';
 
 jest.mock('@/core/api/httpClient', () => ({
   ...jest.requireActual('@/core/api/httpClient'),
@@ -49,5 +54,23 @@ it('demana els fenòmens del dia triat ± 1', async () => {
     '/esdeveniments',
     { des_de: '2026-10-20', fins_a: '2026-10-22' },
     { signal: controller.signal },
+  );
+});
+
+it('llista els plans futurs o passats amb GET /plans?quan=', async () => {
+  get.mockResolvedValue([]);
+  await plansRepository.list('futurs');
+  expect(get).toHaveBeenCalledWith('/plans', { quan: 'futurs' }, { signal: undefined });
+  await plansRepository.list('passats');
+  expect(get).toHaveBeenLastCalledWith('/plans', { quan: 'passats' }, { signal: undefined });
+});
+
+it("demana d'una vegada els fenòmens dels dies dels plans", async () => {
+  get.mockResolvedValue({ data: [] });
+  await fetchEventsBetween('2026-10-21', '2026-11-02');
+  expect(get).toHaveBeenCalledWith(
+    '/esdeveniments',
+    { des_de: '2026-10-21', fins_a: '2026-11-02' },
+    { signal: undefined },
   );
 });

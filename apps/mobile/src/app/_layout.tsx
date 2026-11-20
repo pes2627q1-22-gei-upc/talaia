@@ -56,6 +56,20 @@ function RootStack() {
         }}
       />
       <Stack.Screen
+        name="plans/index"
+        options={{
+          // El títol gran és el de la pantalla (mockup 13): la capçalera només porta l'enrere.
+          headerShown: true,
+          title: '',
+          // El botó enrere torna a Perfil.
+          headerBackTitle: t('tabs.profile'),
+          headerStyle: { backgroundColor: colors.nit },
+          headerShadowVisible: false,
+          headerTintColor: colors.lluna,
+          headerBackButtonDisplayMode: 'minimal',
+        }}
+      />
+      <Stack.Screen
         name="benvinguda"
         options={{ presentation: 'fullScreenModal', animation: 'fade' }}
       />
