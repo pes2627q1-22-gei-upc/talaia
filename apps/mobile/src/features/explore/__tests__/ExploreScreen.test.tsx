@@ -6,7 +6,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import i18n from '@/core/i18n';
-import { motion } from '@/core/theme/tokens';
+import { colors, motion } from '@/core/theme/tokens';
 import { createQueryWrapper } from '@/test-utils/queryWrapper';
 
 import { addDays, nightOf } from '../exploreModel';
@@ -161,11 +161,26 @@ describe('ExploreScreen', () => {
     );
   });
 
-  it('«Mostra el mapa» obre el mapa sense cercar, també sense ubicació', async () => {
+  it('«Mostra tots els punts al mapa» és un botó visible, amb vora, no un enllaç', async () => {
+    await renderScreen();
+    const browse = screen.getByRole('button', { name: 'Mostra tots els punts al mapa' });
+    expect(browse).toHaveStyle({ backgroundColor: colors.sheet, borderColor: colors.vora });
+  });
+
+  it.each([
+    ['es', 'Ver todos los puntos en el mapa'],
+    ['en', 'See all spots on the map'],
+  ])('el botó del mapa està traduït (%s)', async (language, label) => {
+    await i18n.changeLanguage(language);
+    await renderScreen();
+    expect(screen.getByRole('button', { name: label })).toBeOnTheScreen();
+  });
+
+  it('«Mostra tots els punts al mapa» obre el mapa sense cercar, també sense ubicació', async () => {
     jest.mocked(getCurrentPlace).mockResolvedValue({ status: 'denied', canAskAgain: true });
     await renderScreen();
     await screen.findByText('Activa la ubicació');
-    await fireEvent.press(screen.getByRole('button', { name: 'Mostra el mapa' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Mostra tots els punts al mapa' }));
     expect(push).toHaveBeenCalledWith('/recomanacions');
   });
 
@@ -179,7 +194,7 @@ describe('ExploreScreen', () => {
     expect(search).toBeDisabled();
     await fireEvent.press(search);
     expect(push).not.toHaveBeenCalled();
-    expect(screen.getByRole('button', { name: 'Mostra el mapa' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Mostra tots els punts al mapa' })).toBeEnabled();
   });
 
   it.each(['denied', 'error'] as const)(
