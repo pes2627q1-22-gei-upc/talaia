@@ -57,7 +57,7 @@ export function ExploreScreen() {
       {/*
         `contentInsetAdjustmentBehavior` només aparta el contingut de la barra d'estat a iOS: a
         Android la salutació quedava sota l'hora. L'àrea segura de dalt hi val a les dues
-        plataformes, i a iOS el ScrollView continua ajustant el de baix per a les pestanyes.
+        plataformes. La de baix ja la deixa la barra de pestanyes, que queda a sota (ADR-0037).
       */}
       <SafeAreaView edges={['top']} style={styles.safeArea} testID="explore-safe-area">
         <ScrollView
