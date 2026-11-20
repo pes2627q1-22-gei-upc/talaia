@@ -1,6 +1,6 @@
 # Mesura dels requisits no funcionals (TG-182)
 
-Primera mesura dels RNF de Taiga que tenen un mètode definit al Sprint 2 ([TEC] TG-117): RNF01 (mapa), RNF02 (API), RNF03 (qualitat) i RNF05 (accessibilitat). Els RNF i com es mesura cadascun són a [backlog.md](backlog.md#requisits-no-funcionals) i a Taiga. Aquesta mesura es repeteix al final del sprint, després de la `release/0.2.0` del 20/11: vegeu [Com repetir la mesura](#com-repetir-la-mesura).
+Primera mesura dels quatre RNF de Taiga que demana la TG-182 ([TEC] TG-117): RNF01 (mapa), RNF02 (API), RNF03 (qualitat) i RNF05 (accessibilitat). L'RNF04 (disponibilitat), el 06 (privadesa), el 07 (multiidioma) i el 08 (frescor de l'índex) encara no tenen cap mesura: van a la TG-224 del Sprint 3, «Mesurar els RNF i corregir els que no es compleixin» (vegeu [Següents passos](#següents-passos)). Els RNF i com es mesura cadascun són a [backlog.md](backlog.md#requisits-no-funcionals) i a Taiga. Aquesta mesura es repeteix al final del sprint, després de la `release/0.2.0` del 20/11: vegeu [Com repetir la mesura](#com-repetir-la-mesura).
 
 ## Resum
 
@@ -8,15 +8,16 @@ Primera mesura dels RNF de Taiga que tenen un mètode definit al Sprint 2 ([TEC]
 |---|---|---|---|
 | [RNF01](https://tree.taiga.io/project/mohamed-dari-pes_22_c_talaia/us/122) · Mapa | En moure el mapa, punts de l'àrea visible en < 2 s (p95), en 4G | Cal el mòbil. Indicador: `/punts` (32 punts, 2,2 kB amb gzip) arriba en 54 ms (p50) | Pendent |
 | [RNF02](https://tree.taiga.io/project/mohamed-dari-pes_22_c_talaia/us/123) · API | p95 < 500 ms amb 50 peticions concurrents | `/punts` 116–194 ms (una de les tres tandes, 1.253 ms) · `/recomanacions` 872–1.028 ms · `/esdeveniments` sense mesurar | **No compleix** |
-| [RNF03](https://tree.taiga.io/project/mohamed-dari-pes_22_c_talaia/us/124) · Qualitat | Quality Gate en verd, ≥ 70 % de cobertura al codi nou, cap bug greu | Gate **Passed**, 93,2 % al codi nou, 0 bugs. Només analitza l'app | Compleix (l'app) |
-| [RNF05](https://tree.taiga.io/project/mohamed-dari-pes_22_c_talaia/us/126) · Accessibilitat | Tacte ≥ 44 pt, contrast AA, tot etiquetat | Components base etiquetats i contrast AA; el botó `text`, dos enllaços i la barra lliscant no arriben a 44 pt; revisió amb VoiceOver i TalkBack pendent | **No compleix** |
+| [RNF03](https://tree.taiga.io/project/mohamed-dari-pes_22_c_talaia/us/124) · Qualitat | Quality Gate en verd, ≥ 70 % de cobertura al codi nou, cap bug greu | Gate **Passed**, 93,2 % al codi nou, 0 bugs, només de l'app (`071e975`). El 20/11, amb tot el codi (`48ff4c6`): **Passed**, 93,5 %, 0 bugs | Compleix |
+| [RNF05](https://tree.taiga.io/project/mohamed-dari-pes_22_c_talaia/us/126) · Accessibilitat | Tacte ≥ 44 pt, contrast AA, tot etiquetat | Components base etiquetats i contrast AA; el botó `text`, els enllaços de text de les pantalles i la barra lliscant no arriben a 44 pt; revisió amb VoiceOver i TalkBack pendent | **No compleix** |
+| [RNF04](https://tree.taiga.io/project/mohamed-dari-pes_22_c_talaia/us/125) · [RNF06](https://tree.taiga.io/project/mohamed-dari-pes_22_c_talaia/us/127) · [RNF07](https://tree.taiga.io/project/mohamed-dari-pes_22_c_talaia/us/128) · [RNF08](https://tree.taiga.io/project/mohamed-dari-pes_22_c_talaia/us/129) | Disponibilitat ≥ 99 % · cap usuari veu dades d'un altre · textos en ca, es i en · índex de menys d'1 h 15 min | Sense mesura: van a la TG-224 (Sprint 3) | Pendent |
 
 ## Entorn
 
 - **Data:** 11/11/2026, de 20:06 a 20:14 (hora de Catalunya).
 - **API:** la VM de la FIB ([desplegament.md](desplegament.md)): Nginx + API + worker. `GET /api/v1/health` respon `{"status":"ok","version":"0.1.0"}` (versió del paquet de l'API; `stable` és a `v0.1.1`, un hotfix només de l'app). L'adreça pública (`API_PUBLIC_URL`) és al gestor de contrasenyes (P20) i no s'escriu al repo; el script l'amaga a l'informe.
 - **Client de la prova de càrrega:** un ordinador de l'equip fora de la FIB (macOS, Node 22), una sola IP.
-- **SonarCloud:** branca `snapshot` a `071e975` (anàlisi del 11/11/2026 a les 19:24).
+- **SonarCloud:** branca `snapshot` a `071e975` (anàlisi del 11/11/2026 a les 19:24) i, amb l'abast actual, a `48ff4c6` (anàlisi del 20/11/2026 a les 15:12).
 
 ## RNF01 · Rendiment del mapa
 
@@ -26,8 +27,8 @@ En moure el mapa, l'app no fa cap petició a l'API: el mapa té tots els punts e
 
 ### Procediment al dispositiu
 
-1. A `apps/mobile/.env`, `EXPO_PUBLIC_API_URL` amb l'adreça de la VM (P20). Sense, l'app crida l'API local de l'ordinador.
-2. `npm run start --workspace apps/mobile -- --no-dev --minify` i obre l'app a Expo Go amb el Wi-Fi (Metro només s'hi arriba per la xarxa local, o amb `--tunnel`). El mode de desenvolupament és més lent i no serveix ([design-system.md](design-system.md#moviment-i-fluïdesa), regla 10).
+1. A `apps/mobile/.env`, `EXPO_PUBLIC_API_URL` amb l'adreça de la VM (P20). Si no hi és, l'app crida l'API local de l'ordinador.
+2. `npm run start --workspace apps/mobile -- --no-dev --minify` i obre l'app a Expo Go amb el Wi-Fi (a Metro només s'hi arriba per la xarxa local, o amb `--tunnel`). El mode de desenvolupament és més lent i no serveix ([design-system.md](design-system.md#moviment-i-fluïdesa), regla 10).
 3. Un cop carregada, apaga el Wi-Fi i passa a dades mòbils en **4G** (no 5G: Ajustaments → Dades mòbils, «4G» o «LTE»). Mode d'estalvi d'energia apagat. Apunta la cobertura (barres).
 4. Obre el mapa sense cerca («Mostra el mapa») i espera que surtin tots els marcadors.
 5. Grava la pantalla (iOS: Centre de control → Gravació de pantalla; Android: el gravador del sistema, amb «Mostra els tocs» activat a Opcions per a desenvolupadors).
@@ -95,7 +96,7 @@ Per què no autocannon ni k6: Nginx limita cada IP a **20 peticions/s amb una r�
 
 Referència sense càrrega (una petició cada segon, connexió nova): `/punts` 60–120 ms (la primera, 502 ms) i `/recomanacions` 200–375 ms.
 
-`/esdeveniments` necessita credencial (JWT o la clau d'Aprop, `X-API-Key`) i no s'ha mesurat: no s'ha fet servir la clau de producció d'Aprop. Es mesura amb `TALAIA_API_KEY` (vegeu [Com repetir la mesura](#com-repetir-la-mesura)).
+`/esdeveniments` necessita credencial (JWT o la clau d'Aprop, `X-API-Key`) i no s'ha mesurat: no s'ha fet servir la clau de producció d'Aprop. Es pot mesurar amb el JWT d'un compte de prova (`TALAIA_JWT`), que és com hi entra l'app (vegeu [Com repetir la mesura](#com-repetir-la-mesura)).
 
 ### Lectura
 
@@ -105,40 +106,47 @@ Referència sense càrrega (una petició cada segon, connexió nova): `/punts` 6
 
 ## RNF03 · Qualitat del codi
 
-Valors de l'API pública de SonarCloud (`/api/qualitygates/project_status` i `/api/measures/component`, projecte `pes2627q1-22-gei-upc_talaia`), branca `snapshot` a `071e975`. El codi nou és el posterior a la versió anterior (des del 08/10/2026).
+Valors de l'API pública de SonarCloud (`/api/qualitygates/project_status` i `/api/measures/component`, projecte `pes2627q1-22-gei-upc_talaia`), branca `snapshot`. El codi nou és el posterior a la versió anterior (des del 08/10/2026).
 
-| Mesura | Valor | Objectiu RNF03 |
-|---|---|---|
-| Quality Gate (Sonar way) | **Passed** | En verd |
-| Cobertura del codi nou | **93,2 %** (2.101 línies, 84 sense cobrir) | ≥ 70 % (el gate en demana 80 %) |
-| Cobertura total | 92,8 % (2.159 línies, 100 sense cobrir) | — |
-| Bugs · vulnerabilitats · code smells | 0 · 0 · 0 (cap incidència oberta) | Cap bug greu |
-| Fiabilitat · seguretat · mantenibilitat (codi nou) | A · A · A | — |
-| Duplicació al codi nou · hotspots revisats | 0,0 % · 100 % | — |
+**Abast:** el 11/11 (`071e975`), Sonar només analitzava `apps/mobile/src`. Des de la [PR #142](https://github.com/pes2627q1-22-gei-upc/talaia/pull/142) (17/11), `sonar-project.properties` analitza els sis workspaces (`apps/mobile`, `apps/admin`, `services/api`, `services/worker`, `packages/db` i `packages/index`) amb la cobertura de cadascun, i a l'API, el worker i els paquets també compten els fitxers que els tests no carreguen ([ci.md](ci.md#abast-i-exclusions)). Les respostes de l'API del 20/11 són a [`rnf/`](rnf/); l'anàlisi del 11/11 ja no és a l'historial de Sonar.
 
-**Abast:** Sonar només analitza `apps/mobile/src` (8.174 línies de codi, `sonar-project.properties`). L'API i el worker tenen tests a la CI però ni cobertura ni anàlisi a Sonar ([ci.md](ci.md#abast-i-ampliacions)): l'RNF03 es compleix per a l'app, no per a tot el codi.
+| Mesura | 11/11 · `071e975` (l'app) | 20/11 · `48ff4c6` (tot el codi) | Objectiu RNF03 |
+|---|---|---|---|
+| Quality Gate (Sonar way) | **Passed** | **Passed** | En verd |
+| Cobertura del codi nou | **93,2 %** (2.101 línies, 84 sense cobrir) | **93,5 %** (6.525 línies, 311 sense cobrir) | ≥ 70 % (el gate en demana 80 %) |
+| Cobertura total | 92,8 % (2.159 línies, 100 sense cobrir) | 93,4 % (6.632 línies, 321 sense cobrir) | — |
+| Bugs · vulnerabilitats · code smells | 0 · 0 · 0 | 0 · 0 · 1 | Cap bug greu |
+| Fiabilitat · seguretat · mantenibilitat (codi nou) | A · A · A | A · A · A | — |
+| Duplicació al codi nou · hotspots revisats | 0,0 % · 100 % | 0,1 % · 100 % | — |
+| Línies de codi | 8.174 | 22.155 | — |
 
-Cobertura local de Jest a `snapshot` (`npm run test --workspace <w> -- --coverage`), només dels fitxers que carreguen els tests:
+**L'RNF03 es compleix per a tot el codi.** L'únic code smell del 20/11 (major; Sonar no el compta com a bug) és `Math.trunc` en lloc de `| 0` a `features/event/EventSky.tsx:31`.
 
-| Workspace | Tests | Línies | Branques | A Sonar |
-|---|---|---|---|---|
-| `apps/mobile` | 379 (67 fitxers) | 97,16 % | 88,53 % | Sí |
-| `services/api` | 317 (22) | 98,98 % | 89,31 % | No |
-| `services/worker` | 207 (15) | 96,59 % | 84,09 % | No |
-| `packages/db` | 6 (1) | 100 % | 0 % (0 de 2) | No |
+Cobertura de cada workspace: la local de Jest a `071e975` (`npm run test --workspace <w> -- --coverage`), que només compta els fitxers que carreguen els tests, i la de Sonar del 20/11, que a l'API, el worker i els paquets també compta els que no carreguen (el worker baixa al 80 % sobretot pels `cli.ts` de les proves manuals i per `main.ts`, que no carrega cap test):
+
+| Workspace | Tests (11/11) | Línies (11/11) | Branques (11/11) | A Sonar el 11/11 | Sonar el 20/11 |
+|---|---|---|---|---|---|
+| `apps/mobile` | 379 (67 fitxers) | 97,16 % | 88,53 % | Sí | 95,2 % |
+| `services/api` | 317 (22) | 98,98 % | 89,31 % | No | 96,3 % |
+| `services/worker` | 207 (15) | 96,59 % | 84,09 % | No | 80,0 % |
+| `packages/db` | 6 (1) | 100 % | 0 % (0 de 2) | No | 64,7 % (32 línies) |
+| `apps/admin` | — | — | — | No (encara no tenia codi) | 96,8 % |
+| `packages/index` | — | — | — | No (encara no existia) | 86,8 % |
+
+L'objectiu del 70 % és sobre el codi nou de tot el projecte: que `packages/db` (32 línies a cobrir) no hi arribi tot sol no el fa fallar.
 
 ## RNF05 · Accessibilitat
 
 ### Test automàtic (la mesura que demana l'RNF)
 
-- [`shared/ui/__tests__/accessibility.test.tsx`](../apps/mobile/src/shared/ui/__tests__/accessibility.test.tsx): tot el que es pot prémer dels components base té rol (`button`, `tab`, `adjustable`) i nom per al lector de pantalla, i on la mida és fixa, 44 pt de tacte (alçada o `minHeight` més el `hitSlop`). Les dues mancances conegudes són `it.failing`: quan s'arreglin, el test fallarà i caldrà passar-les a `it`.
+- [`shared/ui/__tests__/accessibility.test.tsx`](../apps/mobile/src/shared/ui/__tests__/accessibility.test.tsx): tot el que es pot prémer dels components base té rol (`button`, `tab`, `adjustable`, `switch`) i nom per al lector de pantalla, i on la mida és fixa, 44 pt de tacte (alçada o `minHeight` més el `hitSlop`). Les dues mancances conegudes fixen el valor mesurat (41 pt el `Button` `text` i 28 pt l'`Slider`): el test falla tant si s'arreglen com si es trenquen, i quan s'arreglin cal canviar-lo per la comprovació dels 44 pt. `touchHeight` llegeix l'estil i el `hitSlop` de la vista: si l'`Slider` s'arregla amb `Gesture.hitSlop()`, no ho veurà (continuarà donant 28) i caldrà comprovar el del gest.
 - [`core/theme/__tests__/contrast.test.ts`](../apps/mobile/src/core/theme/__tests__/contrast.test.ts): ràtio de contrast WCAG de cada color de text sobre les superfícies del tema.
 
 ### Etiquetes
 
-Tots els components base que es poden prémer tenen nom: `Button`, `Chip` i l'acció de `StateMessage` pel text; `Card`, les fletxes i els dies de `MonthCalendar`, `Slider`, `WheelPicker`, `TextField` i el fons de `Sheet` per `accessibilityLabel`; les opcions de `SegmentedControl` són pestanyes amb el text. `IndexIndicator` es llegeix «Índex de visibilitat: N de 100, franja».
+Tots els components base que es poden prémer tenen nom: `Button`, `Chip` i l'acció de `StateMessage` pel text; `Card`, les fletxes i els dies de `MonthCalendar`, `Slider`, `Toggle`, `WheelPicker`, `TextField` i el fons de `Sheet` per `accessibilityLabel`; les opcions de `SegmentedControl` són pestanyes amb el text. `IndexIndicator` es llegeix «Índex de visibilitat: N de 100, franja».
 
-A les pantalles (`features/` i `app/`) hi ha 16 elements tocables fets amb `PressableScale` o `Pressable`: 14 amb `accessibilityLabel` i 2 amb el text visible com a nom (els enllaços de `RecommendationsSheet`). Els marcadors del mapa són dins del WebView de MapLibre: cal comprovar al dispositiu què en llegeix el lector de pantalla (el full del rànquing en té les mateixes dades).
+A les pantalles (`features/` i `app/`, a `70e7707`) hi ha 28 elements tocables fets amb `PressableScale` o `Pressable`: 20 amb `accessibilityLabel`, 7 amb el text visible com a nom (els quatre enllaços de text de `RecommendationsSheet`, `MapScreen` i `SpotCard`, els fenòmens i els filtres del calendari i l'alerta que s'edita a la llista) i el cel de la benvinguda, que no és accessible a propòsit (`accessible={false}`: un toc només hi fa sortir un estel fugaç). Els marcadors del mapa són dins del WebView de MapLibre: cal comprovar al dispositiu què en llegeix el lector de pantalla (el full del rànquing en té les mateixes dades).
 
 ### Zones tàctils
 
@@ -146,11 +154,12 @@ A les pantalles (`features/` i `app/`) hi ha 16 elements tocables fets amb `Pres
 |---|---|---|
 | `Button` `primary`, `secondary`, `light` · `TextField` | 54 pt | Compleix |
 | `Chip` | 34 + 2 × 5 de `hitSlop` = 44 pt | Compleix |
+| `Toggle` | 32 + 2 × 6 = 44 pt | Compleix |
 | `SegmentedControl` | 38 + 2 × 4 = 46 pt | Compleix |
 | `MonthCalendar` (fletxes i dies) · tancar del correu · tornar del mapa | 44 pt | Compleix |
 | `WheelPicker` (cada fila) | 48 pt | Compleix |
 | `Button` `text` (`link`, 17 de línia) | 17 + 2 × 12 = **41 pt** | No compleix |
-| Enllaços de `RecommendationsSheet` (mostra/amaga i torna-ho a provar) | 17 + 2 × 12 = **41 pt** | No compleix |
+| Enllaços de text de les pantalles: `RecommendationsSheet` (mostra/amaga i torna-ho a provar), l'avís de la ubicació de `MapScreen` i l'error de `SpotCard` | 17 + 2 × 12 = **41 pt** | No compleix |
 | `Slider` (la barra sencera és la zona del gest) | **28 pt**, sense `hitSlop` | No compleix (amb el lector de pantalla s'ajusta lliscant amunt i avall) |
 
 ### Contrast (WCAG AA)
@@ -171,6 +180,7 @@ Text normal ≥ 4,5:1; text gran (24 pt, o 18,7 pt en negreta) ≥ 3:1.
 - 54 dels 55 parells arriben a 4,5:1. `tap` sobre `crep` (3,93:1) només val per a text gran; avui no hi ha text `tap` sobre `crep`.
 - `nit` sobre els botons i xips plens: `far` 10,25, `lluna` 15,81, `ras` 10,03, `jus` 10,84, `tap` 5,88.
 - Els botons desactivats (opacitat 0,4) en queden exempts (WCAG 1.4.3).
+- **El mode nit (paleta `vermell`, [ADR-0032](decisions/0032-mode-nit-vermell.md)) no entra en aquesta mesura:** la taula és del tema normal. Hi ha textos que no arriben a 4,5:1; és pendent de la TG-239 (Joan).
 - **A comprovar al dispositiu:** a la benvinguda, el text legal (`boira`, `caption`) i l'error (`tap`) són sobre el cel. Si al darrere hi ha el final del degradat (`#2F3680`), fan 4,30:1 i 3,50:1, per sota de 4,5. L'Accessibility Inspector de Xcode (Color contrast) ho mesura sobre la pantalla real.
 
 ### Revisió al dispositiu (pendent)
@@ -190,11 +200,12 @@ Per pantalla, amb VoiceOver (iPhone), TalkBack (Android) i l'auditoria de l'Acce
 
 1. **RNF01:** les 20 mesures a l'iPhone i a l'Android (Hugo), a la taula d'aquest document.
 2. **RNF02 · `/recomanacions`:** informar-ne el responsable de TG-100 (Mohamed) amb aquestes xifres i l'ordre per reproduir-ho; confirmar on va el temps (consulta o cua del pool) abans de triar una solució.
-3. **RNF02 · `/esdeveniments`:** mesurar-lo amb la clau d'Aprop de P20, a mà i des de la màquina de qui la tingui.
+3. **RNF02 · `/esdeveniments`:** mesurar-lo amb el JWT d'un compte de prova (`TALAIA_JWT`), com hi entra l'app, en lloc de la clau d'Aprop.
 4. **RNF02 · VM:** mirar al log de Nginx si el NAT conserva la IP del client, i repetir `/punts` amb `docker stats` per explicar la tanda 2.
-5. **RNF03:** portar la cobertura de l'API i del worker a Sonar ([ci.md](ci.md#abast-i-ampliacions)).
-6. **RNF05:** informar-ne el responsable dels components (Joan): `Button` `text`, els enllaços de `RecommendationsSheet` i `Slider`, a 44 pt (el `hitSlop` del `Chip` n'és el model). Revisió de les pantalles al dispositiu.
-7. Repetir aquesta mesura després de la `release/0.2.0` (20/11) i afegir-la aquí com a «Segona mesura».
+5. **RNF02 · Taiga:** a la TG-123, canviar «autocannon o k6» per `npm run rnf:api` i el límit de 41 peticions per ràfega des d'una IP (Hugo).
+6. **RNF05:** informar-ne el responsable dels components (Joan): `Button` `text`, els enllaços de text de les pantalles i `Slider`, a 44 pt (el `hitSlop` del `Chip` n'és el model). Contrast del mode nit (TG-239). Revisió de les pantalles al dispositiu.
+7. **RNF04, RNF06, RNF07 i RNF08:** primera mesura a la TG-224 (Sprint 3). L'RNF04 es mesura «durant les setmanes de la demo»: si abans del 23/11 no hi ha un monitor extern que consulti `/health` periòdicament des de fora de la VM, d'aquella setmana no en tindrem dades.
+8. Repetir aquesta mesura després de la `release/0.2.0` (20/11) i afegir-la aquí com a «Segona mesura». L'RNF03 ja no té res pendent: des de la PR #142 Sonar analitza tot el codi.
 
 ## Com repetir la mesura
 
@@ -202,17 +213,21 @@ Per pantalla, amb VoiceOver (iPhone), TalkBack (Android) i l'auditoria de l'Acce
 # RNF02: les tres tandes (≤ 20 s per endpoint). La URL és a P20 (API_PUBLIC_URL).
 npm run rnf:api -- --url "$API_PUBLIC_URL"                      # 50 alhora (el 18 % són 429)
 npm run rnf:api -- --url "$API_PUBLIC_URL" --concurrencia 40     # el màxim sense 429 des d'una IP
-TALAIA_API_KEY=… npm run rnf:api -- --url "$API_PUBLIC_URL" --endpoints esdeveniments
+TALAIA_JWT=… npm run rnf:api -- --url "$API_PUBLIC_URL" --endpoints esdeveniments  # JWT d'un compte de prova
 
 # RNF01 (indicador): mida i temps de /punts
 for i in $(seq 20); do curl -so /dev/null --compressed -w '%{size_download} %{time_total}\n' "$API_PUBLIC_URL/punts"; sleep 0.5; done
 
-# RNF03: Quality Gate i cobertura de snapshot
-curl -s 'https://sonarcloud.io/api/qualitygates/project_status?projectKey=pes2627q1-22-gei-upc_talaia&branch=snapshot'
-curl -s 'https://sonarcloud.io/api/measures/component?component=pes2627q1-22-gei-upc_talaia&branch=snapshot&metricKeys=coverage,new_coverage,bugs,reliability_rating&additionalFields=periods'
+# RNF03: anàlisi (commit i hora), Quality Gate i mesures de snapshot, desats a docs/rnf/
+K=pes2627q1-22-gei-upc_talaia; D=$(date +%F); SONAR=https://sonarcloud.io/api
+curl -s "$SONAR/project_analyses/search?project=$K&branch=snapshot&ps=1" -o "docs/rnf/sonar-$D-analisi.json"
+curl -s "$SONAR/qualitygates/project_status?projectKey=$K&branch=snapshot" -o "docs/rnf/sonar-$D-gate.json"
+curl -s "$SONAR/measures/component?component=$K&branch=snapshot&additionalFields=periods&metricKeys=alert_status,coverage,new_coverage,lines_to_cover,new_lines_to_cover,uncovered_lines,new_uncovered_lines,bugs,vulnerabilities,code_smells,reliability_rating,security_rating,sqale_rating,new_duplicated_lines_density,security_hotspots_reviewed,ncloc" -o "docs/rnf/sonar-$D-mesures.json"
 
 # RNF05: etiquetes, zones tàctils i contrast
 npm run test --workspace apps/mobile -- accessibility contrast
 ```
 
 Opcions del script: `--concurrencia` (50), `--durada` (20 s), `--interval` (3 s; `0` contra una API local sense Nginx), `--endpoints` (`punts,recomanacions,esdeveniments`) i `--data` (avui). La credencial de `/esdeveniments` va a `TALAIA_API_KEY` o `TALAIA_JWT`. L'informe surt en Markdown, sense l'adreça de la VM, i el codi de sortida és 1 si algun endpoint no compleix.
+
+Els JSON de Sonar es versionen a [`rnf/`](rnf/) amb la PR de la mesura: Sonar només conserva unes quantes anàlisis de cada branca, i la del 11/11 (`071e975`) ja no hi és. Les del 20/11 són les primeres que s'hi han desat.
