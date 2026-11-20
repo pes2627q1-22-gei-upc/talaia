@@ -99,7 +99,10 @@ Per comprovar un missatge sense fer el commit: `printf 'feat: x\n\nRefs: TG-1' |
 
 - Títol en format Conventional Commits (és el missatge del merge). Descripció amb la plantilla (`.github/pull_request_template.md`): tasca de Taiga, què canvia, com provar-ho, captures si és UI.
 - Mínim 1 revisió aprovada d'una altra persona. Qui obre la PR no l'aprova.
-- Abans de demanar revisió: actualitzar la branca amb `snapshot` i passar `npm run lint`, `npm run typecheck` i `npm test` en local.
+- Abans de demanar revisió: actualitzar la branca amb `snapshot` i passar `npm run lint`, `npm run typecheck` i `npm test` en local. Després d'una aprovació no es fusiona `snapshot` a la branca: cada push la descarta.
+- **Solapament:** abans d'obrir o fusionar una PR, `gh pr list` i mira si toca fitxers que ja toquen altres PR obertes. Els més calents són els JSON d'i18n (`apps/mobile/src/core/i18n/locales/`), `CLAUDE.md`, `docs/testing-ui-inventari.md` i `apps/mobile/src/app/_layout.tsx`. Si sí, avisa qui porta l'altra PR i acordeu l'ordre de fusió.
+- **Fusió ràpida:** una PR aprovada i verda es fusiona el mateix dia. Si xoca amb una altra ja fusionada, qui la porta resol el conflicte i demana la re-aprovació a qui l'havia aprovat.
+- **«Changes requested»:** respon als comentaris, puja el canvi i torna a demanar la revisió (*Re-request review*). GitHub només treu el bloqueig quan el mateix revisor aprova o descarta la seva revisió. Qui ha demanat els canvis la revisa en 24 h.
 - En fusionar: tancar la tasca a Taiga i anotar les **Hores reals**. GitHub esborra la branca de suport.
 
 ## Receptes

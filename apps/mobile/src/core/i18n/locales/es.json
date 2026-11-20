@@ -604,6 +604,28 @@
         "generic": "No hemos podido guardar el plan. Vuelve a intentarlo en un momento."
       }
     },
+    "calendar": {
+      "label": "Añádelo a mi calendario",
+      "hint": "Elige un calendario del móvil. Si es de tu cuenta de Google y tiene la sincronización activada, también aparecerá en Google Calendar.",
+      "unavailable": "El calendario no está disponible en este entorno. Puedes guardar el plan igualmente.",
+      "loading": "Cargando los calendarios…",
+      "denied": "No tenemos permiso para acceder al calendario. Concede el permiso o desactiva esta opción para guardar solo el plan.",
+      "loadError": "No hemos podido cargar los calendarios. Inténtalo de nuevo o desactiva esta opción.",
+      "empty": "No hay ningún calendario modificable. Configura un calendario en el móvil y vuelve a intentarlo, o desactiva esta opción.",
+      "settings": "Abre la configuración",
+      "target": "Calendario de destino",
+      "choose": "Elige el calendario",
+      "eventTitle": "Talaia · {{point}}",
+      "eventTitleWithPhenomenon": "{{phenomenon}} · {{point}}",
+      "savedTitle": "Plan guardado",
+      "adding": "El plan ya está guardado en tu cuenta. Lo estamos añadiendo al calendario…",
+      "continue": "Continuar",
+      "syncErrors": {
+        "create": "El plan está guardado, pero no hemos podido añadirlo al calendario. Puedes reintentarlo o continuar con el plan guardado.",
+        "link": "El plan y el evento del calendario están guardados, pero no hemos podido vincularlos. Inténtalo de nuevo para completar el vínculo.",
+        "denied": "El plan está guardado, pero falta el permiso de calendario. Puedes concederlo y reintentarlo, o continuar con el plan guardado."
+      }
+    },
     "list": {
       "header": "Mis planes",
       "title": "Mis planes",
