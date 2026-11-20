@@ -41,17 +41,18 @@ const MobilicatDateTimeSchema = z.iso
   .datetime({ offset: true })
   .transform((value) => new Date(value).toISOString());
 
+// El contracte declara enters; arrodonim fraccions si el proveïdor les retorna igualment.
 const MobilicatRouteSchema = z.object({
   startTime: MobilicatDateTimeSchema,
   endTime: MobilicatDateTimeSchema,
-  durationSeconds: z.number().int().nonnegative(),
-  distanceMeters: z.number().int().nonnegative(),
-  walkDistanceMeters: z.number().int().nonnegative(),
+  durationSeconds: z.number().finite().nonnegative().transform(Math.round),
+  distanceMeters: z.number().finite().nonnegative().transform(Math.round),
   transfers: z.number().int().nonnegative(),
   stretches: z.array(MobilicatStretchSchema).min(1),
 });
 
-const MobilicatRoutesResponseSchema = z.object({ routes: z.array(MobilicatRouteSchema) });
+// Es valida cada alternativa a part perquè una de malformada no invalidi les altres.
+const MobilicatRoutesResponseSchema = z.object({ routes: z.array(z.unknown()) });
 export type MobilicatRoute = z.infer<typeof MobilicatRouteSchema>;
 
 export type MobilicatRoutesClient = {
@@ -166,7 +167,19 @@ export function createMobilicatRoutesClient({
         );
       }
 
-      return parsed.data.routes.slice(0, query.limit);
+      const routes = parsed.data.routes.flatMap((route) => {
+        const routeParsed = MobilicatRouteSchema.safeParse(route);
+        return routeParsed.success ? [routeParsed.data] : [];
+      });
+      if (parsed.data.routes.length > 0 && routes.length === 0) {
+        throw new MobilicatRoutesError(
+          'invalid_response',
+          'Mobilicat no ha retornat cap alternativa de ruta vàlida',
+          response.status,
+        );
+      }
+
+      return routes.slice(0, query.limit);
     },
   };
 }

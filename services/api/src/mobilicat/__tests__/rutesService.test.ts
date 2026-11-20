@@ -25,7 +25,6 @@ const ROUTE: MobilicatRoute = {
   endTime: '2026-11-18T11:27:00+01:00',
   durationSeconds: 1620,
   distanceMeters: 9400,
-  walkDistanceMeters: 280,
   transfers: 1,
   stretches: [
     { sequence: 0, mode: 'WALK' },

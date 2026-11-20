@@ -229,7 +229,11 @@ La resposta és `RutesPunt` (`@talaia/shared`), amb `estat`, `destacada` i `alte
 alternativa conserva els totals de Mobilicat (`distanciaMetres`, `duradaSegons`), la sortida i
 l'arribada, els transbordaments i els modes dels trams; els trams de transport públic poden incloure
 el tipus de vehicle, la línia i l'operador. `destacada` repeteix la primera alternativa de la llista.
-No es recalculen els totals a partir dels trams.
+No es recalculen els totals a partir dels trams. Si Mobilicat retorna una durada o una distància
+decimal, el client l'arrodoneix a l'enter més proper per mantenir el contracte de Talaia. No cal que
+la resposta inclogui `walkDistanceMeters`, perquè Talaia no l'utilitza. Cada alternativa es valida
+per separat: una ruta malformada o amb un mode de tram desconegut s'omet, però es conserven les altres
+que siguin vàlides; si cap no ho és, la resposta parcial és `no_disponible`.
 
 | `estat` | `destacada` i `alternatives` | Significat |
 |---|---|---|

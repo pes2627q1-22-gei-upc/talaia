@@ -108,6 +108,44 @@ describe('createMobilicatRoutesClient', () => {
     ]);
   });
 
+  it('accepta durades i distàncies decimals i les normalitza a enters', async () => {
+    const routeWithoutWalkDistance: Record<string, unknown> = {
+      ...ROUTE,
+      durationSeconds: 1620.4,
+      distanceMeters: 9400.5,
+    };
+    delete routeWithoutWalkDistance.walkDistanceMeters;
+    fetchMock.mockResolvedValue(
+      responseWith({
+        routes: [routeWithoutWalkDistance],
+      }),
+    );
+    const client = createMobilicatRoutesClient({
+      baseUrl: 'https://api.mobili.cat',
+      fetch: fetchMock,
+    });
+
+    await expect(client.getRoutes(QUERY)).resolves.toMatchObject([
+      { durationSeconds: 1620, distanceMeters: 9401 },
+    ]);
+  });
+
+  it('descarta només les alternatives invàlides, inclosos els modes desconeguts', async () => {
+    const invalidRoute = {
+      ...ROUTE,
+      stretches: [{ sequence: 0, mode: 'SCOOTER' }],
+    };
+    const routeWithoutWalkDistance = { ...ROUTE };
+    delete (routeWithoutWalkDistance as { walkDistanceMeters?: number }).walkDistanceMeters;
+    fetchMock.mockResolvedValue(responseWith({ routes: [invalidRoute, routeWithoutWalkDistance] }));
+    const client = createMobilicatRoutesClient({
+      baseUrl: 'https://api.mobili.cat',
+      fetch: fetchMock,
+    });
+
+    await expect(client.getRoutes(QUERY)).resolves.toHaveLength(1);
+  });
+
   it('retorna [] quan Mobilicat no troba rutes', async () => {
     fetchMock.mockResolvedValue(responseWith({ routes: [] }));
     const client = createMobilicatRoutesClient({
@@ -177,7 +215,14 @@ describe('createMobilicatRoutesClient', () => {
       kind: 'invalid_response',
     });
 
-    fetchMock.mockResolvedValue(responseWith({ routes: [{ ...ROUTE, distanceMeters: 1.5 }] }));
+    fetchMock.mockResolvedValue(responseWith({ routes: [{ ...ROUTE, distanceMeters: -1 }] }));
+    await expect(client.getRoutes(QUERY)).rejects.toMatchObject({
+      kind: 'invalid_response',
+    });
+
+    fetchMock.mockResolvedValue(
+      responseWith({ routes: [{ ...ROUTE, stretches: [{ sequence: 0, mode: 'SCOOTER' }] }] }),
+    );
     await expect(client.getRoutes(QUERY)).rejects.toMatchObject({
       kind: 'invalid_response',
     });
