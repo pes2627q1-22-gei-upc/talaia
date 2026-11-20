@@ -172,7 +172,7 @@
     "title": "Observation spot",
     "currentIndex": "Current visibility index",
     "noIndex": "Index not available yet",
-    "bestHour": "Best time from <strong>{{from}}</strong> to <strong>{{to}}</strong>.",
+    "bestHour": "Tonight's best time: from <strong>{{from}}</strong> to <strong>{{to}}</strong>, peaking at <strong>{{value}}</strong>.",
     "altitudeTag": "Altitude: {{value}}",
     "metres": "{{value}} m",
     "unavailable": "No data",
@@ -229,7 +229,11 @@
     "mapA11y": "Location of {{name}}",
     "mapCredits": "Map credits",
     "mapUnavailable": "Could not load the map.",
+    "indexNow": "Index now · {{time}}",
     "indexAt": "Index for {{time}}",
+    "indexExplanation": "The index goes from 0 to 100: the higher it is, the better you'll see the sky. It takes into account clouds, the darkness of the place, the Moon and the Sun.",
+    "hoursTapHint": "Tap an hour to see its breakdown.",
+    "hourA11yHint": "Shows the index breakdown for this hour",
     "tonight": "Tonight",
     "hoursError": "We couldn't load tonight's forecast.",
     "factorHints": {
@@ -251,7 +255,8 @@
       },
       "sol": "There's still twilight"
     },
-    "factorsAt": "Factors at {{time}}",
+    "factorsAt": "Why the index is {{value}} at {{time}}",
+    "factorsAt_oneOClock": "Why the index is {{value}} at {{time}}",
     "daytime": "It's daytime",
     "daytimeHint": "The index counts from dusk onwards."
   },

@@ -10,7 +10,13 @@ import type { usePointDetailViewModel } from './usePointDetailViewModel';
 
 type Props = Pick<
   ReturnType<typeof usePointDetailViewModel>,
-  'hours' | 'hoursLabel' | 'timezoneLabel' | 'noHours'
+  | 'hours'
+  | 'hoursLabel'
+  | 'timezoneLabel'
+  | 'noHours'
+  | 'indexExplanation'
+  | 'hoursTapHint'
+  | 'hourA11yHint'
 > & {
   /** L'hora triada la porta `IndexBreakdown`, que en pinta els factors. */
   selectedHourId: string | null;
@@ -22,6 +28,9 @@ export const HourlyChart = memo(function HourlyChart({
   hoursLabel,
   timezoneLabel,
   noHours,
+  indexExplanation,
+  hoursTapHint,
+  hourA11yHint,
   selectedHourId,
   onSelect,
 }: Props) {
@@ -41,6 +50,16 @@ export const HourlyChart = memo(function HourlyChart({
         {timezoneLabel}
       </AppText>
       {hours.length ? (
+        <>
+          <AppText variant="small" color="boira">
+            {indexExplanation}
+          </AppText>
+          <AppText variant="small" color="boira">
+            {hoursTapHint}
+          </AppText>
+        </>
+      ) : null}
+      {hours.length ? (
         <FlatList
           horizontal
           data={hours}
@@ -58,6 +77,7 @@ export const HourlyChart = memo(function HourlyChart({
           renderItem={({ item }) => (
             <PressableScale
               accessibilityLabel={item.accessibilityLabel}
+              accessibilityHint={hourA11yHint}
               accessibilityState={{ selected: item.id === selectedHourId }}
               haptic
               onPress={() => onSelect(item.id)}

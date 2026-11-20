@@ -146,7 +146,7 @@ it('explica que no hi ha índex ni hores i omet les metadades absents', async ()
   expect(screen.getByText('Índex encara no disponible')).toBeOnTheScreen();
   expect(screen.getByText('Encara no hi ha previsió per a aquesta nit.')).toBeOnTheScreen();
   expect(screen.queryByRole('header', { name: 'Informació del punt' })).toBeNull();
-  expect(screen.queryByText(/Factors a les/)).toBeNull();
+  expect(screen.queryByText(/Per què a les/)).toBeNull();
 });
 
 it('manté la fitxa mentre espera només les hores i les presenta quan arriben', async () => {
@@ -154,10 +154,10 @@ it('manté la fitxa mentre espera només les hores i les presenta quan arriben',
   const view = await render(page());
   expect(screen.getByRole('header', { name: point.nom })).toBeOnTheScreen();
   expect(screen.queryByText('Encara no hi ha previsió per a aquesta nit.')).toBeNull();
-  expect(screen.queryByText(/Factors a les/)).toBeNull();
+  expect(screen.queryByText(/Per què a les/)).toBeNull();
   setHours();
   await view.rerender(page());
-  expect(screen.getByText('Factors a les 01:00')).toBeOnTheScreen();
+  expect(screen.getByText("Per què a la 01:00 l'índex és 94")).toBeOnTheScreen();
 });
 
 it('permet reintentar les hores des del desglossament sense perdre la fitxa', async () => {
@@ -170,7 +170,7 @@ it('permet reintentar les hores des del desglossament sense perdre la fitxa', as
   expect(refetchDetail).toHaveBeenCalledTimes(1);
   setHours();
   await view.rerender(page());
-  expect(screen.getByText('Factors a les 01:00')).toBeOnTheScreen();
+  expect(screen.getByText("Per què a la 01:00 l'índex és 94")).toBeOnTheScreen();
 });
 
 it('conserva la informació després d’un error de refresc i bloqueja el reintent pendent', async () => {
@@ -195,10 +195,10 @@ it('conserva la informació després d’un error de refresc i bloqueja el reint
 it('torna a la millor hora si la seleccionada desapareix en actualitzar les dades', async () => {
   const view = await render(page());
   await fireEvent.press(screen.getByLabelText(/00:00.*35 de 100/));
-  expect(screen.getByText('Factors a les 00:00')).toBeOnTheScreen();
+  expect(screen.getByText("Per què a les 00:00 l'índex és 35")).toBeOnTheScreen();
   setHours({ data: asBreakdown(point, [hour]) });
   await view.rerender(page());
   expect(screen.getByLabelText(/23:00.*87 de 100/)).toBeSelected();
-  expect(screen.getByText('Factors a les 23:00')).toBeOnTheScreen();
-  expect(screen.queryByText('Factors a les 00:00')).toBeNull();
+  expect(screen.getByText("Per què a les 23:00 l'índex és 87")).toBeOnTheScreen();
+  expect(screen.queryByText("Per què a les 00:00 l'índex és 35")).toBeNull();
 });
