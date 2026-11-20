@@ -43,3 +43,6 @@ export type PlaNou = {
 
 /** `?quan=` de `GET /api/v1/plans` (TG-160). */
 export type QuanPlans = 'futurs' | 'passats';
+
+/** Vincle amb l’esdeveniment creat al calendari del mòbil (PUT /plans/{id}/calendari, TG-158). */
+export type CalendariPla = { calendariEventId: string };
