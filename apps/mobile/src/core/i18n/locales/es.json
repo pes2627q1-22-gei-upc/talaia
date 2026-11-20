@@ -193,6 +193,7 @@
     "clouds": "Nubes",
     "sun": "Sol",
     "moon": "Luna",
+    "humidity": "Humedad",
     "info": "Información del punto",
     "openHorizon": "Vistas despejadas",
     "openHorizonValue": "Hacia {{directions}}",
@@ -244,11 +245,16 @@
         "jus": "La Luna aclara el cielo",
         "tap": "La Luna ilumina mucho el cielo"
       },
-      "sol": "Aún queda luz del crepúsculo"
+      "sol": "Aún queda luz del crepúsculo",
+      "humitat": {
+        "none": "La humedad no molesta",
+        "some": "La humedad empobrece el cielo"
+      }
     },
     "factorsAt": "Factores a las {{time}}",
     "daytime": "Es de día",
-    "daytimeHint": "El índice cuenta a partir del anochecer."
+    "daytimeHint": "El índice cuenta a partir del anochecer.",
+    "humidityCorrected": "Corregida con las observaciones de la XEMA (Servicio Meteorológico de Cataluña)"
   },
   "index": {
     "level": {

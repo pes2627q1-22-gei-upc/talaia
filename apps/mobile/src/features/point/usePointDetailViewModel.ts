@@ -11,11 +11,15 @@ import { twoDigitHours } from './pointModel';
 import { usePointBreakdownQuery, usePointDetailQuery } from './pointRepository';
 import { skyDarknessBand } from './skyDarkness';
 
-/** Els factors de l'índex v1 (ADR-0018), en l'ordre del mockup 05. El Sol, al final. */
+/**
+ * Els factors de l'índex (ADR-0018, v1; ADR-0036, v2), en l'ordre del mockup 05. La humitat només
+ * hi és a la v2, i el Sol, al final.
+ */
 const FACTORS = [
   { key: 'nuvols', icon: 'cloud', label: 'clouds' },
   { key: 'foscor', icon: 'sparkle', label: 'darkness' },
   { key: 'lluna', icon: 'moon', label: 'moon' },
+  { key: 'humitat', icon: 'cloud', label: 'humidity' },
   { key: 'sol', icon: 'sun', label: 'sun' },
 ] as const;
 
@@ -79,7 +83,15 @@ export function usePointDetailViewModel(pointId: string) {
               ? t('point.factorHints.sol')
               : key === 'lluna' && value === 100
                 ? t('point.factorHints.lluna.none')
-                : t(`point.factorHints.${key}.${level}`);
+                : key === 'humitat'
+                  ? entry.humitatCorregida
+                    ? t('point.humidityCorrected')
+                    : t(
+                        value === 100
+                          ? 'point.factorHints.humitat.none'
+                          : 'point.factorHints.humitat.some',
+                      )
+                  : t(`point.factorHints.${key}.${level}`);
         return [{ key, icon, label: t(`point.${label}`), hint, value, level }];
       });
     return [...(breakdown.data?.hores ?? [])]

@@ -193,6 +193,7 @@
     "clouds": "Clouds",
     "sun": "Sun",
     "moon": "Moon",
+    "humidity": "Humidity",
     "info": "About this spot",
     "openHorizon": "Open views",
     "openHorizonValue": "Toward {{directions}}",
@@ -244,11 +245,16 @@
         "jus": "The Moon brightens the sky",
         "tap": "The Moon lights up the sky a lot"
       },
-      "sol": "There's still twilight"
+      "sol": "There's still twilight",
+      "humitat": {
+        "none": "Humidity does not bother",
+        "some": "Humidity washes out the sky"
+      }
     },
     "factorsAt": "Factors at {{time}}",
     "daytime": "It's daytime",
-    "daytimeHint": "The index counts from dusk onwards."
+    "daytimeHint": "The index counts from dusk onwards.",
+    "humidityCorrected": "Corrected with XEMA observations (Meteorological Service of Catalonia)"
   },
   "index": {
     "level": {
