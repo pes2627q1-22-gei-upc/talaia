@@ -2,21 +2,70 @@ import { fakeDb } from '../../testing/fakeDb';
 import { createKyselyRecalculRepositories } from '../repository';
 
 describe('createKyselyRecalculRepositories', () => {
-  it("llegeix els punts publicats i converteix el numeric de l'SQM a number", async () => {
+  it("llegeix els punts publicats amb l'horitzo i l'estació XEMA, i converteix el numeric de l'SQM a number", async () => {
+    const biaixCalculatEl = new Date('2026-11-19T06:15:00.000Z');
     const { db, queries } = fakeDb([
-      { id: 'a', altitud: 1570, sqm: '21.56', lon: 0.7112, lat: 42.0294 },
-      { id: 'b', altitud: null, sqm: null, lon: 2.17, lat: 41.38 },
+      {
+        id: 'a',
+        altitud: 1570,
+        sqm: '21.56',
+        lon: 0.7112,
+        lat: 42.0294,
+        horitzo: null,
+        estacioCodi: 'CC',
+        estacioAltitud: 1600,
+        biaixHumitat: 4.5,
+        biaixCalculatEl,
+        estacioLon: 0.7,
+        estacioLat: 42.0,
+      },
+      {
+        id: 'b',
+        altitud: null,
+        sqm: null,
+        lon: 2.17,
+        lat: 41.38,
+        horitzo: null,
+        estacioCodi: null,
+        estacioAltitud: null,
+        biaixHumitat: null,
+        biaixCalculatEl: null,
+        estacioLon: null,
+        estacioLat: null,
+      },
     ]);
 
     const punts = await createKyselyRecalculRepositories(db).punts.listPublicats();
 
-    expect(queries[0]?.sql).toBe(
-      'select "id", "altitud", "sqm", st_x("ubicacio"::geometry) as "lon", st_y("ubicacio"::geometry) as "lat" from "punts_observacio" where "estat" = $1 order by "slug"',
+    expect(queries[0]?.sql).toContain(
+      'left join "estacions_xema" as "e" on "e"."codi" = "punts_observacio"."estacio_xema"',
     );
     expect(queries[0]?.parameters).toEqual(['PUBLICAT']);
     expect(punts).toEqual([
-      { id: 'a', altitud: 1570, sqm: 21.56, lon: 0.7112, lat: 42.0294 },
-      { id: 'b', altitud: null, sqm: null, lon: 2.17, lat: 41.38 },
+      {
+        id: 'a',
+        altitud: 1570,
+        sqm: 21.56,
+        lon: 0.7112,
+        lat: 42.0294,
+        horitzo: null,
+        estacio: {
+          lat: 42.0,
+          lon: 0.7,
+          altitud: 1600,
+          biaixHumitat: 4.5,
+          biaixCalculatEl,
+        },
+      },
+      {
+        id: 'b',
+        altitud: null,
+        sqm: null,
+        lon: 2.17,
+        lat: 41.38,
+        horitzo: null,
+        estacio: null,
+      },
     ]);
   });
 

@@ -1,3 +1,4 @@
+import type { ResumAjustHumitat } from './ajust';
 import {
   actualitzaEstacionsXema,
   diesPendentsXema,
@@ -28,6 +29,11 @@ export type PlanificacioXemaDeps = {
     repository: XemaRepository;
     /** Si `estacions_xema` té alguna fila. Si és buida, s'actualitzen les estacions en arrencar. */
     hiHaEstacions(): Promise<boolean>;
+    /**
+     * Calcula el biaix de la humitat de cada estació (TG-184, ADR-0036), després de les lectures.
+     * Un cop al dia: si ja s'ha calculat avui, no fa res.
+     */
+    ajustaHumitat?(ara: Date): Promise<ResumAjustHumitat>;
   };
   programa: Programa;
   /** Rellotge injectable als tests. */
@@ -52,7 +58,7 @@ export function planificaXema({
     console.warn("[worker] sense METEOCAT_API_KEY: no s'ingesten les observacions de la XEMA");
     return { atura: () => Promise.resolve() };
   }
-  const { client, repository, hiHaEstacions } = xema;
+  const { client, repository, hiHaEstacions, ajustaHumitat } = xema;
   const aturada = new AbortController();
   let enCurs: Promise<void> | undefined;
 
@@ -76,7 +82,7 @@ export function planificaXema({
     const { estacions, puntsAmbEstacio } = await actualitzaEstacionsXema({ client, repository });
     console.log(`[worker] xema: ${estacions} estacions, ${puntsAmbEstacio} punts amb estació`);
   };
-  /** Els dies que falten fins ahir (com a molt 4), del més antic al més recent. */
+  /** Els dies que falten fins ahir (com a molt 4), del més antic al més recent, i després el biaix. */
   const lectures = async () => {
     const dies = diesPendentsXema(await repository.ultimaLectura(), ara());
     for (const dia of dies) {
@@ -89,6 +95,14 @@ export function planificaXema({
         `[worker] xema: ${resum.lectures} lectures del ${resum.dia} (${resum.estacions} estacions, ${resum.descartades} descartades)`,
       );
       for (const error of resum.errors) console.error(`[worker] xema ${resum.dia}: ${error}`);
+    }
+    if (ajustaHumitat && !aturada.signal.aborted) {
+      const resum = await ajustaHumitat(ara());
+      if (resum.calculat) {
+        console.log(
+          `[worker] xema: biaix de la humitat de ${resum.amb} de ${resum.estacions} estacions`,
+        );
+      }
     }
   };
 

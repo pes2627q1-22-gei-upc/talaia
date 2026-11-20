@@ -1,7 +1,8 @@
-import { estacioXemaMesPropera, puntDesDeLonLat, type DB } from '@talaia/db';
+import { estacioXemaMesPropera, lat, lon, puntDesDeLonLat, type DB } from '@talaia/db';
 import type { LecturaXema } from '@talaia/shared';
 import { sql, type Kysely } from 'kysely';
 
+import type { AjustHumitatRepository } from './ajust';
 import type { XemaRepository } from './ingesta';
 import type { EstacioXema, VariableXema } from './xema';
 
@@ -28,8 +29,10 @@ const VALIDADA = sql<boolean>`excluded.validada and (lectures_xema.validada or n
   sql` or `,
 )}))`;
 
-/** Les taules de la XEMA (TG-115) amb Kysely (ADR-0013). */
-export function createKyselyXemaRepository(db: Kysely<DB>): XemaRepository {
+/** Les taules de la XEMA (TG-115, TG-184) amb Kysely (ADR-0013). */
+export function createKyselyXemaRepository(
+  db: Kysely<DB>,
+): XemaRepository & AjustHumitatRepository {
   return {
     async desaEstacions(estacions) {
       if (estacions.length === 0) return;
@@ -126,6 +129,59 @@ export function createKyselyXemaRepository(db: Kysely<DB>): XemaRepository {
 
     async esborraLecturesAnteriors(abans) {
       await db.deleteFrom('lecturesXema').where('data', '<', abans).execute();
+    },
+
+    async estacionsAssignades() {
+      const files = await db
+        .selectFrom('estacionsXema')
+        .select((eb) => [
+          'codi',
+          'altitud',
+          'biaixHumitat',
+          'biaixCalculatEl',
+          lat(eb.ref('ubicacio')).as('lat'),
+          lon(eb.ref('ubicacio')).as('lon'),
+        ])
+        .where(
+          sql<boolean>`exists (select 1 from punts_observacio p where p.estacio_xema = estacions_xema.codi)`,
+        )
+        .execute();
+      // `real` arriba com a nombre; `numeric`, com a cadena: les coordenades s'han de convertir.
+      return files.map((f) => ({
+        codi: f.codi,
+        lat: Number(f.lat),
+        lon: Number(f.lon),
+        altitud: f.altitud,
+        biaixHumitat: f.biaixHumitat,
+        biaixCalculatEl: f.biaixCalculatEl ? new Date(f.biaixCalculatEl) : null,
+      }));
+    },
+
+    async lecturesHumitat(codi, desDe, fins) {
+      const files = await db
+        .selectFrom('lecturesXema')
+        .select(['data', 'humitat'])
+        .where('estacio', '=', codi)
+        .where('data', '>=', desDe)
+        .where('data', '<=', fins)
+        .execute();
+      return files.map((f) => ({ data: new Date(f.data).toISOString(), humitat: f.humitat }));
+    },
+
+    async desaBiaix(codi, { biaix, mostres, calculatEl }) {
+      await db
+        .updateTable('estacionsXema')
+        .set({ biaixHumitat: biaix, biaixMostres: mostres, biaixCalculatEl: calculatEl })
+        .where('codi', '=', codi)
+        .execute();
+    },
+
+    async ultimCalcul() {
+      const fila = await db
+        .selectFrom('estacionsXema')
+        .select((eb) => eb.fn.max('biaixCalculatEl').as('calculatEl'))
+        .executeTakeFirst();
+      return fila?.calculatEl ? new Date(fila.calculatEl) : null;
     },
 
     async anulaValors(valors) {
