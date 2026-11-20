@@ -9,7 +9,11 @@ let mockExpoGo = false;
 const mockStack = jest.fn();
 const mockStatusBar = jest.fn();
 
-jest.mock('expo', () => ({ isRunningInExpoGo: () => mockExpoGo }));
+// Només es canvia isRunningInExpoGo: la resta d'expo la necessiten els mòduls natius (expo-localization).
+jest.mock('expo', () => ({
+  ...jest.requireActual('expo'),
+  isRunningInExpoGo: () => mockExpoGo,
+}));
 jest.mock('expo-font', () => ({ useFonts: () => [true, null] }));
 jest.mock('@expo-google-fonts/atkinson-hyperlegible-next', () => ({}));
 jest.mock('@expo-google-fonts/big-shoulders-display', () => ({}));
