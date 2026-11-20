@@ -1,9 +1,8 @@
 import { Image } from 'expo-image';
 import { useMemo } from 'react';
-import { ActivityIndicator, Platform, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import Animated, { FadeInDown, FadeOutDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { SafeAreaView as NativeSafeAreaView } from 'react-native-screens/experimental';
 
 import { useTheme } from '@/core/theme/theme';
 import { colors, motion, radii, sizes, spacing } from '@/core/theme/tokens';
@@ -111,8 +110,6 @@ export function MapScreen() {
     [theme],
   );
   const origin = vm.origin && { ...vm.origin, color: theme.far };
-  // Android ja reserva l’espai de les pestanyes; a iOS el menú se superposa al mapa.
-  const RankingSafeArea = Platform.OS === 'ios' ? NativeSafeAreaView : View;
   const insets = useSafeAreaInsets();
   const canRetry = vm.notice?.kind === 'error' || vm.notice?.kind === 'empty';
   const recommendations = vm.recommendations;
@@ -237,22 +234,18 @@ export function MapScreen() {
         )}
       </View>
       {recommendations && (
-        <RankingSafeArea
-          testID="ranking-safe-area"
-          pointerEvents="box-none"
-          style={StyleSheet.absoluteFill}
-          {...(Platform.OS === 'ios' ? { edges: { bottom: true } } : {})}
-        >
+        // La barra de pestanyes queda sota la pantalla (ADR-0037): el full no ha de deixar-ne marge.
+        <View testID="ranking-safe-area" pointerEvents="box-none" style={StyleSheet.absoluteFill}>
           <View style={styles.rankingViewport} pointerEvents="box-none">
             <RecommendationsSheet sheet={recommendations.sheet} />
           </View>
-        </RankingSafeArea>
+        </View>
       )}
       {vm.nearby && (
         <Animated.View
           entering={enterUp}
           exiting={exitDown}
-          style={[styles.nearbyDock, { bottom: insets.bottom + spacing.md }]}
+          style={[styles.nearbyDock, { bottom: spacing.md }]}
           pointerEvents="box-none"
         >
           <PressableScale
@@ -281,7 +274,7 @@ export function MapScreen() {
         <Animated.View
           entering={enterUp}
           exiting={exitDown}
-          style={[styles.spot, { bottom: insets.bottom + spacing.md }]}
+          style={[styles.spot, { bottom: spacing.md }]}
         >
           <SpotCard card={vm.spot} />
         </Animated.View>
@@ -290,7 +283,7 @@ export function MapScreen() {
         <Animated.View
           entering={enterUp}
           exiting={exitDown}
-          style={[styles.picker, { bottom: insets.bottom + spacing.md }]}
+          style={[styles.picker, { bottom: spacing.md }]}
           accessibilityLiveRegion="polite"
         >
           <View style={styles.pickerRow}>
