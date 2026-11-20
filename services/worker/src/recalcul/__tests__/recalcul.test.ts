@@ -265,6 +265,23 @@ describe('recalculaIndex · alertes (TG-153)', () => {
     );
   });
 
+  it("si l'enviament (TG-154) falla, l'execució registra les notificacions noves i l'error", async () => {
+    const { deps, execucions } = setup();
+    const alertes = jest.fn(async () => ({
+      notificacions: 1,
+      errorEnviament: 'Expo Push: timeout',
+    }));
+
+    const resum = await recalculaIndex({ ...deps, alertes });
+
+    expect(resum).toMatchObject({
+      estat: 'ok',
+      notificacions: 1,
+      errorAlertes: 'Expo Push: timeout',
+    });
+    expect(execucions[0]).toMatchObject({ notificacions: 1, errorAlertes: 'Expo Push: timeout' });
+  });
+
   it("també avalua les alertes si ha fallat algun lot, i l'execució continua amb l'error del lot", async () => {
     const punts = Array.from({ length: 25 }, (_, i) => punt(`p${i}`));
     const client = clientAmb((llocs, crida) => {

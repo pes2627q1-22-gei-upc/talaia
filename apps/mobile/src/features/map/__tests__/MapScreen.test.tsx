@@ -1,12 +1,12 @@
-import type { Recomanacio, RecomanacionsResposta } from '@talaia/shared';
+import type { Recomanacio, RecomanacionsResposta, VisibilitatUbicacio } from '@talaia/shared';
 import { router } from 'expo-router';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { GestureHandlerRootView, State } from 'react-native-gesture-handler';
 import { fireGestureHandler, getByGestureTestId } from 'react-native-gesture-handler/jest-utils';
 import { Platform, StyleSheet, View } from 'react-native';
 
-import i18n from '@/core/i18n';
 import { ApiError } from '@/core/api/httpClient';
+import i18n from '@/core/i18n';
 
 import { nightOf } from '../../explore/exploreModel';
 import type { RecommendationParams } from '../../recommendations/recommendationsModel';
@@ -61,6 +61,14 @@ let mockQuery = {
   refetch: mockRefetch,
 };
 jest.mock('../mapRepository', () => ({ useMapPointsQuery: () => mockQuery }));
+
+let mockVisibility = {
+  data: undefined as VisibilitatUbicacio | undefined,
+  isError: false,
+  error: null as unknown,
+  refetch: jest.fn(),
+};
+jest.mock('../visibilityRepository', () => ({ useVisibilityQuery: () => mockVisibility }));
 
 // La DOM component corre en un WebView: aquí només es comprova què li passa la pantalla.
 const mockNightMap = jest.fn((_props: unknown) => <View testID="night-map" />);
@@ -232,9 +240,7 @@ describe('MapScreen', () => {
     await render(<MapScreen />, { wrapper: GestureHandlerRootView });
     const nearby = screen.getByRole('button', { name: 'A prop meu' });
     expect(nearby).toHaveProp('accessibilityHint', 'Mostra els millors punts a prop teu');
-    expect(mockNightMap).toHaveBeenLastCalledWith(
-      expect.objectContaining({ onMapPress: undefined, origin: null }),
-    );
+    expect(mockNightMap).toHaveBeenLastCalledWith(expect.objectContaining({ origin: null }));
     await fireEvent.press(nearby);
     expect(
       screen.getByRole('header', { name: "Toca el mapa per triar d'on surts" }),
@@ -257,6 +263,120 @@ describe('MapScreen', () => {
     await fireEvent.press(screen.getByRole('button', { name: 'Tanca' }));
     expect(screen.queryByText("Toca el mapa per triar d'on surts")).toBeNull();
     expect(screen.getByRole('button', { name: 'A prop meu' })).toBeOnTheScreen();
+  });
+});
+
+describe('MapScreen amb un punt triat (HU05, mockup 04)', () => {
+  /** Toca el mapa com ho faria la DOM component. */
+  const tapMap = async (lat: number, lon: number) => {
+    const props = mockNightMap.mock.calls.at(-1)![0] as {
+      onMapPress: (lat: number, lon: number) => Promise<void>;
+    };
+    await act(async () => props.onMapPress(lat, lon));
+  };
+
+  beforeEach(async () => {
+    await i18n.changeLanguage('ca');
+    mockNightMap.mockClear();
+    mockParams = {};
+    // Amb punts i de nit: cap avís a dalt que tingui el seu propi «Torna-ho a provar».
+    mockQuery = {
+      data: {
+        type: 'FeatureCollection',
+        features: [
+          {
+            type: 'Feature',
+            geometry: { type: 'Point', coordinates: [0.75, 42.05] },
+            properties: {
+              id: 'montsec',
+              nom: 'Serra del Montsec',
+              municipi: 'Àger',
+              index: { valor: 87, franja: 'ras', deDia: false },
+            },
+          },
+        ],
+      },
+      isPending: false,
+      isError: false,
+      isFetching: false,
+      refetch: mockRefetch,
+    };
+    mockVisibility = { data: undefined, isError: false, error: null, refetch: jest.fn() };
+  });
+
+  it('convida a tocar el mapa, i el toc ensenya el lloc, el marca i ofereix calcular-ne l’índex', async () => {
+    await render(<MapScreen />);
+    expect(screen.getByText('Tria un punt al mapa')).toBeOnTheScreen();
+    expect(screen.getByText("Toca on vulguis per veure'n l'índex")).toBeOnTheScreen();
+    expect(screen.getByLabelText('A prop meu')).toBeOnTheScreen();
+
+    await tapMap(42.0112, 1.3089);
+    expect(screen.getByText('Punt triat al mapa')).toBeOnTheScreen();
+    expect(screen.getByText('Lat 42,01 · Lon 1,31')).toBeOnTheScreen();
+    expect(screen.getByText("Calcula l'índex aquí")).toBeOnTheScreen();
+    // La targeta ocupa el lloc del botó: no s'hi superposen.
+    expect(screen.queryByLabelText('A prop meu')).toBeNull();
+    expect(mockNightMap).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        origin: expect.objectContaining({ lat: 42.0112, lon: 1.3089, label: 'Punt triat' }),
+      }),
+    );
+
+    mockVisibility = {
+      ...mockVisibility,
+      data: {
+        lat: 42.01,
+        lon: 1.31,
+        sqm: 21.4,
+        deDia: false,
+        index: {
+          valor: 81,
+          franja: 'ras',
+          hora: '2026-11-16T20:00:00Z',
+          foscorEstimada: false,
+          factors: { nuvols: 1, foscor: 0.9, lluna: 0.95, sol: 1 },
+        },
+      },
+    };
+    await act(async () => fireEvent.press(screen.getByText("Calcula l'índex aquí")));
+    expect(screen.getByLabelText('Índex de visibilitat: 81 de 100, Cel ras')).toBeOnTheScreen();
+    expect(screen.getByText("Índex de l'hora en curs (21:00)")).toBeOnTheScreen();
+    expect(screen.queryByText("Calcula l'índex aquí")).toBeNull();
+  });
+
+  it('fora de Catalunya ho diu sense proposar cap reintent', async () => {
+    mockVisibility = {
+      ...mockVisibility,
+      isError: true,
+      error: new ApiError(422, 'fora_de_catalunya', ''),
+    };
+    await render(<MapScreen />);
+    await tapMap(42.9, 3.6);
+    await act(async () => fireEvent.press(screen.getByText("Calcula l'índex aquí")));
+    expect(screen.getByText('Aquest lloc és fora de Catalunya')).toBeOnTheScreen();
+    expect(screen.queryByText('Torna-ho a provar')).toBeNull();
+  });
+
+  it('si falla, deixa tornar-ho a provar', async () => {
+    mockVisibility = {
+      ...mockVisibility,
+      isError: true,
+      error: new ApiError(503, 'meteo_unavailable', ''),
+    };
+    await render(<MapScreen />);
+    await tapMap(41.9, 2.1);
+    await act(async () => fireEvent.press(screen.getByText("Calcula l'índex aquí")));
+    expect(screen.getByText("No hem pogut calcular l'índex")).toBeOnTheScreen();
+    fireEvent.press(screen.getByText('Torna-ho a provar'));
+    expect(mockVisibility.refetch).toHaveBeenCalled();
+  });
+
+  it('es tanca i torna «A prop meu»', async () => {
+    await render(<MapScreen />);
+    await tapMap(41.9, 2.1);
+    await act(async () => fireEvent.press(screen.getByLabelText('Tanca')));
+    expect(screen.queryByText('Punt triat al mapa')).toBeNull();
+    expect(screen.getByLabelText('A prop meu')).toBeOnTheScreen();
   });
 });
 
