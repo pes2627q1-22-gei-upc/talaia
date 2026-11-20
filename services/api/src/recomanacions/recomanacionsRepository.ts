@@ -49,7 +49,16 @@ export function createRecomanacionsRepository(db: Db): RecomanacionsRepository {
       if (ids.length === 0) return [];
       const files = await db
         .selectFrom('indexVisibilitat')
-        .select(['puntId', 'hora', 'valor', 'franja', 'factors', 'foscorEstimada'])
+        .select([
+          'puntId',
+          'hora',
+          'valor',
+          'franja',
+          'factors',
+          'foscorEstimada',
+          'versio',
+          'humitatCorregida',
+        ])
         .where('puntId', 'in', ids)
         .where('hora', '>=', desDe)
         .where('hora', '<', finsA)
@@ -64,6 +73,8 @@ export function createRecomanacionsRepository(db: Db): RecomanacionsRepository {
         // jsonb sense tipus: l'escriu només el worker, amb `FactorsIndex` (ADR-0018).
         factors: f.factors as IndexHora['factors'],
         foscorEstimada: f.foscorEstimada,
+        versio: f.versio,
+        humitatCorregida: f.humitatCorregida,
       }));
     },
   };
