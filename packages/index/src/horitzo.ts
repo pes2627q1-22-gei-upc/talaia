@@ -1,6 +1,6 @@
 /**
  * Perfil d'horitzó d'un lloc (ADR-0022) aplicat a un astre: si el relleu el tapa (índex v2,
- * ADR-0036). Codi pur, sense xarxa ni base de dades.
+ * ADR-0037). Codi pur, sense xarxa ni base de dades.
  *
  * El perfil (`punts_observacio.horitzo`) són 360 alçades **aparents** en graus, una per grau
  * d'azimut geogràfic: la posició 0 és el nord i la 90, l'est. Per comparar-hi un astre cal la

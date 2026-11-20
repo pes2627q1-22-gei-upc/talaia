@@ -30,7 +30,7 @@ export type PlanificacioXemaDeps = {
     /** Si `estacions_xema` té alguna fila. Si és buida, s'actualitzen les estacions en arrencar. */
     hiHaEstacions(): Promise<boolean>;
     /**
-     * Calcula el biaix de la humitat de cada estació (TG-184, ADR-0036), després de les lectures.
+     * Calcula el biaix de la humitat de cada estació (TG-184, ADR-0037), després de les lectures.
      * Un cop al dia: si ja s'ha calculat avui, no fa res.
      */
     ajustaHumitat?(ara: Date): Promise<ResumAjustHumitat>;

@@ -70,7 +70,7 @@ describe('GET /api/v1/visibilitat', () => {
     expect(res.body.index.valor).toBeGreaterThanOrEqual(0);
     expect(res.body.index.valor).toBeLessThanOrEqual(100);
     expect(['tap', 'jus', 'ras']).toContain(res.body.index.franja);
-    // La v2 (ADR-0036) porta també la humitat: sense dada, o amb la d'Open-Meteo tal qual.
+    // La v2 (ADR-0037) porta també la humitat: sense dada, o amb la d'Open-Meteo tal qual.
     expect(Object.keys(res.body.index.factors).sort()).toEqual([
       'foscor',
       'humitat',

@@ -38,7 +38,7 @@ const efemerides = (llunaAlcada: number, illuminada: number): EfemeridesHora => 
   },
 });
 
-describe('perfil d’horitzo (ADR-0036)', () => {
+describe('perfil d’horitzo (ADR-0037)', () => {
   it('l’alçada aparent suma una refracció petita, més gran a prop de l’horitzó', () => {
     expect(alcadaAparent(0)).toBeGreaterThan(0.4);
     expect(alcadaAparent(0)).toBeLessThan(0.6);
@@ -84,7 +84,7 @@ describe('perfil d’horitzo (ADR-0036)', () => {
   });
 });
 
-describe('índex v2 (ADR-0036): la Lluna amagada i la humitat', () => {
+describe('índex v2 (ADR-0037): la Lluna amagada i la humitat', () => {
   it('la humitat no toca el cel fins al 85 %; al 100 % el fa un 30 % pitjor; sense dada, 1', () => {
     expect(factorHumitat(85)).toBe(1);
     expect(factorHumitat(92.5)).toBeCloseTo(0.85, 10);

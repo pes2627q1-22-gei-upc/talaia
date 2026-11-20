@@ -117,6 +117,26 @@ describe('plansRepository.findById', () => {
   });
 });
 
+describe('plansRepository.setCalendarEvent', () => {
+  it('actualitza només el vincle del pla propi, filtrant per perfil i id a l’SQL', async () => {
+    const { db, queries } = fakeDb([{ id: PLA }]);
+    await expect(createPlansRepository(db).setCalendarEvent(PERFIL, PLA, 'event-1')).resolves.toBe(
+      true,
+    );
+    expect(queries[0]?.sql).toBe(
+      'update "plans" set "calendari_event_id" = $1 where "perfil_id" = $2 and "id" = $3 returning "id"',
+    );
+    expect(queries[0]?.parameters).toEqual(['event-1', PERFIL, PLA]);
+  });
+
+  it('no modifica cap fila si el pla no existeix o no és del perfil', async () => {
+    const { db } = fakeDb([]);
+    await expect(createPlansRepository(db).setCalendarEvent(PERFIL, PLA, 'event-1')).resolves.toBe(
+      false,
+    );
+  });
+});
+
 describe('plansRepository.create', () => {
   const NOU = {
     puntId: MONTSEC,

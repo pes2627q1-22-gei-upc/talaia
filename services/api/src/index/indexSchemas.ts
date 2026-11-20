@@ -19,11 +19,11 @@ export const FactorsSchema: z.ZodType<FactorsIndex> = z.object({
   }),
   lluna: Factor.meta({
     description:
-      '1 sense Lluna; baixa com més il·luminada i alta és. Amb la v2 (ADR-0036), la Lluna amagada pel relleu fa la meitat de llum.',
+      '1 sense Lluna; baixa com més il·luminada i alta és. Amb la v2 (ADR-0037), la Lluna amagada pel relleu fa la meitat de llum.',
   }),
   humitat: Factor.optional().meta({
     description:
-      'Índex v2 (ADR-0036): 1 fins al 85 % d’humitat relativa i 0,7 al 100 %. Absent a la v1.',
+      'Índex v2 (ADR-0037): 1 fins al 85 % d’humitat relativa i 0,7 al 100 %. Absent a la v1.',
   }),
 });
 
@@ -37,13 +37,13 @@ export const IndexHoraSchema: z.ZodType<IndexHora> = z
     franja: z.enum(['tap', 'jus', 'ras']),
     factors: FactorsSchema.meta({
       description:
-        'Els factors de la fórmula (ADR-0018, v1; ADR-0036, v2), de 0 a 1: `índex = 100 × nuvols × sol × (0,6 · foscor + 0,4 · lluna) × humitat`.',
+        'Els factors de la fórmula (ADR-0018, v1; ADR-0037, v2), de 0 a 1: `índex = 100 × nuvols × sol × (0,6 · foscor + 0,4 · lluna) × humitat`.',
     }),
     foscorEstimada: z.boolean().meta({
       description: 'La foscor és provisional: el punt no té SQM del mapa de contaminació lumínica.',
     }),
     versio: z.number().int().min(1).optional().meta({
-      description: 'Versió de la fórmula: 1 (ADR-0018) o 2 (ADR-0036). Absent = 1.',
+      description: 'Versió de la fórmula: 1 (ADR-0018) o 2 (ADR-0037). Absent = 1.',
     }),
     humitatCorregida: z.boolean().optional().meta({
       description:

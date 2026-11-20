@@ -40,7 +40,7 @@ const previsio = (hora: string, humitat: number | null): PrevisioMeteoHora => ({
 
 const lectura = (data: string, humitat: number | null): LecturaHumitat => ({ data, humitat });
 
-describe('biaix de la humitat (ADR-0036)', () => {
+describe('biaix de la humitat (ADR-0037)', () => {
   const parelles = (n: number, diferencia: number) =>
     Array.from({ length: n }, () => ({ xema: 50 + diferencia, previsio: 50 }));
 

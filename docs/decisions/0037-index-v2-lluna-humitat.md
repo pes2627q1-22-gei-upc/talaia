@@ -1,4 +1,4 @@
-# ADR-0036: Índex v2: la Lluna amagada pel relleu i la humitat corregida amb la XEMA
+# ADR-0037: Índex v2: la Lluna amagada pel relleu i la humitat corregida amb la XEMA
 
 **Estat:** Proposada · **Data:** 2026-11-11 · Substitueix en part l'[ADR-0018](0018-formula-index-v1.md) · TG-184, TG-185
 

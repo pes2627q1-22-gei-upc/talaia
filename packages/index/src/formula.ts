@@ -4,7 +4,7 @@
  * l'índex de 0 a 100 amb els factors.
  *
  *   v1 (ADR-0018):  índex = 100 × núvols × sol × (0,6 · foscor + 0,4 · lluna)
- *   v2 (ADR-0036):  índex = 100 × núvols × sol × (0,6 · foscor + 0,4 · lluna) × humitat
+ *   v2 (ADR-0037):  índex = 100 × núvols × sol × (0,6 · foscor + 0,4 · lluna) × humitat
  *
  * Els núvols i el Sol multipliquen: amb el cel tapat o de dia no hi ha res a veure, faci la
  * nit que faci. La foscor i la Lluna diuen com de bo és un cel ras. A la v2, la Lluna amagada pel
@@ -45,7 +45,7 @@ export const FORMULA_V1 = {
   franges: { jus: 40, ras: 70 },
 } as const;
 
-/** Pesos i llindars de la v2 (ADR-0036): els de la v1 més la Lluna amagada i la humitat. */
+/** Pesos i llindars de la v2 (ADR-0037): els de la v1 més la Lluna amagada i la humitat. */
 export const FORMULA_V2 = {
   ...FORMULA_V1,
   /**
@@ -119,7 +119,7 @@ export function factorLluna(
 }
 
 /**
- * Humitat relativa corregida amb el biaix de l'estació de la XEMA (ADR-0036), dins de [0, 100].
+ * Humitat relativa corregida amb el biaix de l'estació de la XEMA (ADR-0037), dins de [0, 100].
  * Sense humitat prevista, `null`; sense biaix, la prevista tal qual.
  */
 export function humitatAmbBiaix(humitat: number | null, biaix: number | null): number | null {
