@@ -62,6 +62,13 @@
         {
           "color": "#0E1433"
         }
+      ],
+      [
+        "expo-calendar",
+        {
+          "calendarPermission": "Talaia accedeix als teus calendaris per deixar-te triar on afegir els plans d’observació.",
+          "remindersPermission": false
+        }
       ]
     ],
     "experiments": {

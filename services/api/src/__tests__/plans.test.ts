@@ -109,6 +109,12 @@ function memoryRepository() {
       const fila = files.find((f) => f.perfilId === perfilId && f.pla.id === id);
       return fila && ambPunt(fila.pla);
     }),
+    setCalendarEvent: jest.fn(async (perfilId: string, id: string, eventId: string) => {
+      const fila = files.find((f) => f.perfilId === perfilId && f.pla.id === id);
+      if (!fila) return false;
+      fila.pla.calendariEventId = eventId;
+      return true;
+    }),
   };
   return repo;
 }
@@ -173,6 +179,57 @@ const NOU: PlaNou = {
   dataHoraFi: '2026-11-18T02:00:00+01:00',
   notes: 'Portar el trípode',
 };
+
+describe('PUT /api/v1/plans/{id}/calendari', () => {
+  const link = async (com: string, id: string, body: unknown = { calendariEventId: 'event-1' }) =>
+    request(app)
+      .put(`/api/v1/plans/${id}/calendari`)
+      .set('Authorization', `Bearer ${await tokenFor(com)}`)
+      .send(body as object);
+
+  it('desa el vincle amb 204, és idempotent i conserva les altres dades del pla', async () => {
+    const { body: plan } = await crea(MARIA.auth, NOU);
+    expect((await link(MARIA.auth, plan.id)).status).toBe(204);
+    expect((await link(MARIA.auth, plan.id)).status).toBe(204);
+    const res = await llegeix(MARIA.auth, plan.id);
+    expect(res.body).toEqual({ ...plan, calendariEventId: 'event-1' });
+    expect(repo.setCalendarEvent).toHaveBeenCalledWith(MARIA.perfil, plan.id, 'event-1');
+  });
+
+  it('un usuari no pot modificar el vincle d’un pla aliè', async () => {
+    const { body: plan } = await crea(MARIA.auth, NOU);
+    const foreign = await link(PERE.auth, plan.id);
+    const missing = await link(PERE.auth, NO_EXISTEIX);
+    expect(foreign.status).toBe(404);
+    expect(foreign.body).toEqual(missing.body);
+    expect((await llegeix(MARIA.auth, plan.id)).body.calendariEventId).toBeNull();
+  });
+
+  it.each([
+    {},
+    { calendariEventId: null },
+    { calendariEventId: ' ' },
+    { calendariEventId: 'x'.repeat(256) },
+    { calendariEventId: 'event-1', perfilId: PERE.perfil },
+  ])('rebutja un cos invàlid: %j', async (body) => {
+    const res = await link(MARIA.auth, NO_EXISTEIX, body);
+    expect(res.status).toBe(400);
+    expect(repo.setCalendarEvent).not.toHaveBeenCalled();
+  });
+
+  it('valida l’id i exigeix que l’usuari tingui perfil', async () => {
+    expect((await link(MARIA.auth, 'incorrecte')).status).toBe(400);
+    expect((await link(SENSE_PERFIL, NO_EXISTEIX)).body.error.code).toBe('profile_not_found');
+  });
+
+  it('sense base de dades retorna 503', async () => {
+    const res = await request(createApp({ supabaseUrl, jwks, profileStore }))
+      .put(`/api/v1/plans/${NO_EXISTEIX}/calendari`)
+      .set('Authorization', `Bearer ${await tokenFor(MARIA.auth)}`)
+      .send({ calendariEventId: 'event-1' });
+    expect(res.status).toBe(503);
+  });
+});
 
 describe('POST /api/v1/plans', () => {
   it('crea el pla (201) amb el mateix Pla que el GET, el punt inclòs i les dates en UTC', async () => {
@@ -400,6 +457,13 @@ describe('/api/v1/plans sense un usuari vàlid', () => {
   const ambToken = (test: request.Test, token?: string) =>
     token ? test.set('Authorization', `Bearer ${token}`) : test;
   const peticions = [
+    [
+      'PUT calendari',
+      (token?: string) =>
+        ambToken(request(app).put(`/api/v1/plans/${NO_EXISTEIX}/calendari`), token).send({
+          calendariEventId: 'event-1',
+        }),
+    ],
     ['POST', (token?: string) => ambToken(request(app).post('/api/v1/plans'), token).send(NOU)],
     ['GET', (token?: string) => ambToken(request(app).get('/api/v1/plans'), token)],
     [
@@ -429,6 +493,7 @@ describe('/api/v1/plans sense un usuari vàlid', () => {
       expect(repo.create).not.toHaveBeenCalled();
       expect(repo.list).not.toHaveBeenCalled();
       expect(repo.findById).not.toHaveBeenCalled();
+      expect(repo.setCalendarEvent).not.toHaveBeenCalled();
     },
   );
 });
@@ -453,8 +518,9 @@ describe('/plans a l’OpenAPI', () => {
     const res = await request(createApp()).get('/api/v1/openapi.json');
     const { post, get } = res.body.paths['/plans'];
     const { get: getId } = res.body.paths['/plans/{id}'];
+    const { put: putCalendar } = res.body.paths['/plans/{id}/calendari'];
 
-    for (const operacio of [post, get, getId]) {
+    for (const operacio of [post, get, getId, putCalendar]) {
       expect(operacio.tags).toEqual(['Plans']);
       expect(operacio.security).toEqual([{ BearerSupabase: [] }]);
       expect(operacio.responses['403'].description).toContain('account_blocked');
@@ -475,5 +541,7 @@ describe('/plans a l’OpenAPI', () => {
     expect(getId.responses['404'].description).toContain('plan_not_found');
     expect(res.body.components.schemas).toHaveProperty('Pla');
     expect(res.body.components.schemas).toHaveProperty('PlaNou');
+    expect(res.body.components.schemas).toHaveProperty('CalendariPla');
+    expect(putCalendar.responses['204']).toBeDefined();
   });
 });

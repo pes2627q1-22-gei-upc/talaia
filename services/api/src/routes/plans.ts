@@ -1,4 +1,4 @@
-import type { Pla, PlaNou, QuanPlans } from '@talaia/shared';
+import type { CalendariPla, Pla, PlaNou, QuanPlans } from '@talaia/shared';
 import { Router, type Request, type RequestHandler } from 'express';
 import { z } from 'zod';
 
@@ -82,6 +82,12 @@ const PlansQuerySchema = z.object({
 const PlaParamsSchema = z.object({
   id: z.uuid({ error: 'id ha de ser un UUID' }).meta({ description: 'L’`id` del pla' }),
 });
+
+const CalendariPlaSchema: z.ZodType<CalendariPla> = z
+  .strictObject({
+    calendariEventId: z.string().trim().min(1).max(255),
+  })
+  .meta({ id: 'CalendariPla' });
 
 const PlaSchema: z.ZodType<Pla> = z
   .object({
@@ -202,6 +208,28 @@ const databaseUnavailable = () =>
 
 const NO_CACHE = { 'Cache-Control': 'no-store', Vary: 'Accept-Language' };
 
+registry.registerPath({
+  method: 'put',
+  path: '/plans/{id}/calendari',
+  tags: ['Plans'],
+  security: [{ BearerSupabase: [] }],
+  summary: 'Vincula un pla propi amb l’esdeveniment del calendari del mòbil (TG-158)',
+  description:
+    'Idempotent. Només desa l’identificador: l’esdeveniment el crea el mòbil amb permís de l’usuari. No modifica el punt, les dates, el fenomen ni les notes.',
+  request: {
+    params: PlaParamsSchema,
+    body: { required: true, content: { 'application/json': { schema: CalendariPlaSchema } } },
+  },
+  responses: {
+    204: { description: 'Vincle desat' },
+    400: errorResponse('`validation_error`: id o cos invàlid'),
+    404: errorResponse(
+      '`plan_not_found`: el pla no existeix o és d’un altre usuari; `profile_not_found`: sense perfil',
+    ),
+    ...ERRORS_AUTH,
+  },
+});
+
 /** `/api/v1/plans` (HU12, TG-156): els plans d'observació de l'usuari autenticat. */
 export function createPlansRouter({ requireUser, service }: PlansRouterOptions): Router {
   const router = Router();
@@ -230,6 +258,15 @@ export function createPlansRouter({ requireUser, service }: PlansRouterOptions):
     const perfilId = currentPerfilId(req);
     if (!service) throw databaseUnavailable();
     res.set(NO_CACHE).json(await service.get(perfilId, id, req.get('Accept-Language')));
+  });
+
+  router.put('/:id/calendari', async (req, res) => {
+    const { id } = PlaParamsSchema.parse(req.params);
+    const { calendariEventId } = CalendariPlaSchema.parse(req.body ?? {});
+    const perfilId = currentPerfilId(req);
+    if (!service) throw databaseUnavailable();
+    await service.setCalendarEvent(perfilId, id, calendariEventId);
+    res.set(NO_CACHE).status(204).end();
   });
 
   return router;

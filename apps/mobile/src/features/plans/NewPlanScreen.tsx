@@ -1,6 +1,6 @@
 import { Image, type ImageSource } from 'expo-image';
 import type { PropsWithChildren } from 'react';
-import { ScrollView, View } from 'react-native';
+import { ScrollView, useWindowDimensions, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -12,7 +12,9 @@ import { Button } from '@/shared/ui/Button';
 import { MonthCalendar } from '@/shared/ui/MonthCalendar';
 import { PressableScale } from '@/shared/ui/PressableScale';
 import { Sheet } from '@/shared/ui/Sheet';
+import { Skeleton } from '@/shared/ui/Skeleton';
 import { TextField } from '@/shared/ui/TextField';
+import { Toggle } from '@/shared/ui/Toggle';
 
 import { DepartureTimeSheet } from './DepartureTimeSheet';
 import { EventSheet } from './EventSheet';
@@ -75,12 +77,40 @@ function ValueCard({
   );
 }
 
-/** «Pla d'observació» (HU12, mockup 06). El calendari del mòbil és la TG-158. */
+/** «Pla d'observació» (HU12, mockup 06), amb calendari del mòbil opcional (TG-158). */
 export function NewPlanScreen(params: NewPlanParams) {
   const styles = useStyles();
   const { colors } = useTheme();
   const vm = useNewPlanViewModel(params);
+  const { height } = useWindowDimensions();
   const { visible, title, closeLabel, onClose, ...calendar } = vm.dateSheet;
+
+  if (vm.saved) {
+    const saved = vm.saved;
+    return (
+      <SafeAreaView edges={['bottom']} style={styles.root}>
+        <ScrollView contentContainerStyle={styles.content}>
+          <AppText variant="display" accessibilityRole="header">
+            {saved.title}
+          </AppText>
+          <AppText variant="body" accessibilityLiveRegion="polite">
+            {saved.message}
+          </AppText>
+          {saved.busy ? (
+            <Skeleton height={sizes.button} />
+          ) : (
+            <>
+              {saved.settings && <Button {...saved.settings} />}
+              <Button {...saved.retry} />
+              <PressableScale onPress={saved.finish.onPress} style={styles.continue}>
+                <AppText variant="link">{saved.finish.label}</AppText>
+              </PressableScale>
+            </>
+          )}
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView edges={['bottom']} style={styles.root}>
@@ -89,6 +119,7 @@ export function NewPlanScreen(params: NewPlanParams) {
         keyboardShouldPersistTaps="handled"
         automaticallyAdjustKeyboardInsets
         showsVerticalScrollIndicator={false}
+        pointerEvents={vm.busy ? 'none' : 'auto'}
       >
         <Enter index={0}>
           <AppText variant="display" accessibilityRole="header">
@@ -154,6 +185,47 @@ export function NewPlanScreen(params: NewPlanParams) {
         </Enter>
 
         <Enter index={5}>
+          <View style={styles.calendarRow}>
+            <AppText variant="label" style={styles.calendarLabel}>
+              {vm.calendar.label}
+            </AppText>
+            <Toggle
+              value={vm.calendar.value}
+              onValueChange={vm.calendar.onChange}
+              accessibilityLabel={vm.calendar.label}
+              disabled={vm.calendar.disabled}
+            />
+          </View>
+          <AppText variant="small" color="boira">
+            {vm.calendar.hint}
+          </AppText>
+          {vm.calendar.loading && (
+            <View accessible accessibilityLabel={vm.calendar.loadingLabel}>
+              <Skeleton height={sizes.button} />
+            </View>
+          )}
+          {vm.calendar.target && (
+            <FieldRow
+              icon={calendarIcon}
+              label={vm.calendar.target.value}
+              accessibilityLabel={`${vm.calendar.target.label}: ${vm.calendar.target.value}`}
+              onPress={vm.calendar.target.onPress}
+              chevron
+            />
+          )}
+          {vm.calendar.error && (
+            <AppText variant="small" color="tap" accessibilityRole="alert">
+              {vm.calendar.error}
+            </AppText>
+          )}
+          {vm.calendar.action && (
+            <PressableScale onPress={vm.calendar.action.onPress}>
+              <AppText variant="link">{vm.calendar.action.label}</AppText>
+            </PressableScale>
+          )}
+        </Enter>
+
+        <Enter index={6}>
           {vm.error ? (
             <AppText variant="small" color="tap" accessibilityRole="alert">
               {vm.error}
@@ -173,6 +245,32 @@ export function NewPlanScreen(params: NewPlanParams) {
       </Sheet>
       <DepartureTimeSheet {...vm.timeSheet} />
       <EventSheet {...vm.eventSheet} />
+      <Sheet
+        visible={vm.calendarSheet.visible}
+        title={vm.calendarSheet.title}
+        closeLabel={vm.calendarSheet.closeLabel}
+        onClose={vm.calendarSheet.onClose}
+      >
+        <ScrollView style={{ maxHeight: height * 0.5 }}>
+          {vm.calendarSheet.options.map((option) => (
+            <PressableScale
+              key={option.id}
+              onPress={option.onPress}
+              accessibilityRole="radio"
+              accessibilityState={{ selected: option.selected }}
+              accessibilityLabel={[option.label, option.hint].filter(Boolean).join(', ')}
+              style={[styles.calendarOption, option.selected && styles.calendarSelected]}
+            >
+              <AppText variant="label">{option.label}</AppText>
+              {!!option.hint && (
+                <AppText variant="small" color="boira">
+                  {option.hint}
+                </AppText>
+              )}
+            </PressableScale>
+          ))}
+        </ScrollView>
+      </Sheet>
     </SafeAreaView>
   );
 }
@@ -194,4 +292,21 @@ const useStyles = makeStyles(({ colors }) => ({
   },
   cardLabel: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   shrink: { flexShrink: 1 },
+  calendarRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    minHeight: sizes.touch,
+  },
+  calendarLabel: { flex: 1 },
+  calendarOption: {
+    padding: spacing.md,
+    gap: spacing.xs,
+    borderRadius: radii.field,
+    borderWidth: 1,
+    borderColor: colors.linia,
+    marginBottom: spacing.sm,
+  },
+  calendarSelected: { borderColor: colors.far },
+  continue: { minHeight: sizes.touch, justifyContent: 'center', alignItems: 'center' },
 }));

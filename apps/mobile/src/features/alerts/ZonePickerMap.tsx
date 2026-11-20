@@ -8,6 +8,7 @@ import type { StyleSpecification } from 'maplibre-gl';
 import { useEffect, useRef } from 'react';
 
 import '@/core/map/maplibreWorker';
+import { NIGHT_MAP_CSS, NIGHT_MAP_TINT } from '@/core/theme/nightMap';
 import { ATTRIBUTION } from '@/features/map/style/nightStyle';
 
 type ZonePickerMapProps = {
@@ -18,6 +19,8 @@ type ZonePickerMapProps = {
   /** Límits del mapa (`[oest, sud, est, nord]`): només es pot triar una zona de Catalunya i voltants. */
   maxBounds: [number, number, number, number];
   chrome: { background: string; text: string; link: string };
+  /** Mode nit (ADR-0032): el mapa passa a vermell amb un filtre. */
+  night?: boolean;
   accessibilityLabel: string;
   /** Cada cop que el mapa s'atura, el punt del centre (on hi ha l'agulla, que és nativa). */
   onCenterChange: (center: { lat: number; lon: number }) => Promise<void>;
@@ -34,6 +37,7 @@ export default function ZonePickerMap({
   zoom,
   maxBounds,
   chrome,
+  night = false,
   accessibilityLabel,
   onCenterChange,
 }: ZonePickerMapProps) {
@@ -82,8 +86,10 @@ export default function ZonePickerMap({
       <style>{`
         .maplibregl-ctrl-attrib { background: ${chrome.background}cc; color: ${chrome.text}; }
         .maplibregl-ctrl-attrib a { color: ${chrome.link}; }
+        ${night ? NIGHT_MAP_CSS : ''}
       `}</style>
       <div ref={container} style={{ position: 'absolute', inset: 0 }} />
+      {night && <div aria-hidden style={{ position: 'absolute', ...NIGHT_MAP_TINT }} />}
     </div>
   );
 }

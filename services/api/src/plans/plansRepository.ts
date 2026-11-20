@@ -59,6 +59,8 @@ export type PlansRepository = {
   list(perfilId: string, quan: QuanPlans | undefined, ara: Date): Promise<PlaAmbTextos[]>;
   /** El pla, si és del perfil; `undefined` si no existeix o és d'un altre usuari. */
   findById(perfilId: string, id: string): Promise<PlaAmbTextos | undefined>;
+  /** Només actualitza el vincle al calendari d’un pla propi; false si no existeix. */
+  setCalendarEvent(perfilId: string, id: string, eventId: string): Promise<boolean>;
 };
 
 export function createPlansRepository(db: Db): PlansRepository {
@@ -170,6 +172,17 @@ export function createPlansRepository(db: Db): PlansRepository {
     async findById(perfilId, id) {
       const fila = await plansDelPerfil(db, perfilId).where('pl.id', '=', id).executeTakeFirst();
       return fila && toPla(fila);
+    },
+
+    async setCalendarEvent(perfilId, id, eventId) {
+      const updated = await db
+        .updateTable('plans')
+        .set({ calendariEventId: eventId })
+        .where('perfilId', '=', perfilId)
+        .where('id', '=', id)
+        .returning('id')
+        .executeTakeFirst();
+      return updated !== undefined;
     },
   };
 }

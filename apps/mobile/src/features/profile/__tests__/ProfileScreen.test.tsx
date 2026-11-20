@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { useRouter } from 'expo-router';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import i18n, { LANGUAGE_KEY } from '@/core/i18n';
@@ -10,6 +11,10 @@ import { ProfileScreen } from '../ProfileScreen';
 jest.mock('@/features/auth/useAuthViewModel', () => ({ useAuthViewModel: jest.fn() }));
 // La targeta de l'estat de l'API té la seva pròpia prova i necessita TanStack Query.
 jest.mock('@/features/apiStatus/ApiStatusCard', () => ({ ApiStatusCard: () => null }));
+jest.mock('expo-router', () => ({ useRouter: jest.fn() }));
+
+const push = jest.fn();
+jest.mocked(useRouter).mockReturnValue({ push } as unknown as ReturnType<typeof useRouter>);
 
 type Auth = ReturnType<typeof useAuthViewModel>;
 
@@ -89,6 +94,13 @@ describe('ProfileScreen · sessió (HU35)', () => {
   it('sense sessió no hi ha res a tancar', async () => {
     await renderProfile(auth({ user: null, isAuthenticated: false }));
     expect(screen.queryByRole('button', { name: 'Tanca la sessió' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Els meus plans' })).toBeNull();
+  });
+
+  it('amb sessió, «Els meus plans» obre la llista de plans (TG-160)', async () => {
+    await renderProfile(auth());
+    await fireEvent.press(screen.getByRole('button', { name: 'Els meus plans' }));
+    expect(push).toHaveBeenCalledWith('/plans');
   });
 
   it('mentre es tanca, el botó ho diu i no es pot tornar a prémer', async () => {
