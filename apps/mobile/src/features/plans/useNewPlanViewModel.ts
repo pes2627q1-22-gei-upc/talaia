@@ -1,8 +1,8 @@
 import type { Esdeveniment, Pla } from '@talaia/shared';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import * as Haptics from 'expo-haptics';
-import { useRouter } from 'expo-router';
-import { useRef, useState } from 'react';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { useCallback, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Linking } from 'react-native';
 
@@ -57,6 +57,15 @@ export function useNewPlanViewModel({ puntId, inici, fi, esdevenimentId }: NewPl
   const queryClient = useQueryClient();
   const point = usePointDetailQuery(puntId);
   const calendar = usePlanCalendar();
+  const focused = useRef(false);
+  useFocusEffect(
+    useCallback(() => {
+      focused.current = true;
+      return () => {
+        focused.current = false;
+      };
+    }, []),
+  );
   const [savedPlan, setSavedPlan] = useState<Pla | null>(null);
   const calendarRequest = useRef<{ calendarId: string; eventName: string | null } | null>(null);
 
@@ -79,7 +88,7 @@ export function useNewPlanViewModel({ puntId, inici, fi, esdevenimentId }: NewPl
 
   const finish = async () => {
     await queryClient.invalidateQueries({ queryKey: PLANS_KEY });
-    router.back();
+    if (focused.current) router.back();
   };
 
   const syncCalendar = async (plan: Pla) => {
@@ -99,11 +108,12 @@ export function useNewPlanViewModel({ puntId, inici, fi, esdevenimentId }: NewPl
     onSuccess: async (plan) => {
       void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       await queryClient.invalidateQueries({ queryKey: PLANS_KEY });
+      if (!focused.current) return;
       if (calendarRequest.current) {
         setSavedPlan(plan);
         await syncCalendar(plan);
       } else {
-        router.back();
+        if (focused.current) router.back();
       }
     },
     onSettled: () => {

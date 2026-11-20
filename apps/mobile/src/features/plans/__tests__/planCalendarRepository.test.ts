@@ -1,6 +1,5 @@
 import { isRunningInExpoGo, requireOptionalNativeModule } from 'expo';
 import * as Calendar from 'expo-calendar';
-import * as Device from 'expo-device';
 import { Platform } from 'react-native';
 
 import { plan } from '../__fixtures__/plan';
@@ -12,7 +11,6 @@ jest.mock('expo', () => ({
   isRunningInExpoGo: jest.fn(() => false),
   requireOptionalNativeModule: jest.fn(() => ({})),
 }));
-jest.mock('expo-device', () => ({ isDevice: true }));
 jest.mock('expo-calendar', () => ({
   getCalendarPermissions: jest.fn(),
   requestCalendarPermissions: jest.fn(),
@@ -99,10 +97,8 @@ it('un build sense CalendarNext i la web no ofereixen calendari', () => {
   jest.restoreAllMocks();
 });
 
-it('no ofereix calendari al simulador', () => {
-  jest.replaceProperty(Device, 'isDevice', false);
-  expect(planCalendarRepository.isSupported()).toBe(false);
-  jest.restoreAllMocks();
+it('ofereix calendari en una build nativa amb CalendarNext', () => {
+  expect(planCalendarRepository.isSupported()).toBe(true);
 });
 
 it('crea l’esdeveniment al calendari triat i retorna el seu identificador', async () => {

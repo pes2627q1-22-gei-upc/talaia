@@ -13,11 +13,11 @@ it('trasllada el punt, les dates absolutes i les notes al calendari, també trav
 });
 
 it.each([
-  ['2026-11-20T21:00:00Z', '2026-11-21T11:00:00.000Z'],
-  ['2026-07-20T21:00:00Z', '2026-07-21T10:00:00.000Z'],
-  ['2026-10-25T00:30:00Z', '2026-10-25T11:00:00.000Z'],
+  ['2026-11-20T21:00:00Z', '2026-11-20T23:00:00.000Z'],
+  ['2026-07-20T21:00:00Z', '2026-07-20T23:00:00.000Z'],
+  ['2026-10-25T00:30:00Z', '2026-10-25T02:30:00.000Z'],
 ])(
-  'sense fi explícit, usa el final de la nit de l’API, també amb canvi d’hora: %s',
+  'sense fi explícit, crea una sessió de dues hores també amb canvi d’hora: %s',
   (startDate, endDate) => {
     expect(
       planCalendarEvent(

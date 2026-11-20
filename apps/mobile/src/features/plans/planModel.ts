@@ -122,8 +122,8 @@ export function cleanNotes(notes: string): string | null {
 
 /**
  * Cos de `POST /plans`. El final és la sortida més la durada de la franja (`initialDuration`): si
- * l'usuari mou la sortida, el final es mou igual. El calendari del mòbil és la TG-158: de moment,
- * sempre `null`.
+ * l'usuari mou la sortida, el final es mou igual. La relació amb el calendari natiu es desa després
+ * amb `PUT /plans/{id}/calendari` (ADR-0036).
  */
 export function buildNewPlan(input: {
   puntId: string;

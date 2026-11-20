@@ -26,7 +26,10 @@ jest.mock('../planCalendarRepository', () => ({
     createEvent: jest.fn(),
   },
 }));
-jest.mock('expo-router', () => ({ useRouter: jest.fn() }));
+jest.mock('expo-router', () => ({
+  useRouter: jest.fn(),
+  useFocusEffect: (effect: () => void) => jest.requireActual('react').useEffect(effect, [effect]),
+}));
 jest.mock('expo-haptics');
 
 const get = jest.mocked(apiGet);

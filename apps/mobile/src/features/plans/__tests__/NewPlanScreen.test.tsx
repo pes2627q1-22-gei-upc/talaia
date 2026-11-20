@@ -2,6 +2,7 @@ import type { Esdeveniment } from '@talaia/shared';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import { useRouter } from 'expo-router';
 import type { PropsWithChildren } from 'react';
+import { Linking } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
@@ -12,7 +13,7 @@ import { createQueryWrapper } from '@/test-utils/queryWrapper';
 
 import { NewPlanScreen } from '../NewPlanScreen';
 import { plan } from '../__fixtures__/plan';
-import { planCalendarRepository } from '../planCalendarRepository';
+import { CalendarPermissionError, planCalendarRepository } from '../planCalendarRepository';
 
 jest.mock('@/core/api/httpClient', () => ({
   ...jest.requireActual('@/core/api/httpClient'),
@@ -28,7 +29,10 @@ jest.mock('../planCalendarRepository', () => ({
     createEvent: jest.fn(),
   },
 }));
-jest.mock('expo-router', () => ({ useRouter: jest.fn() }));
+jest.mock('expo-router', () => ({
+  useRouter: jest.fn(),
+  useFocusEffect: (effect: () => void) => jest.requireActual('react').useEffect(effect, [effect]),
+}));
 jest.mock('expo-haptics');
 
 const get = jest.mocked(apiGet);
@@ -154,6 +158,38 @@ it.each(['ca', 'es', 'en'])(
     );
   },
 );
+
+it('Continua surt de la pantalla i conserva el pla si falla el calendari', async () => {
+  jest.mocked(planCalendarRepository.isSupported).mockReturnValue(true);
+  post.mockResolvedValue(plan);
+  jest.mocked(planCalendarRepository.createEvent).mockRejectedValue(new Error('calendar failure'));
+  await renderScreen();
+  await fireEvent.press(screen.getByRole('switch', { name: i18n.t('plans.calendar.label') }));
+  await screen.findByRole('button', { name: /Personal · Google/ });
+  await fireEvent.press(screen.getByRole('button', { name: i18n.t('plans.new.save') }));
+  await screen.findByText(i18n.t('plans.calendar.syncErrors.create'));
+  await fireEvent.press(screen.getByText(i18n.t('plans.calendar.continue')));
+  await waitFor(() => expect(back).toHaveBeenCalledTimes(1));
+  expect(post).toHaveBeenCalledTimes(1);
+});
+
+it('Obre la configuració després de revocar el permís en desar el pla', async () => {
+  const openSettings = jest.spyOn(Linking, 'openSettings').mockResolvedValue(undefined);
+  jest.mocked(planCalendarRepository.isSupported).mockReturnValue(true);
+  post.mockResolvedValue(plan);
+  jest
+    .mocked(planCalendarRepository.createEvent)
+    .mockRejectedValue(new CalendarPermissionError(false));
+  await renderScreen();
+  await fireEvent.press(screen.getByRole('switch', { name: i18n.t('plans.calendar.label') }));
+  await screen.findByRole('button', { name: /Personal · Google/ });
+  await fireEvent.press(screen.getByRole('button', { name: i18n.t('plans.new.save') }));
+  await fireEvent.press(
+    await screen.findByRole('button', { name: i18n.t('plans.calendar.settings') }),
+  );
+  expect(openSettings).toHaveBeenCalledTimes(1);
+  openSettings.mockRestore();
+});
 
 it('sense suport natiu mostra l’avís, desactiva l’opció i permet desar el pla', async () => {
   await renderScreen();

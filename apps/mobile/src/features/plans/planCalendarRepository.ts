@@ -1,6 +1,5 @@
 import { isRunningInExpoGo, requireOptionalNativeModule } from 'expo';
 import type * as CalendarModule from 'expo-calendar';
-import * as Device from 'expo-device';
 import { Platform } from 'react-native';
 
 import type { PlanCalendarEvent } from './planCalendarModel';
@@ -37,7 +36,6 @@ export const planCalendarRepository = {
   isSupported(): boolean {
     return (
       (Platform.OS === 'ios' || Platform.OS === 'android') &&
-      Device.isDevice &&
       !isRunningInExpoGo() &&
       requireOptionalNativeModule('CalendarNext') !== null
     );

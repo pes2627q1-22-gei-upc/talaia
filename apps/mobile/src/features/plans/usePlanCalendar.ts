@@ -1,5 +1,6 @@
 import type { Pla } from '@talaia/shared';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { AppState } from 'react-native';
 
 import { planCalendarEvent } from './planCalendarModel';
 import {
@@ -22,6 +23,7 @@ export function usePlanCalendar() {
   const [syncing, setSyncing] = useState(false);
   const [synced, setSynced] = useState(false);
   const [error, setError] = useState<'create' | 'link' | 'denied' | null>(null);
+  const enabledRef = useRef(false);
   const generation = useRef(0);
   const syncingRef = useRef(false);
   // Conservat fins que es desa a l’API: un PUT fallit no ha de crear un altre esdeveniment.
@@ -51,10 +53,18 @@ export function usePlanCalendar() {
   };
 
   const toggle = (value: boolean) => {
+    enabledRef.current = value;
     setEnabled(value);
     if (value) void setup();
     else generation.current++;
   };
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state === 'active' && enabledRef.current) void setup();
+    });
+    return () => subscription.remove();
+  }, []);
 
   const sync = async (plan: Pla, title: string, calendarId: string): Promise<boolean> => {
     if (syncingRef.current) return false;
