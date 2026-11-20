@@ -66,7 +66,7 @@ Els degradats i `pointMapColors` també tenen la seva versió vermella. A la TG-
 - **Estils:** `makeStyles((t) => StyleSheet.create({ … }))` en lloc d'un `StyleSheet.create` amb `colors` en carregar el mòdul. Crea els estils un sol cop per tema, quan cal, i el component els llegeix amb el hook que retorna.
 - **El que no són colors** (espaiats, radis, mides, tipografia i moviment) continua sent constant: el mode nit no hi toca.
 - **Fitxers sense React:** el codi que fa servir colors fora d'un component (`nightStyle`, `MarkerPalette`, `MapChrome`) rep la paleta com a paràmetre.
-- **Barra d'estat:** en mode nit s'amaga (`<StatusBar hidden />`). L'hora i la bateria de l'iOS sempre surten en blanc, i no es poden tenyir.
+- **Barra d'estat:** en mode nit s'amaga, perquè l'hora i la bateria de l'iOS sempre surten en blanc i no es poden tenyir. L'app fa servir escenes, i a iOS l'API global de `StatusBar` no l'amaga: la porta cada pantalla (`UIViewControllerBasedStatusBarAppearance` a `app.json`, i `statusBarHidden` i `statusBarStyle` al Stack arrel, que les pantalles de dins hereten). A Expo Go aquesta clau és `false` i les opcions del Stack hi peten, i a Android l'API global funciona: allà continua `<StatusBar hidden />`.
 - **Barrera:** a la TG-239, quan s'acabi de migrar, una regla `no-restricted-imports` d'ESLint no deixarà importar `colors`, `gradients` ni `pointMapColors` fora de `core/theme`. Així, el codi nou no se salta el tema.
 
 ### Mapa
