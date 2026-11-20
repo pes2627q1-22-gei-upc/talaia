@@ -50,6 +50,7 @@ function Enter({ index, children }: PropsWithChildren<{ index: number }>) {
 /** «Què vols veure?» (HU01, mockup 02): l'inici de la pestanya Explora. */
 export function ExploreScreen() {
   const nightTintOnPrimary = useNightTint('nit');
+  const nightTint = useNightTint();
   const styles = useStyles();
   const vm = useExploreViewModel();
   const [firstRow, secondRow] = [vm.goals.slice(0, 3), vm.goals.slice(3)];
@@ -185,7 +186,15 @@ export function ExploreScreen() {
               label={vm.browse.label}
               onPress={vm.browse.onPress}
               variant="secondary"
-              icon={<Image source={mapIcon} style={styles.ctaIcon} accessible={false} />}
+              icon={
+                <Image
+                  tintColor={nightTint}
+                  source={mapIcon}
+                  testID="explore-map-icon"
+                  style={styles.ctaIcon}
+                  accessible={false}
+                />
+              }
               style={styles.browse}
             />
           </Enter>
