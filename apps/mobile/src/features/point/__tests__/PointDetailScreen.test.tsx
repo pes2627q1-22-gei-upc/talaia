@@ -64,6 +64,21 @@ it('mostra les dades i les hores amb etiquetes accessibles', async () => {
   expect(screen.queryByText('Sol')).toBeNull();
 });
 
+it("explica l'índex, a quina hora correspon i que les hores es poden tocar (TG-264)", async () => {
+  await renderScreen();
+  expect(await screen.findByText("Índex d'ara · 22:00 h")).toBeOnTheScreen();
+  expect(
+    screen.getByText(/^Millor índex d'aquesta nit: 94, de 01:00 a 02:00\.$/),
+  ).toBeOnTheScreen();
+  expect(screen.getByText(/^L'índex va de 0 a 100: com més alt, millor/)).toBeOnTheScreen();
+  expect(screen.getByText("Toca una hora per veure'n el desglossament.")).toBeOnTheScreen();
+  expect(screen.getByLabelText(/01:00.*94 de 100/)).toHaveProp(
+    'accessibilityHint',
+    "Mostra el desglossament de l'índex d'aquesta hora",
+  );
+  expect(screen.getByText("Per què a les 01:00 l'índex és 94")).toBeOnTheScreen();
+});
+
 it('triar una hora en mostra els factors, també una hora atenuada', async () => {
   get.mockImplementation(
     respond(point, [
@@ -83,13 +98,13 @@ it('triar una hora en mostra els factors, també una hora atenuada', async () =>
   // Per defecte, la millor hora, amb el valor dins la barra.
   expect(best.props.accessibilityState).toEqual({ selected: true });
   expect(screen.getByLabelText('Núvols. Cel ras')).toHaveAccessibilityValue({ now: 95 });
-  expect(screen.getByText('Factors a les 01:00')).toBeOnTheScreen();
+  expect(screen.getByText("Per què a les 01:00 l'índex és 94")).toBeOnTheScreen();
 
   const muted = screen.getByLabelText(/00:00.*35 de 100/);
   await fireEvent.press(muted);
   expect(muted.props.accessibilityState).toEqual({ selected: true });
   expect(best.props.accessibilityState).toEqual({ selected: false });
-  expect(screen.getByText('Factors a les 00:00')).toBeOnTheScreen();
+  expect(screen.getByText("Per què a les 00:00 l'índex és 35")).toBeOnTheScreen();
   expect(screen.getAllByText('35')).toHaveLength(1);
   expect(screen.getByLabelText('Núvols. Molt ennuvolat')).toHaveAccessibilityValue({ now: 30 });
   expect(screen.getByLabelText('Lluna. La Lluna no molesta')).toHaveAccessibilityValue({

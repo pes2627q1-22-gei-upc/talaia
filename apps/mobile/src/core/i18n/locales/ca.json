@@ -171,7 +171,7 @@
     "title": "Punt d'observació",
     "currentIndex": "Índex actual de visibilitat",
     "noIndex": "Índex encara no disponible",
-    "bestHour": "Millor moment de <strong>{{from}}</strong> a <strong>{{to}}</strong>.",
+    "bestHour": "Millor índex d'aquesta nit: <strong>{{value}}</strong>, de <strong>{{from}}</strong> a <strong>{{to}}</strong>.",
     "altitudeTag": "Altitud: {{value}}",
     "metres": "{{value}} m",
     "unavailable": "Sense dades",
@@ -223,7 +223,10 @@
     "mapA11y": "Ubicació de {{name}}",
     "mapCredits": "Crèdits del mapa",
     "mapUnavailable": "No s'ha pogut carregar el mapa.",
-    "indexAt": "Índex del {{time}}",
+    "indexNow": "Índex d'ara · {{time}} h",
+    "indexExplanation": "L'índex va de 0 a 100: com més alt, millor es veurà el cel. Té en compte els núvols, la foscor del lloc, la Lluna i el Sol.",
+    "hoursTapHint": "Toca una hora per veure'n el desglossament.",
+    "hourA11yHint": "Mostra el desglossament de l'índex d'aquesta hora",
     "tonight": "Aquesta nit",
     "hoursError": "No hem pogut carregar la previsió d'aquesta nit.",
     "factorHints": {
@@ -245,7 +248,7 @@
       },
       "sol": "Encara queda llum del crepuscle"
     },
-    "factorsAt": "Factors a les {{time}}",
+    "factorsAt": "Per què a les {{time}} l'índex és {{value}}",
     "daytime": "És de dia",
     "daytimeHint": "L'índex compta a partir del vespre."
   },

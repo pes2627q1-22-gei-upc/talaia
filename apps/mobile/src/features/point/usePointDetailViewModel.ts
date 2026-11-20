@@ -92,8 +92,10 @@ export function usePointDetailViewModel(pointId: string) {
         value: Math.round(Math.min(100, Math.max(0, entry.valor))),
         level: entry.franja,
         factors: factorRows(entry),
+        // Explica el número de la barra triada (troballa 9 de TG-264).
         factorsTitle: t('point.factorsAt', {
           time: twoDigitHours(clockFormatter.format(new Date(entry.hora))),
+          value: Math.round(Math.min(100, Math.max(0, entry.valor))),
         }),
         accessibilityLabel: t('point.hourA11y', {
           time: dateTimeFormatter.format(new Date(entry.hora)),
@@ -135,6 +137,7 @@ export function usePointDetailViewModel(pointId: string) {
             // L'inici i el final en ISO, perquè «Crea un pla» proposi la franja.
             start: hours[first]!.id,
             end: new Date(finalTimestamp + duration).toISOString(),
+            value: best.value,
             from: formatTime(Date.parse(hours[first]!.id)),
             to: formatTime(finalTimestamp + duration),
             hourIds: new Set(hours.slice(first, last + 1).map((hour) => hour.id)),
@@ -153,7 +156,9 @@ export function usePointDetailViewModel(pointId: string) {
       })),
     [hours, bestPeriod, t],
   );
-  const bestWindow = bestPeriod ? { from: bestPeriod.from, to: bestPeriod.to } : undefined;
+  const bestWindow = bestPeriod
+    ? { value: bestPeriod.value, from: bestPeriod.from, to: bestPeriod.to }
+    : undefined;
   // Per defecte, la millor hora de la nit (la primera si n'hi ha d'empatades).
   const defaultHourId = hours.reduce<(typeof hours)[number] | undefined>(
     (best, hour) => (!best || hour.value > best.value ? hour : best),
@@ -185,8 +190,8 @@ export function usePointDetailViewModel(pointId: string) {
   const indexTime = point?.indexActual?.hora;
   const currentLabel =
     indexTime && Number.isFinite(Date.parse(indexTime))
-      ? t('point.indexAt', {
-          time: twoDigitHours(dateTimeFormatter.format(new Date(indexTime))),
+      ? t('point.indexNow', {
+          time: twoDigitHours(clockFormatter.format(new Date(indexTime))),
         })
       : t('point.currentIndex');
   // De dia, el Sol anul·la l'índex (ADR-0018): no és que estigui tapat, és que no és de nit.
@@ -250,6 +255,10 @@ export function usePointDetailViewModel(pointId: string) {
         },
       }),
     hoursLabel: t('point.tonight'),
+    // Què vol dir l'índex i que les hores es poden tocar (troballes 4 i 8 de TG-264).
+    indexExplanation: t('point.indexExplanation'),
+    hoursTapHint: t('point.hoursTapHint'),
+    hourA11yHint: t('point.hourA11yHint'),
     timezoneLabel: t('point.timezone'),
     noHours: t('point.noHours'),
     hours: displayHours,

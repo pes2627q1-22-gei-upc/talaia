@@ -62,7 +62,9 @@ it('ordena hores, respecta les franges del backend i converteix a l’hora de Ca
   expect(result.current.hours.map((h) => h.level)).toEqual(['ras', 'tap', 'ras']);
   expect(result.current.hours.map((h) => h.isBest)).toEqual([false, false, true]);
   expect(result.current.hours[2]?.accessibilityLabel).toContain('Dins del millor moment');
-  expect(result.current.bestWindow?.to).toBe('02:00');
+  // El número destacat i la franja de la millor hora (troballa 9 de TG-264).
+  expect(result.current.bestWindow).toEqual({ value: 94, from: '01:00', to: '02:00' });
+  expect(result.current.hours[2]?.factorsTitle).toBe("Per què a les 01:00 l'índex és 94");
   // Per defecte, la millor hora de la nit, amb els factors de l'API ×100 (el Sol, ple, no surt).
   expect(result.current.defaultHourId).toBe('2026-10-18T23:00:00Z');
   expect(
@@ -292,16 +294,19 @@ it('tradueix els estats buits en anglès', async () => {
   await waitFor(() => expect(result.current.status).toBe('ok'));
   expect(result.current.altitude).toBe('No data');
   expect(result.current.hoursLabel).toBe('Tonight');
+  expect(result.current.hoursTapHint).toBe('Tap an hour to see its breakdown.');
+  expect(result.current.hourA11yHint).toBe('Shows the index breakdown for this hour');
+  expect(result.current.indexExplanation).toMatch(/^The index goes from 0 to 100/);
 });
 
-it('refresca l’índex quan la fitxa queda oberta i n’indica la data', async () => {
+it('refresca l’índex quan la fitxa queda oberta i n’indica l’hora', async () => {
   jest.useFakeTimers();
   try {
     jest.setSystemTime(new Date('2026-10-20T08:00:00Z'));
     get.mockResolvedValue(asPointResponse());
     const { result, unmount } = await renderVm();
     await waitFor(() => expect(result.current.status).toBe('ok'));
-    expect(result.current.currentLabel).toContain('22:00');
+    expect(result.current.currentLabel).toBe("Índex d'ara · 22:00 h");
     get.mockResolvedValue(
       asPointResponse({
         ...point,
@@ -316,7 +321,7 @@ it('refresca l’índex quan la fitxa queda oberta i n’indica la data', async 
       await jest.advanceTimersByTimeAsync(1_000);
     });
     await waitFor(() => expect(result.current.currentIndex?.valor).toBe(92));
-    expect(result.current.currentLabel).toContain('00:00');
+    expect(result.current.currentLabel).toBe("Índex d'ara · 00:00 h");
     await unmount();
   } finally {
     jest.useRealTimers();

@@ -187,6 +187,9 @@ export function PointDetailScreen({ pointId }: { pointId: string }) {
               hoursLabel={vm.hoursLabel}
               timezoneLabel={vm.timezoneLabel}
               noHours={vm.noHours}
+              indexExplanation={vm.indexExplanation}
+              hoursTapHint={vm.hoursTapHint}
+              hourA11yHint={vm.hourA11yHint}
               hoursLoading={vm.hoursLoading}
               hoursError={vm.hoursError}
               retryLabel={vm.retryLabel}
