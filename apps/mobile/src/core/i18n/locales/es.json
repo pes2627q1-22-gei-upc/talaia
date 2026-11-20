@@ -627,6 +627,7 @@
       }
     },
     "list": {
+      "back": "Volver al perfil",
       "header": "Mis planes",
       "title": "Mis planes",
       "upcoming": "Próximos",

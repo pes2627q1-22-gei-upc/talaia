@@ -136,7 +136,7 @@ export function PlansScreen() {
   const vm = usePlansViewModel();
   const past = vm.tab === 'passats';
   return (
-    <Screen title={vm.title} edges={['bottom', 'left', 'right']}>
+    <Screen title={vm.title} back={vm.back}>
       <View style={styles.tabs}>
         {vm.tabs.map((tab) => (
           <Chip key={tab.key} label={tab.label} selected={tab.selected} onPress={tab.onSelect} />

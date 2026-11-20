@@ -627,6 +627,7 @@
       }
     },
     "list": {
+      "back": "Torna al perfil",
       "header": "Els meus plans",
       "title": "Els meus plans",
       "upcoming": "Propers",

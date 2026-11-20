@@ -33,21 +33,7 @@ function RootStack() {
     <Stack screenOptions={stackOptions}>
       {/* Des de la benvinguda, l'app entra amb una fosa (la benvinguda ja ha fet la seva sortida). */}
       <Stack.Screen name="(tabs)" options={{ animation: 'fade' }} />
-      {/* `punt/[id]` i `pla/nou` porten el seu botó enrere: el natiu d'iOS 26 és de vidre (ADR-0032). */}
-      <Stack.Screen
-        name="plans/index"
-        options={{
-          // El títol gran és el de la pantalla (mockup 13): la capçalera només porta l'enrere.
-          headerShown: true,
-          title: '',
-          // El botó enrere torna a Perfil.
-          headerBackTitle: t('tabs.profile'),
-          headerStyle: { backgroundColor: colors.nit },
-          headerShadowVisible: false,
-          headerTintColor: colors.lluna,
-          headerBackButtonDisplayMode: 'minimal',
-        }}
-      />
+      {/* `punt/[id]`, `pla/nou` i `plans` porten el seu botó enrere: el natiu d'iOS 26 és de vidre (ADR-0032). */}
       <Stack.Screen
         name="benvinguda"
         options={{ presentation: 'fullScreenModal', animation: 'fade' }}

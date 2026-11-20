@@ -627,6 +627,7 @@
       }
     },
     "list": {
+      "back": "Back to profile",
       "header": "My plans",
       "title": "My plans",
       "upcoming": "Upcoming",
