@@ -42,6 +42,7 @@ src/
     i18n/               i18next: ca (per defecte), es, en; claus tipades
     providers/          AppProviders (SafeArea, React Query, i18n)
     theme/tokens.ts     Tokens del design system (colors, espaiats, radis, mides)
+    theme/theme.tsx     Tema actual (normal o vermell): ThemeProvider, useTheme, makeStyles
   shared/ui/            Components de presentació reutilitzables
   test-utils/           Ajudes per als tests (createQueryWrapper)
 ```
@@ -83,7 +84,12 @@ Sense sessió no s'entra a l'app: `(tabs)/_layout.tsx` redirigeix a `/benvinguda
 (`useSessionGate`), i en tancar la sessió s'hi torna. Si la sessió hi és però no
 s'ha pogut recuperar (sense cobertura i amb el token caducat), no s'envia a la
 benvinguda: `RestoreErrorScreen` deixa tornar-ho a provar, i quan torna la xarxa el
-SDK la renova sol. Sense les variables de Supabase la porta queda oberta, per poder
+SDK la renova sol. Si l'API respon 403 `account_blocked` (compte bloquejat, TG-177),
+el client HTTP (`core/api/accountBlocked.ts`) ho apunta i la porta mostra
+`AccountBlockedScreen` fins que es tanca la sessió o, amb «Torna-ho a comprovar», fins que
+l'API diu que ja no està bloquejat (TG-179). Amb `EXPO_PUBLIC_CONTACT_EMAIL` (valor al gestor de
+contrasenyes, P20) l'avís ofereix escriure a l'equip; en recuperar una sessió es
+fa un `POST /perfil` perquè ho sàpiga sense esperar cap altra crida. Sense les variables de Supabase la porta queda oberta, per poder
 provar l'app en local sense compte.
 
 Tots els mètodes són a `features/auth/authRepository.ts`, amb el client únic de
@@ -170,11 +176,37 @@ restauracions obsoletes i persistència amb el magatzem simulat.
 Referències: [Supabase Auth per React Native](https://supabase.com/docs/guides/auth/quickstarts/react-native)
 i [Expo SecureStore](https://docs.expo.dev/versions/latest/sdk/securestore/).
 
+## Notificacions push (TG-152, ADR-0028)
+
+`src/features/notifications`: `pushRepository` (permís, canal d'Android `alertes`, Expo push token amb el `projectId` d'EAS d'`app.json` i registre a l'API) i `usePushRegistration`, que `PushRegistrationProvider` (a `AppProviders`) executa amb sessió:
+
+- En obrir l'app amb sessió, i cada cop que torna a primer pla, mira el permís. **No el demana**: el diàleg el demana la pantalla d'alertes en crear-ne una (`usePushPermission().requestPermission()`, TG-148).
+- Amb permís, obté el token i el desa amb `PUT /api/v1/perfil/dispositius`. Si el sistema el canvia (`addPushTokenListener`), el torna a desar.
+- En tancar la sessió, `AuthProvider` fa el `DELETE /perfil/dispositius/{token}` abans del `signOut` (com a molt 3 s: sense xarxa, el logout continua).
+- `usePushPermission().permission` és `granted`, `denied`, `undetermined` (no demanat), `unavailable` (el dispositiu no pot tenir token) o `null` (sense sessió o encara no s'ha mirat). Sense permís, la pantalla d'alertes ho indica i ofereix obrir la configuració (HU17, criteri 4).
+- Tot falla en silenci: sense token (Expo Go, simulador, sense xarxa, sense perfil), `registered` queda a `false` i l'app funciona igual.
+- **En tocar una notificació d'una alerta** (TG-154), `useOpenNotifiedPoint` (a `(tabs)/_layout.tsx`) obre `/punt/[id]` amb el `data.puntId` de la push, també si l'app estava tancada (`getLastNotificationResponse`). Només amb sessió (`useSessionGate` a `signedIn`): sense sessió o amb el compte bloquejat no s'obre res. Amb l'app oberta, la notificació també es mostra (`setNotificationHandler`).
+
+### Com provar-ho
+
+- **Expo Go** (Android i iOS): no rep push des de l'SDK 53, i l'app no demana res. La pestanya d'alertes diu que el dispositiu no pot rebre notificacions; la resta funciona igual. Un simulador fa el mateix.
+- **Development build d'Android** (`expo-dev-client`, perfil `development` d'`eas.json`, APK de distribució interna): és l'entorn de proves de les push. Cal que el projecte d'EAS tingui les credencials de FCM V1 (`eas credentials`, mai al repo).
+
+  ```bash
+  cd apps/mobile && npx eas-cli@latest build --profile development --platform android
+  npm run mobile -- --dev-client   # des de l'arrel, amb l'APK instal·lat
+  ```
+
+  Inicia la sessió i dona el permís (de moment, a la configuració d'Android, fins que la TG-148 el demani): en tornar a l'app, el token surt a `dispositius_push`. Per enviar-li una notificació sense el worker, l'eina d'Expo: <https://expo.dev/notifications>. Amb `{"puntId": "<uuid d'un punt publicat>"}` al camp *Data*, en tocar-la s'obre la fitxa del punt.
+- **iOS**: com Android, amb un build `development` *ad hoc* (`--platform ios`) i els dispositius registrats al compte d'Apple, només si l'equip el necessita.
+
+`npm run mobile` continua obrint Expo Go (`--go`): amb `expo-dev-client` instal·lat, `expo start` obriria el development build.
+
 ## Regles
 
 - **MVVM:** cap pantalla ni ViewModel crida `fetch`; només els Repository, a través de `core/api`.
 - **i18n:** cap text a les pantalles; tot via `t('…')`. Una clau nova va als tres fitxers de `core/i18n/locales/` (hi ha un test que ho comprova).
-- **Tokens:** cap color, mida ni espaiat a mà; tot de `core/theme/tokens.ts`.
+- **Tokens:** cap color, mida ni espaiat a mà; tot de `core/theme/tokens.ts`. Els colors canvien amb el mode nit (ADR-0032): es llegeixen amb `useTheme()` i els estils es fan amb `const useStyles = makeStyles(({ colors }) => ({ … }))` (`core/theme/theme.tsx`), no amb `StyleSheet.create` i `colors` en carregar el mòdul.
 - Rutes en català (`/punt/[id]`, `/calendari`) i identificadors de codi en anglès.
 
 ## Mòdul de referència: `features/apiStatus`
@@ -200,8 +232,63 @@ Per a una feature `xxx` (identificadors en anglès) amb ruta `/ruta-en-catala`:
 1. **Tipus.** Si la resposta és un tipus de domini, és (o s'afegeix) a `packages/shared`: `import type { Esdeveniment } from '@talaia/shared'`.
 2. **Repository** `src/features/xxx/xxxRepository.ts`: `fetchXxx()` crida `apiGet<T>('/recurs')` i `useXxxQuery()` l'embolica amb `useQuery` i una clau pròpia (`['recurs', filtres]`). És l'únic fitxer de la feature que coneix l'API.
 3. **ViewModel** `useXxxViewModel.ts`: crida el hook del Repository i retorna el que la View pinta: textos ja traduïts, dades ja formatades, l'estat (`loading`/`ok`/`error`) i les accions.
-4. **View** `XxxScreen.tsx`: `const vm = useXxxViewModel();` i només JSX. Esquelet amb `Screen` i els components base de `shared/ui` (`AppText`, `Button`, `Card`, `Chip`, `IndexIndicator`…; taula a `docs/design-system.md`); colors, mides i espaiats de `core/theme/tokens`.
+4. **View** `XxxScreen.tsx`: `const vm = useXxxViewModel();` i només JSX. Esquelet amb `Screen` i els components base de `shared/ui` (`AppText`, `Button`, `Card`, `Chip`, `IndexIndicator`…; taula a `docs/design-system.md`); mides i espaiats de `core/theme/tokens`, i colors de `useTheme()` o `makeStyles()`.
 5. **Ruta** a `src/app/` (o a `src/app/(tabs)/` si és una pestanya): un fitxer prim que només retorna `<XxxScreen />`. Amb paràmetres, mira `src/app/punt/[id].tsx`.
 6. **Textos**: les claus noves als tres fitxers de `core/i18n/locales/` (ca, es, en). Són tipades: una clau inexistent no compila, i un test comprova que els tres idiomes tenen les mateixes.
 7. **Tests** a `src/features/xxx/__tests__/`: copia els d'`apiStatus`. Només se simula `apiGet` (`jest.mock('@/core/api/httpClient', …)`) i el proveïdor de consultes és `createQueryWrapper()`.
 8. Abans de la PR, des de l'arrel: `npm run lint && npm run typecheck && npm test`.
+
+### Idioma de l’app i del contingut (TG-163)
+
+Al perfil es pot triar català, castellà o anglès. El canvi és immediat i es desa
+localment amb AsyncStorage (`talaia:idioma`), també després de tancar la sessió.
+En arrencar, l’app recupera aquesta preferència abans de muntar els proveïdors de
+sessió i les pantalles; sense preferència vàlida, fa servir l’idioma del dispositiu
+si és compatible, o català.
+
+El client HTTP afegeix `Accept-Language` a totes les peticions; conserva una
+capçalera explícita del repositori. Les consultes de punts, mapa, recomanacions i
+calendari tenen memòria cau separada per idioma. El detall d’un esdeveniment només
+reutilitza les dades del calendari en la mateixa llengua. Les traduccions editorials
+i el fallback de contingut al català corresponen a l’API (TG-164).
+
+Comprovació manual a Expo Go (pendent de fer en dispositiu):
+
+1. Obrir el perfil i triar cadascun dels tres idiomes: comprovar els textos, el botó
+   seleccionat i que els tres selectors siguin visibles, sense solapaments ni retalls.
+2. Obrir mapa, fitxa d’un punt, recomanacions i calendari; canviar d’idioma i tornar-hi.
+   Comprovar els textos amb un contingut que tingui traducció i la capçalera de petició.
+3. Tancar completament l’app i tornar-la a obrir: comprovar que conserva l’idioma.
+4. Repetir amb mida de lletra ampliada i pantalla estreta: comprovar que els selectors
+   salten de línia i continuen accessibles.
+
+Les proves automàtiques del perfil cobreixen els botons, la selecció i els textos
+en ca/es/en. `httpClient.test.ts` cobreix la capçalera, i `localizedQueries.test.tsx`
+comprova que canviar d’idioma renova les dades i que tornar-hi reutilitza només la
+memòria cau corresponent. Aquestes proves no substitueixen la inspecció visual al dispositiu.
+
+### «On veure-ho» des del calendari (TG-141)
+
+La fitxa de l’esdeveniment ofereix «On veure-ho». En prémer-lo, obté la ubicació
+actual i obre `/calendari/recomanacions` dins de la mateixa pila: «Enrere» torna a
+la fitxa. Es reutilitza el rànquing del mapa, considerant tots els punts publicats
+sense tall fix de distància. Els permisos denegats i els errors d’ubicació es mostren a la fitxa i es
+poden reintentar; si el permís està bloquejat, el botó obre la configuració.
+
+La consulta envia `esdevenimentId` (el codi de l’esdeveniment) i l’origen, sense
+`data`, `desDe` ni `finsA`: l’API resol la nit i la finestra horària (TG-140).
+El nom i la data de la ruta són context de presentació; en arribar la resposta,
+la nit mostrada és la que ha resolt l’API. Amb `avis: 'sense_previsio'`, es mostra
+«Rànquing de millors punts», l’avís de manca de previsió i els punts per distància, sense
+destacar-ne cap com el millor per observar. Textos en ca/es/en.
+
+Amb previsió, l’API prioritza el nivell de qualitat ras/jus/tap i, dins de
+cada nivell, combina índex i proximitat: resta un punt per cada 30 km, fins a 10
+punts, només per ordenar. Per exemple, un 100 a 150 km passa davant d’un 95 a 20 km. La pantalla mostra l’índex, la distància en línia
+recta i el temps aproximat en cotxe. El nom i la nit de l’esdeveniment es mantenen
+visibles. Es consideren tots els candidats abans de retornar els 20 primers
+(`limit` de l’API). Arrossegant la nansa cap avall es plega el rànquing;
+cap amunt es recupera sense perdre la cerca. No hi ha cap botó visible per
+amagar-lo. La nansa manté una acció accessible equivalent per a VoiceOver/TalkBack.
+
+Proves i comprovacions pendents: [registre de TG-141](../../docs/proves-tg-141.md).

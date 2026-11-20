@@ -122,6 +122,23 @@ registry.registerPath({
   },
 });
 
+registry.registerPath({
+  method: 'delete',
+  path: '/perfil',
+  tags: ['Auth'],
+  summary: 'Elimina el compte de l’usuari autenticat i totes les seves dades (HU38, RGPD)',
+  description:
+    'Esborra l’usuari de Supabase Auth i, en cascada, el perfil i tot el que en penja (alertes, ' +
+    'dispositius push…). Les sessions i els refresh tokens deixen de servir; el JWT que ja té ' +
+    'l’app és vàlid fins que caduca, així que l’app ha de tancar la sessió en rebre el 204. ' +
+    'Si el compte ja no hi era, també respon 204.',
+  security: [{ BearerSupabase: [] }],
+  responses: {
+    204: { description: 'Compte eliminat' },
+    ...ERRORS_AUTH,
+  },
+});
+
 export function toPerfil(profile: ProfileRecord): Perfil {
   return {
     id: profile.id,
@@ -135,7 +152,8 @@ export function toPerfil(profile: ProfileRecord): Perfil {
   };
 }
 
-const profileNotFound = () =>
+/** L'usuari del JWT encara no té perfil. També el fan servir les altres rutes d'usuari (favorits). */
+export const profileNotFound = () =>
   new ApiError(404, 'profile_not_found', "L'usuari encara no té perfil (cal POST /perfil)");
 
 /** `requireAuth` ja ha respost 401 si no hi ha usuari: aquí sempre hi és. */
@@ -193,9 +211,21 @@ export function createAuthRouter({ requireUser, profileStore }: AuthRouterOption
     }
   };
 
+  const handleProfileDelete = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      await profileStore.deleteAccount(currentUser(req).id);
+      res.status(204).end();
+      return undefined;
+    } catch (error) {
+      return next(error);
+    }
+  };
+
   router.post('/perfil', requireUser, handleProfileEnsure);
   router.get('/perfil', requireUser, handleProfileGet);
   router.patch('/perfil', requireUser, handleProfilePatch);
+  // Un compte bloquejat rep 403 (`requireUser`): no es pot esborrar per tornar-se a registrar.
+  router.delete('/perfil', requireUser, handleProfileDelete);
 
   return router;
 }

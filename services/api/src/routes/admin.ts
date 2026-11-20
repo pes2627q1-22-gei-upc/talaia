@@ -11,13 +11,17 @@ import { z } from 'zod';
 import { requireAdmin, type AuthenticatedRequest } from '../middleware/auth';
 import { ApiError } from '../middleware/errors';
 import { registry } from '../openapi';
+import type { PuntsAdminService } from '../punts/puntsAdminService';
 import type { ProfileRecord, ProfileStore } from '../services/profileService';
+import { createAdminPuntsRouter } from './adminPunts';
 import { ERRORS_AUTH, errorResponse, toPerfil } from './auth';
 
 export type AdminRouterOptions = {
   /** El mateix `requireUser` que `/perfil`: un admin bloquejat tampoc no hi entra. */
   requireUser: RequestHandler;
   profileStore: ProfileStore;
+  /** `/admin/punts` (TG-174). Sense `DATABASE_URL` no n'hi ha, i les rutes responen 503. */
+  puntsAdmin?: PuntsAdminService;
 };
 
 const UsuariAdminSchema: z.ZodType<UsuariAdmin> = z
@@ -49,6 +53,18 @@ const ERRORS_ADMIN = {
     '`forbidden` si el compte no és administrador, o `account_blocked` si està bloquejat',
   ),
 };
+
+registry.registerPath({
+  method: 'get',
+  path: '/admin/me',
+  tags: ['Admin'],
+  security: [{ BearerSupabase: [] }],
+  summary: 'Comprova si el compte actual pot accedir a la web d’administració',
+  responses: {
+    204: { description: 'Compte administrador actiu' },
+    ...ERRORS_ADMIN,
+  },
+});
 
 registry.registerPath({
   method: 'get',
@@ -99,9 +115,17 @@ function toUsuariAdmin(profile: ProfileRecord): UsuariAdmin {
 }
 
 /** Rutes de la web d'administració (`/api/v1/admin`). Totes demanen un compte admin no bloquejat. */
-export function createAdminRouter({ requireUser, profileStore }: AdminRouterOptions): Router {
+export function createAdminRouter({
+  requireUser,
+  profileStore,
+  puntsAdmin,
+}: AdminRouterOptions): Router {
   const router = Router();
   router.use(requireUser, requireAdmin);
+
+  router.get('/me', (_req: Request, res: Response) => {
+    res.set('Cache-Control', 'no-store').status(204).end();
+  });
 
   router.get('/usuaris', async (_req: Request, res: Response, next: NextFunction) => {
     try {
@@ -137,6 +161,9 @@ export function createAdminRouter({ requireUser, profileStore }: AdminRouterOpti
       return next(error);
     }
   });
+
+  // Després de `requireUser` i `requireAdmin`, com la resta de /admin.
+  router.use('/punts', createAdminPuntsRouter(puntsAdmin));
 
   return router;
 }

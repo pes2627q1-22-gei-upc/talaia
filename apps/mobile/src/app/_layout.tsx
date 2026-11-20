@@ -6,16 +6,16 @@ import {
 } from '@expo-google-fonts/atkinson-hyperlegible-next';
 import { BigShouldersDisplay_800ExtraBold } from '@expo-google-fonts/big-shoulders-display';
 import { useFonts } from 'expo-font';
-import { DarkTheme, Stack, ThemeProvider } from 'expo-router';
+import { DarkTheme, Stack, ThemeProvider as NavigationThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { LogBox } from 'react-native';
 
 import { AppProviders } from '@/core/providers/AppProviders';
 import { stackOptions } from '@/core/navigation/transitions';
-import { colors } from '@/core/theme/tokens';
+import { useTheme } from '@/core/theme/theme';
 import { EmailLoginCloseButton } from '@/features/auth/EmailLoginCloseButton';
 
 void SplashScreen.preventAutoHideAsync();
@@ -26,20 +26,9 @@ void SplashScreen.preventAutoHideAsync();
 // Native no segueix les promeses. Treure-ho quan Expo la capturi a `webview-wrapper.tsx`.
 LogBox.ignoreLogs(["Unable to find the 'DomWebView' view"]);
 
-const navigationTheme = {
-  ...DarkTheme,
-  colors: {
-    ...DarkTheme.colors,
-    background: colors.nit,
-    card: colors.card,
-    text: colors.lluna,
-    border: colors.linia,
-    primary: colors.far,
-  },
-};
-
 function RootStack() {
   const { t } = useTranslation();
+  const { colors } = useTheme();
   return (
     <Stack screenOptions={stackOptions}>
       {/* Des de la benvinguda, l'app entra amb una fosa (la benvinguda ja ha fet la seva sortida). */}
@@ -51,6 +40,31 @@ function RootStack() {
           headerShown: true,
           headerTransparent: true,
           title: '',
+          headerTintColor: colors.lluna,
+          headerBackButtonDisplayMode: 'minimal',
+        }}
+      />
+      <Stack.Screen
+        name="pla/nou"
+        options={{
+          headerShown: true,
+          title: t('plans.new.header'),
+          headerStyle: { backgroundColor: colors.nit },
+          headerShadowVisible: false,
+          headerTintColor: colors.lluna,
+          headerBackButtonDisplayMode: 'minimal',
+        }}
+      />
+      <Stack.Screen
+        name="plans/index"
+        options={{
+          // El títol gran és el de la pantalla (mockup 13): la capçalera només porta l'enrere.
+          headerShown: true,
+          title: '',
+          // El botó enrere torna a Perfil.
+          headerBackTitle: t('tabs.profile'),
+          headerStyle: { backgroundColor: colors.nit },
+          headerShadowVisible: false,
           headerTintColor: colors.lluna,
           headerBackButtonDisplayMode: 'minimal',
         }}
@@ -74,6 +88,31 @@ function RootStack() {
   );
 }
 
+function ThemedApp() {
+  const { name, colors } = useTheme();
+  const navigationTheme = useMemo(
+    () => ({
+      ...DarkTheme,
+      colors: {
+        ...DarkTheme.colors,
+        background: colors.nit,
+        card: colors.card,
+        text: colors.lluna,
+        border: colors.linia,
+        primary: colors.far,
+      },
+    }),
+    [colors],
+  );
+  return (
+    <NavigationThemeProvider value={navigationTheme}>
+      {/* En mode nit, l'hora i la bateria de l'iOS surten en blanc i no es poden tenyir: s'amaguen. */}
+      <StatusBar style="light" hidden={name === 'vermell'} />
+      <RootStack />
+    </NavigationThemeProvider>
+  );
+}
+
 export default function RootLayout() {
   // Les claus són els noms de família que fa servir `fonts` a tokens.ts.
   const [fontsLoaded, fontError] = useFonts({
@@ -94,10 +133,7 @@ export default function RootLayout() {
 
   return (
     <AppProviders>
-      <ThemeProvider value={navigationTheme}>
-        <StatusBar style="light" />
-        <RootStack />
-      </ThemeProvider>
+      <ThemedApp />
     </AppProviders>
   );
 }

@@ -1,4 +1,4 @@
-import { NightSchema, defaultNight, nightWindow } from '../night';
+import { NightSchema, defaultNight, nightWindow, upcomingNight } from '../night';
 
 const iso = ({ from, to }: { from: Date; to: Date }) => [from.toISOString(), to.toISOString()];
 
@@ -74,4 +74,27 @@ describe('NightSchema', () => {
       expect(NightSchema.safeParse(nit).success).toBe(false);
     },
   );
+});
+
+describe('upcomingNight (recomanacions, TG-133)', () => {
+  it("fins a les 06:00 locals és la nit que s'està acabant; després, la que ve", () => {
+    // Hivern (CET = UTC+1).
+    expect(upcomingNight(new Date('2026-12-16T04:59:00Z'))).toBe('2026-12-15'); // 05:59 local
+    expect(upcomingNight(new Date('2026-12-16T05:00:00Z'))).toBe('2026-12-16'); // 06:00 local
+    expect(upcomingNight(new Date('2026-12-16T10:59:00Z'))).toBe('2026-12-16'); // 11:59 local
+    expect(upcomingNight(new Date('2026-12-16T22:30:00Z'))).toBe('2026-12-16'); // 23:30 local
+    expect(upcomingNight(new Date('2026-12-31T23:30:00Z'))).toBe('2026-12-31'); // 00:30 de l'1 de gener
+    // Estiu (CEST = UTC+2).
+    expect(upcomingNight(new Date('2027-07-02T03:59:00Z'))).toBe('2027-07-01'); // 05:59 local
+    expect(upcomingNight(new Date('2027-07-02T04:00:00Z'))).toBe('2027-07-02'); // 06:00 local
+  });
+
+  it("els dies del canvi d'hora compta l'hora local, no la distància a la mitjanit", () => {
+    // 25/10/2026: a les 05:30Z són les 06:30 locals (CET), ja la nit del 25.
+    expect(upcomingNight(new Date('2026-10-25T04:59:00Z'))).toBe('2026-10-24'); // 05:59 local
+    expect(upcomingNight(new Date('2026-10-25T05:00:00Z'))).toBe('2026-10-25'); // 06:00 local
+    // 28/3/2027: a les 04:00Z són les 06:00 locals (CEST).
+    expect(upcomingNight(new Date('2027-03-28T03:59:00Z'))).toBe('2027-03-27'); // 05:59 local
+    expect(upcomingNight(new Date('2027-03-28T04:00:00Z'))).toBe('2027-03-28'); // 06:00 local
+  });
 });

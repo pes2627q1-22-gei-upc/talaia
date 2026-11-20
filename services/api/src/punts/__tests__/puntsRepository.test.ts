@@ -25,7 +25,7 @@ describe('puntsRepository.listPublished', () => {
 
     expect(queries).toHaveLength(1);
     expect(queries[0]?.sql).toBe(
-      'select "p"."id", "p"."nom", "p"."municipi", st_x("p"."ubicacio"::geometry) as "lon", st_y("p"."ubicacio"::geometry) as "lat", "iv"."valor", "iv"."franja", "iv"."factors" from "punts_observacio" as "p" left join "index_visibilitat" as "iv" on "iv"."punt_id" = "p"."id" and "iv"."hora" = $1 where "p"."estat" = $2 order by "p"."slug"',
+      'select "p"."id", "p"."nom", "p"."textos", "p"."municipi", st_x("p"."ubicacio"::geometry) as "lon", st_y("p"."ubicacio"::geometry) as "lat", "iv"."valor", "iv"."franja", "iv"."factors" from "punts_observacio" as "p" left join "index_visibilitat" as "iv" on "iv"."punt_id" = "p"."id" and "iv"."hora" = $1 where "p"."estat" = $2 order by "p"."slug"',
     );
     expect(queries[0]?.parameters).toEqual([HORA, 'PUBLICAT']);
   });
@@ -78,7 +78,7 @@ describe('puntsRepository.findPublished', () => {
     expect(punt).toBeUndefined();
     expect(queries).toHaveLength(1);
     expect(queries[0]?.sql).toBe(
-      'select "id", "nom", "municipi", "descripcio", "altitud", "horitzo_obert", "accessibilitat", "sqm", st_x("ubicacio"::geometry) as "lon", st_y("ubicacio"::geometry) as "lat" from "punts_observacio" where "id" = $1 and "estat" = $2',
+      'select "id", "nom", "textos", "municipi", "descripcio", "altitud", "horitzo_obert", "accessibilitat", "sqm", st_x("ubicacio"::geometry) as "lon", st_y("ubicacio"::geometry) as "lat" from "punts_observacio" where "id" = $1 and "estat" = $2',
     );
     expect(queries[0]?.parameters).toEqual(['id-1', 'PUBLICAT']);
   });

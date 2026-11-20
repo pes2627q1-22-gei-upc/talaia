@@ -82,6 +82,60 @@ describe('GET /api/v1/punts', () => {
     expect(maxAge).toBeLessThanOrEqual(3600);
   });
 
+  it('separa els noms i els ETag per idioma, sense retornar 304 amb un ETag català en anglès', async () => {
+    const repo = fakeRepository([
+      {
+        ...PUNTS[0]!,
+        textos: {
+          ca: { nom: 'Cap de Creus' },
+          es: { nom: 'Cabo de Creus' },
+          en: { nom: 'Cape Creus' },
+        },
+      },
+    ]);
+    const app = appWith(repo);
+    const ca = await request(app).get('/api/v1/punts').set('Accept-Language', 'ca');
+    const en = await request(app).get('/api/v1/punts').set('Accept-Language', 'en-US');
+    expect(ca.body.features[0].properties.nom).toBe('Cap de Creus');
+    expect(en.body.features[0].properties.nom).toBe('Cape Creus');
+    expect(ca.headers.vary).toContain('Accept-Language');
+    expect(ca.headers.etag).not.toBe(en.headers.etag);
+    expect(
+      (
+        await request(app)
+          .get('/api/v1/punts')
+          .set('Accept-Language', 'ca')
+          .set('If-None-Match', ca.headers.etag as string)
+      ).status,
+    ).toBe(304);
+    expect(
+      (
+        await request(app)
+          .get('/api/v1/punts')
+          .set('Accept-Language', 'en')
+          .set('If-None-Match', ca.headers.etag as string)
+      ).status,
+    ).toBe(200);
+    expect(repo.calls).toBe(2);
+  });
+
+  it('aplica les preferències secundàries al mapa igual que a la fitxa', async () => {
+    const repo = fakeRepository([
+      {
+        ...PUNTS[0]!,
+        textos: { ca: { nom: 'Cap de Creus' }, es: { nom: 'Cabo de Creus' } },
+      },
+    ]);
+    const app = appWith(repo);
+    const preferencies = 'en,es;q=0.9';
+    const mapa = await request(app).get('/api/v1/punts').set('Accept-Language', preferencies);
+    const catala = await request(app).get('/api/v1/punts').set('Accept-Language', 'ca');
+
+    expect(mapa.body.features[0].properties.nom).toBe('Cabo de Creus');
+    expect(mapa.headers.etag).not.toBe(catala.headers.etag);
+    expect(repo.calls).toBe(2);
+  });
+
   it("respon 304 sense cos amb If-None-Match igual a l'ETag (també feble)", async () => {
     const app = appWith();
     const { headers } = await request(app).get('/api/v1/punts');
@@ -335,11 +389,14 @@ describe('OpenAPI de GET /punts', () => {
     const res = await request(createApp()).get('/api/v1/openapi.json');
     const get = res.body.paths['/punts'].get;
     expect(Object.keys(get.responses).sort()).toEqual(['200', '304', '400', '503']);
-    expect(Object.keys(get.responses['200'].headers).sort()).toEqual(['Cache-Control', 'ETag']);
-    expect(get.responses['304'].content).toBeUndefined();
-    expect(get.parameters.map((p: { name: string }) => p.name).sort()).toEqual([
-      'If-None-Match',
-      'bbox',
+    expect(Object.keys(get.responses['200'].headers).sort()).toEqual([
+      'Cache-Control',
+      'ETag',
+      'Vary',
     ]);
+    expect(get.responses['304'].content).toBeUndefined();
+    expect(get.parameters.map((p: { name: string }) => p.name).sort()).toEqual(
+      ['If-None-Match', 'Accept-Language', 'bbox'].sort(),
+    );
   });
 });

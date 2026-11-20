@@ -1,0 +1,4 @@
+# Fitxers ignorats que Claude Code copia a cada worktree nou (--worktree, agents amb isolation: worktree).
+.env
+apps/mobile/.env
+apps/admin/.env

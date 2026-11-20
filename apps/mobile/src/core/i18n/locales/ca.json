@@ -19,7 +19,46 @@
     "retry": "Torna-ho a provar",
     "back": "Enrere",
     "daytime": "És de dia",
-    "daytimeHint": "L'índex compta a partir del vespre. Fins aleshores, els punts surten en gris."
+    "daytimeHint": "L'índex compta a partir del vespre. Fins aleshores, els punts surten en gris.",
+    "origin": "Punt de sortida",
+    "nearby": "Mostra els millors punts a prop teu",
+    "pick": {
+      "title": "Toca el mapa per triar d'on surts",
+      "denied": "No tenim la teva ubicació: buscarem els millors punts a prop del lloc que toquis.",
+      "error": "No hem trobat on ets: buscarem els millors punts a prop del lloc que toquis.",
+      "allow": "Permet la ubicació",
+      "settings": "Obre la configuració",
+      "close": "Tanca"
+    },
+    "spot": {
+      "hint": {
+        "title": "Tria un punt al mapa",
+        "subtitle": "Toca on vulguis per veure'n l'índex"
+      },
+      "title": "Punt triat al mapa",
+      "marker": "Punt triat",
+      "coords": "Lat {{lat}} · Lon {{lon}}",
+      "from": "A {{travel}} de {{place}}",
+      "from_vowel": "A {{travel}} d'{{place}}",
+      "fromHere": "A {{travel}} d'on ets",
+      "calculate": "Calcula l'índex aquí",
+      "loading": "S'està calculant l'índex…",
+      "at": "Índex de l'hora en curs ({{time}})",
+      "daytime": "És de dia: l'índex compta a partir del vespre.",
+      "estimated": "La foscor del cel és estimada: no hi ha cap punt mesurat a prop.",
+      "outside": {
+        "title": "Aquest lloc és fora de Catalunya",
+        "description": "L'índex només es calcula dins de Catalunya. Toca un altre lloc."
+      },
+      "limit": {
+        "title": "Has fet moltes consultes aquesta hora",
+        "description": "Torna-ho a provar quan comenci l'hora següent."
+      },
+      "error": {
+        "title": "No hem pogut calcular l'índex",
+        "description": "Torna-ho a provar d'aquí a una estona."
+      }
+    }
   },
   "calendar": {
     "title": "Calendari",
@@ -29,7 +68,11 @@
     "goToday": "Torna a avui",
     "events": "Fenòmens",
     "allMonth": "Mostra tot el mes",
-    "relative": { "today": "Avui", "tomorrow": "Demà", "past": "Passat" },
+    "relative": {
+      "today": "Avui",
+      "tomorrow": "Demà",
+      "past": "Passat"
+    },
     "filterLabel": "Filtra fenòmens: {{filter}}",
     "filterTitle": "Filtra fenòmens",
     "closeFilter": "Tanca els filtres",
@@ -69,6 +112,44 @@
       "upcomingMonth": "No hi ha fenòmens pendents aquest mes"
     }
   },
+  "event": {
+    "title": "Esdeveniment",
+    "back": "Torna al calendari",
+    "when": "Quan",
+    "whatYouWillSee": "Què veuràs",
+    "particularity": "Aquesta vegada",
+    "howToWatch": "Com observar-ho",
+    "source": "Font: {{source}}",
+    "night": "nit {{from}} {{to}}",
+    "nightFrom": "del {{date}}",
+    "nightFrom_vowel": "de l'{{date}}",
+    "nightTo": "al {{date}}",
+    "nightTo_vowel": "a l'{{date}}",
+    "rangeFrom": "del {{date}}",
+    "rangeFrom_vowel": "de l'{{date}}",
+    "rangeTo": "al {{date}}",
+    "rangeTo_vowel": "a l'{{date}}",
+    "onDay": "el {{date}}",
+    "onDay_vowel": "l'{{date}}",
+    "fromTime": "de les {{time}}",
+    "fromTime_oneOClock": "de la {{time}}",
+    "toTime": "a les {{time}}",
+    "toTime_oneOClock": "a la {{time}}",
+    "atTime": "a les {{time}}",
+    "atTime_oneOClock": "a la {{time}}",
+    "whenSeason": "Activa {{from}} {{to}}. El màxim és {{peak}}.",
+    "whenSeasonNoPeak": "Activa {{from}} {{to}}.",
+    "whenExact": "El moment exacte és {{at}}.",
+    "whenAllDay": "Tot el dia.",
+    "whenWindow": "{{from}} {{to}}, amb el màxim {{peak}}.",
+    "whenWindowNoPeak": "{{from}} {{to}}.",
+    "notFoundTitle": "No hem trobat aquest esdeveniment",
+    "notFoundMessage": "Pot haver deixat d'estar disponible. Torna al calendari i tria'n un altre.",
+    "errorTitle": "No hem pogut carregar l'esdeveniment",
+    "errorMessage": "Comprova la connexió i torna-ho a provar.",
+    "retry": "Torna-ho a provar",
+    "whereToWatch": "On veure-ho"
+  },
   "profile": {
     "title": "Perfil",
     "language": "Idioma",
@@ -77,7 +158,8 @@
       "es": "Castellà",
       "en": "Anglès"
     },
-    "account": "Compte"
+    "account": "Compte",
+    "plans": "Els meus plans"
   },
   "apiStatus": {
     "title": "Estat del servidor",
@@ -129,8 +211,6 @@
     "createPlan": "Crea un pla",
     "mapsErrorTitle": "No hem pogut obrir el mapa",
     "mapsErrorMessage": "Torna-ho a provar d'aquí a un moment.",
-    "planSoonTitle": "Plans, aviat",
-    "planSoonMessage": "La creació de plans encara no està disponible.",
     "timezone": "Hora local de Catalunya · Europe/Madrid",
     "noHours": "Encara no hi ha previsió per a aquesta nit.",
     "hourA11y": "{{time}}: índex {{value}} de 100, {{level}}",
@@ -297,8 +377,77 @@
   },
   "alerts": {
     "title": "Alertes",
-    "soonTitle": "Aviat",
-    "soonMessage": "Aquí podràs crear alertes perquè t'avisem quan hi hagi bones condicions per al que vols veure."
+    "create": "Nova alerta",
+    "new": {
+      "title": "Nova alerta",
+      "back": "Enrere",
+      "goalTitle": "Què vols veure",
+      "originTitle": "On",
+      "minIndex": {
+        "title": "Índex mínim",
+        "value": "{{index}}, {{level}}"
+      },
+      "cta": "Crea l'alerta",
+      "saving": "Creant l'alerta…",
+      "errors": {
+        "limit": "Ja tens el màxim d'alertes. Esborra'n alguna per crear-ne una de nova.",
+        "generic": "No hem pogut crear l'alerta. Torna-ho a provar."
+      },
+      "originModes": {
+        "current": "La meva ubicació",
+        "zone": "Una zona concreta"
+      },
+      "zone": {
+        "title": "Tria la zona",
+        "hint": "Mou el mapa fins que l'agulla quedi on vols.",
+        "map": "Mapa per triar la zona",
+        "confirm": "Tria aquesta zona",
+        "naming": "Buscant el nom…",
+        "close": "Tanca",
+        "empty": "Cap zona triada",
+        "pick": "Tria-la",
+        "change": "Canvia",
+        "unnamed": "Zona triada"
+      },
+      "travel": {
+        "title": "Distància màxima",
+        "minutes": "{{minutes}} min",
+        "hours": "{{hours}} h",
+        "hoursMinutes": "{{hours}} h {{minutes}} min"
+      },
+      "notify": {
+        "title": "Quan t'avisem",
+        "onReach": "Quan s'hi arribi",
+        "atHour": "A una hora",
+        "hourValue": "El mateix dia a les {{hour}}",
+        "change": "Canvia",
+        "hourTitle": "Hora de l'avís",
+        "done": "Fet",
+        "required": "Tria com a mínim una manera d'avisar-te."
+      }
+    },
+    "edit": {
+      "title": "Edita l'alerta",
+      "cta": "Desa els canvis",
+      "saving": "Desant els canvis…",
+      "errors": {
+        "generic": "No hem pogut desar els canvis. Torna-ho a provar."
+      },
+      "missingTitle": "No hem trobat aquesta alerta",
+      "missingMessage": "Potser l'has esborrada. Torna a la llista d'alertes."
+    },
+    "subtitle": "T'avisem només quan el cel acompanya.",
+    "summary": "A menys de {{travel}}, índex de {{index}} o més",
+    "toggle": "Alerta de {{name}}",
+    "editHint": "Obre l'alerta per editar-la",
+    "toggleError": "No hem pogut canviar l'alerta. Torna-ho a provar.",
+    "emptyTitle": "Encara no tens alertes",
+    "emptyMessage": "Crea'n una i t'avisarem quan hi hagi bones condicions per al que vols veure.",
+    "errorTitle": "No hem pogut carregar les alertes",
+    "retry": "Torna-ho a provar",
+    "pushDenied": "Les notificacions estan desactivades: no t'avisarem al mòbil quan hi hagi bones condicions. Pots activar-les a la configuració.",
+    "pushUnavailable": "Aquest dispositiu no pot rebre notificacions. La resta de l'app funciona igual.",
+    "openSettings": "Obre la configuració"
   },
   "auth": {
     "signOut": "Tanca la sessió",
@@ -317,6 +466,16 @@
       "invalidLink": "L'enllaç no és vàlid o ja s'ha fet servir. Obre'l al mateix mòbil on l'has demanat, o demana'n un altre.",
       "emailNotAllowed": "Ara mateix no podem enviar correus a aquesta adreça. Prova d'entrar amb Google."
     }
+  },
+  "accountBlocked": {
+    "title": "El teu compte està bloquejat",
+    "message": "No pots fer servir Talaia amb aquest compte. Si creus que és un error, contacta amb l'equip de Talaia.",
+    "retry": "Torna-ho a comprovar",
+    "checking": "Comprovant…",
+    "contact": "Escriu a {{email}}",
+    "contactError": "No s'ha pogut obrir el correu. Escriu-nos a {{email}}.",
+    "contactSubject": "Compte de Talaia bloquejat",
+    "contactBody": "El meu compte de Talaia és {{account}}."
   },
   "emailLogin": {
     "title": "Entra amb el correu",
@@ -350,7 +509,9 @@
       "tomorrow": "demà a la nit"
     },
     "from": "Des de {{place}}, fins a {{travel}}",
+    "from_vowel": "Des d'{{place}}, fins a {{travel}}",
     "fromHere": "Des d'on ets, fins a {{travel}}",
+    "fromPicked": "Des del punt triat, fins a {{travel}}",
     "duration": {
       "minutes": "{{minutes}} min",
       "hours": "{{hours}} h",
@@ -362,11 +523,109 @@
     "loading": "Buscant els millors punts…",
     "error": "No hem pogut carregar les recomanacions",
     "empty": "No hi ha cap punt a menys de {{travel}}",
+    "empty_vowel": "No hi ha cap punt a menys d'{{travel}}",
     "emptyHint": "Amplia la distància o tria una altra nit.",
     "noIndex": "Encara sense previsió",
     "bestHour": "Millor hora: {{hour}}",
     "byCar": "{{travel}} en cotxe",
     "collapseSheet": "Plega la llista",
-    "expandSheet": "Desplega la llista"
+    "expandSheet": "Desplega la llista",
+    "noEventForecast": "Encara no hi ha previsió per a aquest esdeveniment. Els punts es mostren per distància; consulta l'índex quan s'acosti la data.",
+    "emptyEventHint": "Torna-ho a provar més endavant.",
+    "eventRanking": "Rànquing de millors punts",
+    "qualityDistanceHint": "Prioritzem els nivells de visibilitat: cel ras, just i tapat. Dins de cada nivell, combinem l'índex i la proximitat.",
+    "distance": "{{km}} km en línia recta",
+    "fromUnlimited": "Des de {{place}} · sense límit de distància",
+    "fromUnlimited_vowel": "Des d'{{place}} · sense límit de distància",
+    "pastWindow": "Aquesta franja d'observació ja ha acabat. Tria un altre esdeveniment o una altra nit.",
+    "fromHereUnlimited": "Des d'on ets · sense límit de distància",
+    "emptyCatalog": "Encara no hi ha punts disponibles",
+    "hideRanking": "Amaga el rànquing",
+    "showRanking": "Mostra el rànquing",
+    "nearby": {
+      "label": "A prop meu",
+      "title": "A prop meu, {{when}}",
+      "best": "Millors punts a prop",
+      "here": "Des d'on ets",
+      "picked": "Des del punt triat",
+      "place": "Des de {{place}}",
+      "place_vowel": "Des d'{{place}}",
+      "emptyHint": "Per anar més lluny, tria la distància a «Què vols veure?»."
+    }
+  },
+  "plans": {
+    "new": {
+      "header": "Nou pla",
+      "title": "Pla d'observació",
+      "point": "Punt d'observació",
+      "pointA11y": "Punt d'observació: {{name}}, {{municipality}}",
+      "pointUnavailable": "No hem pogut carregar el punt",
+      "day": "Dia",
+      "dayValue": "{{weekday}} {{day}} {{month}}",
+      "monthsShort": [
+        "de gen.",
+        "de febr.",
+        "de març",
+        "d'abr.",
+        "de maig",
+        "de juny",
+        "de jul.",
+        "d'ag.",
+        "de set.",
+        "d'oct.",
+        "de nov.",
+        "de des."
+      ],
+      "time": "Hora de sortida",
+      "hour": "Hora",
+      "minute": "Minuts",
+      "past": "L'hora de sortida ja ha passat. Tria'n una de més tard.",
+      "event": "Fenomen",
+      "eventValue": "{{type}}: {{name}}",
+      "noEvent": "Cap en concret",
+      "eventSheet": "Què aniràs a veure?",
+      "noEvents": "No hi ha cap fenomen del calendari al voltant d'aquest dia.",
+      "eventsError": "No hem pogut carregar els fenòmens",
+      "retry": "Torna-ho a provar",
+      "notes": "Notes",
+      "notesPlaceholder": "Roba d'abric, frontal vermell…",
+      "save": "Desa el pla",
+      "saving": "Desant…",
+      "dateSheet": "Tria el dia",
+      "timeSheet": "Hora de sortida",
+      "done": "Fet",
+      "close": "Tanca",
+      "errors": {
+        "alreadyExists": "Ja tens un pla en aquest punt a aquesta hora.",
+        "limitReached": "Has arribat al màxim de 20 plans pendents.",
+        "pointGone": "Aquest punt ja no està disponible.",
+        "generic": "No hem pogut desar el pla. Torna-ho a provar d'aquí a un moment."
+      }
+    },
+    "list": {
+      "header": "Els meus plans",
+      "title": "Els meus plans",
+      "upcoming": "Propers",
+      "past": "Passats",
+      "starrySky": "Cel estrellat",
+      "rowTitle": "{{phenomenon}} a {{place}}",
+      "rowTitle_el": "{{phenomenon}} al {{place}}",
+      "rowTitle_els": "{{phenomenon}} als {{place}}",
+      "departure": "Sortida a les {{time}}, {{point}}",
+      "departure_single": "Sortida a la {{time}}, {{point}}",
+      "retired": "Aquest punt ja no està disponible.",
+      "a11y": "{{title}}. {{day}} {{month}}. {{subtitle}}",
+      "openHint": "Obre la fitxa del punt",
+      "emptyUpcomingTitle": "Encara no tens cap pla",
+      "emptyUpcomingMessage": "Busca un bon lloc a Explora i crea un pla des de la seva fitxa.",
+      "emptyPastTitle": "Encara no tens plans passats",
+      "emptyPastMessage": "Quan hagi passat l'hora d'un pla, el trobaràs aquí.",
+      "create": "Troba un lloc",
+      "errorTitle": "No hem pogut carregar els plans",
+      "retry": "Torna-ho a provar"
+    }
+  },
+  "notifications": {
+    "channelName": "Alertes del cel"
   }
 }

@@ -16,6 +16,12 @@
     "xema": "tsx --env-file-if-exists=../../.env src/meteocat/cli.ts"
   },
   "jest": {
+    "collectCoverageFrom": [
+      "src/**/*.ts",
+      "!src/**/__tests__/**",
+      "!src/**/*.test.ts",
+      "!src/**/*.d.ts"
+    ],
     "preset": "ts-jest",
     "testEnvironment": "node"
   },
@@ -30,6 +36,7 @@
   },
   "dependencies": {
     "@talaia/db": "*",
+    "@talaia/index": "*",
     "@talaia/shared": "*",
     "astronomy-engine": "^2.1.19",
     "kysely": "^0.28.17",

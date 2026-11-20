@@ -27,6 +27,29 @@ export type Numeric = ColumnType<string, number | string, number | string>;
 
 export type Timestamp = ColumnType<Date, Date | string, Date | string>;
 
+export interface Alertes {
+  activa: Generated<boolean>;
+  avisaEnArribar: boolean;
+  dataActualitzacio: Generated<Timestamp>;
+  dataCreacio: Generated<Timestamp>;
+  distanciaMaxKm: number;
+  horaAvis: number | null;
+  id: Generated<string>;
+  indexMinim: number;
+  objectiu: string;
+  origen: string;
+  perfilId: string;
+}
+
+export interface DispositiusPush {
+  dataActualitzacio: Generated<Timestamp>;
+  dataCreacio: Generated<Timestamp>;
+  id: Generated<string>;
+  perfilId: string;
+  plataforma: string;
+  token: string;
+}
+
 export interface EsdevenimentsAstronomics {
   codi: string;
   dataActualitzacio: Generated<Timestamp>;
@@ -59,11 +82,19 @@ export interface EstacionsXema {
 export interface ExecucionsWorker {
   acabadaEl: Generated<Timestamp>;
   error: string | null;
+  errorAlertes: string | null;
   estat: string;
   hores: Generated<number>;
   id: Generated<Int8>;
   iniciadaEl: Timestamp;
+  notificacions: number | null;
   punts: Generated<number>;
+}
+
+export interface Favorits {
+  dataCreacio: Generated<Timestamp>;
+  perfilId: string;
+  puntId: string;
 }
 
 export interface FenomensAstronomics {
@@ -107,6 +138,17 @@ export interface LecturesXema {
   ventVelocitat: number | null;
 }
 
+export interface NotificacionsAlertes {
+  alertaId: string;
+  dataCreacio: Generated<Timestamp>;
+  enviadaEl: Timestamp | null;
+  hora: Timestamp;
+  index: number;
+  nit: Timestamp;
+  puntId: string;
+  ticketIds: string[] | null;
+}
+
 export interface Perfils {
   authUserId: string;
   avatarUrl: string | null;
@@ -118,6 +160,19 @@ export interface Perfils {
   id: Generated<string>;
   nom: string | null;
   rol: Generated<string>;
+}
+
+export interface Plans {
+  calendariEventId: string | null;
+  dataActualitzacio: Generated<Timestamp>;
+  dataCreacio: Generated<Timestamp>;
+  dataHoraFi: Timestamp | null;
+  dataHoraInici: Timestamp;
+  esdevenimentId: string | null;
+  id: Generated<string>;
+  notes: string | null;
+  perfilId: string;
+  puntId: string;
 }
 
 export interface PuntsObservacio {
@@ -137,6 +192,7 @@ export interface PuntsObservacio {
   origen: "OFICIAL" | "COMUNITAT";
   slug: string;
   sqm: Numeric | null;
+  textos: Json;
   ubicacio: string;
 }
 
@@ -146,14 +202,19 @@ export interface TipusFenomen {
 }
 
 export interface DB {
+  alertes: Alertes;
+  dispositiusPush: DispositiusPush;
   esdevenimentsAstronomics: EsdevenimentsAstronomics;
   estacionsXema: EstacionsXema;
   execucionsWorker: ExecucionsWorker;
+  favorits: Favorits;
   fenomensAstronomics: FenomensAstronomics;
   fontsAstronomiques: FontsAstronomiques;
   indexVisibilitat: IndexVisibilitat;
   lecturesXema: LecturesXema;
+  notificacionsAlertes: NotificacionsAlertes;
   perfils: Perfils;
+  plans: Plans;
   puntsObservacio: PuntsObservacio;
   tipusFenomen: TipusFenomen;
 }

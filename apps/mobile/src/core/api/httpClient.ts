@@ -2,6 +2,9 @@ import type { ApiErrorBody } from '@talaia/shared';
 
 import { getAccessToken } from '@/core/auth/accessToken';
 import { env } from '@/core/config/env';
+import i18n, { DEFAULT_LANGUAGE, isSupportedLanguage } from '@/core/i18n';
+
+import { ACCOUNT_BLOCKED, accountBlocked } from './accountBlocked';
 
 /** Error de l'API de Talaia: el servidor sempre respon `{ error: { code, message } }`. */
 export class ApiError extends Error {
@@ -38,14 +41,43 @@ export async function apiGet<T>(path: string, query?: Query, init?: RequestInit)
 
 /** Per als endpoints amb cos JSON, inclòs el primer accés de TG-84. */
 export async function apiPost<T>(path: string, body?: unknown, init?: RequestInit): Promise<T> {
+  return apiRequest<T>(buildUrl(path), jsonInit('POST', body, init));
+}
+
+/** Canvis parcials d'un recurs (p. ex. activar o desactivar una alerta, TG-147). */
+export async function apiPatch<T>(path: string, body: unknown, init?: RequestInit): Promise<T> {
+  return apiRequest<T>(buildUrl(path), jsonInit('PATCH', body, init));
+}
+
+function jsonInit(method: string, body: unknown, init?: RequestInit): RequestInit {
+  const headers = new Headers(init?.headers);
+  headers.set('Content-Type', 'application/json');
+  return {
+    ...init,
+    method,
+    headers,
+    body: body === undefined ? undefined : JSON.stringify(body),
+  };
+}
+
+/** `PUT` amb cos JSON; un `204` es resol amb `undefined` (`/perfil/dispositius`, TG-152). */
+export async function apiPut<T = void>(
+  path: string,
+  body: unknown,
+  init?: RequestInit,
+): Promise<T> {
   const headers = new Headers(init?.headers);
   headers.set('Content-Type', 'application/json');
   return apiRequest<T>(buildUrl(path), {
     ...init,
-    method: 'POST',
+    method: 'PUT',
     headers,
-    body: body === undefined ? undefined : JSON.stringify(body),
+    body: JSON.stringify(body),
   });
+}
+
+export async function apiDelete<T = void>(path: string, init?: RequestInit): Promise<T> {
+  return apiRequest<T>(buildUrl(path), { ...init, method: 'DELETE' });
 }
 
 async function apiRequest<T>(url: string, init: RequestInit): Promise<T> {
@@ -55,6 +87,10 @@ async function apiRequest<T>(url: string, init: RequestInit): Promise<T> {
   }
   const headers = new Headers(init.headers);
   if (!headers.has('Accept')) headers.set('Accept', 'application/json');
+  if (!headers.has('Accept-Language')) {
+    const language = i18n.resolvedLanguage;
+    headers.set('Accept-Language', isSupportedLanguage(language) ? language : DEFAULT_LANGUAGE);
+  }
   const token = await getAccessToken();
   // La sessió actual és l'única font d'autorització, també després d'un logout.
   headers.delete('Authorization');
@@ -71,7 +107,23 @@ async function apiRequest<T>(url: string, init: RequestInit): Promise<T> {
   init.signal?.addEventListener('abort', cancel);
   try {
     const response = await fetch(url, { ...init, headers, signal: controller.signal });
-    if (!response.ok) throw await toApiError(response);
+    if (!response.ok) {
+      const error = await toApiError(response);
+      // Un sol lloc per a tota l'app: la porta de la sessió hi mostra l'avís (TG-179).
+      // Només si la sessió encara és la de la petició: una resposta tardana d'un compte que ja
+      // ha sortit no pot bloquejar el següent.
+      if (
+        error.status === 403 &&
+        error.code === ACCOUNT_BLOCKED &&
+        token &&
+        (await getAccessToken().catch(() => null)) === token
+      ) {
+        accountBlocked.report();
+      }
+      throw error;
+    }
+    // Sense cos (`PUT`/`DELETE` que responen 204).
+    if (response.status === 204) return undefined as T;
     return (await response.json()) as T;
   } catch (error) {
     // Un ApiError < 500, perquè TanStack Query no hi torni (3 × 15 s d'esquelet) i es pugui

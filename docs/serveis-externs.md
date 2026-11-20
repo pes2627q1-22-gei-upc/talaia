@@ -37,6 +37,9 @@ en UTC; la conversió a hora local correspon al consumidor.
 Aprop s'autentica amb una API key al header `X-API-Key`, guardada al seu backend i mai a
 l'app mòbil. L'app de Talaia consulta la mateixa ruta amb `Authorization: Bearer <JWT>` de
 Supabase. És una alternativa, no calen les dues credencials alhora.
+Amb JWT, el llistat de l'app pot demanar `Accept-Language: ca|es|en` (també variants com
+`es-ES`); el català és el valor per defecte i la reserva per camp. Amb l'API key d'Aprop, el
+llistat conserva els textos en català independentment de la capçalera.
 
 `tipus` classifica les entrades per famílies estables; no identifica cada fenomen concret. El
 nom diferencia, per exemple, les Perseids de les Gemínids o la lluna plena de la lluna nova:
@@ -97,7 +100,8 @@ Decisions incorporades arran de la resposta d'Aprop:
 - `font` és `IMO` o `NASA` per als calendaris importats; per a fases, conjuncions i
   superllunes calculades és el valor de `metode_calcul` (p. ex. `Astronomy Engine 2.1.19`).
 - Sense credencial o amb una credencial invàlida, la resposta és 401. Un error temporal de
-  la base de dades o del JWKS de Supabase és 503; no es promet cap 429 sense un límit definit.
+  la base de dades o del JWKS de Supabase és 503. El límit general de Nginx pot retornar 429
+  abans que la petició arribi a l'API.
 
 La ubicació forma part del contracte públic, però no del dataset estàtic de TG-106: TG-108
 la llegeix del catàleg de punts oficials. Si el punt de referència no existeix o no és publicat,
@@ -105,6 +109,22 @@ el servei ha de fallar explícitament en lloc de retornar una ubicació inventad
 
 El contracte amb Aprop es pot integrar i revisar independentment del de Mobilicat: aquest darrer
 continua pendent de confirmació i no s'ha de presentar com a acordat en tancar aquesta PR.
+
+### Publicació del servei (TG-142)
+
+Aprop ha confirmat que carregarà els esdeveniments des del seu backend en arrencar i, després,
+un cop al dia; durant les proves preveu com a màxim una petició per minut. Per això no cal
+habilitar CORS per a Aprop: les peticions no surten d'un navegador.
+
+S'aplica el límit general de Nginx a `/api/v1/`: **20 peticions per segon i per IP**, amb una
+ràfega de 40 peticions; quan se supera, Nginx respon **429**. És un límit compartit amb la resta
+de l'API, no una quota per clau d'equip. La clau d'Aprop es configura com a secret a la VM i
+s'ha de lliurar a l'equip per un canal privat; el valor no es publica al repositori.
+
+El 17/11/2026 es va comprovar la URL pública des d'un client separat de la VM: `GET /health`
+va respondre 200, `GET /esdeveniments` sense credencial va respondre 401 i la mateixa consulta
+amb la clau d'Aprop va respondre 200 amb dades del calendari (interval 01/11–30/11/2026).
+No es va forçar el límit de peticions durant aquesta comprovació.
 
 ## Consumim de Mobilicat: rutes sostenibles
 

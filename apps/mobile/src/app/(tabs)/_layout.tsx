@@ -2,20 +2,26 @@ import { Redirect } from 'expo-router';
 import { NativeTabs } from 'expo-router/native-tabs';
 import { useTranslation } from 'react-i18next';
 
-import { colors } from '@/core/theme/tokens';
+import { useTheme } from '@/core/theme/theme';
+import { AccountBlockedScreen } from '@/features/auth/AccountBlockedScreen';
 import { RestoreErrorScreen } from '@/features/auth/RestoreErrorScreen';
 import { useSessionGate } from '@/features/auth/useSessionGate';
+import { useOpenNotifiedPoint } from '@/features/notifications/useOpenNotifiedPoint';
 
 // SF Symbols a iOS i Material Symbols a Android (expo-symbols, que Expo Go porta).
 // La barra pròpia del mockup (icones de Talaia) queda per a una tasca a part.
 
 export default function TabsLayout() {
+  const { colors } = useTheme();
   const { t } = useTranslation();
   const gate = useSessionGate();
+  // En tocar una notificació d'una alerta, la fitxa del punt: només amb sessió (TG-154).
+  useOpenNotifiedPoint(gate === 'signedIn');
 
   // Sense sessió no s'entra a l'app: la benvinguda és la porta (HU35). Mentre es restaura, res.
   if (gate === 'restoring') return null;
   if (gate === 'restoreFailed') return <RestoreErrorScreen />;
+  if (gate === 'blocked') return <AccountBlockedScreen />;
   if (gate === 'signedOut') return <Redirect href="/benvinguda" />;
 
   return (
@@ -33,7 +39,7 @@ export default function TabsLayout() {
         <NativeTabs.Trigger.Label>{t('tabs.calendar')}</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon sf="calendar" md="calendar_month" />
       </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="alertes">
+      <NativeTabs.Trigger name="(alertes)">
         <NativeTabs.Trigger.Label>{t('tabs.alerts')}</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon sf="bell" md="notifications" />
       </NativeTabs.Trigger>

@@ -1,8 +1,11 @@
-import type { Recomanacio, RecomanacionsResposta } from '@talaia/shared';
+import type { Recomanacio, RecomanacionsResposta, VisibilitatUbicacio } from '@talaia/shared';
 import { router } from 'expo-router';
-import { fireEvent, render, screen } from '@testing-library/react-native';
-import { View } from 'react-native';
+import { act, fireEvent, render, screen } from '@testing-library/react-native';
+import { GestureHandlerRootView, State } from 'react-native-gesture-handler';
+import { fireGestureHandler, getByGestureTestId } from 'react-native-gesture-handler/jest-utils';
+import { Platform, StyleSheet, View } from 'react-native';
 
+import { ApiError } from '@/core/api/httpClient';
 import i18n from '@/core/i18n';
 
 import { nightOf } from '../../explore/exploreModel';
@@ -17,10 +20,12 @@ let mockParams: RecommendationParams = {};
 jest.mock('expo-router', () => ({
   router: { push: jest.fn(), back: jest.fn() },
   useLocalSearchParams: () => mockParams,
+  useFocusEffect: (effect: () => void) => jest.requireActual('react').useEffect(effect, [effect]),
 }));
 
 const mockRefetchRecommendations = jest.fn();
 let mockRecommendations = {
+  error: null as Error | null,
   data: undefined as RecomanacionsResposta | undefined,
   isPending: true,
   isError: false,
@@ -35,8 +40,11 @@ jest.mock('../useDeviceHeading', () => ({
   useDeviceHeading: () => ({ heading: null, active: true }),
 }));
 
+// Sense permís d'ubicació: «A prop meu» demana triar l'origen al mapa.
+const mockDenied = { status: 'denied' as const, canAskAgain: false };
+const mockRefetchLocation = jest.fn(async () => ({ data: mockDenied, isError: false }));
 jest.mock('../../explore/locationRepository', () => ({
-  useCurrentPlaceQuery: () => ({ data: undefined, isError: false }),
+  useCurrentPlaceQuery: () => ({ data: mockDenied, isError: false, refetch: mockRefetchLocation }),
 }));
 
 jest.mock(
@@ -53,6 +61,14 @@ let mockQuery = {
   refetch: mockRefetch,
 };
 jest.mock('../mapRepository', () => ({ useMapPointsQuery: () => mockQuery }));
+
+let mockVisibility = {
+  data: undefined as VisibilitatUbicacio | undefined,
+  isError: false,
+  error: null as unknown,
+  refetch: jest.fn(),
+};
+jest.mock('../visibilityRepository', () => ({ useVisibilityQuery: () => mockVisibility }));
 
 // La DOM component corre en un WebView: aquí només es comprova què li passa la pantalla.
 const mockNightMap = jest.fn((_props: unknown) => <View testID="night-map" />);
@@ -71,6 +87,7 @@ describe('MapScreen', () => {
     jest.mocked(router.back).mockClear();
     mockParams = {};
     mockRecommendations = {
+      error: null,
       data: undefined,
       isPending: true,
       isError: false,
@@ -86,8 +103,28 @@ describe('MapScreen', () => {
     };
   });
 
+  it.each(['ca', 'es', 'en'])(
+    'una franja passada explica el problema sense reintent (%s)',
+    async (language) => {
+      await i18n.changeLanguage(language);
+      mockParams = { esdevenimentId: 'leonids-2026', lat: '41.98', lon: '2.82' };
+      mockRecommendations = {
+        ...mockRecommendations,
+        isPending: false,
+        isError: true,
+        isFetching: false,
+        error: new ApiError(400, 'franja_passada', 'Franja passada'),
+      };
+      await render(<MapScreen />, { wrapper: GestureHandlerRootView });
+      expect(screen.getByText(i18n.t('recommendations.pastWindow'))).toBeOnTheScreen();
+      expect(screen.queryByRole('button', { name: i18n.t('map.retry') })).toBeNull();
+      await fireEvent.press(screen.getByRole('button', { name: i18n.t('map.back') }));
+      expect(router.back).toHaveBeenCalledTimes(1);
+    },
+  );
+
   it("passa l'estil nocturn, la càmera i l'etiqueta accessible al mapa", async () => {
-    await render(<MapScreen />);
+    await render(<MapScreen />, { wrapper: GestureHandlerRootView });
     expect(screen.getByTestId('night-map')).toBeOnTheScreen();
     expect(mockNightMap).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -100,7 +137,7 @@ describe('MapScreen', () => {
   });
 
   it('obre la fitxa amb l’ID del marcador seleccionat', async () => {
-    await render(<MapScreen />);
+    await render(<MapScreen />, { wrapper: GestureHandlerRootView });
     const props = mockNightMap.mock.calls.at(-1)![0] as {
       onPointPress: (id: string) => Promise<void>;
     };
@@ -112,7 +149,7 @@ describe('MapScreen', () => {
   });
 
   it('mostra que està carregant els punts', async () => {
-    await render(<MapScreen />);
+    await render(<MapScreen />, { wrapper: GestureHandlerRootView });
     expect(screen.getByText("S'estan carregant els llocs d'observació…")).toBeOnTheScreen();
   });
 
@@ -123,7 +160,7 @@ describe('MapScreen', () => {
       isPending: false,
       isFetching: false,
     };
-    await render(<MapScreen />);
+    await render(<MapScreen />, { wrapper: GestureHandlerRootView });
     expect(screen.getByText('Encara no hi ha llocs disponibles')).toBeOnTheScreen();
     expect(screen.getByText('Torna-ho a provar més endavant.')).toBeOnTheScreen();
     await fireEvent.press(screen.getByRole('button', { name: 'Torna-ho a provar' }));
@@ -142,7 +179,7 @@ describe('MapScreen', () => {
       ],
     };
     mockQuery = { ...mockQuery, data: points, isPending: false, isFetching: false };
-    const { rerender } = await render(<MapScreen />);
+    const { rerender } = await render(<MapScreen />, { wrapper: GestureHandlerRootView });
     expect(screen.queryByText('Encara no hi ha llocs disponibles')).toBeNull();
     expect(screen.queryByText("S'estan carregant els llocs d'observació…")).toBeNull();
     mockQuery = { ...mockQuery, isError: true };
@@ -160,16 +197,220 @@ describe('MapScreen', () => {
 
   it('permet tornar a provar sense amagar el mapa quan falla l’API', async () => {
     mockQuery = { ...mockQuery, isPending: false, isError: true, isFetching: false };
-    await render(<MapScreen />);
+    await render(<MapScreen />, { wrapper: GestureHandlerRootView });
     expect(screen.getByTestId('night-map')).toBeOnTheScreen();
     await fireEvent.press(screen.getByRole('button', { name: 'Torna-ho a provar' }));
     expect(mockRefetch).toHaveBeenCalledTimes(1);
   });
 
   it('el botó enrere torna a «Què vols veure?»', async () => {
-    await render(<MapScreen />);
+    await render(<MapScreen />, { wrapper: GestureHandlerRootView });
     await fireEvent.press(screen.getByRole('button', { name: 'Enrere' }));
     expect(router.back).toHaveBeenCalledTimes(1);
+  });
+
+  it('mostra l’avís diürn amb els punts disponibles sense proposar un reintent', async () => {
+    mockQuery = {
+      ...mockQuery,
+      isPending: false,
+      isFetching: false,
+      data: {
+        type: 'FeatureCollection',
+        features: [
+          {
+            type: 'Feature',
+            geometry: { type: 'Point', coordinates: [0.75, 42.05] },
+            properties: {
+              id: 'montsec',
+              nom: 'Montsec',
+              municipi: 'Àger',
+              index: { valor: 0, franja: 'tap', deDia: true },
+            },
+          },
+        ],
+      },
+    };
+    await render(<MapScreen />, { wrapper: GestureHandlerRootView });
+    expect(screen.getByText('És de dia')).toBeOnTheScreen();
+    expect(screen.queryByRole('button', { name: 'Torna-ho a provar' })).toBeNull();
+    expect(screen.getByTestId('night-map')).toBeOnTheScreen();
+  });
+
+  it('«A prop meu» sense ubicació demana tocar el mapa, i el toc obre el rànquing', async () => {
+    await render(<MapScreen />, { wrapper: GestureHandlerRootView });
+    const nearby = screen.getByRole('button', { name: 'A prop meu' });
+    expect(nearby).toHaveProp('accessibilityHint', 'Mostra els millors punts a prop teu');
+    expect(mockNightMap).toHaveBeenLastCalledWith(expect.objectContaining({ origin: null }));
+    await fireEvent.press(nearby);
+    expect(
+      screen.getByRole('header', { name: "Toca el mapa per triar d'on surts" }),
+    ).toBeOnTheScreen();
+    expect(screen.queryByRole('button', { name: 'A prop meu' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Obre la configuració' })).toBeOnTheScreen();
+    const props = mockNightMap.mock.calls.at(-1)![0] as {
+      onMapPress: (lat: number, lon: number) => Promise<void>;
+    };
+    await act(() => props.onMapPress(41.5, 1.9));
+    expect(router.push).toHaveBeenCalledWith({
+      pathname: '/recomanacions',
+      params: { aprop: 'triat', lat: '41.5', lon: '1.9' },
+    });
+  });
+
+  it('es pot tancar sense triar res', async () => {
+    await render(<MapScreen />, { wrapper: GestureHandlerRootView });
+    await fireEvent.press(screen.getByRole('button', { name: 'A prop meu' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Tanca' }));
+    expect(screen.queryByText("Toca el mapa per triar d'on surts")).toBeNull();
+    expect(screen.getByRole('button', { name: 'A prop meu' })).toBeOnTheScreen();
+  });
+});
+
+describe('MapScreen amb un punt triat (HU05, mockup 04)', () => {
+  /** Toca el mapa com ho faria la DOM component. */
+  const tapMap = async (lat: number, lon: number) => {
+    const props = mockNightMap.mock.calls.at(-1)![0] as {
+      onMapPress: (lat: number, lon: number) => Promise<void>;
+    };
+    await act(async () => props.onMapPress(lat, lon));
+  };
+
+  beforeEach(async () => {
+    await i18n.changeLanguage('ca');
+    mockNightMap.mockClear();
+    mockParams = {};
+    // Amb punts i de nit: cap avís a dalt que tingui el seu propi «Torna-ho a provar».
+    mockQuery = {
+      data: {
+        type: 'FeatureCollection',
+        features: [
+          {
+            type: 'Feature',
+            geometry: { type: 'Point', coordinates: [0.75, 42.05] },
+            properties: {
+              id: 'montsec',
+              nom: 'Serra del Montsec',
+              municipi: 'Àger',
+              index: { valor: 87, franja: 'ras', deDia: false },
+            },
+          },
+        ],
+      },
+      isPending: false,
+      isError: false,
+      isFetching: false,
+      refetch: mockRefetch,
+    };
+    mockVisibility = { data: undefined, isError: false, error: null, refetch: jest.fn() };
+  });
+
+  it('convida a tocar el mapa, i el toc ensenya el lloc, el marca i ofereix calcular-ne l’índex', async () => {
+    await render(<MapScreen />);
+    expect(screen.getByText('Tria un punt al mapa')).toBeOnTheScreen();
+    expect(screen.getByText("Toca on vulguis per veure'n l'índex")).toBeOnTheScreen();
+    expect(screen.getByLabelText('A prop meu')).toBeOnTheScreen();
+
+    await tapMap(42.0112, 1.3089);
+    expect(screen.getByText('Punt triat al mapa')).toBeOnTheScreen();
+    expect(screen.getByText('Lat 42,01 · Lon 1,31')).toBeOnTheScreen();
+    expect(screen.getByText("Calcula l'índex aquí")).toBeOnTheScreen();
+    // La targeta ocupa el lloc del botó: no s'hi superposen.
+    expect(screen.queryByLabelText('A prop meu')).toBeNull();
+    expect(mockNightMap).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        origin: expect.objectContaining({ lat: 42.0112, lon: 1.3089, label: 'Punt triat' }),
+      }),
+    );
+
+    mockVisibility = {
+      ...mockVisibility,
+      data: {
+        lat: 42.01,
+        lon: 1.31,
+        sqm: 21.4,
+        deDia: false,
+        index: {
+          valor: 81,
+          franja: 'ras',
+          hora: '2026-11-16T20:00:00Z',
+          foscorEstimada: false,
+          factors: { nuvols: 1, foscor: 0.9, lluna: 0.95, sol: 1 },
+        },
+      },
+    };
+    await act(async () => fireEvent.press(screen.getByText("Calcula l'índex aquí")));
+    expect(screen.getByLabelText('Índex de visibilitat: 81 de 100, Cel ras')).toBeOnTheScreen();
+    expect(screen.getByText("Índex de l'hora en curs (21:00)")).toBeOnTheScreen();
+    expect(screen.queryByText("Calcula l'índex aquí")).toBeNull();
+  });
+
+  it('fora de Catalunya ho diu sense proposar cap reintent', async () => {
+    mockVisibility = {
+      ...mockVisibility,
+      isError: true,
+      error: new ApiError(422, 'fora_de_catalunya', ''),
+    };
+    await render(<MapScreen />);
+    await tapMap(42.9, 3.6);
+    await act(async () => fireEvent.press(screen.getByText("Calcula l'índex aquí")));
+    expect(screen.getByText('Aquest lloc és fora de Catalunya')).toBeOnTheScreen();
+    expect(screen.queryByText('Torna-ho a provar')).toBeNull();
+  });
+
+  it('si falla, deixa tornar-ho a provar', async () => {
+    mockVisibility = {
+      ...mockVisibility,
+      isError: true,
+      error: new ApiError(503, 'meteo_unavailable', ''),
+    };
+    await render(<MapScreen />);
+    await tapMap(41.9, 2.1);
+    await act(async () => fireEvent.press(screen.getByText("Calcula l'índex aquí")));
+    expect(screen.getByText("No hem pogut calcular l'índex")).toBeOnTheScreen();
+    fireEvent.press(screen.getByText('Torna-ho a provar'));
+    expect(mockVisibility.refetch).toHaveBeenCalled();
+  });
+
+  it('es tanca i torna «A prop meu»', async () => {
+    await render(<MapScreen />);
+    await tapMap(41.9, 2.1);
+    await act(async () => fireEvent.press(screen.getByLabelText('Tanca')));
+    expect(screen.queryByText('Punt triat al mapa')).toBeNull();
+    expect(screen.getByLabelText('A prop meu')).toBeOnTheScreen();
+  });
+});
+
+describe('MapScreen amb «A prop meu» (HU02)', () => {
+  beforeEach(async () => {
+    await i18n.changeLanguage('ca');
+    mockNightMap.mockClear();
+    mockRecommendations = {
+      error: null,
+      data: undefined,
+      isPending: true,
+      isError: false,
+      isFetching: true,
+      refetch: mockRefetchRecommendations,
+    };
+  });
+
+  it('des d’un lloc triat: la capçalera ho diu i el mapa en marca el punt de sortida', async () => {
+    mockParams = { aprop: 'triat', lat: '41.5', lon: '1.9' };
+    await render(<MapScreen />, { wrapper: GestureHandlerRootView });
+    expect(screen.getByRole('header', { name: /A prop meu/ })).toBeOnTheScreen();
+    expect(screen.getByText('Des del punt triat')).toBeOnTheScreen();
+    expect(screen.queryByRole('button', { name: 'A prop meu' })).toBeNull();
+    expect(screen.getByTestId('ranking-safe-area')).toBeOnTheScreen();
+    await fireEvent.press(screen.getByRole('button', { name: 'Plega la llista' }));
+    expect(screen.getByRole('button', { name: 'Desplega la llista' })).toBeOnTheScreen();
+    await fireEvent.press(screen.getByRole('button', { name: 'Desplega la llista' }));
+    expect(screen.getByLabelText('Buscant els millors punts…')).toBeOnTheScreen();
+    expect(mockNightMap).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        origin: expect.objectContaining({ lat: 41.5, lon: 1.9, label: 'Punt de sortida' }),
+        cluster: false,
+      }),
+    );
   });
 });
 
@@ -205,6 +446,8 @@ describe('MapScreen amb una cerca (TG-102, mockup 03)', () => {
     horesAmbIndex: valor === null ? 0 : 8,
   });
   const resposta = (punts: Recomanacio[]): RecomanacionsResposta => ({
+    data: '2026-10-21',
+    tempsMaxim: 150,
     radiKm: 150,
     franja: { desDe: at(22), finsA: at(6) },
     total: punts.length,
@@ -216,6 +459,7 @@ describe('MapScreen amb una cerca (TG-102, mockup 03)', () => {
     jest.mocked(router.push).mockClear();
     mockRefetchRecommendations.mockClear();
     mockRecommendations = {
+      error: null,
       data: undefined,
       isPending: true,
       isError: false,
@@ -246,7 +490,7 @@ describe('MapScreen amb una cerca (TG-102, mockup 03)', () => {
         punt('cadi', 'Serra del Cadí', null, 150),
       ]),
     };
-    await render(<MapScreen />);
+    await render(<MapScreen />, { wrapper: GestureHandlerRootView });
 
     expect(screen.getByRole('header', { name: /Pluja d'estels, aquesta nit/ })).toBeOnTheScreen();
     expect(screen.getByText('Des de Girona, fins a 2 h 30 min')).toBeOnTheScreen();
@@ -302,6 +546,9 @@ describe('MapScreen amb una cerca (TG-102, mockup 03)', () => {
 
     await fireEvent.press(montsec);
     expect(router.push).toHaveBeenCalledWith({ pathname: '/punt/[id]', params: { id: 'montsec' } });
+    await fireEvent.press(screen.getByRole('button', { name: i18n.t('recommendations.showLess') }));
+    expect(screen.queryByRole('button', { name: /^4t: Serra del Cadí/ })).toBeNull();
+    expect(screen.getByRole('button', { name: /^1r: Serra del Montsec/ })).toBeOnTheScreen();
   });
 
   it('el full es plega per veure el mapa, i la càmera aprofita l’espai', async () => {
@@ -314,7 +561,7 @@ describe('MapScreen amb una cerca (TG-102, mockup 03)', () => {
         punt('prades', 'Muntanyes de Prades', 81, 100),
       ]),
     };
-    await render(<MapScreen />);
+    await render(<MapScreen />, { wrapper: GestureHandlerRootView });
     const lastFit = () =>
       (mockNightMap.mock.calls.at(-1)![0] as { fit: { padding: { bottom: number } } }).fit;
     const open = lastFit().padding.bottom;
@@ -329,7 +576,7 @@ describe('MapScreen amb una cerca (TG-102, mockup 03)', () => {
   });
 
   it('mentre carrega ho diu, i si falla es pot tornar a provar', async () => {
-    const { rerender } = await render(<MapScreen />);
+    const { rerender } = await render(<MapScreen />, { wrapper: GestureHandlerRootView });
     expect(screen.getByLabelText('Buscant els millors punts…')).toBeOnTheScreen();
 
     mockRecommendations = {
@@ -351,9 +598,215 @@ describe('MapScreen amb una cerca (TG-102, mockup 03)', () => {
       isFetching: false,
       data: resposta([]),
     };
-    await render(<MapScreen />);
+    await render(<MapScreen />, { wrapper: GestureHandlerRootView });
     expect(screen.getByText('No hi ha cap punt a menys de 2 h 30 min')).toBeOnTheScreen();
     expect(screen.getByText('Amplia la distància o tria una altra nit.')).toBeOnTheScreen();
     expect(screen.queryByRole('button', { name: "Mostra'ls tots" })).toBeNull();
+  });
+
+  it('mostra el fenomen, la nit resolta per l’API i els punts sense previsió per distància', async () => {
+    const name = 'Eclipsi lunar penombral, visible sencer des de tot Catalunya i les Illes';
+    mockParams = {
+      esdevenimentId: 'eclipsi-2027',
+      eventName: name,
+      eventWhen: 'Nit del 20 al 21 de febrer',
+      lat: '41.98',
+      lon: '2.82',
+      lloc: 'Girona',
+    };
+    mockRecommendations = {
+      ...mockRecommendations,
+      isPending: false,
+      isFetching: false,
+      data: {
+        ...resposta([punt('montsec', 'Serra del Montsec', null, 45)]),
+        data: '2027-02-20',
+        tempsMaxim: null,
+        radiKm: null,
+        avis: 'sense_previsio',
+        esdeveniment: { id: 'eclipsi-2027', inici: at(22), maxim: null, fi: at(6) },
+      },
+    };
+    await render(<MapScreen />, { wrapper: GestureHandlerRootView });
+    expect(screen.getByRole('header', { name: /Eclipsi lunar penombral/ })).toBeOnTheScreen();
+    expect(screen.getByText(name).props.numberOfLines).toBeUndefined();
+    expect(screen.getByText('ds. 20 febr.')).toBeOnTheScreen();
+    expect(screen.getByText('Rànquing de millors punts')).toBeOnTheScreen();
+    expect(screen.getByText('Des de Girona · sense límit de distància')).toBeOnTheScreen();
+    expect(screen.getByText('80 km en línia recta')).toBeOnTheScreen();
+    const notice = screen.getByText(i18n.t('recommendations.noEventForecast'));
+    expect(notice.props.numberOfLines).toBeUndefined();
+    const row = screen.getByRole('button', {
+      name: /^1r: Serra del Montsec. Encara sense previsió/,
+    });
+    // Sense previsió cap punt es destaca com si fos el millor per observar.
+    expect(StyleSheet.flatten(row.props.style).backgroundColor).toBeUndefined();
+    expect(mockNightMap).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        cluster: false,
+        points: expect.objectContaining({
+          features: [
+            expect.objectContaining({
+              properties: expect.objectContaining({ id: 'montsec', index: null }),
+            }),
+          ],
+        }),
+      }),
+    );
+    await fireEvent.press(row);
+    expect(router.push).toHaveBeenLastCalledWith({
+      pathname: '/punt/[id]',
+      params: { id: 'montsec' },
+    });
+    expect(screen.queryByText('Amaga el rànquing')).toBeNull();
+    await fireEvent(screen.getByTestId('ranking-sheet'), 'layout', {
+      nativeEvent: { layout: { height: 360 } },
+    });
+    await act(() =>
+      fireGestureHandler(getByGestureTestId('ranking-sheet-pan'), [
+        { state: State.BEGAN, translationY: 0 },
+        { state: State.ACTIVE, translationY: 0 },
+        { state: State.ACTIVE, translationY: 250 },
+        { state: State.END, translationY: 250, velocityY: 0 },
+      ]),
+    );
+    expect(screen.queryByText(i18n.t('recommendations.noEventForecast'))).toBeNull();
+    expect(screen.queryByText('Rànquing de millors punts')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Mostra el rànquing' })).toBeOnTheScreen();
+    expect(screen.getByTestId('night-map')).toBeOnTheScreen();
+    expect(screen.queryByText('Mostra el rànquing')).toBeNull();
+    await act(() =>
+      fireGestureHandler(getByGestureTestId('ranking-sheet-pan'), [
+        { state: State.BEGAN, translationY: 0 },
+        { state: State.ACTIVE, translationY: 0 },
+        { state: State.ACTIVE, translationY: -250 },
+        { state: State.END, translationY: -250, velocityY: 0 },
+      ]),
+    );
+    expect(screen.getByText('Rànquing de millors punts')).toBeOnTheScreen();
+    expect(screen.getByText(i18n.t('recommendations.noEventForecast'))).toBeOnTheScreen();
+  });
+
+  it('manté la data preomplerta durant la càrrega i permet reintentar un error', async () => {
+    mockParams = {
+      esdevenimentId: 'leonids-2026',
+      eventName: 'Leònids',
+      eventWhen: '18 de novembre',
+      lat: '41.98',
+      lon: '2.82',
+    };
+    const { rerender } = await render(<MapScreen />, { wrapper: GestureHandlerRootView });
+    expect(screen.getByText('Leònids')).toBeOnTheScreen();
+    expect(screen.getByText('18 de novembre')).toBeOnTheScreen();
+    expect(screen.getByLabelText('Buscant els millors punts…')).toBeOnTheScreen();
+    mockRecommendations = {
+      ...mockRecommendations,
+      isPending: false,
+      isFetching: false,
+      isError: true,
+    };
+    await rerender(<MapScreen />);
+    await fireEvent.press(screen.getByRole('button', { name: 'Torna-ho a provar' }));
+    expect(mockRefetchRecommendations).toHaveBeenCalledTimes(1);
+  });
+
+  it.each(['ca', 'es', 'en'])(
+    'explica qualitat i proximitat i mostra la distància en %s',
+    async (language) => {
+      await i18n.changeLanguage(language);
+      mockParams = {
+        esdevenimentId: 'leonids-2026',
+        eventName: 'Leònids',
+        lat: '41.98',
+        lon: '2.82',
+      };
+      mockRecommendations = {
+        ...mockRecommendations,
+        isPending: false,
+        isFetching: false,
+        data: {
+          ...resposta([{ ...punt('prop', 'Punt proper', 85, 20), distanciaKm: 1.2 }]),
+          tempsMaxim: null,
+          radiKm: null,
+        },
+      };
+      await render(<MapScreen />, { wrapper: GestureHandlerRootView });
+      expect(screen.getByText(i18n.t('recommendations.eventRanking'))).toBeOnTheScreen();
+      const hint = screen.getByText(i18n.t('recommendations.qualityDistanceHint'));
+      expect(hint.props.numberOfLines).toBeUndefined();
+      expect(screen.getByText(i18n.t('recommendations.fromHereUnlimited'))).toBeOnTheScreen();
+      const distance = i18n.t('recommendations.distance', {
+        km: language === 'en' ? '1.2' : '1,2',
+      });
+      expect(screen.getByText(distance)).toBeOnTheScreen();
+      expect(screen.getByText(distance).props.numberOfLines).toBeUndefined();
+      expect(
+        screen.getByRole('button', { name: new RegExp(distance.replace('.', '\\.')) }),
+      ).toBeOnTheScreen();
+    },
+  );
+
+  it('sense cap punt publicat no anuncia un radi ni proposa ampliar un límit inexistent', async () => {
+    mockParams = {
+      esdevenimentId: 'leonids-2026',
+      eventName: 'Leònids',
+      lat: '41.98',
+      lon: '2.82',
+    };
+    mockRecommendations = {
+      ...mockRecommendations,
+      isPending: false,
+      isFetching: false,
+      data: { ...resposta([]), tempsMaxim: null, radiKm: null },
+    };
+    await render(<MapScreen />, { wrapper: GestureHandlerRootView });
+    expect(screen.getByText('Encara no hi ha punts disponibles')).toBeOnTheScreen();
+    expect(screen.getByText('Torna-ho a provar més endavant.')).toBeOnTheScreen();
+  });
+
+  it.each(['ios', 'android'] as const)(
+    'el full respecta el menú inferior a %s sense duplicar-ne el marge',
+    async (platform) => {
+      const original = Platform.OS;
+      Object.defineProperty(Platform, 'OS', { configurable: true, value: platform });
+      try {
+        await render(<MapScreen />, { wrapper: GestureHandlerRootView });
+        const safeArea = screen.getByTestId('ranking-safe-area');
+        if (platform === 'ios') expect(safeArea.props.edges).toMatchObject({ bottom: true });
+        else expect(safeArea.props.edges).toBeUndefined();
+        expect(
+          StyleSheet.flatten(screen.getByTestId('ranking-sheet').props.style).paddingBottom,
+        ).toBe(8);
+        await fireEvent.press(screen.getByRole('button', { name: 'Plega la llista' }));
+        expect(screen.getByRole('button', { name: 'Desplega la llista' })).toBeOnTheScreen();
+        await fireEvent.press(screen.getByRole('button', { name: 'Desplega la llista' }));
+        expect(screen.getByRole('button', { name: 'Plega la llista' })).toBeOnTheScreen();
+      } finally {
+        Object.defineProperty(Platform, 'OS', { configurable: true, value: original });
+      }
+    },
+  );
+
+  it('el lector de pantalla pot plegar i recuperar el full sense arrossegar-lo', async () => {
+    await render(<MapScreen />, { wrapper: GestureHandlerRootView });
+    await fireEvent(
+      screen.getByRole('button', { name: 'Plega la llista' }),
+      'accessibilityAction',
+      {
+        nativeEvent: { actionName: 'activate' },
+      },
+    );
+    expect(screen.queryByLabelText('Buscant els millors punts…')).toBeNull();
+    await fireEvent(
+      screen.getByRole('button', { name: 'Desplega la llista' }),
+      'accessibilityAction',
+      {
+        nativeEvent: { actionName: 'activate' },
+      },
+    );
+    expect(screen.getByLabelText('Buscant els millors punts…')).toBeOnTheScreen();
+    await fireEvent(screen.getByRole('button', { name: 'Plega la llista' }), 'accessibilityEscape');
+    expect(screen.getByRole('button', { name: 'Desplega la llista' })).toBeOnTheScreen();
+    expect(screen.getByTestId('night-map')).toBeOnTheScreen();
   });
 });

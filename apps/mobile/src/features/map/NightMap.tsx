@@ -8,9 +8,11 @@ import type { StyleSpecification } from 'maplibre-gl';
 import { useEffect, useRef } from 'react';
 
 import '@/core/map/maplibreWorker';
+import { NIGHT_MAP_CSS, NIGHT_MAP_TINT } from '@/core/theme/nightMap';
 
 import {
   bindClusterInteraction,
+  CLUSTERS_LAYER,
   MARKERS_LAYER,
   type MapPoints,
   type MarkerPalette,
@@ -47,6 +49,8 @@ type NightMapProps = {
   mapStyle: StyleSpecification;
   camera: MapCamera;
   chrome: MapChrome;
+  /** Mode nit (ADR-0032): el mapa passa a vermell amb un filtre. */
+  night?: boolean;
   accessibilityLabel: string;
   userLocation: { lat: number; lon: number } | null;
   userHeading: number | null;
@@ -56,6 +60,10 @@ type NightMapProps = {
   points: MapPoints;
   markerPalette: MarkerPalette;
   onPointPress: (id: string) => Promise<void>;
+  /** Un toc al mapa fora dels marcadors, amb on ha caigut. Sense, tocar el mapa no fa res. */
+  onMapPress?: (lat: number, lon: number) => Promise<void>;
+  /** El lloc triat d'on surt un rànquing «A prop meu» (HU02), amb el seu nom accessible. */
+  origin?: { lat: number; lon: number; label: string; color: string } | null;
   /** Agrupa els punts propers (el catàleg). Només compta en crear el mapa. */
   cluster?: boolean;
   /** Si n'hi ha, la càmera hi va (un rànquing); cada zona nova la torna a moure. */
@@ -71,6 +79,7 @@ export default function NightMap({
   mapStyle,
   camera,
   chrome,
+  night = false,
   accessibilityLabel,
   points,
   userLocation,
@@ -80,6 +89,8 @@ export default function NightMap({
   userLocationColor,
   markerPalette,
   onPointPress,
+  onMapPress,
+  origin = null,
   cluster = true,
   fit = null,
 }: NightMapProps) {
@@ -90,6 +101,7 @@ export default function NightMap({
   const headingMarker = useRef<maplibregl.Marker | null>(null);
   const latestPoints = useRef({ points, markerPalette });
   const onPointPressRef = useRef(onPointPress);
+  const onMapPressRef = useRef(onMapPress);
   // El pont torna a enviar les props a cada render natiu: el mapa es crea un sol cop amb les inicials.
   const initial = useRef({ mapStyle, camera, cluster });
   const latestFit = useRef(fit);
@@ -97,7 +109,8 @@ export default function NightMap({
 
   useEffect(() => {
     onPointPressRef.current = onPointPress;
-  }, [onPointPress]);
+    onMapPressRef.current = onMapPress;
+  }, [onPointPress, onMapPress]);
 
   useEffect(() => {
     latestPoints.current = { points, markerPalette };
@@ -138,6 +151,14 @@ export default function NightMap({
       const id = event.features?.[0]?.properties?.id;
       if (typeof id === 'string') void onPointPressRef.current(id);
     };
+    // Un toc sobre un marcador o un grup ja té la seva acció: només compta el que cau al terreny.
+    const clickMap = (event: maplibregl.MapMouseEvent) => {
+      const press = onMapPressRef.current;
+      if (!press) return;
+      const layers = [MARKERS_LAYER, CLUSTERS_LAYER].filter((id) => map.getLayer(id));
+      if (layers.length && map.queryRenderedFeatures(event.point, { layers }).length) return;
+      void press(event.lngLat.lat, event.lngLat.lng);
+    };
     const enterPoint = () => {
       map.getCanvas().style.cursor = 'pointer';
     };
@@ -145,6 +166,7 @@ export default function NightMap({
       map.getCanvas().style.cursor = '';
     };
     map.on('click', MARKERS_LAYER, clickPoint);
+    map.on('click', clickMap);
     map.on('mouseenter', MARKERS_LAYER, enterPoint);
     map.on('mouseleave', MARKERS_LAYER, leavePoint);
     // Les dades poden arribar abans o després que l'estil s'hagi carregat.
@@ -165,6 +187,7 @@ export default function NightMap({
     return () => {
       unbindClusters();
       map.off('click', MARKERS_LAYER, clickPoint);
+      map.off('click', clickMap);
       map.off('mouseenter', MARKERS_LAYER, enterPoint);
       map.off('mouseleave', MARKERS_LAYER, leavePoint);
       ready.current = false;
@@ -172,6 +195,48 @@ export default function NightMap({
       map.remove();
     };
   }, []);
+
+  const originLat = origin?.lat;
+  const originLon = origin?.lon;
+  const originLabel = origin?.label;
+  const originColor = origin?.color;
+  useEffect(() => {
+    const map = mapRef.current;
+    if (
+      !map ||
+      originLat === undefined ||
+      originLon === undefined ||
+      !Number.isFinite(originLat) ||
+      !Number.isFinite(originLon)
+    ) {
+      return;
+    }
+    // El punt de sortida, amb un halo quiet perquè no es confongui amb la ubicació (que batega).
+    // MapLibre col·loca el marcador amb `transform`: l'entrada s'anima en un fill.
+    const element = document.createElement('div');
+    element.setAttribute('role', 'img');
+    element.setAttribute('aria-label', originLabel ?? '');
+    Object.assign(element.style, { width: '14px', height: '14px', pointerEvents: 'none' });
+    const dot = document.createElement('span');
+    dot.className = 'talaia-origin';
+    Object.assign(dot.style, {
+      display: 'block',
+      width: '100%',
+      height: '100%',
+      borderRadius: '50%',
+      boxSizing: 'border-box',
+      backgroundColor: originColor ?? '',
+      border: `2px solid ${markerPalette.background}`,
+      boxShadow: `0 0 0 5px ${originColor}38, 0 0 18px 4px ${originColor}55`,
+    });
+    element.appendChild(dot);
+    const marker = new maplibregl.Marker({ element, pitchAlignment: 'viewport' })
+      .setLngLat([originLon, originLat])
+      .addTo(map);
+    return () => {
+      marker.remove();
+    };
+  }, [originLat, originLon, originLabel, originColor, markerPalette.background]);
 
   const lat = userLocation?.lat;
   const lon = userLocation?.lon;
@@ -271,16 +336,30 @@ export default function NightMap({
           .talaia-location-pulse { animation: none; opacity: 0.12; }
         }
 
+        .talaia-origin { animation: talaia-origin-drop 420ms cubic-bezier(0.2, 0.9, 0.3, 1.25) both; }
+        @keyframes talaia-origin-drop {
+          from { transform: translateY(-10px) scale(0.4); opacity: 0; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .talaia-origin { animation: none; }
+        }
+
         .maplibregl-ctrl-attrib { background-color: ${chrome.background} !important; color: ${chrome.text}; }
         .maplibregl-ctrl-attrib a { color: ${chrome.link}; }
         .maplibregl-ctrl-attrib-button { background-color: transparent !important; filter: invert(1); }
+        ${night ? NIGHT_MAP_CSS : ''}
       `}</style>
       <div
         ref={container}
         role="region"
         aria-label={accessibilityLabel}
-        style={{ position: 'fixed', inset: 0, background: chrome.background }}
+        style={{
+          position: 'fixed',
+          inset: 0,
+          background: chrome.background,
+        }}
       />
+      {night && <div aria-hidden style={{ position: 'fixed', ...NIGHT_MAP_TINT }} />}
     </>
   );
 }

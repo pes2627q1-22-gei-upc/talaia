@@ -64,18 +64,26 @@ jobs:
         if: matrix.check == 'tests'
         run: npm run test --workspace apps/mobile -- --ci --coverage --runInBand
 
-      # S'executa encara que fallin els de l'app; la cobertura per a Sonar continua sent la de l'app.
-      - name: Tests de l'API
+      # Els altres workspaces s'executen encara que fallin els tests de l'app.
+      - name: Tests de l'admin amb cobertura
         if: ${{ !cancelled() && matrix.check == 'tests' }}
-        run: npm run test --workspace services/api -- --ci
+        run: npm run test --workspace apps/admin -- --coverage
 
-      - name: Tests del worker
+      - name: Tests de l'API amb cobertura
         if: ${{ !cancelled() && matrix.check == 'tests' }}
-        run: npm run test --workspace services/worker -- --ci
+        run: npm run test --workspace services/api -- --ci --coverage --runInBand
 
-      - name: Tests de @talaia/db
+      - name: Tests del worker amb cobertura
         if: ${{ !cancelled() && matrix.check == 'tests' }}
-        run: npm run test --workspace packages/db -- --ci
+        run: npm run test --workspace services/worker -- --ci --coverage --runInBand
+
+      - name: Tests de @talaia/db amb cobertura
+        if: ${{ !cancelled() && matrix.check == 'tests' }}
+        run: npm run test --workspace packages/db -- --ci --coverage --runInBand
+
+      - name: Tests de @talaia/index amb cobertura
+        if: ${{ !cancelled() && matrix.check == 'tests' }}
+        run: npm run test --workspace packages/index -- --ci --coverage --runInBand
 
       - name: Tests dels scripts de dades
         if: ${{ !cancelled() && matrix.check == 'tests' }}
@@ -93,12 +101,42 @@ jobs:
         if: ${{ !cancelled() && matrix.check == 'tests' }}
         run: npm run test:rnf
 
-      - name: Desa la cobertura
+      - name: Tests de la preparació de cobertura
+        if: ${{ !cancelled() && matrix.check == 'tests' }}
+        run: node --test scripts/ci/*.test.mjs
+
+      - name: Prepara els informes de cobertura per a SonarCloud
+        if: matrix.check == 'tests'
+        run: node scripts/ci/prepare-sonar-coverage.mjs
+
+      - name: Desa la cobertura de l'app
         if: ${{ !cancelled() && matrix.check == 'tests' && (steps.tests.outcome == 'success' || steps.tests.outcome == 'failure') }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: mobile-coverage
           path: apps/mobile/coverage/
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Desa la cobertura de l'admin
+        if: ${{ !cancelled() && matrix.check == 'tests' }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: admin-coverage
+          path: apps/admin/coverage/
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Desa la cobertura dels serveis i paquets
+        if: ${{ !cancelled() && matrix.check == 'tests' }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: services-coverage
+          path: |
+            services/api/coverage/
+            services/worker/coverage/
+            packages/db/coverage/
+            packages/index/coverage/
           if-no-files-found: error
           retention-days: 7
 
@@ -121,9 +159,6 @@ jobs:
               exit 1
             fi
           done
-          test -s apps/mobile/coverage/lcov.info
-          # Jest escriu rutes relatives a apps/mobile; Sonar analitza des de l'arrel.
-          sed 's|^SF:src/|SF:apps/mobile/src/|' apps/mobile/coverage/lcov.info > apps/mobile/coverage/lcov-sonar.info
 
       - name: Anàlisi SonarCloud i Quality Gate
         if: steps.sonar_config.outcome == 'success'

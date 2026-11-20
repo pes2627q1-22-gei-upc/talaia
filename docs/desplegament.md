@@ -75,7 +75,7 @@ sudo mkdir -p /opt/talaia && sudo chown "$USER": /opt/talaia && sudo chmod 700 /
 (umask 077 && cp ~/talaia/.env.example /opt/talaia/.env)
 ```
 
-Omple com a mínim `PUBLIC_HOST`, `PUBLIC_PORT` (`40000+XXX·10`), `ACME_EMAIL`, `DUCKDNS_TOKEN`, `DATABASE_URL`, `SUPABASE_URL` (`https://<ref>.supabase.co`, la mateixa de l'app; sense, el compose no arrenca) i `API_PUBLIC_URL`. Perquè el worker desi les observacions de les estacions XEMA, també `METEOCAT_API_KEY`. Per activar l'accés d'Aprop al calendari, configura també `APROP_API_KEY` amb una clau aleatòria de 32 caràcters o més; sense aquesta variable, les peticions amb API key responen 503. Els valors reals són al gestor de contrasenyes de l'equip (P20), mai al repo ni al xat.
+Omple com a mínim `PUBLIC_HOST`, `PUBLIC_PORT` (`40000+XXX·10`), `ACME_EMAIL`, `DUCKDNS_TOKEN`, `DATABASE_URL`, `SUPABASE_URL` (`https://<ref>.supabase.co`, la mateixa de l'app; sense, el compose no arrenca) i `API_PUBLIC_URL`. Perquè el worker desi les observacions de les estacions XEMA, també `METEOCAT_API_KEY`. Si el projecte d'Expo té activada la seguretat reforçada de push, el worker necessita `EXPO_ACCESS_TOKEN` per enviar les notificacions de les alertes (TG-154). El worker de la VM envia les push perquè el compose posa `ENVIA_PUSH=true` per defecte; amb `ENVIA_PUSH=false` al `.env` es deixen d'enviar. Per activar l'accés d'Aprop al calendari, configura també `APROP_API_KEY` amb una clau aleatòria de 32 caràcters o més; sense aquesta variable, les peticions amb API key responen 503. Perquè arribi un correu quan un deploy falla, les quatre `ALERT_*` (secció «Avís per correu»). Els valors reals són al gestor de contrasenyes de l'equip (P20), mai al repo ni al xat.
 
 Compte: Docker Compose llegeix un comentari al final d'una línia buida (`VAR=   # …`) com si fos el valor. Posa els comentaris a la línia de sobre.
 
@@ -124,9 +124,29 @@ GitHub no executa res a la VM: la VM només baixa `stable`, i una PR (d'un fork 
 
 1. Una `release/0.N.0` o un `hotfix/0.N.x` es fusiona a `stable` ([git-workflow.md](git-workflow.md)).
 2. En menys de 5 minuts, el cron de la VM executa `desplega.sh`: `git reset --hard origin/stable`, `docker compose up -d --build --remove-orphans --wait`, un healthcheck amb `curl --resolve <PUBLIC_HOST>:8080:127.0.0.1`, que valida el certificat real contra el Nginx local, i `docker image prune`.
-3. Cada deploy queda a `~/talaia-deploy.log`. Si falla, el log acaba amb `ERROR` i el cron el torna a provar a cada passada fins que surti bé: una fallada de xarxa o de Docker Hub es resol sola, i un commit trencat deixa un `ERROR` cada 5 minuts fins que arribi el hotfix a `stable`. No hi ha rollback automàtic: si el contenidor nou no passa el healthcheck, ja ha substituït l'anterior.
+3. Cada deploy queda a `~/talaia-deploy.log`. Si falla, el log acaba amb `ERROR (<pas>)`: `git fetch`, `git reset`, `docker compose`, `healthcheck` o `docker image prune`. El cron el torna a provar a cada passada fins que surti bé: una fallada de xarxa o de Docker Hub es resol sola, i un commit trencat deixa un `ERROR` cada 5 minuts fins que arribi el hotfix a `stable`. No hi ha rollback automàtic: si el contenidor nou no passa el healthcheck, ja ha substituït l'anterior. Si l'avís està configurat, arriba un correu (secció següent).
 
 A mà, a la VM, torna a desplegar el commit actual: `FORCE=1 ~/talaia/deploy/scripts/desplega.sh`.
+
+### Avís per correu
+
+Quan un deploy falla, `desplega.sh` crida `deploy/scripts/avisa.sh`, que envia un correu des del Gmail de l'equip ([ADR-0035](decisions/0035-avis-deploy.md)):
+
+- **Un sol correu per fallada.** El commit pel qual ja s'ha avisat queda a `.git/talaia-avisat`. Els reintents del cron no tornen a avisar fins que falla un altre commit. Si el que falla és el `git fetch`, la clau és `git-fetch`: un correu i prou mentre GitHub no respongui.
+- **Un correu de recuperació** quan torna a anar bé, ja sigui amb un deploy que acaba bé o amb un fetch que torna a anar sense res de nou. Llavors s'esborra `.git/talaia-avisat`. Si hi ha un deploy pendent (`.git/talaia-pendent`: un `FORCE=1` que ha fallat, o `stable` que torna a l'últim commit bo), «sense canvis» no compta com a recuperació: el cron torna a desplegar, i el correu només arriba quan el healthcheck passa. `talaia-pendent` s'escriu a cada deploy fallat, surti o no el correu, i s'esborra quan el deploy acaba bé.
+- **Què hi porta:** el pas que ha fallat, el commit, l'hora, la màquina i les últimes 30 línies de `~/talaia-deploy.log` (un altre log amb `DEPLOY_LOG=…`). Mai el fitxer d'entorn.
+- **Si el correu no surt** (xarxa, contrasenya revocada), queda `AVÍS: no s'ha pogut enviar el correu` al log i el deploy no se'n ressent. L'estat no es desa, i a la passada següent es torna a provar.
+- **Sense les quatre variables, no fa res.** Van a `/opt/talaia/.env`: `ALERT_SMTP_URL=smtp://smtp.gmail.com:587`, `ALERT_FROM` (el compte de l'equip, P20), `ALERT_TO` (adreces separades per comes) i `ALERT_SMTP_PASSWORD`. La contrasenya és una contrasenya d'aplicació del compte, **diferent de la de Supabase**, perquè es pugui revocar per separat. Els valors, al gestor de contrasenyes. La contrasenya no surt a la línia d'ordres (`ps`): curl la llegeix d'un fitxer temporal de permisos 0600.
+
+`deploy-check.yml` prova `avisa.sh` a cada PR que toca `deploy/` (`deploy/tests/prova-avis.sh`, contra un Mailpit amb STARTTLS), i també `desplega.sh` sencer amb el trap, sobre un clon de prova amb Docker i el healthcheck simulats. En local: `sh deploy/tests/prova-avis.sh` (Docker, openssl, jq i git).
+
+Per provar-ho a la VM sense trencar el deploy, envia un avís de fallada de prova amb una clau que no s'hagi fet servir mai. Llavors arriba el correu i n'envies el de recuperació:
+
+```bash
+echo "Prova de l'avís de deploy" > /tmp/cos
+sh ~/talaia/deploy/scripts/avisa.sh fallada /opt/talaia/.env /tmp/avisat prova "Prova d'avís" /tmp/cos
+sh ~/talaia/deploy/scripts/avisa.sh recuperat /opt/talaia/.env /tmp/avisat "Prova de recuperació" /tmp/cos
+```
 
 ## El worker
 
@@ -153,3 +173,7 @@ En local, el mateix compose arrenca amb `.env.example` i un certificat autosigna
 docker compose -f deploy/compose.yaml --env-file .env.example up -d --build --wait
 curl -k --resolve talaia.duckdns.org:8080:127.0.0.1 https://talaia.duckdns.org:8080/api/v1/health
 ```
+
+## Última prova de muntar-la de zero
+
+*Pendent (TG-180).* Quan es faci, apunta-hi la data, on (una segona VM, una VM local o un altre projecte de Compose a la mateixa VM), quant ha trigat seguint la guia literalment, i què s'ha corregit.

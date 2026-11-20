@@ -49,6 +49,10 @@ const profileStore: ProfileStore = {
     p.dataBloqueig = bloquejat ? (p.dataBloqueig ?? new Date('2026-11-12T10:00:00.000Z')) : null;
     return p;
   },
+  deleteAccount: async (authUserId) => {
+    // Com la cascada de `auth.users` → `perfils`.
+    perfils = perfils.filter((p) => p.authUserId !== authUserId);
+  },
 };
 
 let app: ReturnType<typeof createApp>;
@@ -174,6 +178,39 @@ describe('GET /api/v1/admin/usuaris', () => {
   });
 });
 
+describe('GET /api/v1/admin/me', () => {
+  it('confirma un administrador sense retornar dades dels usuaris', async () => {
+    const res = await request(app)
+      .get('/api/v1/admin/me')
+      .set('Authorization', `Bearer ${await tokenFor(ADMIN.auth)}`);
+    expect(res.status).toBe(204);
+    expect(res.text).toBe('');
+    expect(res.headers['cache-control']).toBe('no-store');
+  });
+
+  it('rebutja absència de sessió, usuaris normals i comptes bloquejats', async () => {
+    expect((await request(app).get('/api/v1/admin/me')).status).toBe(401);
+    const user = await request(app)
+      .get('/api/v1/admin/me')
+      .set('Authorization', `Bearer ${await tokenFor(MARIA.auth)}`);
+    expect(user.status).toBe(403);
+    expect(user.body.error.code).toBe('forbidden');
+    perfils[0]!.bloquejat = true;
+    const blocked = await request(app)
+      .get('/api/v1/admin/me')
+      .set('Authorization', `Bearer ${await tokenFor(ADMIN.auth)}`);
+    expect(blocked.status).toBe(403);
+    expect(blocked.body.error.code).toBe('account_blocked');
+  });
+
+  it('figura a OpenAPI amb BearerSupabase', async () => {
+    const res = await request(app).get('/api/v1/openapi.json');
+    const operation = res.body.paths['/admin/me'].get;
+    expect(operation.security).toEqual([{ BearerSupabase: [] }]);
+    expect(Object.keys(operation.responses).sort()).toEqual(['204', '401', '403', '503']);
+  });
+});
+
 describe('compte bloquejat', () => {
   it('rep 403 account_blocked a /perfil i, un cop desbloquejat, hi torna a entrar', async () => {
     expect((await getPerfil(MARIA.auth)).status).toBe(200);
@@ -188,7 +225,12 @@ describe('compte bloquejat', () => {
         .patch('/api/v1/perfil')
         .set('Authorization', `Bearer ${await tokenFor(MARIA.auth)}`)
         .send({ nom: 'Maria' }),
+      // Si es pogués esborrar, es podria tornar a registrar amb el mateix correu.
+      request(app)
+        .delete('/api/v1/perfil')
+        .set('Authorization', `Bearer ${await tokenFor(MARIA.auth)}`),
     ]);
+    expect(byAuth(MARIA.auth)).not.toBeNull();
     for (const res of responses) {
       expect(res.status).toBe(403);
       expect(res.body).toEqual({

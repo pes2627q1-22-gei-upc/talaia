@@ -1,10 +1,11 @@
 import * as Haptics from 'expo-haptics';
 import { type ReactNode, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 import { Directions, Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { FadeIn, FadeInLeft, FadeInRight } from 'react-native-reanimated';
 
-import { type ColorToken, colors, motion, radii, sizes, spacing } from '@/core/theme/tokens';
+import { makeStyles, useTheme } from '@/core/theme/theme';
+import { type ColorToken, motion, radii, sizes, spacing } from '@/core/theme/tokens';
 
 import { AppText } from './AppText';
 import { type CalendarMonth, monthIndex, monthOf, monthWeeks, shiftMonth } from './calendarGrid';
@@ -63,6 +64,8 @@ export function MonthCalendar({
   previousLabel,
   nextLabel,
 }: MonthCalendarProps) {
+  const styles = useStyles();
+  const { colors } = useTheme();
   const [internalVisible, setInternalVisible] = useState(() => monthOf(value ?? today));
   const visible = visibleMonth ?? internalVisible;
   const [direction, setDirection] = useState<-1 | 1>(1);
@@ -207,7 +210,7 @@ export function MonthCalendar({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(({ colors }) => ({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -250,4 +253,4 @@ const styles = StyleSheet.create({
     height: spacing.xs + spacing.xs / 2,
     borderRadius: radii.pill,
   },
-});
+}));

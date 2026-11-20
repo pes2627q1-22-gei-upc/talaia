@@ -1,11 +1,12 @@
 import type { ObjectiuObservacio } from '@talaia/shared';
 import { Image } from 'expo-image';
 import type { PropsWithChildren } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { colors, motion, sizes, spacing } from '@/core/theme/tokens';
+import { makeStyles, useNightTint } from '@/core/theme/theme';
+import { motion, sizes, spacing } from '@/core/theme/tokens';
 import { AppText } from '@/shared/ui/AppText';
 import { Button } from '@/shared/ui/Button';
 import { SegmentedControl } from '@/shared/ui/SegmentedControl';
@@ -47,6 +48,8 @@ function Enter({ index, children }: PropsWithChildren<{ index: number }>) {
 
 /** «Què vols veure?» (HU01, mockup 02): l'inici de la pestanya Explora. */
 export function ExploreScreen() {
+  const nightTintOnPrimary = useNightTint('nit');
+  const styles = useStyles();
   const vm = useExploreViewModel();
   const [firstRow, secondRow] = [vm.goals.slice(0, 3), vm.goals.slice(3)];
 
@@ -163,7 +166,14 @@ export function ExploreScreen() {
               onPress={vm.cta.onPress}
               disabled={vm.cta.disabled}
               haptic
-              icon={<Image source={searchIcon} style={styles.ctaIcon} accessible={false} />}
+              icon={
+                <Image
+                  tintColor={nightTintOnPrimary}
+                  source={searchIcon}
+                  style={styles.ctaIcon}
+                  accessible={false}
+                />
+              }
               style={styles.cta}
             />
             <Button
@@ -182,7 +192,7 @@ export function ExploreScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(({ colors }) => ({
   root: { flex: 1, backgroundColor: colors.nit },
   safeArea: { flex: 1 },
   content: { paddingHorizontal: spacing.ml, paddingTop: spacing.sm, paddingBottom: spacing.xl },
@@ -196,4 +206,4 @@ const styles = StyleSheet.create({
   cta: { marginTop: spacing.ms },
   // Centrat sota el botó principal, amb aire abans de la barra de pestanyes.
   browse: { alignSelf: 'center', marginTop: spacing.sm },
-});
+}));

@@ -1,10 +1,13 @@
-import { apiPost } from '@/core/api/httpClient';
+import { ApiError, apiPost } from '@/core/api/httpClient';
 
 import { authRepository, SignInFailure } from '../authRepository';
 import { profileRepository } from '../profileRepository';
 import { signInAndEnsureProfile } from '../signIn';
 
-jest.mock('@/core/api/httpClient', () => ({ apiPost: jest.fn() }));
+jest.mock('@/core/api/httpClient', () => ({
+  ...jest.requireActual('@/core/api/httpClient'),
+  apiPost: jest.fn(),
+}));
 jest.mock('../authRepository', () => ({
   ...jest.requireActual('../authRepository'),
   authRepository: { signOut: jest.fn(async () => {}) },
@@ -52,4 +55,10 @@ it('si el perfil falla, tanca la sessió perquè no quedi a mitges', async () =>
   jest.mocked(apiPost).mockRejectedValue(new Error('503'));
   expect(await signInAndEnsureProfile(async () => {})).toEqual({ ok: false, reason: 'profile' });
   expect(authRepository.signOut).toHaveBeenCalledTimes(1);
+});
+
+it('un compte bloquejat entra igualment: la porta li mostra l’avís (TG-179)', async () => {
+  jest.mocked(apiPost).mockRejectedValue(new ApiError(403, 'account_blocked', 'Bloquejat'));
+  expect(await signInAndEnsureProfile(async () => {})).toEqual({ ok: true });
+  expect(authRepository.signOut).not.toHaveBeenCalled();
 });

@@ -1,9 +1,10 @@
 import { Image } from 'expo-image';
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 import { GestureHandlerRootView, ScrollView } from 'react-native-gesture-handler';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { colors, radii, sizes, spacing } from '@/core/theme/tokens';
+import { makeStyles, useNightTint, useTheme } from '@/core/theme/theme';
+import { radii, sizes, spacing } from '@/core/theme/tokens';
 import { AppText } from '@/shared/ui/AppText';
 import { MonthCalendar } from '@/shared/ui/MonthCalendar';
 import { PressableScale } from '@/shared/ui/PressableScale';
@@ -16,6 +17,9 @@ import { useCalendarViewModel } from './useCalendarViewModel';
 
 /** Calendari mensual de fenòmens (HU09, mockup 08). */
 export function CalendarScreen() {
+  const nightTint = useNightTint();
+  const styles = useStyles();
+  const { colors } = useTheme();
   const vm = useCalendarViewModel();
 
   return (
@@ -84,7 +88,12 @@ export function CalendarScreen() {
                   accessibilityState={{ expanded: vm.filterMenuOpen }}
                 >
                   {vm.filter === 'all' ? (
-                    <Image source={filterIcons.all} style={styles.filterIcon} accessible={false} />
+                    <Image
+                      tintColor={nightTint}
+                      source={filterIcons.all}
+                      style={styles.filterIcon}
+                      accessible={false}
+                    />
                   ) : (
                     <View
                       style={[
@@ -97,6 +106,7 @@ export function CalendarScreen() {
                   <AppText variant="chip">{vm.activeFilterShortLabel}</AppText>
                   <Image
                     source={require('@/assets/images/calendar/chevron-down.svg')}
+                    tintColor={nightTint}
                     style={styles.chevron}
                     accessible={false}
                   />
@@ -121,8 +131,9 @@ export function CalendarScreen() {
               <StateMessage title={vm.emptyMessage} />
             ) : (
               vm.events.map((event) => (
-                <View
+                <PressableScale
                   key={event.id}
+                  onPress={() => vm.openEvent(event.id)}
                   style={[
                     styles.event,
                     event.past && styles.pastEvent,
@@ -154,6 +165,7 @@ export function CalendarScreen() {
                   {event.past ? (
                     <Image
                       source={require('@/assets/images/calendar/history.svg')}
+                      tintColor={nightTint}
                       style={styles.eventIcon}
                       accessible
                       accessibilityLabel={vm.labels.past}
@@ -165,9 +177,14 @@ export function CalendarScreen() {
                       </AppText>
                     </View>
                   ) : (
-                    <Image source={event.icon} style={styles.eventIcon} accessible={false} />
+                    <Image
+                      tintColor={nightTint}
+                      source={event.icon}
+                      style={styles.eventIcon}
+                      accessible={false}
+                    />
                   )}
-                </View>
+                </PressableScale>
               ))
             )}
           </View>
@@ -188,7 +205,12 @@ export function CalendarScreen() {
                 accessibilityRole="button"
                 accessibilityState={{ selected: value === vm.filter }}
               >
-                <Image source={filterIcons[value]} style={styles.filterIcon} accessible={false} />
+                <Image
+                  tintColor={nightTint}
+                  source={filterIcons[value]}
+                  style={styles.filterIcon}
+                  accessible={false}
+                />
                 <AppText variant="label" style={styles.filterOptionLabel}>
                   {label}
                 </AppText>
@@ -225,7 +247,7 @@ export function CalendarScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(({ colors }) => ({
   screen: { flex: 1, backgroundColor: colors.nit },
   content: {
     paddingHorizontal: spacing.ml,
@@ -371,4 +393,4 @@ const styles = StyleSheet.create({
     backgroundColor: colors.vel,
     borderRadius: radii.pill,
   },
-});
+}));

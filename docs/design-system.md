@@ -29,9 +29,30 @@ Font de veritat visual: els mockups de **Figma** (16 pantalles). Aquest document
 
 Els quatre tokens `fenomen*` són categories del calendari, sense significat de qualitat de l'índex ni d'estat. Els punts, les icones i els filtres comparteixen el color de cada categoria. Les etiquetes «Avui» i «Demà» i la icona de passat fan servir colors neutres.
 
-**Degradats** (`gradients` a `tokens.ts`): `cel`, el fons de la benvinguda, de `#0B1030` a `#17205A` (58 %) i `#2F3680`; `pointMapFade`, la transició transparent del mapa de la fitxa cap a `nit` (punt intermedi `#0E143333`). S'apliquen amb `expo-linear-gradient`. Els colors exclusius dels degradats viuen aquí. `pointMapColors` agrupa els colors amb alfa del marcador i de l'atribució del mapa DOM.
+**Degradats** (`gradients` a `tokens.ts`): `cel`, el fons de la benvinguda, de `#0B1030` a `#17205A` (58 %) i `#2F3680`; `pointMapFade`, la transició transparent del mapa de la fitxa cap a `nit` (punt intermedi `#0E143333`). `eventSky`, el cel de la fitxa d'un esdeveniment (mockup 09), de `#1C2560` a `#0B1030`, i `eventHorizon`, l'horitzó que el tanca per sota, de transparent a `#06091A` (72 %). S'apliquen amb `expo-linear-gradient`. Els colors exclusius dels degradats viuen aquí. `pointMapColors` agrupa els colors amb alfa del marcador i de l'atribució del mapa DOM.
 
 Escala de l'índex de visibilitat: `tap` (0–39) → `jus` (40–69) → `ras` (70–100). *Llindars a confirmar amb la fórmula v1 (TG-98).* L'app no els calcula: la franja arriba de l'API (`IndexVisibilitat.franja`) i és el nom del token de color.
+
+### Mode nit (paleta `vermell`, ADR-0032)
+
+Quan s'observa, l'app passa a vermell sobre negre: el blau i el verd trenquen l'adaptació de l'ull a la foscor. És la paleta `colorsVermell` (amb `gradientsVermell` i `pointMapColorsVermell`) de `tokens.ts`, amb les mateixes claus.
+
+| Token | `vermell` | | Token | `vermell` |
+|---|---|---|---|---|
+| `nit` | `#000000` | | `lluna` · `far` · `ubicacio` · `ras` | `#FF0000` |
+| `card` | `#0F0000` | | `boira` | `#F20000` |
+| `sheet` | `#120000` | | `jus` | `#DC0000` |
+| `vel` | `#170000` | | `tap` | `#BE0000` |
+| `crep` | `#1C0000` | | `pedra` · `fenomen*` | `#C80000` |
+| `linia` | `#2E0000` | | | |
+| `vora` | `#5A0000` | | | |
+
+- **Regles,** comprovades per `core/theme/__tests__/palettes.test.ts`: només el canal vermell, el text ≥ 4,5:1 i els accents ≥ 3:1 sobre totes les superfícies (de `nit` a `crep`).
+- **El text principal i el secundari surten gairebé iguals:** el contrast màxim sobre el negre és 5,25:1. La jerarquia la fan la mida i el pes.
+- **Les franges de l'índex i les categories del calendari no es distingeixen pel color.** Al costat sempre hi ha d'haver el número o el text.
+- **Com es fa servir:** les pantalles no importen `colors`: fan servir `useTheme()` i `makeStyles()` (`core/theme/theme.tsx`), i així es tornen a pintar quan canvia el tema.
+- **Icones SVG:** els SVG porten el seu color. Una icona que no té `tintColor` el pren de `useNightTint()`, que en mode nit dona `lluna` (o `nit` amb `useNightTint('nit')`, sobre un botó `primary`) i en el tema normal no fa res.
+- **Mapes:** les DOM components (`NightMap`, `PointLocationMapContent` i `ZonePickerMap`) no veuen el tema. Reben `night`, posen `filter: grayscale(1)` només al canvas de MapLibre i, a sobre de tot, una capa `#FF0000` amb `mix-blend-mode: multiply` (`core/theme/nightMap.ts`). El que es dibuixa al canvas rep la paleta normal, i el filtre el passa a vermell. Els marcadors HTML, l'atribució i els controls reben la del tema: el gris els apagaria (`#FF0000` → `#360000`), i la capa no els canvia.
 
 ## Tipografia
 
@@ -57,7 +78,7 @@ Es carreguen amb `@expo-google-fonts` al layout arrel. Cada pes és una família
 | `tag` | Atkinson 700 | 12 / 16 | Etiquetes |
 | `overline` | Atkinson 800 | 10,5 / 14, majúscules | Franja sota la xifra («CEL RAS») |
 
-Espaiats (`spacing`): 2 (entre un títol i el seu subtítol) · 4 · 8 · 12 · 16 · 20 · 24 · 32, sense sumar-hi ni restar-hi píxels. Radis (`radii`): 10 (etiquetes) · 14 (camps i controls de formulari) · 16 (botons, targetes) · 20 (targeta de l'índex) · píndola. Mides fixes (`sizes`): botó 54, xip 34, tacte mínim 44, icona 22 (petita, 16). «Què vols veure?» fa servir targetes de 81 amb icona de 26 i files de formulari de 46. El rànquing fa servir una columna d'índex de 72, una nansa de 36 × 4 i punts de llegenda de 8. La fitxa del punt fa servir mapa de 300, gràfic horari de 64, columna horària de 44, amplada de l'índex de 96 i marcador de 66 (nucli 43, tija 18, halo 10). El calendari fa servir files de fenomen de 82 i una caixa de data de 46 × 54.
+Espaiats (`spacing`): 2 (entre un títol i el seu subtítol) · 4 · 8 · 12 · 16 · 20 · 24 · 32, sense sumar-hi ni restar-hi píxels. Radis (`radii`): 10 (etiquetes) · 14 (camps i controls de formulari) · 16 (botons, targetes) · 20 (targeta de l'índex) · píndola. Mides fixes (`sizes`): botó 54, xip 34, tacte mínim 44, icona 22 (petita, 16). «Què vols veure?» fa servir targetes de 81 amb icona de 26 i files de formulari de 46. El rànquing fa servir una columna d'índex de 72, una nansa de 36 × 4 i punts de llegenda de 8. La fitxa del punt fa servir mapa de 300, gràfic horari de 64, columna horària de 44, amplada de l'índex de 96 i marcador de 66 (nucli 43, tija 18, halo 10). El calendari fa servir files de fenomen de 82 i una caixa de data de 46 × 54. La fitxa de l'esdeveniment fa servir una targeta del cel de 106 amb un horitzó de 28 i l'anell del radiant de 34.
 
 ## Components base (TG-113)
 
@@ -83,7 +104,7 @@ A `apps/mobile/src/shared/ui/`. Cap pantalla torna a definir un botó, una targe
 
 L'índex, al Figma, és només la xifra amb el color de la franja i l'etiqueta: ni anell ni barra. L'anell és dels marcadors del mapa (capa de MapLibre, TG-90) i les barres, del desglossament per factors (TG-105).
 
-Encara no hi són: el gest d'arrossegar el full inferior (TG-102), les etiquetes i la llegenda del mapa (TG-89/TG-90/TG-102) i les icones de Talaia (`Button` ja accepta `icon`). La barra de pestanyes és la nativa (`NativeTabs`), amb quatre pestanyes (Explora, Calendari, Alertes i Perfil) i l'activa en `far`.
+El full del rànquing es pot arrossegar per la nansa cap avall per plegar-lo i cap amunt per recuperar-lo (TG-141), amb Reanimated i una acció accessible equivalent. Encara no hi són: les etiquetes i la llegenda del mapa (TG-89/TG-90/TG-102) i les icones de Talaia (`Button` ja accepta `icon`). La barra de pestanyes és la nativa (`NativeTabs`), amb quatre pestanyes (Explora, Calendari, Alertes i Perfil) i l'activa en `far`.
 
 ## Moviment i fluïdesa
 

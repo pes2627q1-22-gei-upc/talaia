@@ -9,6 +9,7 @@ on:
       - 'services/*/Dockerfile'
       - 'services/worker/**'
       - 'packages/db/**'
+      - 'packages/index/**'
       - '.dockerignore'
       - 'package-lock.json'
       - '.github/workflows/deploy*.yml'
@@ -35,8 +36,8 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Sintaxi de l'script de deploy
-        run: sh -n deploy/scripts/desplega.sh
+      - name: Scripts de deploy (shellcheck)
+        run: shellcheck deploy/scripts/*.sh deploy/tests/*.sh
 
       - name: Valida el compose
         run: $COMPOSE config -q
@@ -65,3 +66,18 @@ jobs:
       - name: Logs
         if: failure()
         run: $COMPOSE logs
+
+  # L'avís de deploy fallat (TG-180, ADR-0035) contra un Mailpit amb STARTTLS i autenticació: un sol
+  # correu per fallada, el de recuperació, res sense configurar i cap error si el servidor no respon.
+  # També desplega.sh sencer amb el trap (Docker i healthcheck simulats).
+  avis:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Prova d'avisa.sh
+        run: sh deploy/tests/prova-avis.sh

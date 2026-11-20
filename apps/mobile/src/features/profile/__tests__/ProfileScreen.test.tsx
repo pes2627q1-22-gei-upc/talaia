@@ -1,7 +1,9 @@
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { useRouter } from 'expo-router';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-import i18n from '@/core/i18n';
+import i18n, { LANGUAGE_KEY } from '@/core/i18n';
 import { useAuthViewModel } from '@/features/auth/useAuthViewModel';
 
 import { ProfileScreen } from '../ProfileScreen';
@@ -9,6 +11,10 @@ import { ProfileScreen } from '../ProfileScreen';
 jest.mock('@/features/auth/useAuthViewModel', () => ({ useAuthViewModel: jest.fn() }));
 // La targeta de l'estat de l'API té la seva pròpia prova i necessita TanStack Query.
 jest.mock('@/features/apiStatus/ApiStatusCard', () => ({ ApiStatusCard: () => null }));
+jest.mock('expo-router', () => ({ useRouter: jest.fn() }));
+
+const push = jest.fn();
+jest.mocked(useRouter).mockReturnValue({ push } as unknown as ReturnType<typeof useRouter>);
 
 type Auth = ReturnType<typeof useAuthViewModel>;
 
@@ -21,6 +27,7 @@ function auth(overrides: Partial<Auth> = {}): Auth {
     user: { id: 'one', email: 'one@example.test' },
     loading: false,
     signingOut: false,
+    blocked: false,
     error: null,
     isAuthenticated: true,
     logoutLabel: 'Tanca la sessió',
@@ -52,6 +59,31 @@ describe('ProfileScreen · sessió (HU35)', () => {
     await i18n.changeLanguage('ca');
   });
 
+  it.each(['es', 'en', 'ca'] as const)(
+    'canvia a %s amb els botons i tradueix la pantalla',
+    async (language) => {
+      // Per al català, comencem en un altre idioma per comprovar un canvi real.
+      const previous = language === 'ca' ? 'en' : 'ca';
+      await i18n.changeLanguage(previous);
+      await renderProfile(auth());
+      const targetLabel = i18n.t(`profile.languages.${language}`);
+      expect(
+        screen.getByRole('button', { name: i18n.t(`profile.languages.${previous}`) }),
+      ).toBeSelected();
+      await fireEvent.press(screen.getByRole('button', { name: targetLabel }));
+      await waitFor(() => expect(i18n.language).toBe(language));
+      expect(
+        screen.getByRole('header', { name: i18n.t('profile.title', { lng: language }) }),
+      ).toBeOnTheScreen();
+      expect(
+        screen.getByRole('button', {
+          name: i18n.t(`profile.languages.${language}`, { lng: language }),
+        }),
+      ).toBeSelected();
+      expect(AsyncStorage.setItem).toHaveBeenCalledWith(LANGUAGE_KEY, language);
+    },
+  );
+
   it('amb sessió, «Tanca la sessió» la tanca', async () => {
     await renderProfile(auth());
     expect(screen.getByRole('header', { name: 'Perfil' })).toBeOnTheScreen();
@@ -62,6 +94,13 @@ describe('ProfileScreen · sessió (HU35)', () => {
   it('sense sessió no hi ha res a tancar', async () => {
     await renderProfile(auth({ user: null, isAuthenticated: false }));
     expect(screen.queryByRole('button', { name: 'Tanca la sessió' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Els meus plans' })).toBeNull();
+  });
+
+  it('amb sessió, «Els meus plans» obre la llista de plans (TG-160)', async () => {
+    await renderProfile(auth());
+    await fireEvent.press(screen.getByRole('button', { name: 'Els meus plans' }));
+    expect(push).toHaveBeenCalledWith('/plans');
   });
 
   it('mentre es tanca, el botó ho diu i no es pot tornar a prémer', async () => {
