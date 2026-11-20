@@ -17,6 +17,13 @@ type Props = Pick<
   onSelect: (hourId: string) => void;
 };
 
+/**
+ * La xifra de l'hora triada va dins de la barra, en `nit`, quan la barra en fa com a mínim la meitat
+ * (32 pt, i la línia en fa 30); si no, a sobre de la barra, del color de la franja. Mai a mig camí: hi
+ * quedava del mateix color que la barra i només es llegia per l'ombra.
+ */
+const INSIDE_FROM = 50;
+
 export const HourlyChart = memo(function HourlyChart({
   hours,
   hoursLabel,
@@ -87,14 +94,20 @@ export const HourlyChart = memo(function HourlyChart({
                       pointerEvents="none"
                       style={[styles.barSilhouette, { borderColor: colors[item.level] }]}
                     />
-                    <View pointerEvents="none" style={styles.barIndex}>
+                    <View
+                      testID="selected-hour-index"
+                      pointerEvents="none"
+                      style={[
+                        styles.barIndex,
+                        item.value >= INSIDE_FROM
+                          ? { top: `${100 - item.value}%` }
+                          : { bottom: `${item.value}%` },
+                      ]}
+                    >
                       <AppText
                         variant="heading"
-                        color={item.value >= 75 ? 'nit' : item.level}
-                        style={[
-                          styles.barIndexValue,
-                          item.value < 75 && styles.barIndexValueShadow,
-                        ]}
+                        color={item.value >= INSIDE_FROM ? 'nit' : item.level}
+                        style={styles.barIndexValue}
                       >
                         {item.value}
                       </AppText>
@@ -139,20 +152,7 @@ const useStyles = makeStyles(({ colors }) => ({
     borderWidth: 1,
     borderRadius: spacing.xs,
   },
-  barIndex: {
-    position: 'absolute',
-    top: 0,
-    bottom: 0,
-    left: 0,
-    right: 0,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  barIndex: { position: 'absolute', left: 0, right: 0, alignItems: 'center' },
   barIndexValue: typography.hourlyIndex,
-  barIndexValueShadow: {
-    textShadowColor: colors.nit,
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
-  },
   bar: { width: '100%', borderTopLeftRadius: spacing.xs, borderTopRightRadius: spacing.xs },
 }));

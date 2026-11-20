@@ -4,8 +4,6 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AppState, Linking } from 'react-native';
 
-import { colors } from '@/core/theme/tokens';
-
 import { roundCoord } from '../explore/exploreModel';
 import { useCurrentPlaceQuery } from '../explore/locationRepository';
 import {
@@ -150,9 +148,9 @@ export function useMapViewModel() {
     notice,
     recommendations,
     origin: picked
-      ? { ...picked.origen, label: t('map.origin'), color: colors.far }
+      ? { ...picked.origen, label: t('map.origin') }
       : spotCard && spot.spot
-        ? { ...spot.spot, label: t('map.spot.marker'), color: colors.far }
+        ? { ...spot.spot, label: t('map.spot.marker') }
         : null,
     hint:
       recommendations || mode === 'picking'

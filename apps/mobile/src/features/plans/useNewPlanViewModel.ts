@@ -205,6 +205,7 @@ export function useNewPlanViewModel({ puntId, inici, fi, esdevenimentId }: NewPl
   return {
     header: t('plans.new.header'),
     title: t('plans.new.title'),
+    back: { label: t('plans.new.back'), onPress: () => router.back() },
     busy: create.isPending || calendar.syncing,
     saved: savedPlan
       ? {

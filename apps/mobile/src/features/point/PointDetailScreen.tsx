@@ -10,6 +10,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { makeStyles, useNightTint, useTheme } from '@/core/theme/theme';
 import { fonts, motion, radii, sizes, spacing, typography } from '@/core/theme/tokens';
 import { AppText } from '@/shared/ui/AppText';
+import { BackButton } from '@/shared/ui/BackButton';
 import { Button } from '@/shared/ui/Button';
 import { Card } from '@/shared/ui/Card';
 import { IndexIndicator } from '@/shared/ui/IndexIndicator';
@@ -284,12 +285,15 @@ export function PointDetailScreen({ pointId }: { pointId: string }) {
           />
         </View>
       ) : null}
+      {/* Sura sobre el mapa de la fitxa (mockup 05), també mentre carrega o si falla. */}
+      <BackButton label={vm.backLabel} style={[styles.back, { top: insets.top + spacing.sm }]} />
     </SafeAreaView>
   );
 }
 
 const useStyles = makeStyles(({ colors }) => ({
   root: { flex: 1, backgroundColor: colors.nit },
+  back: { position: 'absolute', left: spacing.md },
   scroll: { paddingBottom: spacing.lg },
   actions: {
     flexDirection: 'row',
