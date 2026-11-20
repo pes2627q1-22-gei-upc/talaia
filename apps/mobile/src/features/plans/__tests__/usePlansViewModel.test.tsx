@@ -169,8 +169,8 @@ it('si els fenòmens no arriben, la llista surt igualment sense els noms', async
   expect(result.current.upcoming.rows[0]!.title).toBe('Cel estrellat a Àger');
 });
 
-it('en tornar a «Propers», els passats es queden carregats i no es tornen a demanar', async () => {
-  const { result } = await renderVm();
+it('en tornar a «Propers», els passats es queden carregats, i un invalidate els refresca', async () => {
+  const { result, client } = await renderVm();
   await waitFor(() => expect(result.current.upcoming.state).toBe('ready'));
   await act(async () => result.current.tabs[1]!.onSelect());
   await waitFor(() => expect(result.current.past.state).toBe('ready'));
@@ -179,6 +179,17 @@ it('en tornar a «Propers», els passats es queden carregats i no es tornen a de
   expect(result.current.tabs.map((tab) => tab.selected)).toEqual([true, false]);
   expect(result.current.past.rows).toHaveLength(1);
   expect(plansCalls('passats')).toBe(1);
+
+  // Tornar a «Passats» no els torna a demanar: la consulta no s'ha desactivat (`pastRequested`).
+  await act(async () => result.current.tabs[1]!.onSelect());
+  expect(result.current.past.state).toBe('ready');
+  expect(plansCalls('passats')).toBe(1);
+
+  // Des de «Propers», crear un pla (invalidar PLANS_KEY) també refresca els passats.
+  await act(async () => result.current.tabs[0]!.onSelect());
+  const before = plansCalls('passats');
+  await act(() => client.invalidateQueries({ queryKey: PLANS_KEY }));
+  expect(plansCalls('passats')).toBe(before + 1);
 });
 
 it('mentre arriben els noms dels fenòmens, la llista surt amb esquelets', async () => {
