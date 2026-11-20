@@ -11,4 +11,6 @@ export type * from './plans';
 export type * from './punts';
 export type * from './recomanacions';
 export * from './nit';
+export { MODES_RUTA } from './rutes';
+export type * from './rutes';
 export type * from './visibilitat';
