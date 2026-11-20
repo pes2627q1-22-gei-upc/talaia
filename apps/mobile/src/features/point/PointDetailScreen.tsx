@@ -119,13 +119,10 @@ export function PointDetailScreen({ pointId }: { pointId: string }) {
               <AppText variant="display" accessibilityRole="header" style={styles.mapTitle}>
                 {vm.title}
               </AppText>
-              <View style={[styles.favoritePosition, { top: insets.top + spacing.sm }]}>
-                <FavoriteButton key={pointId} pointId={pointId} />
-              </View>
             </View>
           ) : null}
           <Animated.View entering={appear} style={styles.content}>
-            <View style={styles.heading}>
+            <View style={styles.metaRow}>
               <View style={styles.tags}>
                 <AppText variant="tag" color="pedra" style={styles.tag}>
                   {vm.municipality}
@@ -134,9 +131,10 @@ export function PointDetailScreen({ pointId }: { pointId: string }) {
                   {vm.altitudeTag}
                 </AppText>
               </View>
+              <FavoriteButton key={pointId} pointId={pointId} />
             </View>
             {vm.staleMessage ? (
-              <View accessibilityLiveRegion="polite" style={styles.heading}>
+              <View accessibilityLiveRegion="polite" style={styles.staleMessage}>
                 <AppText variant="small" color="jus">
                   {vm.staleMessage}
                 </AppText>
@@ -323,9 +321,9 @@ const useStyles = makeStyles(({ colors }) => ({
     bottom: -spacing.md,
     color: colors.lluna,
   },
-  favoritePosition: { position: 'absolute', right: spacing.ml, zIndex: 2 },
-  heading: { gap: spacing.sm },
-  tags: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+  metaRow: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm },
+  staleMessage: { gap: spacing.sm },
+  tags: { flex: 1, flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   tag: {
     backgroundColor: colors.vel,
     paddingHorizontal: spacing.sm,
