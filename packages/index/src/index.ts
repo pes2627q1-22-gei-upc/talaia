@@ -15,15 +15,21 @@ export {
 } from './astronomia';
 export {
   FORMULA_V1,
+  FORMULA_V2,
+  VERSIO_INDEX,
   calculaIndex,
   calculaIndexHores,
   factorFoscor,
+  factorHumitat,
   factorLluna,
   factorNuvols,
   factorSol,
   franjaDe,
+  humitatAmbBiaix,
   type EntradaIndex,
+  type OpcionsIndex,
 } from './formula';
+export { GRAUS_PERFIL, alcadaAparent, amagatPelRelleu, horitzoA } from './horitzo';
 export {
   DIES_PREVISIO_PER_DEFECTE,
   LLOCS_PER_PETICIO_PER_DEFECTE,

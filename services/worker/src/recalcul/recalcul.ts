@@ -7,12 +7,17 @@ import {
 import type { PuntObservacio } from '@talaia/shared';
 
 import type { IndexRepository } from '../index/repository';
+import { biaixAplicable, type EstacioAmbBiaix } from '../meteocat/ajust';
 
 /** El que el recàlcul necessita d'un punt: on és i quina foscor té. */
 export type PuntPerRecalcul = Pick<PuntObservacio, 'id' | 'lat' | 'lon'> & {
   altitud: number | null;
   /** SQM del mapa de contaminació lumínica (ADR-0020), o `null` si no en té. */
   sqm: number | null;
+  /** Perfil d'horitzó (ADR-0022): 360 alçades aparents, o `null`. Per a la Lluna amagada (ADR-0037). */
+  horitzo?: number[] | null;
+  /** L'estació de la XEMA assignada al punt, amb el seu biaix de la humitat (ADR-0037), si en té. */
+  estacio?: EstacioAmbBiaix | null;
 };
 
 export type ExecucioWorker = {
@@ -135,7 +140,10 @@ export async function recalculaIndex({
         { lat: punt.lat, lon: punt.lon, altitud: punt.altitud },
         hores.map((h) => h.hora),
       );
-      const index = calculaIndexHores(hores, efemerides, punt.sqm);
+      const index = calculaIndexHores(hores, efemerides, punt.sqm, {
+        horitzo: punt.horitzo ?? null,
+        biaixHumitat: biaixAplicable(punt, punt.estacio, ara()),
+      });
       await indexs.desaIndexs(punt.id, index);
       resum.punts += 1;
       resum.hores += index.length;

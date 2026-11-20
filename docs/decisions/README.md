@@ -42,5 +42,6 @@ Format: **Context → Decisió → Conseqüències**. Estat: `Acceptada`, `Propo
 | [0033](0033-avaluacio-alertes-worker.md) | Avaluació de les alertes al worker després de cada recàlcul: una sola consulta, una decisió pura (índex ≥ mínim a les hores que queden de la nit, segons quan avisa cada alerta i sense comptes bloquejats; desempat per índex, distància i hora) i com a molt una notificació per alerta i nit a `notificacions_alertes`, que envia la TG-154 | Proposada |
 | [0035](0035-avis-deploy.md) | Avís per correu des del Gmail de l'equip quan el deploy de la VM falla (un per fallada) i quan es recupera, amb `curl` a l'SMTP | Acceptada |
 | [0036](0036-calendari-natiu-plans.md) | Calendari natiu dels plans amb `expo-calendar` 58 i `CalendarNext`; cal una build nativa per provar aquesta funció | Acceptada |
+| [0037](0037-index-v2-lluna-humitat.md) | Índex v2: la Lluna amagada pel relleu (perfil d'horitzó, ADR-0022) fa la meitat de llum i la humitat corregida amb la XEMA fa pitjor el cel a partir del 85 % (TG-184) | Proposada |
 
 Decisions encara obertes: [pendents.md](pendents.md).

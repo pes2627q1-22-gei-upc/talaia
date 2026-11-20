@@ -73,6 +73,9 @@ export interface EsdevenimentsAstronomics {
 export interface EstacionsXema {
   actualitzadaEl: Generated<Timestamp>;
   altitud: number | null;
+  biaixCalculatEl: Timestamp | null;
+  biaixHumitat: number | null;
+  biaixMostres: number | null;
   codi: string;
   nom: string;
   operativa: Generated<boolean>;
@@ -122,8 +125,10 @@ export interface IndexVisibilitat {
   foscorEstimada: boolean;
   franja: "tap" | "jus" | "ras";
   hora: Timestamp;
+  humitatCorregida: Generated<boolean>;
   puntId: string;
   valor: number;
+  versio: Generated<number>;
 }
 
 export interface LecturesXema {

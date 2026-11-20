@@ -193,6 +193,7 @@
     "clouds": "Núvols",
     "sun": "Sol",
     "moon": "Lluna",
+    "humidity": "Humitat",
     "info": "Informació del punt",
     "openHorizon": "Vistes obertes",
     "openHorizonValue": "Cap {{directions}}",
@@ -249,11 +250,16 @@
         "jus": "La Lluna aclareix el cel",
         "tap": "La Lluna il·lumina molt el cel"
       },
-      "sol": "Encara queda llum del crepuscle"
+      "sol": "Encara queda llum del crepuscle",
+      "humitat": {
+        "none": "La humitat no molesta",
+        "some": "La humitat empobreix el cel"
+      }
     },
     "factorsAt": "Factors a les {{time}}",
     "daytime": "És de dia",
-    "daytimeHint": "L'índex compta a partir del vespre."
+    "daytimeHint": "L'índex compta a partir del vespre.",
+    "humidityCorrected": "Corregida amb les observacions de la XEMA (Servei Meteorològic de Catalunya)"
   },
   "index": {
     "level": {

@@ -15,6 +15,7 @@ import { createKyselyEnviamentRepository } from './alertes/enviamentRepository';
 import { createExpoPushClient } from './alertes/expoPush';
 import { createKyselyAlertesRepository } from './alertes/repository';
 import { loadEnv } from './config/env';
+import { DIES_BIAIX, ajustaHumitatXema } from './meteocat/ajust';
 import { planificaXema } from './meteocat/planificacio';
 import { createKyselyXemaRepository } from './meteocat/repository';
 import { createXemaClient } from './meteocat/xema';
@@ -67,16 +68,29 @@ const tasca = cron.schedule(PLANIFICACIO, () => void executor.executa('hora'), {
 void executor.executa('arrencada');
 console.log(`[worker] en marxa: recàlcul de l'índex a «${PLANIFICACIO}» (UTC)`);
 
+// Open-Meteo dels dies passats, per mesurar el biaix de la humitat a les estacions (TG-184,
+// ADR-0037): una petició per estació i dia, no una previsió.
+const meteoPassat = createOpenMeteoClient({
+  baseUrl: env.OPEN_METEO_BASE_URL,
+  diesPrevisio: 0,
+  diesPassats: DIES_BIAIX,
+  timeoutMs: 30_000,
+});
+
 // Observacions de la XEMA (TG-115, ADR-0025): només amb la clau de Meteocat, amb el mateix pool.
 const xema = planificaXema({
   xema: env.METEOCAT_API_KEY
-    ? {
-        client: createXemaClient({ apiKey: env.METEOCAT_API_KEY }),
-        repository: createKyselyXemaRepository(db),
-        hiHaEstacions: async () =>
-          (await db.selectFrom('estacionsXema').select('codi').limit(1).executeTakeFirst()) !==
-          undefined,
-      }
+    ? (() => {
+        const repository = createKyselyXemaRepository(db);
+        return {
+          client: createXemaClient({ apiKey: env.METEOCAT_API_KEY }),
+          repository,
+          hiHaEstacions: async () =>
+            (await db.selectFrom('estacionsXema').select('codi').limit(1).executeTakeFirst()) !==
+            undefined,
+          ajustaHumitat: (ara: Date) => ajustaHumitatXema({ meteo: meteoPassat, repository, ara }),
+        };
+      })()
     : undefined,
   programa: (expressio, tasca, opcions) => cron.schedule(expressio, tasca, opcions),
 });

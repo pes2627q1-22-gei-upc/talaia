@@ -53,7 +53,7 @@ describe('fórmula de l’índex v1 (ADR-0018)', () => {
   it('cel ras, de nit, sense Lluna i un cel fosc de debò: 100', () => {
     const i = calculaIndex({ meteo: meteo(), efemerides: efemerides(), sqm: 21.5 });
     expect(i).toMatchObject({ valor: 100, franja: 'ras', foscorEstimada: false });
-    expect(i.factors).toEqual({ nuvols: 1, sol: 1, foscor: 1, lluna: 1 });
+    expect(i.factors).toEqual({ nuvols: 1, sol: 1, foscor: 1, lluna: 1, humitat: 1 });
   });
 
   it('l’exemple de l’ADR: Lluna mig il·luminada a 20°, foscor estimada → 63 · jus', () => {
@@ -74,7 +74,7 @@ describe('fórmula de l’índex v1 (ADR-0018)', () => {
     });
     // 100 × 0,75 × (0,6 × 0,5 + 0,4 × 0,5) = 37,5 → 38.
     expect(i).toMatchObject({ hora: HORA, valor: 38, franja: 'tap', foscorEstimada: false });
-    expect(i.factors).toEqual({ nuvols: 0.75, sol: 1, foscor: 0.5, lluna: 0.5 });
+    expect(i.factors).toEqual({ nuvols: 0.75, sol: 1, foscor: 0.5, lluna: 0.5, humitat: 1 });
   });
 
   it.each([

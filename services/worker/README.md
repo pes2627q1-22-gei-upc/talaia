@@ -2,7 +2,7 @@
 
 Procés de Talaia que ingesta les dades externes i recalcula l'índex de visibilitat de tots els punts **cada hora** ([ADR-0004](../../docs/decisions/0004-index-precalculat.md)). Node 22 + TypeScript (strict), mateixes eines que l'API.
 
-Estat: hi ha la **ingesta de la previsió d'Open-Meteo** (TG-95 i TG-114), el **càlcul astronòmic** amb Astronomy Engine (TG-96), la **fórmula de l'índex v1** amb la seva persistència (TG-98) i la **ingesta de les observacions de la XEMA** de Meteocat (TG-115, `npm run xema`). El **procés horari** (TG-99) recalcula l'índex de tots els punts en arrencar i cada hora amb node-cron, dins del contenidor, i després **avalua les alertes** (TG-153): i **n'envia les notificacions push** amb l'Expo Push Service (TG-154).
+Estat: hi ha la **ingesta de la previsió d'Open-Meteo** (TG-95 i TG-114), el **càlcul astronòmic** amb Astronomy Engine (TG-96), la **fórmula de l'índex v1** amb la seva persistència (TG-98) i la **ingesta de les observacions de la XEMA** de Meteocat (TG-115, `npm run xema`), amb l'**índex v2** (TG-184, ADR-0037: la Lluna amagada pel relleu i la humitat corregida amb el biaix de cada estació). El **procés horari** (TG-99) recalcula l'índex de tots els punts en arrencar i cada hora amb node-cron, dins del contenidor, i després **avalua les alertes** (TG-153): i **n'envia les notificacions push** amb l'Expo Push Service (TG-154).
 
 El client d'Open-Meteo, el càlcul astronòmic i la fórmula de l'índex són a **`@talaia/index`** (`packages/index`), perquè l'API també els fa servir per calcular l'índex d'una ubicació qualsevol al moment ([ADR-0031](../../docs/decisions/0031-visibilitat-ubicacio-al-moment.md)). El worker hi posa la planificació, la persistència i les CLI de prova.
 
@@ -68,7 +68,7 @@ src/meteocat/
   cli.ts                 `npm run xema`: prova manual amb la clau, sense base de dades
 ```
 
-El que es va mesurar de debò, per contrastar-ho amb la previsió d'Open-Meteo. L'ajust de l'índex amb aquestes dades és TG-184 (Sprint 2). Per què així: [ADR-0025](../../docs/decisions/0025-observacions-xema.md).
+El que es va mesurar de debò, per contrastar-ho amb la previsió d'Open-Meteo. Cada dia, `meteocat/ajust.ts` calcula el biaix de la humitat de cada estació (TG-184): la mediana de la XEMA menys Open-Meteo a les hores de nit dels últims 14 dies, amb un mínim de 48 parelles. El recàlcul l'aplica només als punts propers (menys de 25 km i 350 m d'altitud) durant 7 dies com a màxim. Per què així: [ADR-0025](../../docs/decisions/0025-observacions-xema.md) i [ADR-0037](../../docs/decisions/0037-index-v2-lluna-humitat.md).
 
 - **Estacions** (`actualitzaEstacionsXema`, un cop al mes): desa les estacions operatives (`/estacions/metadades?estat=ope`), marca com a no operatives les que ja no ho són (sense esborrar-les ni perdre'n les lectures) i assigna a cada punt l'estació operativa més propera (`punts_observacio.estacio_xema`, KNN de PostGIS, només per distància).
 - **Lectures** (`ingestaLecturesXema`, un cop al dia, en UTC i no abans de les 03:00 UTC): les d'**ahir** (UTC) de les estacions assignades als punts. Una petició per variable per a totes les estacions (`/variables/mesurades/{codi}/{any}/{mes}/{dia}`): temperatura, humitat, precipitació, vent i irradiància solar. La XEMA no mesura els núvols; la irradiància en fa de testimoni de dia.
