@@ -148,7 +148,11 @@ describe('MapScreen', () => {
           link: colorsVermell.lluna,
         },
         userLocationColor: colorsVermell.ubicacio,
-        markerPalette: expect.objectContaining({ background: colors.nit, text: colors.lluna }),
+        markerPalette: expect.objectContaining({
+          background: colors.nit,
+          text: colors.lluna,
+          shapes: true,
+        }),
       }),
     );
     expect(screen.getByRole('button', { name: i18n.t('map.back') })).toHaveStyle({

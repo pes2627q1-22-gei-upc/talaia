@@ -39,6 +39,15 @@ const markerPalette = {
   tap: normal.tap,
 };
 
+/** En mode nit, cada franja amb una forma, en el color més clar: el filtre la passa al vermell més viu. */
+const nightMarkerPalette = {
+  ...markerPalette,
+  ras: normal.lluna,
+  jus: normal.lluna,
+  tap: normal.lluna,
+  shapes: true,
+};
+
 // Les icones porten el traç negre: el color el posa `tintColor`, perquè canvia amb el tema.
 const retryIcon = {
   uri: `data:image/svg+xml;utf8,${encodeURIComponent(`
@@ -153,7 +162,7 @@ export function MapScreen() {
         userLocationLabel={vm.userLocationLabel}
         userLocationColor={theme.ubicacio}
         points={vm.points}
-        markerPalette={markerPalette}
+        markerPalette={night ? nightMarkerPalette : markerPalette}
         onPointPress={vm.openPoint}
         cluster={!recommendations}
         fit={fit}
