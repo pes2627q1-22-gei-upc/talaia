@@ -156,7 +156,7 @@ it('manté la fitxa mentre espera només les hores i les presenta quan arriben',
   expect(screen.queryByText(/Per què a les/)).toBeNull();
   setHours();
   await view.rerender(page());
-  expect(screen.getByText("Per què a les 01:00 l'índex és 94")).toBeOnTheScreen();
+  expect(screen.getByText("Per què a la 01:00 l'índex és 94")).toBeOnTheScreen();
 });
 
 it('permet reintentar les hores des del desglossament sense perdre la fitxa', async () => {
@@ -169,7 +169,7 @@ it('permet reintentar les hores des del desglossament sense perdre la fitxa', as
   expect(refetchDetail).toHaveBeenCalledTimes(1);
   setHours();
   await view.rerender(page());
-  expect(screen.getByText("Per què a les 01:00 l'índex és 94")).toBeOnTheScreen();
+  expect(screen.getByText("Per què a la 01:00 l'índex és 94")).toBeOnTheScreen();
 });
 
 it('conserva la informació després d’un error de refresc i bloqueja el reintent pendent', async () => {

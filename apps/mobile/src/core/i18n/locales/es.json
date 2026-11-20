@@ -171,7 +171,7 @@
     "title": "Punto de observación",
     "currentIndex": "Índice actual de visibilidad",
     "noIndex": "Índice aún no disponible",
-    "bestHour": "Mejor índice de esta noche: <strong>{{value}}</strong>, de <strong>{{from}}</strong> a <strong>{{to}}</strong>.",
+    "bestHour": "Mejor momento de esta noche: de <strong>{{from}}</strong> a <strong>{{to}}</strong>, con un máximo de <strong>{{value}}</strong>.",
     "altitudeTag": "Altitud: {{value}}",
     "metres": "{{value}} m",
     "unavailable": "Sin datos",
@@ -223,7 +223,8 @@
     "mapA11y": "Ubicación de {{name}}",
     "mapCredits": "Créditos del mapa",
     "mapUnavailable": "No se ha podido cargar el mapa.",
-    "indexNow": "Índice de ahora · {{time}} h",
+    "indexNow": "Índice actual · {{time}}",
+    "indexAt": "Índice del {{time}}",
     "indexExplanation": "El índice va de 0 a 100: cuanto más alto, mejor se verá el cielo. Tiene en cuenta las nubes, la oscuridad del lugar, la Luna y el Sol.",
     "hoursTapHint": "Toca una hora para ver su desglose.",
     "hourA11yHint": "Muestra el desglose del índice de esta hora",
@@ -249,6 +250,7 @@
       "sol": "Aún queda luz del crepúsculo"
     },
     "factorsAt": "Por qué a las {{time}} el índice es {{value}}",
+    "factorsAt_oneOClock": "Por qué a la {{time}} el índice es {{value}}",
     "daytime": "Es de día",
     "daytimeHint": "El índice cuenta a partir del anochecer."
   },

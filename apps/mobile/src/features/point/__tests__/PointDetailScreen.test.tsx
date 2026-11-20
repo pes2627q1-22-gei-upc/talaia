@@ -36,6 +36,7 @@ async function renderScreen() {
     </QueryWrapper>,
   );
 }
+afterEach(() => jest.restoreAllMocks());
 beforeEach(async () => {
   get.mockReset();
   // Per defecte, com l'API: la fitxa o el desglossament segons la ruta.
@@ -65,10 +66,12 @@ it('mostra les dades i les hores amb etiquetes accessibles', async () => {
 });
 
 it("explica l'índex, a quina hora correspon i que les hores es poden tocar (TG-264)", async () => {
+  // 22:30 a Catalunya: l'índex actual (22:00) és el de l'hora en curs.
+  jest.spyOn(Date, 'now').mockReturnValue(Date.parse('2026-10-18T20:30:00Z'));
   await renderScreen();
-  expect(await screen.findByText("Índex d'ara · 22:00 h")).toBeOnTheScreen();
+  expect(await screen.findByText("Índex d'ara · 22:00")).toBeOnTheScreen();
   expect(
-    screen.getByText(/^Millor índex d'aquesta nit: 94, de 01:00 a 02:00\.$/),
+    screen.getByText("Millor moment d'aquesta nit: de 01:00 a 02:00, amb un màxim de 94."),
   ).toBeOnTheScreen();
   expect(screen.getByText(/^L'índex va de 0 a 100: com més alt, millor/)).toBeOnTheScreen();
   expect(screen.getByText("Toca una hora per veure'n el desglossament.")).toBeOnTheScreen();
@@ -76,7 +79,22 @@ it("explica l'índex, a quina hora correspon i que les hores es poden tocar (TG-
     'accessibilityHint',
     "Mostra el desglossament de l'índex d'aquesta hora",
   );
-  expect(screen.getByText("Per què a les 01:00 l'índex és 94")).toBeOnTheScreen();
+  expect(screen.getByText("Per què a la 01:00 l'índex és 94")).toBeOnTheScreen();
+});
+
+it('la millor franja de diverses hores en diu el màxim, no un valor per a totes', async () => {
+  get.mockImplementation(
+    respond(point, [
+      { ...hour, hora: '2026-10-18T21:00:00Z', valor: 87 },
+      { ...hour, hora: '2026-10-18T22:00:00Z', valor: 90 },
+      { ...hour, hora: '2026-10-18T23:00:00Z', valor: 94 },
+    ]),
+  );
+  await renderScreen();
+  expect(
+    await screen.findByText("Millor moment d'aquesta nit: de 23:00 a 02:00, amb un màxim de 94."),
+  ).toBeOnTheScreen();
+  expect(screen.getAllByLabelText(/Dins del millor moment/)).toHaveLength(3);
 });
 
 it('triar una hora en mostra els factors, també una hora atenuada', async () => {
@@ -98,7 +116,7 @@ it('triar una hora en mostra els factors, també una hora atenuada', async () =>
   // Per defecte, la millor hora, amb el valor dins la barra.
   expect(best.props.accessibilityState).toEqual({ selected: true });
   expect(screen.getByLabelText('Núvols. Cel ras')).toHaveAccessibilityValue({ now: 95 });
-  expect(screen.getByText("Per què a les 01:00 l'índex és 94")).toBeOnTheScreen();
+  expect(screen.getByText("Per què a la 01:00 l'índex és 94")).toBeOnTheScreen();
 
   const muted = screen.getByLabelText(/00:00.*35 de 100/);
   await fireEvent.press(muted);

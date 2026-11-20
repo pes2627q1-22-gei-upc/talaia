@@ -11,6 +11,11 @@ import { twoDigitHours } from './pointModel';
 import { usePointBreakdownQuery, usePointDetailQuery } from './pointRepository';
 import { skyDarknessBand } from './skyDarkness';
 
+/** «a la 01:00», però «a les 23:00» (com a la fitxa de l'esdeveniment). */
+const oneOClock = (time: string) => (time.startsWith('01:') ? 'oneOClock' : undefined);
+/** Per saber si l'índex de la targeta és el de l'hora en curs. */
+const HOUR_MS = 60 * 60 * 1000;
+
 /** Els factors de l'índex v1 (ADR-0018), en l'ordre del mockup 05. El Sol, al final. */
 const FACTORS = [
   { key: 'nuvols', icon: 'cloud', label: 'clouds' },
@@ -93,10 +98,14 @@ export function usePointDetailViewModel(pointId: string) {
         level: entry.franja,
         factors: factorRows(entry),
         // Explica el número de la barra triada (troballa 9 de TG-264).
-        factorsTitle: t('point.factorsAt', {
-          time: twoDigitHours(clockFormatter.format(new Date(entry.hora))),
-          value: Math.round(Math.min(100, Math.max(0, entry.valor))),
-        }),
+        factorsTitle: (() => {
+          const time = twoDigitHours(clockFormatter.format(new Date(entry.hora)));
+          return t('point.factorsAt', {
+            time,
+            value: Math.round(Math.min(100, Math.max(0, entry.valor))),
+            context: oneOClock(time),
+          });
+        })(),
         accessibilityLabel: t('point.hourA11y', {
           time: dateTimeFormatter.format(new Date(entry.hora)),
           value: Math.round(Math.min(100, Math.max(0, entry.valor))),
@@ -156,6 +165,7 @@ export function usePointDetailViewModel(pointId: string) {
       })),
     [hours, bestPeriod, t],
   );
+  // El valor és el màxim de la franja, no de totes les hores: el text ho diu així (TG-264).
   const bestWindow = bestPeriod
     ? { value: bestPeriod.value, from: bestPeriod.from, to: bestPeriod.to }
     : undefined;
@@ -188,12 +198,15 @@ export function usePointDetailViewModel(pointId: string) {
       : `${horizonDirections.slice(0, -1).join(', ')} ${t('point.listAnd')} ${horizonDirections.at(-1)}`
     : undefined;
   const indexTime = point?.indexActual?.hora;
-  const currentLabel =
-    indexTime && Number.isFinite(Date.parse(indexTime))
-      ? t('point.indexNow', {
-          time: twoDigitHours(clockFormatter.format(new Date(indexTime))),
-        })
-      : t('point.currentIndex');
+  const indexTimestamp = indexTime ? Date.parse(indexTime) : NaN;
+  // «d'ara» només si l'índex és de l'hora de l'últim intent de refresc (l'API només dona l'índex de
+  // l'hora en curs). Si un refresc falla, la fitxa conserva l'índex antic i en diu el dia i l'hora.
+  const lastAttempt = Math.max(query.dataUpdatedAt, query.errorUpdatedAt);
+  const currentLabel = !Number.isFinite(indexTimestamp)
+    ? t('point.currentIndex')
+    : Math.floor(indexTimestamp / HOUR_MS) === Math.floor(lastAttempt / HOUR_MS)
+      ? t('point.indexNow', { time: twoDigitHours(clockFormatter.format(indexTimestamp)) })
+      : t('point.indexAt', { time: twoDigitHours(dateTimeFormatter.format(indexTimestamp)) });
   // De dia, el Sol anul·la l'índex (ADR-0018): no és que estigui tapat, és que no és de nit.
   const daytime = point?.indexActual?.factors.sol === 0;
   return {
