@@ -2,7 +2,7 @@ import type { Favorit } from '@talaia/shared';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 
-import { apiGet, apiPost } from '@/core/api/httpClient';
+import { apiDelete, apiGet, apiPost } from '@/core/api/httpClient';
 
 export const favoritesKey = (language: string) => ['favorits', language] as const;
 
@@ -12,6 +12,9 @@ export const favoritesRepository = {
   },
   add(puntId: string): Promise<Favorit> {
     return apiPost<Favorit>('/favorits', { puntId });
+  },
+  remove(puntId: string): Promise<void> {
+    return apiDelete(`/favorits/${encodeURIComponent(puntId)}`);
   },
 };
 

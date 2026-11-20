@@ -1,7 +1,7 @@
 import { Image } from 'expo-image';
 import { View } from 'react-native';
 
-import { makeStyles, useNightTint, useTheme } from '@/core/theme/theme';
+import { makeStyles, useTheme } from '@/core/theme/theme';
 import { sizes, spacing } from '@/core/theme/tokens';
 import { AppText } from '@/shared/ui/AppText';
 import { PressableScale } from '@/shared/ui/PressableScale';
@@ -15,7 +15,6 @@ export function FavoriteButton({ pointId }: { pointId: string }) {
   const vm = useFavoriteViewModel(pointId);
   const styles = useStyles();
   const { colors } = useTheme();
-  const nightTint = useNightTint();
   return (
     <View style={styles.container}>
       <PressableScale
@@ -30,10 +29,13 @@ export function FavoriteButton({ pointId }: { pointId: string }) {
       >
         <Image
           source={vm.saved ? filled : outline}
-          tintColor={vm.saved ? colors.ras : nightTint}
+          tintColor={colors.boira}
           style={styles.icon}
           accessible={false}
         />
+        <AppText variant="small" color="boira">
+          {vm.label}
+        </AppText>
       </PressableScale>
       {vm.error ? (
         <AppText variant="small" color="tap" accessibilityRole="alert" style={styles.error}>
@@ -45,15 +47,13 @@ export function FavoriteButton({ pointId }: { pointId: string }) {
 }
 
 const useStyles = makeStyles(({ colors }) => ({
-  container: { alignItems: 'flex-end', gap: spacing.xs },
+  container: { alignItems: 'flex-start', gap: spacing.xs },
   button: {
-    width: sizes.touch,
-    height: sizes.touch,
-    borderRadius: sizes.touch / 2,
+    minHeight: sizes.touch,
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.vel,
+    gap: spacing.sm,
   },
-  icon: { width: sizes.icon, height: sizes.icon },
+  icon: { width: sizes.icon - spacing.xs, height: sizes.icon - spacing.xs },
   error: { backgroundColor: colors.nit, paddingHorizontal: spacing.sm },
 }));
