@@ -42,6 +42,7 @@ function repository(overrides: Partial<PlansRepository> = {}): jest.Mocked<Plans
     create: jest.fn(async () => ({ ok: true, pla: PLA_AMB_TEXTOS }) as const),
     list: jest.fn(async () => [PLA_AMB_TEXTOS]),
     findById: jest.fn(async () => PLA_AMB_TEXTOS),
+    setCalendarEvent: jest.fn(async () => true),
     ...overrides,
   } as jest.Mocked<PlansRepository>;
 }
@@ -56,10 +57,12 @@ describe('plansService', () => {
     await service(repo).create(PERFIL, NOU);
     await service(repo).list(PERFIL, 'futurs');
     await service(repo).get(PERFIL, PLA);
+    await service(repo).setCalendarEvent(PERFIL, PLA, 'event-1');
 
     expect(repo.create).toHaveBeenCalledWith(PERFIL, NOU, ARA);
     expect(repo.list).toHaveBeenCalledWith(PERFIL, 'futurs', ARA);
     expect(repo.findById).toHaveBeenCalledWith(PERFIL, PLA);
+    expect(repo.setCalendarEvent).toHaveBeenCalledWith(PERFIL, PLA, 'event-1');
   });
 
   it('sense rellotge injectat, fa servir l’hora actual', async () => {
@@ -115,14 +118,28 @@ describe('plansService', () => {
     const falla = jest.fn(async () => {
       throw new Error('connection refused');
     });
-    const repo = repository({ create: falla, list: falla, findById: falla });
+    const repo = repository({
+      create: falla,
+      list: falla,
+      findById: falla,
+      setCalendarEvent: falla,
+    });
     for (const crida of [
       service(repo).create(PERFIL, NOU),
       service(repo).list(PERFIL),
       service(repo).get(PERFIL, PLA),
+      service(repo).setCalendarEvent(PERFIL, PLA, 'event-1'),
     ]) {
       await expect(crida).rejects.toMatchObject({ status: 503, code: 'database_unavailable' });
     }
     error.mockRestore();
+  });
+
+  it('un vincle a un pla inexistent o aliè retorna 404', async () => {
+    const repo = repository({ setCalendarEvent: jest.fn(async () => false) });
+    await expect(service(repo).setCalendarEvent(PERFIL, PLA, 'event-1')).rejects.toMatchObject({
+      status: 404,
+      code: 'plan_not_found',
+    });
   });
 });

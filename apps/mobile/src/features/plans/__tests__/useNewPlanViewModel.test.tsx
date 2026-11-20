@@ -4,18 +4,32 @@ import { act, renderHook, waitFor } from '@testing-library/react-native';
 import { useRouter } from 'expo-router';
 import type { PropsWithChildren } from 'react';
 
-import { ApiError, apiGet, apiPost } from '@/core/api/httpClient';
+import { ApiError, apiGet, apiPost, apiPut } from '@/core/api/httpClient';
 import i18n from '@/core/i18n';
 import { asPointResponse } from '@/features/point/__fixtures__/point';
 
 import { type NewPlanParams, useNewPlanViewModel } from '../useNewPlanViewModel';
+import { plan } from '../__fixtures__/plan';
+import { planCalendarRepository } from '../planCalendarRepository';
 
 jest.mock('@/core/api/httpClient', () => ({
   ...jest.requireActual('@/core/api/httpClient'),
   apiGet: jest.fn(),
   apiPost: jest.fn(),
+  apiPut: jest.fn(),
 }));
-jest.mock('expo-router', () => ({ useRouter: jest.fn() }));
+jest.mock('../planCalendarRepository', () => ({
+  ...jest.requireActual('../planCalendarRepository'),
+  planCalendarRepository: {
+    isSupported: jest.fn(() => false),
+    requestCalendars: jest.fn(),
+    createEvent: jest.fn(),
+  },
+}));
+jest.mock('expo-router', () => ({
+  useRouter: jest.fn(),
+  useFocusEffect: (effect: () => void) => jest.requireActual('react').useEffect(effect, [effect]),
+}));
 jest.mock('expo-haptics');
 
 const get = jest.mocked(apiGet);
@@ -106,6 +120,19 @@ beforeEach(async () => {
   get.mockReset();
   get.mockImplementation(respond() as typeof apiGet);
   post.mockReset();
+  jest.mocked(apiPut).mockReset();
+  jest.mocked(apiPut).mockResolvedValue(undefined);
+  jest.mocked(planCalendarRepository.isSupported).mockReturnValue(false);
+  jest.mocked(planCalendarRepository.requestCalendars).mockReset();
+  jest.mocked(planCalendarRepository.requestCalendars).mockResolvedValue({
+    status: 'ready',
+    calendars: [
+      { id: 'google', title: 'Personal', account: 'Google' },
+      { id: 'local', title: 'Local', account: 'Mòbil' },
+    ],
+  });
+  jest.mocked(planCalendarRepository.createEvent).mockReset();
+  jest.mocked(planCalendarRepository.createEvent).mockResolvedValue('native-event-1');
   back.mockReset();
   await i18n.changeLanguage('ca');
 });
@@ -373,5 +400,92 @@ it('el calendari comença avui i enfosqueix els dies passats', async () => {
     min: '2026-10-21',
     dimPastDays: true,
     value: '2026-10-21',
+  });
+});
+
+describe('calendari del mòbil (TG-158)', () => {
+  async function enabled() {
+    jest.mocked(planCalendarRepository.isSupported).mockReturnValue(true);
+    post.mockResolvedValue(plan);
+    const vm = await renderVm();
+    await act(() => vm.result.current.calendar.onChange(true));
+    await waitFor(() => expect(vm.result.current.calendar.target).not.toBeNull());
+    return vm;
+  }
+
+  it('desa el pla abans de crear l’esdeveniment al calendari triat, i retorna en acabar', async () => {
+    const { result } = await enabled();
+    await act(() => result.current.calendarSheet.options[1]!.onPress());
+    await act(() => result.current.save.onPress());
+    await waitFor(() => expect(back).toHaveBeenCalled());
+    expect(post).toHaveBeenCalledTimes(1);
+    expect(planCalendarRepository.createEvent).toHaveBeenCalledWith(
+      'local',
+      expect.objectContaining({
+        title: 'Talaia · Serra del Montsec',
+        startDate: plan.dataHoraInici,
+      }),
+    );
+    expect(post.mock.invocationCallOrder[0]).toBeLessThan(
+      jest.mocked(planCalendarRepository.createEvent).mock.invocationCallOrder[0]!,
+    );
+    expect(apiPut).toHaveBeenCalledWith('/plans/plan-1/calendari', {
+      calendariEventId: 'native-event-1',
+    });
+  });
+
+  it('si el pla no es desa, no crea cap esdeveniment natiu', async () => {
+    const { result } = await enabled();
+    post.mockRejectedValueOnce(new Error('offline'));
+    await act(() => result.current.save.onPress());
+    await waitFor(() => expect(result.current.error).toBeDefined());
+    expect(planCalendarRepository.createEvent).not.toHaveBeenCalled();
+    expect(result.current.saved).toBeNull();
+  });
+
+  it('un error de calendari conserva el pla i el reintent no repeteix el POST', async () => {
+    const { result } = await enabled();
+    jest
+      .mocked(planCalendarRepository.createEvent)
+      .mockRejectedValueOnce(new Error('calendar gone'));
+    await act(() => result.current.save.onPress());
+    await waitFor(() => expect(result.current.saved?.busy).toBe(false));
+    expect(result.current.saved?.message).toBe(i18n.t('plans.calendar.syncErrors.create'));
+    expect(back).not.toHaveBeenCalled();
+    await act(() => result.current.saved?.retry.onPress());
+    await waitFor(() => expect(back).toHaveBeenCalled());
+    expect(post).toHaveBeenCalledTimes(1);
+  });
+
+  it('un error del vincle reintenta el PUT, sense repetir ni pla ni esdeveniment', async () => {
+    const { result } = await enabled();
+    jest.mocked(apiPut).mockRejectedValueOnce(new Error('offline'));
+    await act(() => result.current.save.onPress());
+    await waitFor(() => expect(result.current.saved?.busy).toBe(false));
+    expect(result.current.saved?.message).toBe(i18n.t('plans.calendar.syncErrors.link'));
+    await act(() => result.current.saved?.retry.onPress());
+    await waitFor(() => expect(back).toHaveBeenCalled());
+    expect(post).toHaveBeenCalledTimes(1);
+    expect(planCalendarRepository.createEvent).toHaveBeenCalledTimes(1);
+    expect(apiPut).toHaveBeenCalledTimes(2);
+  });
+
+  it('es pot desactivar l’opció després de denegar permisos i desar només el pla', async () => {
+    jest.mocked(planCalendarRepository.isSupported).mockReturnValue(true);
+    jest
+      .mocked(planCalendarRepository.requestCalendars)
+      .mockResolvedValue({ status: 'denied', canAskAgain: false });
+    post.mockResolvedValue(plan);
+    const { result } = await renderVm();
+    await act(() => result.current.calendar.onChange(true));
+    await waitFor(() =>
+      expect(result.current.calendar.error).toBe(i18n.t('plans.calendar.denied')),
+    );
+    expect(result.current.save.disabled).toBe(true);
+    expect(result.current.calendar.action?.label).toBe(i18n.t('plans.calendar.settings'));
+    await act(() => result.current.calendar.onChange(false));
+    await act(() => result.current.save.onPress());
+    await waitFor(() => expect(back).toHaveBeenCalled());
+    expect(planCalendarRepository.createEvent).not.toHaveBeenCalled();
   });
 });

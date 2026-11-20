@@ -71,9 +71,9 @@ Els degradats i `pointMapColors` també tenen la seva versió vermella. A la TG-
 
 ### Mapa
 
-La DOM component rep el nom del tema. En mode nit, posa al contenidor del mapa `filter: grayscale(1)` i, a sobre, una capa `mix-blend-mode: multiply` de color `#FF0000` que no rep tocs.
+La DOM component rep el nom del tema. En mode nit, posa al canvas del mapa `filter: grayscale(1)` i, a sobre de tot, una capa `mix-blend-mode: multiply` de color `#FF0000` que no rep tocs.
 
-El resultat és la lluminositat de cada píxel només al canal vermell. Hi entren tot el que pinta MapLibre (les tessel·les de l'ICGC, el relleu, els marcadors i els clústers) i els controls.
+El resultat és la lluminositat de cada píxel del canvas només al canal vermell. Hi entra tot el que MapLibre pinta al canvas: les tessel·les de l'ICGC, el relleu i les capes de marcadors i clústers, que reben la paleta normal. Els marcadors HTML, l'atribució i els controls queden fora del filtre i reben la paleta vermella: el gris els apagaria (`#FF0000` → `#360000`, de 5,25:1 a 1,16:1 sobre negre), i la capa no canvia un color que només té vermell. Es va veure a la revisió de la #164.
 
 L'estil i els marcadors no canvien. L'estil de l'ICGC tampoc no s'ha de tornar a fer cada vegada que se n'actualitza la còpia.
 

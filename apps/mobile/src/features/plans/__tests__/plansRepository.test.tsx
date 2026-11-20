@@ -3,7 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react-native';
 import type { PropsWithChildren } from 'react';
 
-import { ApiError, apiGet, apiPost } from '@/core/api/httpClient';
+import { ApiError, apiGet, apiPost, apiPut } from '@/core/api/httpClient';
 import i18n from '@/core/i18n';
 
 import {
@@ -19,6 +19,7 @@ jest.mock('@/core/api/httpClient', () => ({
   ...jest.requireActual('@/core/api/httpClient'),
   apiGet: jest.fn(),
   apiPost: jest.fn(),
+  apiPut: jest.fn(),
 }));
 const get = jest.mocked(apiGet);
 const post = jest.mocked(apiPost);
@@ -57,6 +58,12 @@ it("propaga l'error de GET /plans", async () => {
 
 it('la clau dels plans és la que invalidarà «Els meus plans»', () => {
   expect(PLANS_KEY).toEqual(['plans']);
+});
+
+it('vincula l’esdeveniment del calendari al pla existent amb un PUT idempotent', async () => {
+  jest.mocked(apiPut).mockResolvedValue(undefined);
+  await plansRepository.linkCalendar('p1', { calendariEventId: 'event-1' });
+  expect(apiPut).toHaveBeenCalledWith('/plans/p1/calendari', { calendariEventId: 'event-1' });
 });
 
 it('demana els fenòmens del dia triat ± 1', async () => {

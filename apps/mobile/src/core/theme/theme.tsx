@@ -56,6 +56,16 @@ export function useTheme(): Theme {
 }
 
 /**
+ * Color per a una icona SVG que porta el seu propi color: en mode nit es tenyeix perquè no surti
+ * blava ni verda (ADR-0032). En el tema normal, `undefined`: la icona es veu tal com és.
+ * Sobre un botó `primary`, `useNightTint('nit')`, com el text del botó.
+ */
+export function useNightTint(token: ColorToken = 'lluna'): string | undefined {
+  const { name, colors } = useTheme();
+  return name === 'vermell' ? colors[token] : undefined;
+}
+
+/**
  * `const useStyles = makeStyles(({ colors }) => ({ … }))` en lloc d'un `StyleSheet.create` amb els
  * colors en carregar el mòdul. Crea els estils un sol cop per tema, quan es demanen.
  */

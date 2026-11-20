@@ -16,7 +16,7 @@ argument-hint: "[TG-<ref>]"
 1. **Comprova la branca i els commits.**
    - La branca ha de ser `feature/TG-<ref>-…`. Una `release/…` o un `hotfix/…` va cap a `stable` i després torna a `snapshot`, i un hotfix no pot portar res de `snapshot`: para i segueix les receptes de `docs/git-workflow.md`.
    - Cap commit no pot portar `TG-<ref> #<estat>`. Si n'hi ha, avisa: s'han de treure abans que arribin a `snapshot` (`docs/git-workflow.md`).
-2. **Posa la branca al dia.** `git fetch origin`. Si va enrere de `snapshot`, fusiona-hi `origin/snapshot`. En una branca publicada, merge, no rebase.
+2. **Posa la branca al dia.** `git fetch origin`. Si va enrere de `snapshot`, fusiona-hi `origin/snapshot`. En una branca publicada, merge, no rebase. Després, mira el solapament: compara `git diff --name-only origin/snapshot...HEAD` amb els fitxers de les PR obertes (`gh pr list --state open`, i `gh pr view <núm> --json files` per a cadascuna). Si en comparteixen, digues-ho a la persona abans d'obrir la PR, amb el número de la PR i els fitxers.
 3. **Verifica.** Delega a l'agent `verificador` el lint, el typecheck i els tests dels workspaces tocats. Si alguna cosa falla, para i explica-ho.
 4. **Redacta la PR.**
    - **Títol:** en Conventional Commits, de 72 caràcters com a màxim.
