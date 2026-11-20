@@ -198,7 +198,7 @@ export function usePointDetailViewModel(pointId: string) {
       : `${horizonDirections.slice(0, -1).join(', ')} ${t('point.listAnd')} ${horizonDirections.at(-1)}`
     : undefined;
   const indexTime = point?.indexActual?.hora;
-  const indexTimestamp = indexTime ? Date.parse(indexTime) : NaN;
+  const indexTimestamp = indexTime ? Date.parse(indexTime) : Number.NaN;
   // «d'ara» només si l'índex és de l'hora de l'últim intent de refresc (l'API només dona l'índex de
   // l'hora en curs). Si un refresc falla, la fitxa conserva l'índex antic i en diu el dia i l'hora.
   const lastAttempt = Math.max(query.dataUpdatedAt, query.errorUpdatedAt);
