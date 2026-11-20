@@ -1,5 +1,6 @@
 import type { EfemeridesHora, PrevisioMeteoHora } from '@talaia/shared';
 
+import * as paquet from '../index';
 import { GRAUS_PERFIL, alcadaAparent, amagatPelRelleu, horitzoA } from '../horitzo';
 import { calculaIndex, factorHumitat, factorLluna, humitatAmbBiaix } from '../formula';
 
@@ -126,5 +127,17 @@ describe('índex v2 (ADR-0037): la Lluna amagada i la humitat', () => {
     expect(factorLluna(e)).toBeCloseTo(1 / 3, 2);
     expect(factorLluna(e, pla(40))).toBeCloseTo(2 / 3, 2);
     expect(factorLluna(e, null)).toBeCloseTo(1 / 3, 2);
+  });
+});
+
+describe('paquet @talaia/index (ADR-0037)', () => {
+  it('exporta la v2 i les funcions de l’horitzo des de l’arrel', () => {
+    expect(paquet.FORMULA_V2.llunaAmagada).toBe(0.5);
+    expect(paquet.VERSIO_INDEX).toBe(2);
+    expect(paquet.GRAUS_PERFIL).toBe(360);
+    expect(typeof paquet.amagatPelRelleu).toBe('function');
+    expect(typeof paquet.horitzoA).toBe('function');
+    expect(typeof paquet.alcadaAparent).toBe('function');
+    expect(paquet.humitatAmbBiaix(60, null)).toBe(60);
   });
 });
