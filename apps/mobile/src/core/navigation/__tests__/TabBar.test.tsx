@@ -1,5 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react-native';
 import type { BottomTabBarProps } from 'expo-router/js-tabs';
+import * as ReactNative from 'react-native';
 
 import { type ThemeName, ThemeProvider } from '@/core/theme/theme';
 import { colors, colorsVermell } from '@/core/theme/tokens';
@@ -44,6 +45,18 @@ describe('TabBar', () => {
     expect(screen.getAllByRole('tab')).toHaveLength(4);
     expect(screen.getByRole('tab', { name: 'Calendari' })).toBeSelected();
     expect(screen.getByRole('tab', { name: 'Explora' })).not.toBeSelected();
+  });
+
+  it('amb la lletra del sistema molt gran, les etiquetes creixen com a molt 1,2 vegades', async () => {
+    jest.spyOn(ReactNative, 'useWindowDimensions').mockReturnValue({
+      width: 402,
+      height: 874,
+      scale: 3,
+      fontScale: 2.5,
+    });
+    await renderBar();
+    expect(screen.getByText('Calendari')).toHaveStyle({ fontSize: 12 * 1.2 });
+    expect(screen.getByText('Calendari').props.allowFontScaling).toBe(false);
   });
 
   it('tocar una altra pestanya hi va, i tornar a tocar la triada només avisa la pila', async () => {

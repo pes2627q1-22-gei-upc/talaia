@@ -1,12 +1,18 @@
 import { BottomTabBarHeightCallbackContext, type BottomTabBarProps } from 'expo-router/js-tabs';
 import { SymbolView, type SymbolViewProps } from 'expo-symbols';
 import { useContext } from 'react';
-import { View } from 'react-native';
+import { useWindowDimensions, View } from 'react-native';
 
 import { makeStyles, useTheme } from '@/core/theme/theme';
-import { radii, sizes, spacing } from '@/core/theme/tokens';
+import { radii, sizes, spacing, typography } from '@/core/theme/tokens';
 import { AppText } from '@/shared/ui/AppText';
 import { PressableScale } from '@/shared/ui/PressableScale';
+
+/**
+ * Amb la lletra més gran del sistema, les etiquetes es tallaven («Expl…»). La barra nativa d'iOS
+ * tampoc no les fa créixer: creixen com a molt 1,2 vegades, i el lector de pantalla les llegeix.
+ */
+const LABEL_MAX_SCALE = 1.2;
 
 /** SF Symbols a iOS i Material Symbols a Android (expo-symbols, que Expo Go porta). */
 const ICONS: Record<string, SymbolViewProps['name']> = {
@@ -27,6 +33,11 @@ export function TabBar({ state, descriptors, emitter, navigateToTab, insets }: B
   // En mode nit, `far` i `boira` són gairebé el mateix vermell: la triada s'inverteix, com un xip.
   const selectedColor = name === 'vermell' ? ('nit' as const) : ('far' as const);
   const onHeightChange = useContext(BottomTabBarHeightCallbackContext);
+  const scale = Math.min(useWindowDimensions().fontScale, LABEL_MAX_SCALE);
+  const labelSize = {
+    fontSize: typography.caption.fontSize * scale,
+    lineHeight: typography.caption.lineHeight * scale,
+  };
   return (
     <View
       style={[styles.bar, { paddingBottom: Math.max(insets.bottom, spacing.sm) }]}
@@ -63,7 +74,13 @@ export function TabBar({ state, descriptors, emitter, navigateToTab, insets }: B
                   style={styles.icon}
                 />
               )}
-              <AppText variant="caption" color={color} numberOfLines={1}>
+              <AppText
+                variant="caption"
+                color={color}
+                numberOfLines={1}
+                allowFontScaling={false}
+                style={labelSize}
+              >
                 {label}
               </AppText>
             </PressableScale>
