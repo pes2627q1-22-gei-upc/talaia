@@ -29,6 +29,35 @@
       "allow": "Permet la ubicació",
       "settings": "Obre la configuració",
       "close": "Tanca"
+    },
+    "spot": {
+      "hint": {
+        "title": "Tria un punt al mapa",
+        "subtitle": "Toca on vulguis per veure'n l'índex"
+      },
+      "title": "Punt triat al mapa",
+      "marker": "Punt triat",
+      "coords": "Lat {{lat}} · Lon {{lon}}",
+      "from": "A {{travel}} de {{place}}",
+      "from_vowel": "A {{travel}} d'{{place}}",
+      "fromHere": "A {{travel}} d'on ets",
+      "calculate": "Calcula l'índex aquí",
+      "loading": "S'està calculant l'índex…",
+      "at": "Índex de l'hora en curs ({{time}})",
+      "daytime": "És de dia: l'índex compta a partir del vespre.",
+      "estimated": "La foscor del cel és estimada: no hi ha cap punt mesurat a prop.",
+      "outside": {
+        "title": "Aquest lloc és fora de Catalunya",
+        "description": "L'índex només es calcula dins de Catalunya. Toca un altre lloc."
+      },
+      "limit": {
+        "title": "Has fet moltes consultes aquesta hora",
+        "description": "Torna-ho a provar quan comenci l'hora següent."
+      },
+      "error": {
+        "title": "No hem pogut calcular l'índex",
+        "description": "Torna-ho a provar d'aquí a una estona."
+      }
     }
   },
   "calendar": {
@@ -578,20 +607,6 @@
       "title": "Els meus plans",
       "upcoming": "Propers",
       "past": "Passats",
-      "months": [
-        "GEN",
-        "FEB",
-        "MAR",
-        "ABR",
-        "MAIG",
-        "JUNY",
-        "JUL",
-        "AG",
-        "SET",
-        "OCT",
-        "NOV",
-        "DES"
-      ],
       "starrySky": "Cel estrellat",
       "rowTitle": "{{phenomenon}} a {{place}}",
       "rowTitle_el": "{{phenomenon}} al {{place}}",

@@ -7,6 +7,8 @@ import {
 } from '@talaia/shared';
 
 import { iniciHora, type ResumAlertes } from '../recalcul/recalcul';
+import { sendPendingNotifications, type EnviamentRepository } from './enviament';
+import type { ExpoPushClient } from './expoPush';
 
 /**
  * Una fila candidata (ADR-0033): una alerta, un punt publicat dins del seu radi i una hora de la
@@ -199,12 +201,30 @@ export async function evaluateAlerts(
 
 /**
  * El pas d'alertes de l'execució horària: el port `alertes` de `recalculaIndex`, que el crida
- * després de desar l'índex. La TG-154 hi afegirà l'enviament de les notificacions noves que torna
- * `evaluateAlerts` (Expo Push), sense tocar ni l'avaluació ni el recàlcul.
+ * després de desar l'índex. Avalua les alertes i, amb `enviament` (TG-154), envia per Expo Push
+ * les notificacions pendents: les noves i les que no s'han pogut enviar abans. Un error de
+ * l'enviament no amaga les notificacions desades: va a `errorEnviament`.
  */
-export function createAlertsStep(repository: AlertesRepository) {
+export function createAlertsStep(
+  repository: AlertesRepository,
+  enviament?: { repository: EnviamentRepository; push: ExpoPushClient },
+) {
   return async (now: Date): Promise<ResumAlertes> => {
     const { notificacions } = await evaluateAlerts(repository, now);
-    return { notificacions: notificacions.length };
+    if (!enviament) return { notificacions: notificacions.length };
+    let errors: string[];
+    try {
+      const resum = await sendPendingNotifications(enviament.repository, enviament.push, now);
+      console.log(
+        `[worker] alertes: ${notificacions.length} noves, ${resum.enviades} enviades, ` +
+          `${resum.tokensEsborrats} tokens esborrats`,
+      );
+      errors = resum.errors;
+    } catch (error) {
+      errors = [error instanceof Error ? error.message : String(error)];
+    }
+    if (errors.length === 0) return { notificacions: notificacions.length };
+    console.error("[worker] l'enviament de les alertes ha fallat", errors);
+    return { notificacions: notificacions.length, errorEnviament: errors.join('; ') };
   };
 }

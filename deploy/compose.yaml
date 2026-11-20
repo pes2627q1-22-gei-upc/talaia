@@ -45,6 +45,9 @@ services:
       DATABASE_URL: ${DATABASE_URL:-}
       OPEN_METEO_BASE_URL: ${OPEN_METEO_BASE_URL:-}
       METEOCAT_API_KEY: ${METEOCAT_API_KEY:-}
+      EXPO_ACCESS_TOKEN: ${EXPO_ACCESS_TOKEN:-}
+      # Només la VM envia les push (TG-154); un worker local no, si no ho diu.
+      ENVIA_PUSH: ${ENVIA_PUSH:-true}
     volumes:
       - ${SUPABASE_CA_CERT:-/dev/null}:/run/talaia/supabase-ca.crt:ro
 

@@ -67,7 +67,8 @@ it('ensenya els propers amb esquelets mentre carreguen i obre la fitxa en tocar-
     name: "Cel estrellat a Àger. 21 d'octubre. Sortida a les 23:15, Serra del Montsec",
   });
   expect(screen.getByText('21')).toBeOnTheScreen();
-  expect(screen.getByText('OCT')).toBeOnTheScreen();
+  // L'abreviatura normativa («oct.»), en majúscules a la vista com al mockup.
+  expect(screen.getByText('oct.')).toHaveStyle({ textTransform: 'uppercase' });
   expect(screen.getByText('Cel estrellat a Àger')).toBeOnTheScreen();
   expect(screen.getByText('Sortida a les 23:15, Serra del Montsec')).toBeOnTheScreen();
   expect(screen.queryByTestId('plans-loading')).toBeNull();

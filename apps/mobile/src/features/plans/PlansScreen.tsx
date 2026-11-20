@@ -52,14 +52,18 @@ function PlanRowView({
         style={[styles.row, dimmed && styles.dimmedRow]}
         testID={`plan-row-${row.id}`}
       >
-        <View style={[styles.dateBox, dimmed && styles.dimmed]}>
-          <AppText variant="hourlyIndex">{row.day}</AppText>
-          <AppText variant="chip" color="boira">
+        <View style={[styles.dateBox, dimmed && styles.dimmedDateBox]}>
+          <AppText variant="hourlyIndex" color={dimmed ? 'boira' : 'lluna'}>
+            {row.day}
+          </AppText>
+          <AppText variant="chip" color="boira" style={styles.month}>
             {row.month}
           </AppText>
         </View>
-        <View style={[styles.text, dimmed && styles.dimmed]}>
-          <AppText variant="label">{row.title}</AppText>
+        <View style={styles.text}>
+          <AppText variant="label" color={dimmed ? 'boira' : 'lluna'}>
+            {row.title}
+          </AppText>
           <AppText variant="small" color="boira">
             {row.subtitle}
           </AppText>
@@ -156,9 +160,9 @@ const useStyles = makeStyles(({ colors }) => ({
     borderColor: colors.linia,
     backgroundColor: colors.card,
   },
-  // Els passats, com al mockup: la vora més suau i el contingut atenuat.
-  dimmedRow: { borderColor: colors.vel },
-  dimmed: { opacity: 0.55 },
+  // Els passats, com al Calendari: un altre fons i el títol en boira, sense opacitat, perquè el
+  // text continuï ≥ 4,5:1 també en mode nit (ADR-0032).
+  dimmedRow: { backgroundColor: colors.nit, borderColor: colors.vel },
   dateBox: {
     width: DATE_BOX,
     minHeight: DATE_BOX,
@@ -168,6 +172,8 @@ const useStyles = makeStyles(({ colors }) => ({
     justifyContent: 'center',
     paddingVertical: spacing.xs,
   },
+  dimmedDateBox: { backgroundColor: colors.card },
+  month: { textTransform: 'uppercase' },
   text: { flex: 1, gap: spacing.xxs },
   chevron: {
     width: sizes.iconSmall,

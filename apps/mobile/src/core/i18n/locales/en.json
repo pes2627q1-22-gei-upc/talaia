@@ -29,6 +29,35 @@
       "allow": "Allow location",
       "settings": "Open Settings",
       "close": "Close"
+    },
+    "spot": {
+      "hint": {
+        "title": "Pick a spot on the map",
+        "subtitle": "Tap anywhere to see its index"
+      },
+      "title": "Spot picked on the map",
+      "marker": "Picked spot",
+      "coords": "Lat {{lat}} · Lon {{lon}}",
+      "from": "{{travel}} from {{place}}",
+      "from_vowel": "{{travel}} from {{place}}",
+      "fromHere": "{{travel}} from where you are",
+      "calculate": "Calculate the index here",
+      "loading": "Calculating the index…",
+      "at": "Index for the current hour ({{time}})",
+      "daytime": "It's daytime: the index counts from dusk onwards.",
+      "estimated": "Sky darkness is estimated: there's no measured spot nearby.",
+      "outside": {
+        "title": "This place is outside Catalonia",
+        "description": "The index is only calculated within Catalonia. Tap somewhere else."
+      },
+      "limit": {
+        "title": "You've made a lot of requests this hour",
+        "description": "Try again when the next hour starts."
+      },
+      "error": {
+        "title": "We couldn't calculate the index",
+        "description": "Try again in a little while."
+      }
     }
   },
   "calendar": {
@@ -578,24 +607,10 @@
       "title": "My plans",
       "upcoming": "Upcoming",
       "past": "Past",
-      "months": [
-        "JAN",
-        "FEB",
-        "MAR",
-        "APR",
-        "MAY",
-        "JUN",
-        "JUL",
-        "AUG",
-        "SEP",
-        "OCT",
-        "NOV",
-        "DEC"
-      ],
       "starrySky": "Starry sky",
       "rowTitle": "{{phenomenon}} in {{place}}",
-      "rowTitle_el": "{{phenomenon}} in El {{place}}",
-      "rowTitle_els": "{{phenomenon}} in Els {{place}}",
+      "rowTitle_el": "{{phenomenon}} in el {{place}}",
+      "rowTitle_els": "{{phenomenon}} in els {{place}}",
       "departure": "Leaving at {{time}}, {{point}}",
       "departure_single": "Leaving at {{time}}, {{point}}",
       "retired": "This spot is no longer available.",

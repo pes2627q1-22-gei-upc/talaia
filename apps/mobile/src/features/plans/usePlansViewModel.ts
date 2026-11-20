@@ -69,7 +69,8 @@ export function usePlansViewModel() {
   const upcoming = usePlansSection('futurs', true);
   const past = usePlansSection('passats', pastRequested || tab === 'passats');
 
-  const months = t('plans.list.months', { returnObjects: true }) as string[];
+  // Les abreviatures normatives del Calendari («febr.», «març»); la vista les posa en majúscules.
+  const months = t('explore.calendar.monthsShort', { returnObjects: true }) as string[];
   const monthsOf = t('explore.calendar.monthsOf', { returnObjects: true }) as string[];
 
   const toListRow = (row: PlanRow): PlanListRow => {
