@@ -2,12 +2,15 @@ import { StyleSheet, View } from 'react-native';
 
 import { spacing } from '@/core/theme/tokens';
 import { ApiStatusCard } from '@/features/apiStatus/ApiStatusCard';
+import { FieldRow } from '@/features/explore/FieldRow';
 import { AppText } from '@/shared/ui/AppText';
 import { Button } from '@/shared/ui/Button';
 import { Chip } from '@/shared/ui/Chip';
 import { Screen } from '@/shared/ui/Screen';
 
 import { useProfileViewModel } from './useProfileViewModel';
+
+const calendarIcon = require('@/assets/images/plans/calendari.svg');
 
 export function ProfileScreen() {
   const vm = useProfileViewModel();
@@ -26,6 +29,15 @@ export function ProfileScreen() {
           />
         ))}
       </View>
+      {vm.plans ? (
+        <FieldRow
+          icon={calendarIcon}
+          label={vm.plans.label}
+          accessibilityLabel={vm.plans.label}
+          onPress={vm.plans.onPress}
+          chevron
+        />
+      ) : null}
       {vm.auth.isAuthenticated ? (
         <View style={styles.account}>
           <AppText variant="small" color="boira">

@@ -5,6 +5,7 @@ import Animated, { FadeInDown, FadeOutDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SafeAreaView as NativeSafeAreaView } from 'react-native-screens/experimental';
 
+import { useTheme } from '@/core/theme/theme';
 import { colors, motion, radii, sizes, spacing } from '@/core/theme/tokens';
 import { AppText } from '@/shared/ui/AppText';
 import { PressableScale } from '@/shared/ui/PressableScale';
@@ -15,8 +16,6 @@ import { RecommendationsSheet } from '../recommendations/RecommendationsSheet';
 import NightMap from './NightMap';
 import { SpotCard } from './SpotCard';
 import { useMapViewModel } from './useMapViewModel';
-
-const chrome = { background: colors.nit, text: colors.boira, link: colors.lluna };
 
 /**
  * Marges de l'enquadrament (mockup 03): la capçalera i la llegenda a dalt, i el full a baix (obert
@@ -103,6 +102,15 @@ const exitDown = FadeOutDown.duration(motion.fast).easing(motion.exit);
  */
 export function MapScreen() {
   const vm = useMapViewModel();
+  const { name, colors: theme } = useTheme();
+  const night = name === 'vermell';
+  // Els controls i els marcadors HTML queden fora del filtre del mode nit: van amb el tema. Les capes
+  // del canvas (`markerPalette`) les passa a vermell el filtre, i van amb la paleta normal.
+  const chrome = useMemo(
+    () => ({ background: theme.nit, text: theme.boira, link: theme.lluna }),
+    [theme],
+  );
+  const origin = vm.origin && { ...vm.origin, color: theme.far };
   // Android ja reserva l’espai de les pestanyes; a iOS el menú se superposa al mapa.
   const RankingSafeArea = Platform.OS === 'ios' ? NativeSafeAreaView : View;
   const insets = useSafeAreaInsets();
@@ -131,6 +139,7 @@ export function MapScreen() {
   return (
     <View style={styles.container}>
       <NightMap
+        night={night}
         mapStyle={vm.mapStyle}
         camera={vm.camera}
         chrome={chrome}
@@ -139,14 +148,14 @@ export function MapScreen() {
         userHeading={vm.userHeading}
         locationActive={vm.locationActive}
         userLocationLabel={vm.userLocationLabel}
-        userLocationColor={colors.ubicacio}
+        userLocationColor={theme.ubicacio}
         points={vm.points}
         markerPalette={markerPalette}
         onPointPress={vm.openPoint}
         cluster={!recommendations}
         fit={fit}
         onMapPress={vm.onMapPress}
-        origin={vm.origin}
+        origin={origin}
         dom={{
           // Transparent: un WKWebView opac pinta blanc fins que la pàgina fa el primer dibuix.
           // Mentrestant es veu el fons nit del contenidor.

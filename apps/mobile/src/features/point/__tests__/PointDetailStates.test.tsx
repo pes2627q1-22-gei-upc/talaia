@@ -13,6 +13,7 @@ jest.mock('../pointRepository', () => ({
   usePointBreakdownQuery: jest.fn(),
 }));
 jest.mock('../PointLocationMap', () => () => null);
+jest.mock('../FavoriteButton', () => ({ FavoriteButton: () => null }));
 const mockPush = jest.fn();
 jest.mock('expo-router', () => ({
   ...jest.requireActual('expo-router'),

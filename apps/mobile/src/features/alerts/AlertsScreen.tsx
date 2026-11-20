@@ -1,8 +1,9 @@
 import { Image } from 'expo-image';
-import { FlatList, StyleSheet, View } from 'react-native';
+import { FlatList, View } from 'react-native';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 
-import { colors, motion, radii, spacing } from '@/core/theme/tokens';
+import { makeStyles, useTheme } from '@/core/theme/theme';
+import { motion, radii, spacing } from '@/core/theme/tokens';
 import { AppText } from '@/shared/ui/AppText';
 import { Button } from '@/shared/ui/Button';
 import { Card } from '@/shared/ui/Card';
@@ -23,14 +24,17 @@ const ICON = 26;
 const SKELETON_ROWS = 3;
 const SKELETON_HEIGHT = 88;
 
+// El color el posa `tintColor` (`pedra`), perquè canvia amb el tema.
 const bellIcon = {
   uri: `data:image/svg+xml;utf8,${encodeURIComponent(
-    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="${colors.pedra}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 1.5h-15z"/><path d="M10 20.5a2.2 2.2 0 0 0 4 0"/></svg>`,
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 1.5h-15z"/><path d="M10 20.5a2.2 2.2 0 0 0 4 0"/></svg>`,
   )}`,
 };
 
 /** Una alerta: fenomen i resum (es prem per editar-la) i interruptor. Una de desactivada s'apaga. */
 function AlertRow({ item, index }: { item: AlertItem; index: number }) {
+  const styles = useStyles();
+  const { colors } = useTheme();
   return (
     <Animated.View
       entering={FadeInDown.duration(motion.base)
@@ -74,6 +78,7 @@ function AlertRow({ item, index }: { item: AlertItem; index: number }) {
 
 /** Pestanya «Alertes» (HU19, mockup 10): les alertes de l'usuari i el camí a «Nova alerta». */
 export function AlertsScreen() {
+  const styles = useStyles();
   const vm = useAlertsViewModel();
   const createButton = (
     <Button label={vm.create.label} onPress={vm.create.onPress} haptic style={styles.create} />
@@ -133,7 +138,7 @@ export function AlertsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(({ colors }) => ({
   list: { gap: spacing.ms, paddingBottom: spacing.xl },
   row: {
     flexDirection: 'row',
@@ -156,4 +161,4 @@ const styles = StyleSheet.create({
   off: { opacity: 0.5 },
   create: { marginTop: spacing.sm },
   notice: { gap: spacing.sm },
-});
+}));
