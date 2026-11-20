@@ -8,6 +8,7 @@ import { makeStyles, useTheme } from '@/core/theme/theme';
 import { motion, radii, sizes, spacing } from '@/core/theme/tokens';
 import { FieldRow } from '@/features/explore/FieldRow';
 import { AppText } from '@/shared/ui/AppText';
+import { BackButton } from '@/shared/ui/BackButton';
 import { Button } from '@/shared/ui/Button';
 import { MonthCalendar } from '@/shared/ui/MonthCalendar';
 import { PressableScale } from '@/shared/ui/PressableScale';
@@ -83,7 +84,7 @@ export function NewPlanScreen(params: NewPlanParams) {
   const { visible, title, closeLabel, onClose, ...calendar } = vm.dateSheet;
 
   return (
-    <SafeAreaView edges={['bottom']} style={styles.root}>
+    <SafeAreaView edges={['top', 'bottom']} style={styles.root}>
       <ScrollView
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
@@ -91,9 +92,12 @@ export function NewPlanScreen(params: NewPlanParams) {
         showsVerticalScrollIndicator={false}
       >
         <Enter index={0}>
-          <AppText variant="display" accessibilityRole="header">
-            {vm.title}
-          </AppText>
+          <View style={styles.header}>
+            <BackButton label={vm.backLabel} />
+            <AppText variant="display" accessibilityRole="header" style={styles.shrink}>
+              {vm.title}
+            </AppText>
+          </View>
         </Enter>
 
         <Enter index={1}>
@@ -180,6 +184,7 @@ export function NewPlanScreen(params: NewPlanParams) {
 const useStyles = makeStyles(({ colors }) => ({
   root: { flex: 1, backgroundColor: colors.nit },
   content: { padding: spacing.ml, gap: spacing.lg },
+  header: { flexDirection: 'row', alignItems: 'center', gap: spacing.ms },
   section: { gap: spacing.ms },
   icon: { width: sizes.icon, height: sizes.icon },
   cards: { flexDirection: 'row', gap: spacing.ms },

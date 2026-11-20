@@ -153,6 +153,7 @@ export function useNewPlanViewModel({ puntId, inici, fi, esdevenimentId }: NewPl
   return {
     header: t('plans.new.header'),
     title: t('plans.new.title'),
+    backLabel: t('plans.new.back'),
     point: {
       label: t('plans.new.point'),
       loading: !pointData && point.isPending,
