@@ -41,5 +41,6 @@ Format: **Context → Decisió → Conseqüències**. Estat: `Acceptada`, `Propo
 | [0032](0032-mode-nit-vermell.md) | Mode nit vermell sobre negre: paleta `vermell` dels tokens amb `ThemeProvider` i `makeStyles`, filtre CSS al contenidor del mapa i brillantor baixa amb `expo-brightness` (HU45) | Proposada |
 | [0033](0033-avaluacio-alertes-worker.md) | Avaluació de les alertes al worker després de cada recàlcul: una sola consulta, una decisió pura (índex ≥ mínim a les hores que queden de la nit, segons quan avisa cada alerta i sense comptes bloquejats; desempat per índex, distància i hora) i com a molt una notificació per alerta i nit a `notificacions_alertes`, que envia la TG-154 | Proposada |
 | [0035](0035-avis-deploy.md) | Avís per correu des del Gmail de l'equip quan el deploy de la VM falla (un per fallada) i quan es recupera, amb `curl` a l'SMTP | Acceptada |
+| [0037](0037-barra-pestanyes-propia.md) | Barra de pestanyes pròpia (`Tabs` d'Expo Router i `TabBar`) en lloc de la nativa, que des d'iOS 26 no es pot posar en vermell en mode nit; substitueix en part l'ADR-0010 (P2) | Proposada |
 
 Decisions encara obertes: [pendents.md](pendents.md).
