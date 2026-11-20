@@ -20,4 +20,12 @@ describe('loadEnv', () => {
   it('no arrenca amb una URL invàlida', () => {
     expect(() => loadEnv({ OPEN_METEO_BASE_URL: 'no-es-una-url' })).toThrow('OPEN_METEO_BASE_URL');
   });
+
+  it('ENVIA_PUSH: per defecte no envia; només amb «true»', () => {
+    expect(loadEnv({}).ENVIA_PUSH).toBe(false);
+    expect(loadEnv({ ENVIA_PUSH: '' }).ENVIA_PUSH).toBe(false);
+    expect(loadEnv({ ENVIA_PUSH: 'false' }).ENVIA_PUSH).toBe(false);
+    expect(loadEnv({ ENVIA_PUSH: 'true' }).ENVIA_PUSH).toBe(true);
+    expect(() => loadEnv({ ENVIA_PUSH: 'si' })).toThrow('ENVIA_PUSH');
+  });
 });

@@ -13,6 +13,18 @@ const EnvSchema = z.object({
   ),
   // Clau de l'API de Meteocat (TG-115). Opcional: sense ella no s'ingesten les observacions de la XEMA.
   METEOCAT_API_KEY: z.preprocess(buitComAbsent, z.string().optional()),
+  // Access token d'Expo (TG-154, ADR-0028): cal per enviar les push si el projecte té activada la
+  // seguretat reforçada. Opcional: sense ella, s'envia sense capçalera d'autorització.
+  EXPO_ACCESS_TOKEN: z.preprocess(buitComAbsent, z.string().optional()),
+  // Si el worker envia les push (TG-154). Per defecte no: un worker local contra la BD compartida
+  // no ha de notificar usuaris reals. El compose de la VM l'activa (`ENVIA_PUSH=true`).
+  ENVIA_PUSH: z.preprocess(
+    buitComAbsent,
+    z
+      .enum(['true', 'false'])
+      .default('false')
+      .transform((valor) => valor === 'true'),
+  ),
   OPEN_METEO_BASE_URL: z.preprocess(
     buitComAbsent,
     z.url().default('https://api.open-meteo.com/v1'),

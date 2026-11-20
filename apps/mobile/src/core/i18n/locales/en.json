@@ -29,6 +29,35 @@
       "allow": "Allow location",
       "settings": "Open Settings",
       "close": "Close"
+    },
+    "spot": {
+      "hint": {
+        "title": "Pick a spot on the map",
+        "subtitle": "Tap anywhere to see its index"
+      },
+      "title": "Spot picked on the map",
+      "marker": "Picked spot",
+      "coords": "Lat {{lat}} · Lon {{lon}}",
+      "from": "{{travel}} from {{place}}",
+      "from_vowel": "{{travel}} from {{place}}",
+      "fromHere": "{{travel}} from where you are",
+      "calculate": "Calculate the index here",
+      "loading": "Calculating the index…",
+      "at": "Index for the current hour ({{time}})",
+      "daytime": "It's daytime: the index counts from dusk onwards.",
+      "estimated": "Sky darkness is estimated: there's no measured spot nearby.",
+      "outside": {
+        "title": "This place is outside Catalonia",
+        "description": "The index is only calculated within Catalonia. Tap somewhere else."
+      },
+      "limit": {
+        "title": "You've made a lot of requests this hour",
+        "description": "Try again when the next hour starts."
+      },
+      "error": {
+        "title": "We couldn't calculate the index",
+        "description": "Try again in a little while."
+      }
     }
   },
   "calendar": {
