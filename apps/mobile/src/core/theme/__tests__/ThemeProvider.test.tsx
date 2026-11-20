@@ -5,7 +5,7 @@ import { FieldRow } from '@/features/explore/FieldRow';
 import { Chip } from '@/shared/ui/Chip';
 import { Screen } from '@/shared/ui/Screen';
 
-import { type ThemeName, ThemeProvider } from '../theme';
+import { type ThemeName, ThemeProvider, useNightTint } from '../theme';
 
 jest.mock('expo-brightness', () => ({
   getBrightnessAsync: jest.fn().mockResolvedValue(0.5),
@@ -55,5 +55,25 @@ describe('ThemeProvider', () => {
     expect(JSON.stringify(screen.toJSON())).toContain(
       `"tintColor":${String(processColor('#FF0000'))}`,
     );
+  });
+
+  it('useNightTint només tenyeix en mode nit', async () => {
+    const seen: (string | undefined)[] = [];
+    function Probe() {
+      seen.push(useNightTint(), useNightTint('nit'));
+      return null;
+    }
+    const { rerender } = await render(
+      <ThemeProvider>
+        <Probe />
+      </ThemeProvider>,
+    );
+    expect(seen.slice(-2)).toEqual([undefined, undefined]);
+    await rerender(
+      <ThemeProvider name="vermell">
+        <Probe />
+      </ThemeProvider>,
+    );
+    expect(seen.slice(-2)).toEqual(['#FF0000', '#000000']);
   });
 });

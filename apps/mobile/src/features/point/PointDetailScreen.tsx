@@ -7,7 +7,7 @@ import { ScrollView, View } from 'react-native';
 import Animated, { FadeIn, ReduceMotion, useReducedMotion } from 'react-native-reanimated';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { makeStyles, useTheme } from '@/core/theme/theme';
+import { makeStyles, useNightTint, useTheme } from '@/core/theme/theme';
 import { fonts, motion, radii, sizes, spacing, typography } from '@/core/theme/tokens';
 import { AppText } from '@/shared/ui/AppText';
 import { Button } from '@/shared/ui/Button';
@@ -35,8 +35,10 @@ const planIcon = require('@/assets/images/point/plan.svg');
 
 /** TG-93 / mockup 05, amb el desglossament d'aquesta nit (TG-105). Rutes i plans, altres històries. */
 export function PointDetailScreen({ pointId }: { pointId: string }) {
+  const nightTint = useNightTint();
+  const nightTintOnPrimary = useNightTint('nit');
   const styles = useStyles();
-  const { colors, gradients, pointMapColors } = useTheme();
+  const { name: theme, colors, gradients, pointMapColors } = useTheme();
   const mapPalette = useMemo(
     () => ({
       background: colors.nit,
@@ -88,6 +90,7 @@ export function PointDetailScreen({ pointId }: { pointId: string }) {
           {vm.coordinates ? (
             <View style={mapStyle}>
               <PointLocationMap
+                night={theme === 'vermell'}
                 mapStyle={vm.mapStyle}
                 key={pointId}
                 coordinates={vm.coordinates}
@@ -253,7 +256,14 @@ export function PointDetailScreen({ pointId }: { pointId: string }) {
             variant="secondary"
             label={vm.directionsLabel}
             haptic
-            icon={<Image source={directionsIcon} style={styles.actionIcon} accessible={false} />}
+            icon={
+              <Image
+                tintColor={nightTint}
+                source={directionsIcon}
+                style={styles.actionIcon}
+                accessible={false}
+              />
+            }
             onPress={vm.openDirections}
             style={styles.actionButton}
           />
@@ -261,7 +271,14 @@ export function PointDetailScreen({ pointId }: { pointId: string }) {
             variant="primary"
             label={vm.createPlanLabel}
             haptic
-            icon={<Image source={planIcon} style={styles.actionIcon} accessible={false} />}
+            icon={
+              <Image
+                tintColor={nightTintOnPrimary}
+                source={planIcon}
+                style={styles.actionIcon}
+                accessible={false}
+              />
+            }
             onPress={vm.createPlan}
             style={styles.actionButton}
           />
