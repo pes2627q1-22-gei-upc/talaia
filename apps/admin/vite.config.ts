@@ -3,6 +3,8 @@ import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
 
 export default defineConfig({
+  // Nginx la serveix a /admin/ (TG-176): els recursos compilats hi han d'apuntar. També en local.
+  base: '/admin/',
   plugins: [react()],
   server: { proxy: { '/api/v1': 'http://127.0.0.1:3000' } },
   test: {
