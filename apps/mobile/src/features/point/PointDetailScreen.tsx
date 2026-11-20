@@ -17,6 +17,7 @@ import { Skeleton } from '@/shared/ui/Skeleton';
 import { StateMessage } from '@/shared/ui/StateMessage';
 
 import { IndexBreakdown } from './IndexBreakdown';
+import { FavoriteButton } from './FavoriteButton';
 import PointLocationMap from './PointLocationMap';
 import { usePointDetailViewModel } from './usePointDetailViewModel';
 
@@ -118,6 +119,9 @@ export function PointDetailScreen({ pointId }: { pointId: string }) {
               <AppText variant="display" accessibilityRole="header" style={styles.mapTitle}>
                 {vm.title}
               </AppText>
+              <View style={[styles.favoritePosition, { top: insets.top + spacing.sm }]}>
+                <FavoriteButton key={pointId} pointId={pointId} />
+              </View>
             </View>
           ) : null}
           <Animated.View entering={appear} style={styles.content}>
@@ -319,6 +323,7 @@ const useStyles = makeStyles(({ colors }) => ({
     bottom: -spacing.md,
     color: colors.lluna,
   },
+  favoritePosition: { position: 'absolute', right: spacing.ml, zIndex: 2 },
   heading: { gap: spacing.sm },
   tags: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   tag: {
