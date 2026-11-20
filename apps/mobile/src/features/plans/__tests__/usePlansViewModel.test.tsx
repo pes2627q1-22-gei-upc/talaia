@@ -85,7 +85,7 @@ it('carrega els propers amb el nom del fenomen i la sortida, sense demanar els p
     expect.objectContaining({
       id: 'p1',
       day: '21',
-      month: 'OCT',
+      month: 'oct.',
       title: 'Oriònides a Àger',
       subtitle: 'Sortida a les 23:15, Serra del Montsec',
       retired: false,
@@ -94,14 +94,14 @@ it('carrega els propers amb el nom del fenomen i la sortida, sense demanar els p
     expect.objectContaining({
       id: 'p2',
       day: '02',
-      month: 'NOV',
+      month: 'nov.',
       title: 'Cel estrellat al Garraf',
       subtitle: 'Sortida a la 01:00, Mirador de la Morella',
     }),
   ]);
   expect(get).toHaveBeenCalledWith(
     '/esdeveniments',
-    { des_de: '2026-10-21', fins_a: '2026-10-21' },
+    { des_de: '2026-10-20', fins_a: '2026-10-22' },
     expect.anything(),
   );
   expect(plansCalls('passats')).toBe(0);
@@ -179,3 +179,36 @@ it('crear un pla (invalidar PLANS_KEY) refresca les llistes ja carregades', asyn
   expect(plansCalls('futurs')).toBe(before.futurs + 1);
   expect(plansCalls('passats')).toBe(before.passats + 1);
 });
+
+it("un pla de les 23:15 per a un eclipsi de les 02:00 de l'endemà en porta el nom", async () => {
+  const eclipse = { id: 'eclipsi-2026', nom: 'Eclipsi de Lluna' } as Esdeveniment;
+  get.mockImplementation((async (path: string, query?: Record<string, unknown>) => {
+    // Com l'API: només torna l'eclipsi (22/10, hora de Catalunya) si la consulta l'inclou.
+    if (path === '/esdeveniments') {
+      const q = query as { des_de: string; fins_a: string };
+      return { data: q.des_de <= '2026-10-22' && '2026-10-22' <= q.fins_a ? [eclipse] : [] };
+    }
+    return query?.quan === 'futurs' ? [plan({ esdevenimentId: 'eclipsi-2026' })] : [];
+  }) as typeof apiGet);
+  const { result } = await renderVm();
+  await waitFor(() => expect(result.current.upcoming.state).toBe('ready'));
+  expect(result.current.upcoming.rows[0]!.title).toBe('Eclipsi de Lluna a Àger');
+});
+
+it.each([
+  ['es', 'Cielo estrellado en el Garraf', 'Cielo estrellado en la Ràpita'],
+  ['en', 'Starry sky in el Garraf', 'Starry sky in la Ràpita'],
+])(
+  "en %s, l'article del municipi queda en minúscula, com en català",
+  async (lng, garraf, rapita) => {
+    await i18n.changeLanguage(lng);
+    const place = (id: string, municipi: string) =>
+      plan({ id, punt: { id, nom: 'Mirador', municipi, publicat: true } });
+    get.mockImplementation(
+      respond({ futurs: [place('g', 'El Garraf'), place('r', 'la Ràpita')], passats: [] }),
+    );
+    const { result } = await renderVm();
+    await waitFor(() => expect(result.current.upcoming.state).toBe('ready'));
+    expect(result.current.upcoming.rows.map((row) => row.title)).toEqual([garraf, rapita]);
+  },
+);

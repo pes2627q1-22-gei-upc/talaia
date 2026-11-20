@@ -170,15 +170,20 @@ export function planErrorKey(error: unknown): PlanErrorKey | null {
   }
 }
 
-/** `/esdeveniments` no admet més de 366 dies per consulta. */
-const MAX_EVENT_RANGE_DAYS = 365;
+/**
+ * `/esdeveniments` no admet més de 366 dies per consulta. Els plans es queden a 363 dies del primer
+ * perquè, amb el dia de més a cada banda (`eventWindow`), la consulta no passi del màxim.
+ */
+const MAX_EVENT_RANGE_DAYS = 363;
 
 /**
  * Dies (`YYYY-MM-DD`, hora de Catalunya) que cal demanar a `/esdeveniments` per posar nom als
- * fenòmens d'una llista de plans, en una sola crida. La llista arriba de l'API amb el pla més
- * proper a avui primer: si els plans amb fenomen s'escampen més d'un any, es demana l'any que
- * comença (o acaba) en aquest pla, i els que en queden fora surten sense nom de fenomen.
- * `null` si cap pla no va lligat a un fenomen.
+ * fenòmens d'una llista de plans, en una sola crida. Com «Crea un pla», que ofereix els fenòmens
+ * del dia ± 1, cada pla porta la seva finestra (`eventWindow`): una sortida a les 23:15 per a un
+ * eclipsi de les 02:00 de l'endemà en troba el nom. La llista arriba de l'API amb el pla més
+ * proper a avui primer (els futurs en ordre ascendent i els passats en descendent): si els plans
+ * amb fenomen s'escampen més d'un any, es demana l'any que comença (o acaba) en aquest pla, i els
+ * que en queden fora surten sense nom de fenomen. `null` si cap pla no va lligat a un fenomen.
  */
 export function planEventsRange(plans: Pla[]): { from: string; to: string } | null {
   const days = plans
@@ -186,11 +191,12 @@ export function planEventsRange(plans: Pla[]): { from: string; to: string } | nu
     .map((plan) => cataloniaDate(plan.dataHoraInici));
   const anchor = days[0];
   if (anchor === undefined) return null;
-  const inRange = days.filter(
-    (day) => Math.abs(Date.parse(day) - Date.parse(anchor)) <= MAX_EVENT_RANGE_DAYS * 86_400_000,
-  );
-  const sorted = [...inRange].sort();
-  return { from: sorted[0]!, to: sorted[sorted.length - 1]! };
+  const sorted = days
+    .filter(
+      (day) => Math.abs(Date.parse(day) - Date.parse(anchor)) <= MAX_EVENT_RANGE_DAYS * 86_400_000,
+    )
+    .sort((a, b) => a.localeCompare(b));
+  return { from: eventWindow(sorted[0]!).from, to: eventWindow(sorted[sorted.length - 1]!).to };
 }
 
 /**
@@ -200,7 +206,7 @@ export function planEventsRange(plans: Pla[]): { from: string; to: string } | nu
 export type PlaceArticle = 'el' | 'els' | null;
 
 export function splitPlaceArticle(municipi: string): { article: PlaceArticle; name: string } {
-  const match = /^(els?)\s+(.+)$/i.exec(municipi.trim());
+  const match = /^(els?)\s+(\S.*)$/i.exec(municipi.trim());
   if (!match) return { article: null, name: municipi.trim() };
   return { article: match[1]!.toLowerCase() as 'el' | 'els', name: match[2]! };
 }
