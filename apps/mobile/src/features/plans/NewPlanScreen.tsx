@@ -79,6 +79,19 @@ function ValueCard({
 }
 
 /** «Pla d'observació» (HU12, mockup 06), amb calendari del mòbil opcional (TG-158). */
+/** L'enrere i el nom de la pantalla, fixos a dalt en tots els estats (també en desar el calendari). */
+function TopBar({ back, title }: { back: { label: string; onPress: () => void }; title: string }) {
+  const styles = useStyles();
+  return (
+    <View style={styles.topBar}>
+      <BackButton label={back.label} onPress={back.onPress} />
+      <AppText variant="label" color="boira">
+        {title}
+      </AppText>
+    </View>
+  );
+}
+
 export function NewPlanScreen(params: NewPlanParams) {
   const styles = useStyles();
   const { colors } = useTheme();
@@ -89,7 +102,8 @@ export function NewPlanScreen(params: NewPlanParams) {
   if (vm.saved) {
     const saved = vm.saved;
     return (
-      <SafeAreaView edges={['bottom']} style={styles.root}>
+      <SafeAreaView edges={['top', 'bottom']} style={styles.root}>
+        <TopBar back={vm.back} title={vm.header} />
         <ScrollView contentContainerStyle={styles.content}>
           <AppText variant="display" accessibilityRole="header">
             {saved.title}
@@ -115,7 +129,9 @@ export function NewPlanScreen(params: NewPlanParams) {
 
   return (
     <SafeAreaView edges={['top', 'bottom']} style={styles.root}>
+      <TopBar back={vm.back} title={vm.header} />
       <ScrollView
+        testID="new-plan-scroll"
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
         automaticallyAdjustKeyboardInsets
@@ -123,12 +139,9 @@ export function NewPlanScreen(params: NewPlanParams) {
         pointerEvents={vm.busy ? 'none' : 'auto'}
       >
         <Enter index={0}>
-          <View style={styles.header}>
-            <BackButton label={vm.backLabel} />
-            <AppText variant="display" accessibilityRole="header" style={styles.shrink}>
-              {vm.title}
-            </AppText>
-          </View>
+          <AppText variant="display" accessibilityRole="header">
+            {vm.title}
+          </AppText>
         </Enter>
 
         <Enter index={1}>
@@ -282,7 +295,14 @@ export function NewPlanScreen(params: NewPlanParams) {
 const useStyles = makeStyles(({ colors }) => ({
   root: { flex: 1, backgroundColor: colors.nit },
   content: { padding: spacing.ml, gap: spacing.lg },
-  header: { flexDirection: 'row', alignItems: 'center', gap: spacing.ms },
+  // Fora del ScrollView: com la capçalera nativa, l'enrere no marxa en baixar pel formulari.
+  topBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.ms,
+    paddingHorizontal: spacing.ml,
+    paddingTop: spacing.sm,
+  },
   section: { gap: spacing.ms },
   icon: { width: sizes.icon, height: sizes.icon },
   cards: { flexDirection: 'row', gap: spacing.ms },

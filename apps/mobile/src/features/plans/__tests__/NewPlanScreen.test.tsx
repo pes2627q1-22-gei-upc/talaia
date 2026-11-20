@@ -1,5 +1,5 @@
 import type { Esdeveniment } from '@talaia/shared';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react-native';
 import { useRouter } from 'expo-router';
 import type { PropsWithChildren } from 'react';
 import { Linking } from 'react-native';
@@ -171,6 +171,25 @@ it('Continua surt de la pantalla i conserva el pla si falla el calendari', async
   await fireEvent.press(screen.getByText(i18n.t('plans.calendar.continue')));
   await waitFor(() => expect(back).toHaveBeenCalledTimes(1));
   expect(post).toHaveBeenCalledTimes(1);
+});
+
+it("l'enrere queda fora del formulari desplaçable i també surt en desar el calendari", async () => {
+  jest.mocked(planCalendarRepository.isSupported).mockReturnValue(true);
+  post.mockResolvedValue(plan);
+  jest.mocked(planCalendarRepository.createEvent).mockRejectedValue(new Error('calendar failure'));
+  await renderScreen();
+  const backLabel = i18n.t('plans.new.back');
+  expect(screen.getByRole('button', { name: backLabel })).toBeOnTheScreen();
+  expect(
+    within(screen.getByTestId('new-plan-scroll')).queryByRole('button', { name: backLabel }),
+  ).toBeNull();
+
+  await fireEvent.press(screen.getByRole('switch', { name: i18n.t('plans.calendar.label') }));
+  await screen.findByRole('button', { name: /Personal · Google/ });
+  await fireEvent.press(screen.getByRole('button', { name: i18n.t('plans.new.save') }));
+  await screen.findByText(i18n.t('plans.calendar.syncErrors.create'));
+  await fireEvent.press(screen.getByRole('button', { name: backLabel }));
+  expect(back).toHaveBeenCalledTimes(1);
 });
 
 it('Obre la configuració després de revocar el permís en desar el pla', async () => {
