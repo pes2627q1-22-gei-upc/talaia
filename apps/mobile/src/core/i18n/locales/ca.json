@@ -208,6 +208,7 @@
     "description": "Descripció",
     "accessibility": "Accessibilitat",
     "directions": "Com arribar",
+    "routeSummary": "{{distance}} km · {{minutes}} min",
     "createPlan": "Crea un pla",
     "mapsErrorTitle": "No hem pogut obrir el mapa",
     "mapsErrorMessage": "Torna-ho a provar d'aquí a un moment.",

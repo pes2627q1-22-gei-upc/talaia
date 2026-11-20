@@ -1,18 +1,21 @@
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { StyleSheet } from 'react-native';
+import { Linking, Platform, StyleSheet } from 'react-native';
 
 import { apiGet, ApiError } from '@/core/api/httpClient';
 import i18n from '@/core/i18n';
 import { createQueryWrapper } from '@/test-utils/queryWrapper';
+import { useCurrentPlaceQuery } from '@/features/explore/locationRepository';
 
 import { PointDetailScreen } from '../PointDetailScreen';
+import { directionsUrl } from '../pointModel';
 import { asPointResponse, hour, point, respond } from '../__fixtures__/point';
 
 jest.mock('@/core/api/httpClient', () => ({
   ...jest.requireActual('@/core/api/httpClient'),
   apiGet: jest.fn(),
 }));
+jest.mock('@/features/explore/locationRepository', () => ({ useCurrentPlaceQuery: jest.fn() }));
 // El WebView no existeix a Jest; es comprova la pantalla nativa amb el repository real.
 jest.mock('../PointLocationMap', () => () => null);
 jest.mock('expo-router', () => ({
@@ -38,9 +41,62 @@ async function renderScreen() {
 }
 beforeEach(async () => {
   get.mockReset();
+  jest.mocked(useCurrentPlaceQuery).mockReturnValue({
+    data: { status: 'denied', canAskAgain: false },
+  } as ReturnType<typeof useCurrentPlaceQuery>);
   // Per defecte, com l'API: la fitxa o el desglossament segons la ruta.
   get.mockImplementation(respond());
   await i18n.changeLanguage('ca');
+});
+
+it('mostra la distància i el temps de Mobilicat quan hi ha ruta', async () => {
+  jest.mocked(useCurrentPlaceQuery).mockReturnValue({
+    data: { status: 'ready', place: { name: 'Barcelona', lat: 41.385, lon: 2.17 } },
+  } as ReturnType<typeof useCurrentPlaceQuery>);
+  const pointResponse = respond();
+  get.mockImplementation((path) =>
+    path.endsWith('/rutes')
+      ? Promise.resolve({
+          estat: 'disponible',
+          destacada: { distanciaMetres: 12340, duradaSegons: 1561 },
+        })
+      : pointResponse(path),
+  );
+  await renderScreen();
+  expect(await screen.findByText('12,3 km · 27 min')).toBeOnTheScreen();
+  expect(screen.getByRole('button', { name: 'Com arribar' })).toBeOnTheScreen();
+  expect(get).toHaveBeenCalledWith(
+    '/punts/montsec/rutes',
+    { lat: 41.385, lon: 2.17 },
+    { signal: expect.any(AbortSignal) },
+  );
+  const open = jest.spyOn(Linking, 'openURL').mockResolvedValue();
+  fireEvent.press(screen.getByRole('button', { name: 'Com arribar' }));
+  expect(open).toHaveBeenCalledWith(directionsUrl(point.lat, point.lon, Platform.OS));
+  open.mockRestore();
+});
+
+it('manté la fitxa i el botó quan Mobilicat no respon', async () => {
+  jest.mocked(useCurrentPlaceQuery).mockReturnValue({
+    data: { status: 'ready', place: { name: 'Barcelona', lat: 41.385, lon: 2.17 } },
+  } as ReturnType<typeof useCurrentPlaceQuery>);
+  const pointResponse = respond();
+  get.mockImplementation((path) =>
+    path.endsWith('/rutes')
+      ? Promise.reject(new Error('Mobilicat no disponible'))
+      : pointResponse(path),
+  );
+  await renderScreen();
+  expect(await screen.findByRole('header', { name: point.nom })).toBeOnTheScreen();
+  expect(screen.getByRole('button', { name: 'Com arribar' })).toBeOnTheScreen();
+  await waitFor(() =>
+    expect(get).toHaveBeenCalledWith(
+      '/punts/montsec/rutes',
+      { lat: 41.385, lon: 2.17 },
+      { signal: expect.any(AbortSignal) },
+    ),
+  );
+  expect(screen.queryByText(/km · .* min/)).toBeNull();
 });
 
 it('mostra les dades i les hores amb etiquetes accessibles', async () => {

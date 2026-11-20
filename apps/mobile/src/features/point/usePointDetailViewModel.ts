@@ -1,14 +1,19 @@
 import { useRouter } from 'expo-router';
-import { Alert, Linking } from 'react-native';
+import { Alert, Linking, Platform } from 'react-native';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { DireccioHoritzo, IndexHora } from '@talaia/shared';
 
 import { ApiError } from '@/core/api/httpClient';
 import { nightStyle } from '@/features/map/style/nightStyle';
+import { useCurrentPlaceQuery } from '@/features/explore/locationRepository';
 
-import { twoDigitHours } from './pointModel';
-import { usePointBreakdownQuery, usePointDetailQuery } from './pointRepository';
+import { directionsUrl, twoDigitHours } from './pointModel';
+import {
+  usePointBreakdownQuery,
+  usePointDetailQuery,
+  usePointRoutesQuery,
+} from './pointRepository';
 import { skyDarknessBand } from './skyDarkness';
 
 /** Els factors de l'índex v1 (ADR-0018), en l'ordre del mockup 05. El Sol, al final. */
@@ -24,6 +29,9 @@ export function usePointDetailViewModel(pointId: string) {
   const router = useRouter();
   const query = usePointDetailQuery(pointId);
   const breakdown = usePointBreakdownQuery(pointId);
+  const currentPlace = useCurrentPlaceQuery();
+  const origin = currentPlace.data?.status === 'ready' ? currentPlace.data.place : undefined;
+  const routes = usePointRoutesQuery(pointId, query.data ? origin : undefined);
   const point = query.data;
   const invalidId = !pointId.trim();
   const notFound =
@@ -160,6 +168,16 @@ export function usePointDetailViewModel(pointId: string) {
     undefined,
   )?.id;
   const number = new Intl.NumberFormat(locale, { maximumFractionDigits: 0 });
+  const route = routes.data?.estat === 'disponible' ? routes.data.destacada : null;
+  const routeSummary =
+    route && Number.isFinite(route.distanciaMetres) && Number.isFinite(route.duradaSegons)
+      ? t('point.routeSummary', {
+          distance: new Intl.NumberFormat(locale, { maximumFractionDigits: 1 }).format(
+            route.distanciaMetres / 1000,
+          ),
+          minutes: number.format(Math.ceil(route.duradaSegons / 60)),
+        })
+      : undefined;
   const altitude =
     point?.altitud == null
       ? t('point.unavailable')
@@ -212,6 +230,7 @@ export function usePointDetailViewModel(pointId: string) {
     bestWindow,
     altitude,
     altitudeTag: t('point.altitudeTag', { value: altitude }),
+    routeSummary,
     skyDarkness:
       point?.sqm == null || !Number.isFinite(point.sqm)
         ? undefined
@@ -235,10 +254,9 @@ export function usePointDetailViewModel(pointId: string) {
     createPlanLabel: t('point.createPlan'),
     openDirections: () => {
       if (!point) return;
-      const destination = `${point.lat},${point.lon}`;
-      void Linking.openURL(
-        `https://www.google.com/maps/dir/?api=1&destination=${destination}`,
-      ).catch(() => Alert.alert(t('point.mapsErrorTitle'), t('point.mapsErrorMessage')));
+      void Linking.openURL(directionsUrl(point.lat, point.lon, Platform.OS)).catch(() =>
+        Alert.alert(t('point.mapsErrorTitle'), t('point.mapsErrorMessage')),
+      );
     },
     // El pla surt amb la millor franja de la nit com a hora de sortida, si n'hi ha (TG-157).
     createPlan: () =>

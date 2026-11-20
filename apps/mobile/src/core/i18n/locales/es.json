@@ -208,6 +208,7 @@
     "description": "Descripción",
     "accessibility": "Accesibilidad",
     "directions": "Cómo llegar",
+    "routeSummary": "{{distance}} km · {{minutes}} min",
     "createPlan": "Crea un plan",
     "mapsErrorTitle": "No hemos podido abrir el mapa",
     "mapsErrorMessage": "Vuelve a intentarlo dentro de un momento.",

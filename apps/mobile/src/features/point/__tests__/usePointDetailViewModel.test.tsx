@@ -9,7 +9,7 @@ import {
   fetchPointDetail,
   millisecondsUntilNextPointRefresh,
 } from '../pointRepository';
-import { twoDigitHours } from '../pointModel';
+import { directionsUrl, twoDigitHours } from '../pointModel';
 import { skyDarknessBand } from '../skyDarkness';
 import { usePointDetailViewModel } from '../usePointDetailViewModel';
 import { asPointResponse, hour, point, respond } from '../__fixtures__/point';
@@ -163,6 +163,15 @@ it('les hores sempre surten amb dues xifres (Hermes treu el zero)', () => {
   expect(twoDigitHours('23')).toBe('23');
   expect(twoDigitHours('1 de nov., 9:05')).toBe('1 de nov., 09:05');
   expect(twoDigitHours('22 oct., 16:00')).toBe('22 oct., 16:00');
+});
+
+it('obre la navegació al mapa propi del mòbil amb el destí', () => {
+  expect(directionsUrl(42.05, 0.73, 'ios')).toBe(
+    'http://maps.apple.com/?daddr=42.05,0.73&dirflg=d',
+  );
+  expect(directionsUrl(42.05, 0.73, 'android')).toBe(
+    'https://www.google.com/maps/dir/?api=1&destination=42.05,0.73&travelmode=driving',
+  );
 });
 
 it('només ensenya les hores de nit, i el Sol només quan resta (crepuscle)', async () => {

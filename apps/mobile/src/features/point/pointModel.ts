@@ -15,3 +15,11 @@ export const twoDigitHours = (text: string) =>
     /(^|\D)(\d)(?=:\d\d|$)/g,
     (_, before: string, digit: string) => `${before}0${digit}`,
   );
+
+/** El destí s'obre a l'app de mapes pròpia de cada plataforma. */
+export function directionsUrl(lat: number, lon: number, platform: string): string {
+  const destination = `${lat},${lon}`;
+  return platform === 'ios'
+    ? `http://maps.apple.com/?daddr=${destination}&dirflg=d`
+    : `https://www.google.com/maps/dir/?api=1&destination=${destination}&travelmode=driving`;
+}

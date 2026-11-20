@@ -9,7 +9,30 @@ import type { PointDetailModel } from './pointModel';
 export const pointKeys = {
   detail: (pointId: string, language: string) => ['punts', 'detail', pointId, language] as const,
   breakdown: (pointId: string) => ['punts', 'breakdown', pointId] as const,
+  routes: (pointId: string, lat: number, lon: number) =>
+    ['punts', 'routes', pointId, lat.toFixed(3), lon.toFixed(3)] as const,
 };
+
+/** Camps de l'endpoint de TG-135 que necessita la fitxa. */
+type PointRoutes = {
+  estat: 'disponible' | 'sense_rutes' | 'no_disponible';
+  destacada: { distanciaMetres: number; duradaSegons: number } | null;
+};
+
+export function usePointRoutesQuery(pointId: string, origin?: { lat: number; lon: number }) {
+  return useQuery({
+    queryKey: pointKeys.routes(pointId, origin?.lat ?? 0, origin?.lon ?? 0),
+    queryFn: ({ signal }) =>
+      apiGet<PointRoutes>(
+        `/punts/${encodeURIComponent(pointId)}/rutes`,
+        { lat: origin!.lat, lon: origin!.lon },
+        { signal },
+      ),
+    enabled: pointId.trim().length > 0 && !!origin,
+    staleTime: 5 * 60_000,
+    retry: false,
+  });
+}
 
 /** El worker publica l'índex cada hora al minut 5; deixem 30 s de marge. */
 export function millisecondsUntilNextPointRefresh(now = Date.now()) {

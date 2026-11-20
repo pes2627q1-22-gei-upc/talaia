@@ -33,7 +33,7 @@ const directionsIcon = require('@/assets/images/point/directions.svg');
 const sunIcon = require('@/assets/images/point/sun.svg');
 const planIcon = require('@/assets/images/point/plan.svg');
 
-/** TG-93 / mockup 05, amb el desglossament d'aquesta nit (TG-105). Rutes i plans, altres històries. */
+/** TG-93 / mockup 05, amb el desglossament d'aquesta nit (TG-105) i la ruta (TG-136). */
 export function PointDetailScreen({ pointId }: { pointId: string }) {
   const nightTint = useNightTint();
   const nightTintOnPrimary = useNightTint('nit');
@@ -130,6 +130,11 @@ export function PointDetailScreen({ pointId }: { pointId: string }) {
                   {vm.altitudeTag}
                 </AppText>
               </View>
+              {vm.routeSummary ? (
+                <AppText variant="small" color="boira">
+                  {vm.routeSummary}
+                </AppText>
+              ) : null}
             </View>
             {vm.staleMessage ? (
               <View accessibilityLiveRegion="polite" style={styles.heading}>
