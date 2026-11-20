@@ -121,6 +121,8 @@ Detalls i receptes: `docs/git-workflow.md` (ADR-0009).
 - **Gitflow** amb els noms de l'assignatura: `snapshot` = `develop` (per defecte), `stable` = `main` (una versió etiquetada per sprint, `v0.N.0`), `prod` = versió publicada.
 - Branques de suport: `feature/TG-<ref>-descripcio-curta` des de `snapshot` i de tornada a `snapshot`; `release/0.N.0` des de `snapshot` cap a `stable` i `snapshot`; `hotfix/0.N.x` des de `stable` cap a `stable` i `snapshot`. No hi ha altres prefixos (res de `fix/`, `docs/`…: tot el que no és release ni hotfix és una feature).
 - Tot entra per **pull request** amb CI en verd i **1 revisió aprovada**, fusionada amb merge commit. Ningú fa push directe a `snapshot`, `stable` ni `prod`.
+- **Revisions i conflictes:** un push a una PR descarta les aprovacions (ruleset: `dismiss_stale_reviews_on_push`). Per això, actualitza la branca amb `snapshot` només just abans de demanar la revisió final, mai després d'una aprovació; una PR aprovada i verda es fusiona el mateix dia; i abans d'obrir o fusionar una PR, mira si toca fitxers que ja toquen altres PR obertes (`docs/git-workflow.md` → «Pull requests»).
+- **Estat:** `CLAUDE.md` no porta una línia per funcionalitat ni per PR: l'estat va a `docs/sprint-<N>.md` o a Taiga.
 - **Commits:** [Conventional Commits 1.0.0](https://www.conventionalcommits.org/en/v1.0.0/): `<tipus>(<àmbit>): <descripció>` amb el peu **`Refs: TG-<ref>`** obligatori (l'assignatura exigeix lligar cada commit a Taiga). Canvi incompatible: `!` i/o peu `BREAKING CHANGE:`.
 
   ```
@@ -136,7 +138,7 @@ Especificada → implementada → provada (tests a la CI) → revisada (PR aprov
 ## Com ha de treballar Claude Code aquí
 
 1. Identifica la tasca de Taiga (ref `TG-xx`) i llegeix-ne la descripció i els criteris d'acceptació de la història (`docs/sprint-<N>.md` del sprint de la tasca).
-2. Crea la branca `feature/TG-<ref>-…` des de `snapshot` actualitzada.
+2. Crea la branca `feature/TG-<ref>-…` des de `snapshot` actualitzada i, abans d'obrir la PR, comprova que no xoqui amb fitxers de les PR obertes (`/obre-pr` ho fa).
 3. Respecta el stack i les convencions; si una decisió no està presa, consulta `docs/decisions/pendents.md` i **pregunta** abans d'inventar-la.
 4. Escriu tests i actualitza l'OpenAPI / docs a la mateixa PR.
 5. Missatges de commit i descripció de PR seguint la convenció; plantilla a `.github/pull_request_template.md`.
