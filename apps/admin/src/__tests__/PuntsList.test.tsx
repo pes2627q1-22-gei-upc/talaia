@@ -162,6 +162,28 @@ describe('Llista de punts', () => {
     expect(screen.getByRole('status')).toHaveTextContent('No s’han trobat punts');
   });
 
+  it('cerca sense distingir accents i conserva la llista en canviar el token', async () => {
+    const user = userEvent.setup();
+    const point = { ...PUNTS[0]!, municipi: 'Sant Llorenç' };
+    const fetch = vi.fn(async () => response([point]));
+    vi.stubGlobal('fetch', fetch);
+    const props = {
+      onAccessDenied: vi.fn(),
+      onCreate: vi.fn(),
+      onEdit: vi.fn(),
+    };
+    const { rerender } = render(<PuntsList {...props} accessToken="token-admin" />);
+
+    await screen.findByText('Sant Llorenç');
+    await user.type(screen.getByLabelText('Cerca per nom o municipi'), 'llorenc');
+    expect(screen.getByText('Sant Llorenç')).toBeInTheDocument();
+
+    rerender(<PuntsList {...props} accessToken="token-renovat" />);
+
+    expect(screen.getByText('Sant Llorenç')).toBeInTheDocument();
+    expect(fetch).toHaveBeenCalledOnce();
+  });
+
   it('demana confirmació en retirar i actualitza l’estat quan respon l’API', async () => {
     const user = userEvent.setup();
     const updatedPoint = { ...PUNTS[0]!, estat: 'DESACTIVAT' as const };

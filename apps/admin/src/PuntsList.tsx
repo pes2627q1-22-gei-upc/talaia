@@ -29,6 +29,9 @@ const originLabels: Record<OrigenPunt, string> = {
 };
 
 export function PuntsList({ accessToken, onAccessDenied, onCreate, onEdit }: Props) {
+  // El token actualitza les peticions següents sense reiniciar la cerca ni els filtres.
+  const accessTokenRef = useRef(accessToken);
+  accessTokenRef.current = accessToken;
   const [points, setPoints] = useState<PuntAdmin[] | null>(null);
   const [error, setError] = useState('');
   const [statusError, setStatusError] = useState('');
@@ -46,7 +49,7 @@ export function PuntsList({ accessToken, onAccessDenied, onCreate, onEdit }: Pro
     setPoints(null);
     setError('');
 
-    void getAdminPunts(accessToken, controller.signal)
+    void getAdminPunts(accessTokenRef.current, controller.signal)
       .then(setPoints)
       .catch((cause: unknown) => {
         if (controller.signal.aborted) return;
@@ -58,17 +61,17 @@ export function PuntsList({ accessToken, onAccessDenied, onCreate, onEdit }: Pro
       });
 
     return () => controller.abort();
-  }, [accessToken, attempt, onAccessDenied]);
+  }, [attempt, onAccessDenied]);
 
   const visiblePoints = useMemo(() => {
     if (!points) return [];
-    const normalizedQuery = query.trim().toLocaleLowerCase();
+    const normalizedQuery = normalizeForSearch(query.trim());
 
     return points.filter((point) => {
       const matchesQuery =
         normalizedQuery.length === 0 ||
-        point.nom.toLocaleLowerCase().includes(normalizedQuery) ||
-        point.municipi.toLocaleLowerCase().includes(normalizedQuery);
+        normalizeForSearch(point.nom).includes(normalizedQuery) ||
+        normalizeForSearch(point.municipi).includes(normalizedQuery);
       const matchesStatus = status === 'TOTS' || point.estat === status;
       return matchesQuery && matchesStatus;
     });
@@ -119,7 +122,7 @@ export function PuntsList({ accessToken, onAccessDenied, onCreate, onEdit }: Pro
     setStatusNotice('');
 
     try {
-      const updated = await patchAdminPunt(accessToken, point.id, { estat: nextStatus });
+      const updated = await patchAdminPunt(accessTokenRef.current, point.id, { estat: nextStatus });
       setPoints(
         (current) => current?.map((item) => (item.id === updated.id ? updated : item)) ?? null,
       );
@@ -350,4 +353,11 @@ function statusChangeError(cause: unknown, point: PuntAdmin, nextStatus: Editabl
   }
 
   return `No s’ha pogut ${action} ${point.nom}; l’estat no s’ha canviat. Torna-ho a provar.`;
+}
+
+function normalizeForSearch(value: string) {
+  return value
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+    .toLocaleLowerCase();
 }

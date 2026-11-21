@@ -336,6 +336,42 @@ describe('Tancament i caducitat de la sessió', () => {
     expect(lastAuthorization(fetch).authorization).toBe('Bearer token-renovat');
   });
 
+  it.each(['SIGNED_IN', 'TOKEN_REFRESHED'] as const)(
+    'conserva el formulari mentre revalida l’accés després de %s',
+    async (event) => {
+      const fetch = vi.fn(async (input: RequestInfo | URL) => {
+        if (String(input) === '/api/v1/admin/punts') {
+          return new Response('[]', {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          });
+        }
+        await new Promise((resolve) => setTimeout(resolve, 50));
+        return new Response(null, { status: 204 });
+      });
+      vi.stubGlobal('fetch', fetch);
+      const { user, emit } = await openAdmin({ session: ADMIN });
+
+      await user.click(await screen.findByRole('button', { name: 'Nou punt' }));
+      await user.type(screen.getByRole('textbox', { name: 'Nom' }), 'Mirador nou');
+      const checksBefore = fetch.mock.calls.filter(
+        ([url]) => String(url) === '/api/v1/admin/me',
+      ).length;
+
+      await act(async () =>
+        emit(event, { access_token: event === 'SIGNED_IN' ? 'token-admin' : 'token-renovat' }),
+      );
+
+      expect(screen.getByRole('textbox', { name: 'Nom' })).toHaveValue('Mirador nou');
+      await waitFor(() => {
+        expect(fetch.mock.calls.filter(([url]) => String(url) === '/api/v1/admin/me')).toHaveLength(
+          checksBefore + 1,
+        );
+      });
+      expect(screen.getByRole('textbox', { name: 'Nom' })).toHaveValue('Mirador nou');
+    },
+  );
+
   it('no mostra la zona d’administració si la resposta de l’API arriba després de sortir', async () => {
     const response = deferred<Response>();
     const fetch = vi.fn(() => response.promise);

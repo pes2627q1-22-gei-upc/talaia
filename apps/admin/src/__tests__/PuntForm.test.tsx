@@ -99,6 +99,37 @@ describe('Formulari de punts', () => {
     });
   });
 
+  it('conserva els canvis i no torna a carregar el punt quan es renova el token', async () => {
+    const user = userEvent.setup();
+    const fetch = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) =>
+      jsonResponse(init?.method === 'PATCH' ? { ...PUNT, nom: 'Observatori del Montsec' } : PUNT),
+    );
+    vi.stubGlobal('fetch', fetch);
+    const props = {
+      puntId: PUNT.id,
+      onCancel: vi.fn(),
+      onSaved: vi.fn(),
+      onAccessDenied: vi.fn(),
+    };
+    const { rerender } = render(<PuntForm {...props} accessToken={TOKEN} />);
+
+    expect(await screen.findByLabelText('Nom')).toHaveValue(PUNT.nom);
+    await user.clear(screen.getByLabelText('Nom'));
+    await user.type(screen.getByLabelText('Nom'), 'Observatori del Montsec');
+
+    rerender(<PuntForm {...props} accessToken="token-renovat" />);
+
+    expect(screen.getByLabelText('Nom')).toHaveValue('Observatori del Montsec');
+    expect(fetch).toHaveBeenCalledOnce();
+    await user.click(screen.getByRole('button', { name: 'Desa els canvis' }));
+
+    await waitFor(() => expect(props.onSaved).toHaveBeenCalledWith('updated'));
+    expect(fetch).toHaveBeenCalledTimes(2);
+    expect(new Headers(fetch.mock.calls[1]?.[1]?.headers).get('Authorization')).toBe(
+      'Bearer token-renovat',
+    );
+  });
+
   it('permet editar les dades complementàries i crear el punt desactivat', async () => {
     const user = userEvent.setup();
     const fetch = vi.fn(async (_input: RequestInfo | URL, _init?: RequestInit) =>

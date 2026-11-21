@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import type { EstatPunt, PuntAdmin } from '@talaia/shared';
 
 import { createAdminPunt, getAdminPunt, patchAdminPunt, PuntsApiError } from './puntsApi';
@@ -44,6 +44,9 @@ function apiMessage(cause: unknown): string {
 }
 
 export function PuntForm({ accessToken, puntId, onCancel, onSaved, onAccessDenied }: Props) {
+  // Un token renovat no ha de tornar a carregar les dades i sobreescriure el formulari en edició.
+  const accessTokenRef = useRef(accessToken);
+  accessTokenRef.current = accessToken;
   const [values, setValues] = useState<PuntFormValues>(createEmptyPuntForm);
   const [original, setOriginal] = useState<PuntAdmin | null>(null);
   const [loading, setLoading] = useState(Boolean(puntId));
@@ -59,7 +62,7 @@ export function PuntForm({ accessToken, puntId, onCancel, onSaved, onAccessDenie
     const controller = new AbortController();
     setLoading(true);
     setLoadError('');
-    void getAdminPunt(accessToken, puntId, controller.signal)
+    void getAdminPunt(accessTokenRef.current, puntId, controller.signal)
       .then((punt) => {
         setOriginal(punt);
         setValues(valuesFromPunt(punt));
@@ -77,7 +80,7 @@ export function PuntForm({ accessToken, puntId, onCancel, onSaved, onAccessDenie
       });
 
     return () => controller.abort();
-  }, [accessToken, loadAttempt, onAccessDenied, puntId]);
+  }, [loadAttempt, onAccessDenied, puntId]);
 
   function updateValue<Key extends keyof PuntFormValues>(key: Key, value: PuntFormValues[Key]) {
     setValues((current) => ({ ...current, [key]: value }));
@@ -104,7 +107,7 @@ export function PuntForm({ accessToken, puntId, onCancel, onSaved, onAccessDenie
 
       setSaving(true);
       try {
-        await patchAdminPunt(accessToken, puntId, parsed.value);
+        await patchAdminPunt(accessTokenRef.current, puntId, parsed.value);
         onSaved('updated');
       } catch (cause) {
         if (cause instanceof PuntsApiError && (cause.status === 401 || cause.status === 403)) {
@@ -126,7 +129,7 @@ export function PuntForm({ accessToken, puntId, onCancel, onSaved, onAccessDenie
 
     setSaving(true);
     try {
-      await createAdminPunt(accessToken, parsed.value);
+      await createAdminPunt(accessTokenRef.current, parsed.value);
       onSaved('created');
     } catch (cause) {
       if (cause instanceof PuntsApiError && (cause.status === 401 || cause.status === 403)) {

@@ -17,6 +17,18 @@ superposats, tapats o retallats.
 | Retirada | Canvi a `DESACTIVAT` i contrast de l'estat desat a Supabase | Correcte; el registre conserva l'estat `DESACTIVAT` |
 | Mapa de l'app | Nova càrrega de l'app després de retirar el punt | Correcte; el punt ja no apareix |
 
+## Incidència detectada en la revisió de la PR
+
+En tornar a la pestanya de l'administració o en renovar-se el token, Supabase
+emet `SIGNED_IN` o `TOKEN_REFRESHED`. La comprovació d'accés desmuntava l'espai
+mentre esperava l'API i es perdien el formulari i l'estat de la llista. S'ha
+corregit mantenint l'espai muntat durant la revalidació i evitant que el token
+actualitzat torni a carregar el punt o la llista.
+
+La regressió es comprova amb proves automatitzades per als dos esdeveniments i
+una resposta de `/admin/me` amb 50 ms de latència. També es verifica que una
+cerca sense accents troba «Sant Llorenç».
+
 En la primera comprovació després de retirar-lo, el punt encara es veia a causa
 de la memòria cau de `/punts`, vàlida fins a l'hora següent. Després de deixar
 caducar la memòria cau i tornar a iniciar l'API i l'app, el punt va desaparèixer.

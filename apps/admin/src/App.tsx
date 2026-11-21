@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 
 import { AdminWorkspace } from './AdminWorkspace';
 import { authClient, checkAdmin, completeAuthRedirect } from './auth';
@@ -8,6 +8,8 @@ type Access = 'loading' | 'signed-out' | 'checking' | 'allowed' | 'denied' | 'er
 export function App() {
   const [access, setAccess] = useState<Access>('loading');
   const [adminToken, setAdminToken] = useState<string | null>(null);
+  const accessRef = useRef<Access>('loading');
+  const adminTokenRef = useRef<string | null>(null);
   const [email, setEmail] = useState('');
   const [code, setCode] = useState('');
   const [codeSent, setCodeSent] = useState(false);
@@ -26,27 +28,49 @@ export function App() {
       const id = ++checkId;
       if (!token) {
         if (active) {
+          adminTokenRef.current = null;
           setAdminToken(null);
           setEmail('');
           setCode('');
           setCodeSent(false);
           setMessage('');
+          accessRef.current = 'signed-out';
           setAccess('signed-out');
         }
         return;
       }
-      setAdminToken(null);
-      setAccess('checking');
+      // Revalidar una sessió renovada en segon pla no ha de desmuntar l'espai ni perdre'n l'estat.
+      const wasAllowed = accessRef.current === 'allowed';
+      if (wasAllowed) {
+        adminTokenRef.current = token;
+        setAdminToken(token);
+      } else {
+        adminTokenRef.current = null;
+        setAdminToken(null);
+        accessRef.current = 'checking';
+        setAccess('checking');
+      }
       try {
         const result = await checkAdmin(token);
         if (active && id === checkId) {
+          adminTokenRef.current = result === 'allowed' ? token : null;
           setAdminToken(result === 'allowed' ? token : null);
+          accessRef.current = result;
           setAccess(result);
+          setMessage('');
         }
       } catch {
         if (active && id === checkId) {
-          setAdminToken(null);
-          setAccess('error');
+          if (wasAllowed) {
+            setMessage(
+              'No s’ha pogut revalidar l’accés. Torna-ho a provar quan recuperis la connexió.',
+            );
+          } else {
+            adminTokenRef.current = null;
+            setAdminToken(null);
+            accessRef.current = 'error';
+            setAccess('error');
+          }
         }
       }
     };
@@ -64,6 +88,7 @@ export function App() {
       } catch {
         if (active) {
           setMessage('No s’ha pogut completar l’inici de sessió. Torna-ho a provar.');
+          accessRef.current = 'error';
           setAccess('error');
         }
       }
@@ -76,7 +101,9 @@ export function App() {
   }, []);
 
   const handleAdminAccessDenied = useCallback(() => {
+    adminTokenRef.current = null;
     setAdminToken(null);
+    accessRef.current = 'denied';
     setAccess('denied');
   }, []);
 
@@ -174,11 +201,7 @@ export function App() {
             </button>
           </div>
           {adminToken ? (
-            <AdminWorkspace
-              key={adminToken}
-              accessToken={adminToken}
-              onAccessDenied={handleAdminAccessDenied}
-            />
+            <AdminWorkspace accessToken={adminToken} onAccessDenied={handleAdminAccessDenied} />
           ) : null}
         </>
       ) : null}

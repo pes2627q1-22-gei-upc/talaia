@@ -65,7 +65,7 @@ La font és el **Mapa de brillantor del cel nocturn de Catalunya 2024** (General
 | `scripts/fill-sqm.ts` | Omple l'`sqm` de tots els punts del GeoJSON a partir del GeoTIFF (2 decimals; cel·la més propera fins a 2 km si cal, i ho diu) |
 | `scripts/mapa-foscor.test.ts` | Tests amb cel·les reals de la font: `npm test -w data` |
 
-El GeoTIFF es pot comprovar amb GDAL si es té instal·lat (`gdalinfo -stats data/raw/mapa-sqm-2024.tif`; `gdallocationinfo -wgs84 … 0.7112 42.0294` dona el mateix que `sqmA`). Quan la Generalitat actualitzi el mapa: `build-mapa-foscor.ts` → `fill-sqm.ts` → `build-seed-punts.ts`, i els canvis d'`sqm` queden al diff del GeoJSON.
+El GeoTIFF es pot comprovar amb GDAL si es té instal·lat (`gdalinfo -stats data/raw/mapa-sqm-2024.tif`; `gdallocationinfo -wgs84 … 0.7112 42.0294` dona el mateix que `sqmA`). Quan la Generalitat actualitzi el mapa: `build-mapa-foscor.ts` → `fill-sqm.ts` → `build-seed-punts.ts`, i els canvis d'`sqm` queden al diff del GeoJSON. Com que el seed només insereix els slugs que encara no existeixen, generar dades noves no actualitza els punts d'una base existent. Per propagar-hi canvis calculats (`sqm`, `horitzo` o `horitzo_obert`), cal afegir i revisar una migració amb un `UPDATE` explícit per als slugs i camps afectats.
 
 ## Perfil d'horitzó (TG-116)
 
