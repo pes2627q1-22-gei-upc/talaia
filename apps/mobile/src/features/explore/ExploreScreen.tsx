@@ -5,7 +5,7 @@ import { ScrollView, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { makeStyles } from '@/core/theme/theme';
+import { makeStyles, useNightTint } from '@/core/theme/theme';
 import { motion, sizes, spacing } from '@/core/theme/tokens';
 import { AppText } from '@/shared/ui/AppText';
 import { Button } from '@/shared/ui/Button';
@@ -48,6 +48,7 @@ function Enter({ index, children }: PropsWithChildren<{ index: number }>) {
 
 /** «Què vols veure?» (HU01, mockup 02): l'inici de la pestanya Explora. */
 export function ExploreScreen() {
+  const nightTintOnPrimary = useNightTint('nit');
   const styles = useStyles();
   const vm = useExploreViewModel();
   const [firstRow, secondRow] = [vm.goals.slice(0, 3), vm.goals.slice(3)];
@@ -57,7 +58,7 @@ export function ExploreScreen() {
       {/*
         `contentInsetAdjustmentBehavior` només aparta el contingut de la barra d'estat a iOS: a
         Android la salutació quedava sota l'hora. L'àrea segura de dalt hi val a les dues
-        plataformes, i a iOS el ScrollView continua ajustant el de baix per a les pestanyes.
+        plataformes. La de baix ja la deixa la barra de pestanyes, que queda a sota (ADR-0037).
       */}
       <SafeAreaView edges={['top']} style={styles.safeArea} testID="explore-safe-area">
         <ScrollView
@@ -165,7 +166,14 @@ export function ExploreScreen() {
               onPress={vm.cta.onPress}
               disabled={vm.cta.disabled}
               haptic
-              icon={<Image source={searchIcon} style={styles.ctaIcon} accessible={false} />}
+              icon={
+                <Image
+                  tintColor={nightTintOnPrimary}
+                  source={searchIcon}
+                  style={styles.ctaIcon}
+                  accessible={false}
+                />
+              }
               style={styles.cta}
             />
             <Button

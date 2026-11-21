@@ -12,6 +12,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@talaia/shared": "*",
     "@supabase/supabase-js": "^2.118.0",
     "react": "19.3.0",
     "react-dom": "19.3.0"

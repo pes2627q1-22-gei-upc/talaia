@@ -10,7 +10,11 @@ import {
   isFuture,
   localToIso,
   planErrorKey,
+  planEventsRange,
+  planRow,
+  splitPlaceArticle,
 } from '../planModel';
+import { plan } from '../__fixtures__/plans';
 
 const MINUTE = 60 * 1000;
 const HOUR = 60 * MINUTE;
@@ -39,6 +43,34 @@ describe('localToIso', () => {
 
   it('sense minuts, en punt', () => {
     expect(localToIso('2026-10-21', 22)).toBe('2026-10-21T20:00:00.000Z');
+  });
+
+  // Les nits del canvi d'hora: l'hora local es converteix amb el desplaçament d'aquell moment.
+  it("la nit del 24 al 25/10/2026 (fi de l'horari d'estiu, 03:00 → 02:00)", () => {
+    expect(localToIso('2026-10-24', 23)).toBe('2026-10-24T21:00:00.000Z');
+    expect(localToIso('2026-10-25', 1, 30)).toBe('2026-10-24T23:30:00.000Z');
+    // Les 02:30 hi són dues vegades: es pren la primera (encara a l'estiu).
+    expect(localToIso('2026-10-25', 2, 30)).toBe('2026-10-25T00:30:00.000Z');
+    expect(localToIso('2026-10-25', 4)).toBe('2026-10-25T03:00:00.000Z');
+  });
+
+  it("la nit del 27 al 28/3/2027 (inici de l'horari d'estiu, 02:00 → 03:00)", () => {
+    expect(localToIso('2027-03-27', 23)).toBe('2027-03-27T22:00:00.000Z');
+    // Les 02:30 no existeixen: passen a les 03:30 d'estiu, com fa el rellotge del mòbil.
+    expect(localToIso('2027-03-28', 2, 30)).toBe('2027-03-28T01:30:00.000Z');
+    expect(localToIso('2027-03-28', 4)).toBe('2027-03-28T02:00:00.000Z');
+  });
+
+  it("una fila d'«Els meus plans» mostra la mateixa hora local que es va triar, també aquestes nits", () => {
+    for (const [date, hour] of [
+      ['2026-10-25', 1],
+      ['2026-10-25', 4],
+      ['2027-03-28', 4],
+      ['2027-03-27', 23],
+    ] as const) {
+      const row = planRow(plan({ dataHoraInici: localToIso(date, hour) }), new Map());
+      expect([row.day, row.time]).toEqual([date.slice(8), `${String(hour).padStart(2, '0')}:00`]);
+    }
   });
 });
 
@@ -207,5 +239,124 @@ describe('planErrorKey', () => {
 
   it('el compte bloquejat ja el mostra AccountBlockedScreen', () => {
     expect(planErrorKey(new ApiError(403, 'account_blocked', ''))).toBeNull();
+  });
+});
+
+describe('«Els meus plans» (TG-160)', () => {
+  const names = new Map([['orionides-2026', 'Oriònides']]);
+
+  it('una fila sense fenomen: data i hora de sortida locals, municipi i punt', () => {
+    expect(planRow(plan(), names)).toEqual({
+      id: 'p1',
+      puntId: 'montsec',
+      day: '21',
+      month: 9,
+      time: '23:15',
+      hour: 23,
+      phenomenon: null,
+      place: { article: null, name: 'Àger' },
+      pointName: 'Serra del Montsec',
+      retired: false,
+    });
+  });
+
+  it('amb fenomen, el nom surt del seu codi; un codi desconegut queda sense nom', () => {
+    expect(planRow(plan({ esdevenimentId: 'orionides-2026' }), names).phenomenon).toBe('Oriònides');
+    expect(planRow(plan({ esdevenimentId: 'altre' }), names).phenomenon).toBeNull();
+  });
+
+  it("un pla que creua la mitjanit surt el dia i a l'hora de la sortida, amb o sense final", () => {
+    const crossing = {
+      // 2 de novembre a les 23:30 (CET, UTC+1) fins a la 01:30 de l'endemà.
+      dataHoraInici: '2026-11-02T22:30:00.000Z',
+      dataHoraFi: '2026-11-03T00:30:00.000Z',
+    };
+    expect(planRow(plan(crossing), names)).toMatchObject({ day: '02', month: 10, time: '23:30' });
+    expect(planRow(plan({ ...crossing, dataHoraFi: null }), names)).toMatchObject({
+      day: '02',
+      time: '23:30',
+    });
+    // Sortida a la una: la vista diu «a la 01:00».
+    expect(planRow(plan({ dataHoraInici: '2026-11-03T00:00:00.000Z' }), names)).toMatchObject({
+      day: '03',
+      time: '01:00',
+      hour: 1,
+    });
+  });
+
+  it('un punt retirat es marca: la fila no es pot obrir', () => {
+    const retired = plan({ punt: { ...plan().punt, publicat: false } });
+    expect(planRow(retired, names).retired).toBe(true);
+  });
+
+  it("separa l'article que el català contrau («al Pont de Suert», «als Hostalets»)", () => {
+    expect(splitPlaceArticle('El Pont de Suert')).toEqual({ article: 'el', name: 'Pont de Suert' });
+    expect(splitPlaceArticle('Els Hostalets de Pierola')).toEqual({
+      article: 'els',
+      name: 'Hostalets de Pierola',
+    });
+    expect(splitPlaceArticle('Prades')).toEqual({ article: null, name: 'Prades' });
+    expect(splitPlaceArticle("L'Escala")).toEqual({ article: null, name: "L'Escala" });
+    expect(splitPlaceArticle('Elna')).toEqual({ article: null, name: 'Elna' });
+    expect(splitPlaceArticle('el  Brull')).toEqual({ article: 'el', name: 'Brull' });
+    expect(splitPlaceArticle('la Ràpita')).toEqual({ article: null, name: 'la Ràpita' });
+  });
+
+  describe('planEventsRange', () => {
+    it('sense cap pla amb fenomen, no cal demanar res', () => {
+      expect(planEventsRange([plan()])).toBeNull();
+      expect(planEventsRange([])).toBeNull();
+    });
+
+    it('els dies (de Catalunya) dels plans amb fenomen, amb el dia ± 1 de «Crea un pla»', () => {
+      const plans = [
+        plan({ id: 'a', esdevenimentId: 'x', dataHoraInici: '2026-10-21T21:15:00Z' }),
+        plan({ id: 'b', dataHoraInici: '2026-10-01T20:00:00Z' }),
+        // A les 23:30 locals del 2 de novembre: a Catalunya encara és dia 2.
+        plan({ id: 'c', esdevenimentId: 'y', dataHoraInici: '2026-11-02T22:30:00Z' }),
+      ];
+      expect(planEventsRange(plans)).toEqual({ from: '2026-10-20', to: '2026-11-03' });
+    });
+
+    it('els passats arriben en ordre descendent: el rang continua anant de from a to', () => {
+      const plans = [
+        plan({ id: 'c', esdevenimentId: 'z', dataHoraInici: '2026-11-02T22:30:00Z' }),
+        plan({ id: 'b', esdevenimentId: 'y', dataHoraInici: '2026-10-21T21:15:00Z' }),
+        plan({ id: 'a', esdevenimentId: 'x', dataHoraInici: '2026-08-12T20:00:00Z' }),
+      ];
+      const range = planEventsRange(plans)!;
+      expect(range).toEqual({ from: '2026-08-11', to: '2026-11-03' });
+      expect(range.from <= range.to).toBe(true);
+    });
+
+    it("una sortida a les 23:15 troba l'eclipsi de les 02:00 de l'endemà, com a «Crea un pla»", () => {
+      // 21/10 a les 23:15 (CEST) i un eclipsi el 22/10 a les 02:00 (00:00 UTC).
+      const eclipse = { inici: '2026-10-22T00:00:00Z', fi: '2026-10-22T01:00:00Z' };
+      const departure = plan({ esdevenimentId: 'eclipsi', dataHoraInici: '2026-10-21T21:15:00Z' });
+      expect(eventFitsDay(eclipse, '2026-10-21')).toBe(true);
+      const range = planEventsRange([departure])!;
+      expect(range.from <= '2026-10-22' && '2026-10-22' <= range.to).toBe(true);
+    });
+
+    it("no passa dels 366 dies de /esdeveniments: es queda amb l'any del primer pla", () => {
+      const plans = [
+        plan({ id: 'a', esdevenimentId: 'x', dataHoraInici: '2026-11-20T21:00:00Z' }),
+        plan({ id: 'b', esdevenimentId: 'y', dataHoraInici: '2027-08-12T21:00:00Z' }),
+        plan({ id: 'c', esdevenimentId: 'z', dataHoraInici: '2028-01-03T21:00:00Z' }),
+      ];
+      expect(planEventsRange(plans)).toEqual({ from: '2026-11-19', to: '2027-08-13' });
+    });
+
+    it('amb el dia de més a cada banda, la consulta més llarga és de 366 dies', () => {
+      const days = (range: { from: string; to: string }) =>
+        (Date.parse(range.to) - Date.parse(range.from)) / 86_400_000 + 1;
+      const first = plan({ id: 'a', esdevenimentId: 'x', dataHoraInici: '2027-01-10T20:00:00Z' });
+      // 363 dies després del primer, hi entra; 364, ja no.
+      const last = plan({ id: 'b', esdevenimentId: 'y', dataHoraInici: '2028-01-08T20:00:00Z' });
+      const beyond = plan({ id: 'c', esdevenimentId: 'z', dataHoraInici: '2028-01-09T20:00:00Z' });
+      const range = planEventsRange([first, last, beyond])!;
+      expect(range).toEqual({ from: '2027-01-09', to: '2028-01-09' });
+      expect(days(range)).toBe(366);
+    });
   });
 });

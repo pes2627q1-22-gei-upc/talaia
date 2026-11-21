@@ -10,6 +10,8 @@
 .env.*
 !.env.example
 apps
+# La web d'administració es compila a la imatge de Nginx (TG-176).
+!apps/admin
 data
 docs
 supabase

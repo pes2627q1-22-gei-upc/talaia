@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { act, renderHook } from '@testing-library/react-native';
+import { useRouter } from 'expo-router';
 
 import i18n, { LANGUAGE_KEY, restoreLanguage } from '@/core/i18n';
 
@@ -12,6 +13,10 @@ jest.mock('@/features/auth/useAuthViewModel', () => ({
     user: { id: 'u', email: 'maria@example.com' },
   }),
 }));
+
+jest.mock('expo-router', () => ({ useRouter: jest.fn() }));
+const push = jest.fn();
+jest.mocked(useRouter).mockReturnValue({ push } as unknown as ReturnType<typeof useRouter>);
 
 describe('useProfileViewModel', () => {
   beforeEach(async () => {
@@ -36,6 +41,10 @@ describe('useProfileViewModel', () => {
     expect(result.current.auth).toMatchObject({ isAuthenticated: true });
     expect(result.current.accountLabel).toBe('Compte');
     expect(result.current.email).toBe('maria@example.com');
+    // Amb sessió, l'entrada a «Els meus plans» (TG-160).
+    expect(result.current.plans?.label).toBe('Els meus plans');
+    result.current.plans?.onPress();
+    expect(push).toHaveBeenCalledWith('/plans');
     // L'estat del servidor és per a l'equip: als tests (__DEV__) surt; a la build publicada, no.
     expect(result.current.showApiStatus).toBe(true);
   });

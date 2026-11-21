@@ -1,7 +1,7 @@
 import { Image, type ImageSource } from 'expo-image';
 import { View } from 'react-native';
 
-import { makeStyles, useTheme } from '@/core/theme/theme';
+import { makeStyles, useNightTint } from '@/core/theme/theme';
 import { radii, sizes, spacing } from '@/core/theme/tokens';
 import { AppText } from '@/shared/ui/AppText';
 import { PressableScale } from '@/shared/ui/PressableScale';
@@ -41,9 +41,8 @@ export function FieldRow({
   loadingTestID,
 }: FieldRowProps) {
   const styles = useStyles();
-  const { name, colors } = useTheme();
   // Els SVG porten el seu color (la fletxa d'ubicació és blava): en mode nit es tenyeixen tots.
-  const tint = name === 'vermell' ? colors.lluna : undefined;
+  const tint = useNightTint();
   const content = (
     <>
       <Image source={icon} tintColor={iconTint ?? tint} style={styles.icon} accessible={false} />

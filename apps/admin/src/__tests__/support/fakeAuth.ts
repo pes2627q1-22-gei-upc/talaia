@@ -56,10 +56,16 @@ export function deferred<T>() {
   return { promise, resolve, reject };
 }
 
-/** Simula `GET /api/v1/admin/me`: cada crida rep el següent estat i l'últim es repeteix. */
+/** Simula `GET /api/v1/admin/me` i `GET /api/v1/admin/punts` per a les proves de l'admin. */
 export function stubAdminApi(...statuses: number[]) {
   const pending = [...statuses];
-  const fetch = vi.fn(async (_input: RequestInfo | URL, _init?: RequestInit) => {
+  const fetch = vi.fn(async (input: RequestInfo | URL, _init?: RequestInit) => {
+    if (String(input) === '/api/v1/admin/punts') {
+      return new Response('[]', {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
     const status = pending.length > 1 ? pending.shift()! : pending[0]!;
     return new Response(null, { status });
   });

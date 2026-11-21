@@ -1,6 +1,6 @@
 # ADR-0017: Catàleg inicial de punts d'observació en un GeoJSON versionat
 
-**Estat:** Acceptada · **Data:** 2026-10-12 · Resol la decisió pendent P13 · TG-87
+**Estat:** Acceptada · **Data:** 2026-10-12 · Revisada a TG-175 (2026-11-21) · Resol la decisió pendent P13 · TG-87
 
 ## Context
 
@@ -15,7 +15,7 @@ HU06 demana com a mínim 30 punts d'observació de Catalunya al mapa. Cal decidi
 - **Metadades:** `slug` (únic i estable), `nom`, `municipi`, `descripcio`, `altitud`, `horitzo_obert` i `accessibilitat`. Tots són `OFICIAL` (sense creador) i `PUBLICAT`.
 - **`horitzo_obert` és aproximat:** una llista de direccions (`N`, `NE`… `NW`) només on la geografia és clara (costa, cims, cingles). Si no, `null`. El perfil d'horitzó real el calcula TG-116 amb el model d'elevacions de 5 m de l'ICGC.
 - **No hi ha foscor ni índex al catàleg.** La foscor la calcula TG-97 a partir del GeoTIFF i l'índex el worker.
-- **Seed generat, no escrit a mà.** `data/scripts/build-seed-punts.ts` valida el GeoJSON (≥ 30 punts, slugs únics, coordenades dins de Catalunya, direccions vàlides) i genera `supabase/seeds/01_punts_observacio.sql` amb `on conflict (slug) do update`, que només toca punts `OFICIAL`. Amb `--check` també comprova que el seed versionat està al dia. És idempotent: `supabase db reset` i `db push --include-seed` no dupliquen punts. La càrrega de `./seeds/*.sql` a `config.toml` s'activa amb TG-86, que crea la taula; fins llavors el seed no s'executa.
+- **Seed generat, no escrit a mà.** `data/scripts/build-seed-punts.ts` valida el GeoJSON (≥ 30 punts, slugs únics, coordenades dins de Catalunya, direccions vàlides) i genera `supabase/seeds/01_punts_observacio.sql` amb `on conflict (slug) do nothing`. El seed insereix els slugs que no existeixen i deixa intacta qualsevol fila que ja tingui el mateix slug, sigui oficial o comunitària; no actualitza ni l'estat, ni les metadades, ni la ubicació. Amb `--check` també comprova que el seed versionat està al dia. Repetir `db push --include-seed` no duplica ni sobreescriu punts. Un `db reset`, en canvi, recrea una base buida i carrega els valors actuals del GeoJSON. La càrrega de `./seeds/*.sql` a `config.toml` s'activa amb TG-86, que crea la taula; fins llavors el seed no s'executa.
 
 ## Alternatives descartades
 
@@ -26,7 +26,8 @@ HU06 demana com a mínim 30 punts d'observació de Catalunya al mapa. Cal decidi
 
 ## Conseqüències
 
-- Afegir o corregir un punt = editar el GeoJSON i tornar a generar el seed a la mateixa PR.
+- Afegir un punt al catàleg inicial = editar el GeoJSON i tornar a generar el seed a la mateixa PR. Una correcció del GeoJSON no actualitza les files que ja existeixen a una base de dades; cal aplicar-la explícitament des de l'administració o amb una migració.
+- Les altes i edicions fetes des de l'administració persisteixen en tornar a aplicar el seed sobre la mateixa base. Un `db reset` les esborra juntament amb la base; si s'han de conservar en la nova càrrega inicial, incorporar al GeoJSON els punts oficials i les metadades que es vulguin mantenir, regenerar el seed i preservar/restaurar també les dades relacionades que no formen part del catàleg. No fer servir `db reset` com a actualització ordinària.
 - L'altitud s'omple amb `data/scripts/fill-altitudes.ts` (Copernicus DEM 90 m, via Open-Meteo), prou precisa per a la fitxa del punt.
 - Els punts proposats per la comunitat (HU28) no passen per aquí: van a la mateixa taula amb `origen = 'COMUNITAT'`.
 - Tasques afectades: TG-86 (les columnes han de coincidir), TG-88 i TG-92 (llegeixen aquests camps), TG-97 i TG-116 (calculen per a aquests punts).

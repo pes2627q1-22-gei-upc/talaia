@@ -1,9 +1,10 @@
-import type { Esdeveniment } from '@talaia/shared';
+import type { Esdeveniment, Pla } from '@talaia/shared';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import * as Haptics from 'expo-haptics';
-import { useRouter } from 'expo-router';
-import { useRef, useState } from 'react';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { useCallback, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Linking } from 'react-native';
 
 import { eventDate } from '@/features/calendar/calendarModel';
 import {
@@ -31,6 +32,7 @@ import {
   planErrorKey,
 } from './planModel';
 import { PLANS_KEY, plansRepository, usePlanEventsQuery } from './plansRepository';
+import { usePlanCalendar } from './usePlanCalendar';
 
 /** Paràmetres de la ruta `/pla/nou`: el punt, i el que la fitxa o un fenomen ja proposen. */
 export type NewPlanParams = {
@@ -54,6 +56,18 @@ export function useNewPlanViewModel({ puntId, inici, fi, esdevenimentId }: NewPl
   const router = useRouter();
   const queryClient = useQueryClient();
   const point = usePointDetailQuery(puntId);
+  const calendar = usePlanCalendar();
+  const focused = useRef(false);
+  useFocusEffect(
+    useCallback(() => {
+      focused.current = true;
+      return () => {
+        focused.current = false;
+      };
+    }, []),
+  );
+  const [savedPlan, setSavedPlan] = useState<Pla | null>(null);
+  const calendarRequest = useRef<{ calendarId: string; eventName: string | null } | null>(null);
 
   const [departure, setDeparture] = useState<Departure>(() => initialDeparture(inici));
   // Es calcula un sol cop, amb la sortida inicial: després, el final segueix la sortida.
@@ -62,7 +76,7 @@ export function useNewPlanViewModel({ puntId, inici, fi, esdevenimentId }: NewPl
   // El fenomen dels paràmetres només es coneix pel seu id fins que arriba la llista.
   const [pendingEventId, setPendingEventId] = useState(esdevenimentId ?? null);
   const [notes, setNotes] = useState('');
-  const [sheet, setSheet] = useState<'date' | 'time' | 'event' | null>(null);
+  const [sheet, setSheet] = useState<'date' | 'time' | 'event' | 'calendar' | null>(null);
   const [pastError, setPastError] = useState(false);
   // `isPending` arriba un render tard: el ref atura el doble toc del mateix instant.
   const sending = useRef(false);
@@ -72,12 +86,35 @@ export function useNewPlanViewModel({ puntId, inici, fi, esdevenimentId }: NewPl
   const chosenEvent =
     event ?? (pendingEventId ? eventList.find((item) => item.id === pendingEventId) : undefined);
 
+  const finish = async () => {
+    await queryClient.invalidateQueries({ queryKey: PLANS_KEY });
+    if (focused.current) router.back();
+  };
+
+  const syncCalendar = async (plan: Pla) => {
+    const request = calendarRequest.current;
+    if (!request) return;
+    const title = request.eventName
+      ? t('plans.calendar.eventTitleWithPhenomenon', {
+          point: plan.punt.nom,
+          phenomenon: request.eventName,
+        })
+      : t('plans.calendar.eventTitle', { point: plan.punt.nom });
+    if (await calendar.sync(plan, title, request.calendarId)) await finish();
+  };
+
   const create = useMutation({
     mutationFn: plansRepository.create,
-    onSuccess: async () => {
+    onSuccess: async (plan) => {
       void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       await queryClient.invalidateQueries({ queryKey: PLANS_KEY });
-      router.back();
+      if (!focused.current) return;
+      if (calendarRequest.current) {
+        setSavedPlan(plan);
+        await syncCalendar(plan);
+      } else {
+        if (focused.current) router.back();
+      }
     },
     onSettled: () => {
       sending.current = false;
@@ -129,13 +166,18 @@ export function useNewPlanViewModel({ puntId, inici, fi, esdevenimentId }: NewPl
   };
 
   const save = () => {
-    if (sending.current || create.isPending) return;
+    if (sending.current || create.isPending || savedPlan) return;
+    if (calendar.enabled && (calendar.status !== 'ready' || !calendar.selectedId)) return;
     // L'hora pot haver passat amb la pantalla oberta: es torna a mirar en el moment d'enviar.
     if (!isFuture(departureIso(departure))) {
       setPastError(true);
       return;
     }
     sending.current = true;
+    calendarRequest.current =
+      calendar.enabled && calendar.selectedId
+        ? { calendarId: calendar.selectedId, eventName: chosenEvent?.nom ?? null }
+        : null;
     create.mutate(
       buildNewPlan({
         puntId,
@@ -149,10 +191,36 @@ export function useNewPlanViewModel({ puntId, inici, fi, esdevenimentId }: NewPl
 
   const errorKey = create.isError ? planErrorKey(create.error) : null;
   const pointData = point.data;
+  const calendarError = !calendar.enabled
+    ? null
+    : calendar.status === 'denied'
+      ? t('plans.calendar.denied')
+      : calendar.status === 'error'
+        ? t('plans.calendar.loadError')
+        : calendar.status === 'ready' && calendar.calendars.length === 0
+          ? t('plans.calendar.empty')
+          : null;
+  const selectedCalendar = calendar.calendars.find((item) => item.id === calendar.selectedId);
 
   return {
     header: t('plans.new.header'),
     title: t('plans.new.title'),
+    busy: create.isPending || calendar.syncing,
+    saved: savedPlan
+      ? {
+          title: t('plans.calendar.savedTitle'),
+          message: calendar.error
+            ? t(`plans.calendar.syncErrors.${calendar.error}`)
+            : t('plans.calendar.adding'),
+          busy: calendar.syncing || calendar.synced || create.isPending,
+          retry: { label: t('plans.new.retry'), onPress: () => void syncCalendar(savedPlan) },
+          settings:
+            calendar.error === 'denied' && !calendar.canAskAgain
+              ? { label: t('plans.calendar.settings'), onPress: () => void Linking.openSettings() }
+              : null,
+          finish: { label: t('plans.calendar.continue'), onPress: () => void finish() },
+        }
+      : null,
     point: {
       label: t('plans.new.point'),
       loading: !pointData && point.isPending,
@@ -185,12 +253,59 @@ export function useNewPlanViewModel({ puntId, inici, fi, esdevenimentId }: NewPl
       maxLength: NOTES_MAX,
       onChange: setNotes,
     },
+    calendar: {
+      label: t('plans.calendar.label'),
+      hint: t(calendar.supported ? 'plans.calendar.hint' : 'plans.calendar.unavailable'),
+      value: calendar.enabled,
+      disabled: !calendar.supported || create.isPending,
+      onChange: calendar.toggle,
+      loading: calendar.enabled && calendar.status === 'loading',
+      loadingLabel: t('plans.calendar.loading'),
+      error: calendarError,
+      action:
+        calendar.enabled &&
+        (calendar.status === 'denied' ||
+          calendar.status === 'error' ||
+          (calendar.status === 'ready' && calendar.calendars.length === 0))
+          ? calendar.status === 'denied' && !calendar.canAskAgain
+            ? { label: t('plans.calendar.settings'), onPress: () => void Linking.openSettings() }
+            : { label: t('plans.new.retry'), onPress: () => void calendar.setup() }
+          : null,
+      target:
+        calendar.enabled && selectedCalendar && calendar.status === 'ready'
+          ? {
+              label: t('plans.calendar.target'),
+              value: [selectedCalendar.title, selectedCalendar.account].filter(Boolean).join(' · '),
+              onPress: () => setSheet('calendar'),
+            }
+          : null,
+    },
     save: {
       label: create.isPending ? t('plans.new.saving') : t('plans.new.save'),
-      disabled: create.isPending || past || !puntId.trim(),
+      disabled:
+        create.isPending ||
+        past ||
+        !puntId.trim() ||
+        (calendar.enabled && (calendar.status !== 'ready' || !calendar.selectedId)),
       onPress: save,
     },
     error: errorKey ? t(`plans.new.errors.${errorKey}`) : undefined,
+    calendarSheet: {
+      visible: sheet === 'calendar',
+      title: t('plans.calendar.choose'),
+      closeLabel: t('plans.new.close'),
+      onClose: () => setSheet(null),
+      options: calendar.calendars.map((item) => ({
+        id: item.id,
+        label: item.title,
+        hint: item.account,
+        selected: item.id === calendar.selectedId,
+        onPress: () => {
+          calendar.select(item.id);
+          setSheet(null);
+        },
+      })),
+    },
     dateSheet: {
       visible: sheet === 'date',
       title: t('plans.new.dateSheet'),

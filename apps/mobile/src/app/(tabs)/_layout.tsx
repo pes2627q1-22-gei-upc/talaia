@@ -1,18 +1,17 @@
 import { Redirect } from 'expo-router';
-import { NativeTabs } from 'expo-router/native-tabs';
+import { Tabs } from 'expo-router/js-tabs';
 import { useTranslation } from 'react-i18next';
 
-import { useTheme } from '@/core/theme/theme';
+import { TabBar } from '@/core/navigation/TabBar';
 import { AccountBlockedScreen } from '@/features/auth/AccountBlockedScreen';
 import { RestoreErrorScreen } from '@/features/auth/RestoreErrorScreen';
 import { useSessionGate } from '@/features/auth/useSessionGate';
 import { useOpenNotifiedPoint } from '@/features/notifications/useOpenNotifiedPoint';
 
-// SF Symbols a iOS i Material Symbols a Android (expo-symbols, que Expo Go porta).
-// La barra pròpia del mockup (icones de Talaia) queda per a una tasca a part.
+// Barra pròpia (`TabBar`, ADR-0037): la nativa d'iOS 26 no es pot posar en vermell en mode nit.
+const renderTabBar = (props: Parameters<typeof TabBar>[0]) => <TabBar {...props} />;
 
 export default function TabsLayout() {
-  const { colors } = useTheme();
   const { t } = useTranslation();
   const gate = useSessionGate();
   // En tocar una notificació d'una alerta, la fitxa del punt: només amb sessió (TG-154).
@@ -25,28 +24,11 @@ export default function TabsLayout() {
   if (gate === 'signedOut') return <Redirect href="/benvinguda" />;
 
   return (
-    <NativeTabs
-      backgroundColor={colors.card}
-      indicatorColor={colors.crep}
-      tintColor={colors.far}
-      labelStyle={{ default: { color: colors.boira }, selected: { color: colors.far } }}
-    >
-      <NativeTabs.Trigger name="(explora)">
-        <NativeTabs.Trigger.Label>{t('tabs.explore')}</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon sf="safari" md="explore" />
-      </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="calendari">
-        <NativeTabs.Trigger.Label>{t('tabs.calendar')}</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon sf="calendar" md="calendar_month" />
-      </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="(alertes)">
-        <NativeTabs.Trigger.Label>{t('tabs.alerts')}</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon sf="bell" md="notifications" />
-      </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="perfil">
-        <NativeTabs.Trigger.Label>{t('tabs.profile')}</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon sf="person.crop.circle" md="account_circle" />
-      </NativeTabs.Trigger>
-    </NativeTabs>
+    <Tabs tabBar={renderTabBar} screenOptions={{ headerShown: false }}>
+      <Tabs.Screen name="(explora)" options={{ title: t('tabs.explore') }} />
+      <Tabs.Screen name="calendari" options={{ title: t('tabs.calendar') }} />
+      <Tabs.Screen name="(alertes)" options={{ title: t('tabs.alerts') }} />
+      <Tabs.Screen name="perfil" options={{ title: t('tabs.profile') }} />
+    </Tabs>
   );
 }

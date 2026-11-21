@@ -66,14 +66,14 @@ Els degradats i `pointMapColors` també tenen la seva versió vermella. A la TG-
 - **Estils:** `makeStyles((t) => StyleSheet.create({ … }))` en lloc d'un `StyleSheet.create` amb `colors` en carregar el mòdul. Crea els estils un sol cop per tema, quan cal, i el component els llegeix amb el hook que retorna.
 - **El que no són colors** (espaiats, radis, mides, tipografia i moviment) continua sent constant: el mode nit no hi toca.
 - **Fitxers sense React:** el codi que fa servir colors fora d'un component (`nightStyle`, `MarkerPalette`, `MapChrome`) rep la paleta com a paràmetre.
-- **Barra d'estat:** en mode nit s'amaga (`<StatusBar hidden />`). L'hora i la bateria de l'iOS sempre surten en blanc, i no es poden tenyir.
+- **Barra d'estat:** en mode nit s'amaga, perquè l'hora i la bateria de l'iOS sempre surten en blanc i no es poden tenyir. L'app fa servir escenes, i a iOS l'API global de `StatusBar` no l'amaga: la porta cada pantalla (`UIViewControllerBasedStatusBarAppearance` a `app.json`, i `statusBarHidden` i `statusBarStyle` al Stack arrel, que les pantalles de dins hereten). A Expo Go aquesta clau és `false` i les opcions del Stack hi peten, i a Android l'API global funciona: allà continua `<StatusBar hidden />`.
 - **Barrera:** a la TG-239, quan s'acabi de migrar, una regla `no-restricted-imports` d'ESLint no deixarà importar `colors`, `gradients` ni `pointMapColors` fora de `core/theme`. Així, el codi nou no se salta el tema.
 
 ### Mapa
 
-La DOM component rep el nom del tema. En mode nit, posa al contenidor del mapa `filter: grayscale(1)` i, a sobre, una capa `mix-blend-mode: multiply` de color `#FF0000` que no rep tocs.
+La DOM component rep el nom del tema. En mode nit, posa al canvas del mapa `filter: grayscale(1)` i, a sobre de tot, una capa `mix-blend-mode: multiply` de color `#FF0000` que no rep tocs.
 
-El resultat és la lluminositat de cada píxel només al canal vermell. Hi entren tot el que pinta MapLibre (les tessel·les de l'ICGC, el relleu, els marcadors i els clústers) i els controls.
+El resultat és la lluminositat de cada píxel del canvas només al canal vermell. Hi entra tot el que MapLibre pinta al canvas: les tessel·les de l'ICGC, el relleu i les capes de marcadors i clústers, que reben la paleta normal. Els marcadors HTML, l'atribució i els controls queden fora del filtre i reben la paleta vermella: el gris els apagaria (`#FF0000` → `#360000`, de 5,25:1 a 1,16:1 sobre negre), i la capa no canvia un color que només té vermell. Es va veure a la revisió de la #164.
 
 L'estil i els marcadors no canvien. L'estil de l'ICGC tampoc no s'ha de tornar a fer cada vegada que se n'actualitza la còpia.
 

@@ -109,6 +109,12 @@ function memoryRepository() {
       const fila = files.find((f) => f.perfilId === perfilId && f.pla.id === id);
       return fila && ambPunt(fila.pla);
     }),
+    setCalendarEvent: jest.fn(async (perfilId: string, id: string, eventId: string) => {
+      const fila = files.find((f) => f.perfilId === perfilId && f.pla.id === id);
+      if (!fila) return false;
+      fila.pla.calendariEventId = eventId;
+      return true;
+    }),
   };
   return repo;
 }
@@ -173,6 +179,57 @@ const NOU: PlaNou = {
   dataHoraFi: '2026-11-18T02:00:00+01:00',
   notes: 'Portar el trípode',
 };
+
+describe('PUT /api/v1/plans/{id}/calendari', () => {
+  const link = async (com: string, id: string, body: unknown = { calendariEventId: 'event-1' }) =>
+    request(app)
+      .put(`/api/v1/plans/${id}/calendari`)
+      .set('Authorization', `Bearer ${await tokenFor(com)}`)
+      .send(body as object);
+
+  it('desa el vincle amb 204, és idempotent i conserva les altres dades del pla', async () => {
+    const { body: plan } = await crea(MARIA.auth, NOU);
+    expect((await link(MARIA.auth, plan.id)).status).toBe(204);
+    expect((await link(MARIA.auth, plan.id)).status).toBe(204);
+    const res = await llegeix(MARIA.auth, plan.id);
+    expect(res.body).toEqual({ ...plan, calendariEventId: 'event-1' });
+    expect(repo.setCalendarEvent).toHaveBeenCalledWith(MARIA.perfil, plan.id, 'event-1');
+  });
+
+  it('un usuari no pot modificar el vincle d’un pla aliè', async () => {
+    const { body: plan } = await crea(MARIA.auth, NOU);
+    const foreign = await link(PERE.auth, plan.id);
+    const missing = await link(PERE.auth, NO_EXISTEIX);
+    expect(foreign.status).toBe(404);
+    expect(foreign.body).toEqual(missing.body);
+    expect((await llegeix(MARIA.auth, plan.id)).body.calendariEventId).toBeNull();
+  });
+
+  it.each([
+    {},
+    { calendariEventId: null },
+    { calendariEventId: ' ' },
+    { calendariEventId: 'x'.repeat(256) },
+    { calendariEventId: 'event-1', perfilId: PERE.perfil },
+  ])('rebutja un cos invàlid: %j', async (body) => {
+    const res = await link(MARIA.auth, NO_EXISTEIX, body);
+    expect(res.status).toBe(400);
+    expect(repo.setCalendarEvent).not.toHaveBeenCalled();
+  });
+
+  it('valida l’id i exigeix que l’usuari tingui perfil', async () => {
+    expect((await link(MARIA.auth, 'incorrecte')).status).toBe(400);
+    expect((await link(SENSE_PERFIL, NO_EXISTEIX)).body.error.code).toBe('profile_not_found');
+  });
+
+  it('sense base de dades retorna 503', async () => {
+    const res = await request(createApp({ supabaseUrl, jwks, profileStore }))
+      .put(`/api/v1/plans/${NO_EXISTEIX}/calendari`)
+      .set('Authorization', `Bearer ${await tokenFor(MARIA.auth)}`)
+      .send({ calendariEventId: 'event-1' });
+    expect(res.status).toBe(503);
+  });
+});
 
 describe('POST /api/v1/plans', () => {
   it('crea el pla (201) amb el mateix Pla que el GET, el punt inclòs i les dates en UTC', async () => {
@@ -243,11 +300,39 @@ describe('POST /api/v1/plans', () => {
     ['dataHoraFi abans de dataHoraInici', { ...NOU, dataHoraFi: '2026-11-17T20:00:00Z' }],
     ['un esdevenimentId mal format', { ...NOU, esdevenimentId: 'Leònides 2026' }],
     ['unes notes buides', { ...NOU, notes: '' }],
-    ['unes notes massa llargues', { ...NOU, notes: 'x'.repeat(1001) }],
     ['un perfilId (l’usuari només surt del JWT)', { ...NOU, perfilId: PERE.perfil }],
     ['un cos buit', undefined],
   ])('amb %s respon 400 validation_error', async (_cas, body) => {
     const res = await crea(MARIA.auth, body);
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe('validation_error');
+    expect(repo.create).not.toHaveBeenCalled();
+  });
+
+  // Els límits de mida de `routes/plans.ts`: un valor al límit passa la validació i un caràcter
+  // més és un 400.
+  it.each<[string, Partial<PlaNou>]>([
+    ['notes', { notes: 'x'.repeat(1000) }],
+    ['calendariEventId', { calendariEventId: 'x'.repeat(255) }],
+  ])('%s al límit de mida es desa sencer', async (camp, extra) => {
+    const res = await crea(MARIA.auth, { ...NOU, ...extra });
+    expect(res.status).toBe(201);
+    expect(res.body[camp]).toBe(extra[camp as keyof PlaNou]);
+  });
+
+  it('un esdevenimentId de 200 caràcters passa la validació (i el repositori no el troba)', async () => {
+    const res = await crea(MARIA.auth, { ...NOU, esdevenimentId: 'a'.repeat(200) });
+    expect(repo.create).toHaveBeenCalled();
+    expect(res.status).toBe(422);
+    expect(res.body.error.code).toBe('event_not_found');
+  });
+
+  it.each<[string, Partial<PlaNou>]>([
+    ['notes', { notes: 'x'.repeat(1001) }],
+    ['esdevenimentId', { esdevenimentId: 'a'.repeat(201) }],
+    ['calendariEventId', { calendariEventId: 'x'.repeat(256) }],
+  ])('%s un caràcter per sobre del límit respon 400 validation_error', async (_camp, extra) => {
+    const res = await crea(MARIA.auth, { ...NOU, ...extra });
     expect(res.status).toBe(400);
     expect(res.body.error.code).toBe('validation_error');
     expect(repo.create).not.toHaveBeenCalled();
@@ -327,6 +412,33 @@ describe('GET /api/v1/plans', () => {
     expect(inicis(await llista(MARIA.auth, '?quan=passats'))).toEqual(['2026-11-16T02:00:00.000Z']);
   });
 
+  // Aquests límits passen pel repositori en memòria: proven el servei i el doble, no l'SQL. El
+  // límit real (`fiEfectiu >= ara` i el migdia de després de la nit) el protegeixen els tests de
+  // futurs i passats de `plans/__tests__/plansRepository.test.ts`.
+  it.each([
+    ['acaba just ara', 'futurs', '2026-11-16T12:00:00.000Z'],
+    ['acaba 1 ms abans d’ara', 'passats', '2026-11-16T11:59:59.999Z'],
+    ['acaba d’aquí a 1 s', 'futurs', '2026-11-16T12:00:01.000Z'],
+  ])('un pla que %s és dels %s', async (_cas, quan, dataHoraFi) => {
+    await crea(MARIA.auth, { puntId: MONTSEC, dataHoraInici: '2026-11-16T09:00:00Z', dataHoraFi });
+    expect((await llista(MARIA.auth, `?quan=${quan}`)).body).toMatchObject([{ dataHoraFi }]);
+  });
+
+  it.each([
+    ['les 12:00 locals', 'futurs', new Date('2026-11-16T11:00:00.000Z')],
+    ['1 ms després de les 12:00 locals', 'passats', new Date('2026-11-16T11:00:00.001Z')],
+  ])('sense dataHoraFi, a %s de després de la nit, el pla és dels %s', async (_c, quan, ara) => {
+    app = createApp({
+      supabaseUrl,
+      jwks,
+      profileStore,
+      plans: createPlansService(repo, { now: () => ara }),
+    });
+    // Les 22:00 locals del 15: la nit del 15 s'acaba a les 12:00 locals del 16.
+    await crea(MARIA.auth, { puntId: MONTSEC, dataHoraInici: '2026-11-15T21:00:00Z' });
+    expect(inicis(await llista(MARIA.auth, `?quan=${quan}`))).toEqual(['2026-11-15T21:00:00.000Z']);
+  });
+
   it('?quan=passats: els acabats, del més recent al més antic', async () => {
     await creaTres(MARIA.auth);
     await crea(MARIA.auth, { puntId: MONTSEC, dataHoraInici: '2026-11-10T21:00:00Z' });
@@ -388,6 +500,14 @@ describe('GET /api/v1/plans/{id}', () => {
     expect(repo.findById).toHaveBeenCalledWith(PERE.perfil, pla.id);
   });
 
+  it('el pla d’un punt retirat després de crear-lo respon 200 amb publicat: false', async () => {
+    const { body: pla } = await crea(MARIA.auth, NOU);
+    retirats.add(MONTSEC);
+    const res = await llegeix(MARIA.auth, pla.id);
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ ...pla, punt: { ...pla.punt, publicat: false } });
+  });
+
   it('respon 400 validation_error si l’id no és un UUID', async () => {
     const res = await llegeix(MARIA.auth, 'el-meu-pla');
     expect(res.status).toBe(400);
@@ -400,6 +520,13 @@ describe('/api/v1/plans sense un usuari vàlid', () => {
   const ambToken = (test: request.Test, token?: string) =>
     token ? test.set('Authorization', `Bearer ${token}`) : test;
   const peticions = [
+    [
+      'PUT calendari',
+      (token?: string) =>
+        ambToken(request(app).put(`/api/v1/plans/${NO_EXISTEIX}/calendari`), token).send({
+          calendariEventId: 'event-1',
+        }),
+    ],
     ['POST', (token?: string) => ambToken(request(app).post('/api/v1/plans'), token).send(NOU)],
     ['GET', (token?: string) => ambToken(request(app).get('/api/v1/plans'), token)],
     [
@@ -429,6 +556,7 @@ describe('/api/v1/plans sense un usuari vàlid', () => {
       expect(repo.create).not.toHaveBeenCalled();
       expect(repo.list).not.toHaveBeenCalled();
       expect(repo.findById).not.toHaveBeenCalled();
+      expect(repo.setCalendarEvent).not.toHaveBeenCalled();
     },
   );
 });
@@ -453,8 +581,9 @@ describe('/plans a l’OpenAPI', () => {
     const res = await request(createApp()).get('/api/v1/openapi.json');
     const { post, get } = res.body.paths['/plans'];
     const { get: getId } = res.body.paths['/plans/{id}'];
+    const { put: putCalendar } = res.body.paths['/plans/{id}/calendari'];
 
-    for (const operacio of [post, get, getId]) {
+    for (const operacio of [post, get, getId, putCalendar]) {
       expect(operacio.tags).toEqual(['Plans']);
       expect(operacio.security).toEqual([{ BearerSupabase: [] }]);
       expect(operacio.responses['403'].description).toContain('account_blocked');
@@ -475,5 +604,7 @@ describe('/plans a l’OpenAPI', () => {
     expect(getId.responses['404'].description).toContain('plan_not_found');
     expect(res.body.components.schemas).toHaveProperty('Pla');
     expect(res.body.components.schemas).toHaveProperty('PlaNou');
+    expect(res.body.components.schemas).toHaveProperty('CalendariPla');
+    expect(putCalendar.responses['204']).toBeDefined();
   });
 });

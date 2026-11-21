@@ -33,7 +33,7 @@ export function ZoneSheet({
   closeLabel,
 }: ZoneSheetProps) {
   const styles = useStyles();
-  const { colors } = useTheme();
+  const { name: theme, colors } = useTheme();
   const chrome = useMemo(
     () => ({ background: colors.nit, text: colors.boira, link: colors.lluna }),
     [colors],
@@ -46,6 +46,7 @@ export function ZoneSheet({
       <View style={styles.map}>
         {visible ? (
           <ZonePickerMap
+            night={theme === 'vermell'}
             mapStyle={mapStyle}
             center={center}
             zoom={zoom}

@@ -51,6 +51,8 @@ Quan s'observa, l'app passa a vermell sobre negre: el blau i el verd trenquen l'
 - **El text principal i el secundari surten gairebé iguals:** el contrast màxim sobre el negre és 5,25:1. La jerarquia la fan la mida i el pes.
 - **Les franges de l'índex i les categories del calendari no es distingeixen pel color.** Al costat sempre hi ha d'haver el número o el text.
 - **Com es fa servir:** les pantalles no importen `colors`: fan servir `useTheme()` i `makeStyles()` (`core/theme/theme.tsx`), i així es tornen a pintar quan canvia el tema.
+- **Icones SVG:** els SVG porten el seu color. Una icona que no té `tintColor` el pren de `useNightTint()`, que en mode nit dona `lluna` (o `nit` amb `useNightTint('nit')`, sobre un botó `primary`) i en el tema normal no fa res.
+- **Mapes:** les DOM components (`NightMap`, `PointLocationMapContent` i `ZonePickerMap`) no veuen el tema. Reben `night`, posen `filter: grayscale(1)` només al canvas de MapLibre i, a sobre de tot, una capa `#FF0000` amb `mix-blend-mode: multiply` (`core/theme/nightMap.ts`). El que es dibuixa al canvas rep la paleta normal, i el filtre el passa a vermell. Els marcadors HTML, l'atribució i els controls reben la del tema: el gris els apagaria (`#FF0000` → `#360000`), i la capa no els canvia.
 
 ## Tipografia
 
@@ -102,7 +104,7 @@ A `apps/mobile/src/shared/ui/`. Cap pantalla torna a definir un botó, una targe
 
 L'índex, al Figma, és només la xifra amb el color de la franja i l'etiqueta: ni anell ni barra. L'anell és dels marcadors del mapa (capa de MapLibre, TG-90) i les barres, del desglossament per factors (TG-105).
 
-El full del rànquing es pot arrossegar per la nansa cap avall per plegar-lo i cap amunt per recuperar-lo (TG-141), amb Reanimated i una acció accessible equivalent. Encara no hi són: les etiquetes i la llegenda del mapa (TG-89/TG-90/TG-102) i les icones de Talaia (`Button` ja accepta `icon`). La barra de pestanyes és la nativa (`NativeTabs`), amb quatre pestanyes (Explora, Calendari, Alertes i Perfil) i l'activa en `far`.
+El full del rànquing es pot arrossegar per la nansa cap avall per plegar-lo i cap amunt per recuperar-lo (TG-141), amb Reanimated i una acció accessible equivalent. Encara no hi són: les etiquetes i la llegenda del mapa (TG-89/TG-90/TG-102) i les icones de Talaia (`Button` ja accepta `icon`). La barra de pestanyes és pròpia (`core/navigation/TabBar.tsx`, ADR-0037), amb quatre pestanyes (Explora, Calendari, Alertes i Perfil): una càpsula `card` sota les pantalles, l'activa en `far` sobre `crep` i les altres en `boira`.
 
 ## Moviment i fluïdesa
 
@@ -175,5 +177,5 @@ Estil nocturn propi sobre les tessel·les vectorials de l'ICGC, recolorit amb aq
 ## Regles
 
 - Cap color, mida de font o espaiat escrit a mà a les pantalles: sempre des dels tokens del tema.
-- Contrast mínim WCAG AA per al text.
+- Contrast mínim WCAG AA per al text: ho comprova `core/theme/__tests__/contrast.test.ts` (RNF05, `docs/rnf.md`). `tap` sobre `crep` (3,9:1) només val per a text gran.
 - Tots els textos visibles passen per i18n.

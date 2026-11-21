@@ -1,10 +1,10 @@
 import { Image } from 'expo-image';
 import { useMemo } from 'react';
-import { ActivityIndicator, Platform, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import Animated, { FadeInDown, FadeOutDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { SafeAreaView as NativeSafeAreaView } from 'react-native-screens/experimental';
 
+import { useTheme } from '@/core/theme/theme';
 import { colors, motion, radii, sizes, spacing } from '@/core/theme/tokens';
 import { AppText } from '@/shared/ui/AppText';
 import { PressableScale } from '@/shared/ui/PressableScale';
@@ -15,8 +15,6 @@ import { RecommendationsSheet } from '../recommendations/RecommendationsSheet';
 import NightMap from './NightMap';
 import { SpotCard } from './SpotCard';
 import { useMapViewModel } from './useMapViewModel';
-
-const chrome = { background: colors.nit, text: colors.boira, link: colors.lluna };
 
 /**
  * Marges de l'enquadrament (mockup 03): la capçalera i la llegenda a dalt, i el full a baix (obert
@@ -103,8 +101,15 @@ const exitDown = FadeOutDown.duration(motion.fast).easing(motion.exit);
  */
 export function MapScreen() {
   const vm = useMapViewModel();
-  // Android ja reserva l’espai de les pestanyes; a iOS el menú se superposa al mapa.
-  const RankingSafeArea = Platform.OS === 'ios' ? NativeSafeAreaView : View;
+  const { name, colors: theme } = useTheme();
+  const night = name === 'vermell';
+  // Els controls i els marcadors HTML queden fora del filtre del mode nit: van amb el tema. Les capes
+  // del canvas (`markerPalette`) les passa a vermell el filtre, i van amb la paleta normal.
+  const chrome = useMemo(
+    () => ({ background: theme.nit, text: theme.boira, link: theme.lluna }),
+    [theme],
+  );
+  const origin = vm.origin && { ...vm.origin, color: theme.far };
   const insets = useSafeAreaInsets();
   const canRetry = vm.notice?.kind === 'error' || vm.notice?.kind === 'empty';
   const recommendations = vm.recommendations;
@@ -131,6 +136,7 @@ export function MapScreen() {
   return (
     <View style={styles.container}>
       <NightMap
+        night={night}
         mapStyle={vm.mapStyle}
         camera={vm.camera}
         chrome={chrome}
@@ -139,14 +145,14 @@ export function MapScreen() {
         userHeading={vm.userHeading}
         locationActive={vm.locationActive}
         userLocationLabel={vm.userLocationLabel}
-        userLocationColor={colors.ubicacio}
+        userLocationColor={theme.ubicacio}
         points={vm.points}
         markerPalette={markerPalette}
         onPointPress={vm.openPoint}
         cluster={!recommendations}
         fit={fit}
         onMapPress={vm.onMapPress}
-        origin={vm.origin}
+        origin={origin}
         dom={{
           // Transparent: un WKWebView opac pinta blanc fins que la pàgina fa el primer dibuix.
           // Mentrestant es veu el fons nit del contenidor.
@@ -228,22 +234,18 @@ export function MapScreen() {
         )}
       </View>
       {recommendations && (
-        <RankingSafeArea
-          testID="ranking-safe-area"
-          pointerEvents="box-none"
-          style={StyleSheet.absoluteFill}
-          {...(Platform.OS === 'ios' ? { edges: { bottom: true } } : {})}
-        >
+        // La barra de pestanyes queda sota la pantalla (ADR-0037): el full no ha de deixar-ne marge.
+        <View testID="ranking-safe-area" pointerEvents="box-none" style={StyleSheet.absoluteFill}>
           <View style={styles.rankingViewport} pointerEvents="box-none">
             <RecommendationsSheet sheet={recommendations.sheet} />
           </View>
-        </RankingSafeArea>
+        </View>
       )}
       {vm.nearby && (
         <Animated.View
           entering={enterUp}
           exiting={exitDown}
-          style={[styles.nearbyDock, { bottom: insets.bottom + spacing.md }]}
+          style={[styles.nearbyDock, { bottom: spacing.md }]}
           pointerEvents="box-none"
         >
           <PressableScale
@@ -272,7 +274,7 @@ export function MapScreen() {
         <Animated.View
           entering={enterUp}
           exiting={exitDown}
-          style={[styles.spot, { bottom: insets.bottom + spacing.md }]}
+          style={[styles.spot, { bottom: spacing.md }]}
         >
           <SpotCard card={vm.spot} />
         </Animated.View>
@@ -281,7 +283,7 @@ export function MapScreen() {
         <Animated.View
           entering={enterUp}
           exiting={exitDown}
-          style={[styles.picker, { bottom: insets.bottom + spacing.md }]}
+          style={[styles.picker, { bottom: spacing.md }]}
           accessibilityLiveRegion="polite"
         >
           <View style={styles.pickerRow}>
