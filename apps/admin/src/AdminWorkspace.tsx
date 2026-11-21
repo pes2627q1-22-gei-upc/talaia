@@ -87,6 +87,7 @@ export function AdminWorkspace({ accessToken, currentUserId, onAccessDenied }: P
           <UsersList
             accessToken={accessToken}
             currentUserId={currentUserId}
+            active={section === 'users'}
             onAccessDenied={onAccessDenied}
           />
         ) : null}

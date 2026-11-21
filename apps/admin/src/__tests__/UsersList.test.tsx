@@ -32,10 +32,107 @@ const USERS: UsuariAdmin[] = [
     dataActualitzacio: '2026-11-19T10:00:00Z',
   },
 ];
-const props = { accessToken: 'token', currentUserId: 'self', onAccessDenied: vi.fn() };
+const props = {
+  accessToken: 'token',
+  currentUserId: 'self',
+  active: true,
+  onAccessDenied: vi.fn(),
+};
 const response = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status });
 
 describe('Llista d’usuaris', () => {
+  it('confirma el bloqueig d’un altre administrador i permet desbloquejar-lo', async () => {
+    const person = {
+      ...USERS[1]!,
+      nom: 'Joan',
+      email: 'joan@example.cat',
+      rol: 'admin' as const,
+      bloquejat: false,
+      dataBloqueig: null,
+    };
+    const blocked = { ...person, bloquejat: true, dataBloqueig: '2026-11-19T10:00:00Z' };
+    const fetchMock = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+      if (init?.method !== 'PATCH') return response([USERS[0], person]);
+      return response(JSON.parse(String(init.body)).bloquejat ? blocked : person);
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    const user = userEvent.setup();
+    render(<UsersList {...props} />);
+    expect(await screen.findByText('No pots bloquejar el teu compte')).toBeInTheDocument();
+    const block = screen.getByRole('button', { name: /Bloqueja Joan/ });
+    await user.click(block);
+    expect(screen.getByRole('alertdialog')).toHaveTextContent('joan@example.cat');
+    expect(screen.getByRole('button', { name: 'Cancel·la' })).toHaveFocus();
+    await user.keyboard('{Shift>}{Tab}{/Shift}');
+    expect(screen.getByRole('button', { name: 'Confirma el bloqueig' })).toHaveFocus();
+    await user.tab();
+    expect(screen.getByRole('button', { name: 'Cancel·la' })).toHaveFocus();
+    await user.keyboard('{Escape}');
+    expect(block).toHaveFocus();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    await user.click(block);
+    await user.click(screen.getByRole('button', { name: 'Confirma el bloqueig' }));
+    expect(await screen.findByRole('status')).toHaveTextContent('bloquejat correctament');
+    const patchCall = fetchMock.mock.calls[1]!;
+    expect(patchCall[0]).toBe('/api/v1/admin/usuaris/2');
+    expect(JSON.parse(String(patchCall[1]?.body))).toEqual({ bloquejat: true });
+    expect(new Headers(patchCall[1]?.headers).get('Authorization')).toBe('Bearer token');
+    await user.click(screen.getByRole('button', { name: /Desbloqueja Joan/ }));
+    expect(await screen.findByRole('status')).toHaveTextContent('desbloquejat correctament');
+    expect(JSON.parse(String(fetchMock.mock.calls[2]?.[1]?.body))).toEqual({ bloquejat: false });
+  });
+
+  it('impedeix accions duplicades i exigeix actualitzar quan el resultat és incert', async () => {
+    const pending = deferred<Response>();
+    const fetchMock = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+      if (init?.method === 'PATCH') return pending.promise;
+      return response(USERS);
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    const user = userEvent.setup();
+    render(<UsersList {...props} />);
+    await user.click(await screen.findByRole('button', { name: /Desbloqueja Sense nom/ }));
+    expect(screen.getByRole('button', { name: /Desbloqueja Sense nom/ })).toBeDisabled();
+    pending.reject(new TypeError('network'));
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'No s’ha pogut confirmar el resultat',
+    );
+    expect(screen.getByRole('button', { name: /Desbloqueja Sense nom/ })).toBeDisabled();
+    await user.click(screen.getByRole('button', { name: 'Actualitza la llista' }));
+    expect(await screen.findByRole('button', { name: /Desbloqueja Sense nom/ })).toBeEnabled();
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+  });
+
+  it.each([
+    [400, 'cannot_block_self', 'No pots bloquejar el teu propi compte.'],
+    [404, 'usuari_not_found', 'Aquest usuari ja no existeix'],
+  ])('explica l’error %s de la modificació', async (status, code, message) => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) =>
+        init?.method === 'PATCH' ? response({ error: { code } }, status) : response(USERS),
+      ),
+    );
+    const user = userEvent.setup();
+    render(<UsersList {...props} />);
+    await user.click(await screen.findByRole('button', { name: /Desbloqueja Sense nom/ }));
+    expect(await screen.findByRole('alert')).toHaveTextContent(message);
+  });
+
+  it('retira l’accés si el PATCH és rebutjat per permisos', async () => {
+    const denied = vi.fn();
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) =>
+        init?.method === 'PATCH' ? new Response(null, { status: 403 }) : response(USERS),
+      ),
+    );
+    const user = userEvent.setup();
+    render(<UsersList {...props} onAccessDenied={denied} />);
+    await user.click(await screen.findByRole('button', { name: /Desbloqueja Sense nom/ }));
+    await vi.waitFor(() => expect(denied).toHaveBeenCalledOnce());
+  });
+
   it('mostra els perfils i filtra per nom, correu i estat', async () => {
     const user = userEvent.setup();
     const fetchMock = vi.fn(async (_input: RequestInfo | URL, _init?: RequestInit) =>

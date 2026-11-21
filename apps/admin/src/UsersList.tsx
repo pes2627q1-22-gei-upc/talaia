@@ -1,11 +1,12 @@
 import type { UsuariAdmin } from '@talaia/shared';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
-import { getAdminUsers, UsersApiError } from './usersApi';
+import { getAdminUsers, patchAdminUser, UsersApiError } from './usersApi';
 
 type Props = {
   accessToken: string;
   currentUserId: string;
+  active: boolean;
   onAccessDenied: () => void;
 };
 type StatusFilter = 'all' | 'active' | 'blocked';
@@ -17,7 +18,7 @@ function normalize(value: string) {
     .toLocaleLowerCase('ca');
 }
 
-export function UsersList({ accessToken, currentUserId, onAccessDenied }: Props) {
+export function UsersList({ accessToken, currentUserId, active, onAccessDenied }: Props) {
   const tokenRef = useRef(accessToken);
   tokenRef.current = accessToken;
   const [users, setUsers] = useState<UsuariAdmin[] | null>(null);
@@ -25,6 +26,16 @@ export function UsersList({ accessToken, currentUserId, onAccessDenied }: Props)
   const [attempt, setAttempt] = useState(0);
   const [query, setQuery] = useState('');
   const [status, setStatus] = useState<StatusFilter>('all');
+  const [target, setTarget] = useState<UsuariAdmin | null>(null);
+  const [pending, setPending] = useState(false);
+  const [notice, setNotice] = useState('');
+  const [actionError, setActionError] = useState('');
+  const [uncertain, setUncertain] = useState(false);
+  const cancelRef = useRef<HTMLButtonElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
+  const pendingRef = useRef(false);
+  const feedbackRef = useRef<HTMLParagraphElement>(null);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -43,6 +54,89 @@ export function UsersList({ accessToken, currentUserId, onAccessDenied }: Props)
     return () => controller.abort();
   }, [attempt, onAccessDenied]);
 
+  useEffect(() => {
+    if (!active) setTarget(null);
+  }, [active]);
+
+  useEffect(() => {
+    if (active && (notice || actionError)) feedbackRef.current?.focus();
+  }, [active, notice, actionError]);
+
+  useEffect(() => {
+    if (!target || !active) return;
+    cancelRef.current?.focus();
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape' && !pendingRef.current) {
+        event.preventDefault();
+        setTarget(null);
+        triggerRef.current?.focus();
+      } else if (event.key === 'Tab') {
+        const buttons =
+          dialogRef.current?.querySelectorAll<HTMLButtonElement>('button:not(:disabled)');
+        if (!buttons?.length) {
+          event.preventDefault();
+          return;
+        }
+        if (event.shiftKey && document.activeElement === buttons[0]) {
+          event.preventDefault();
+          buttons[buttons.length - 1]?.focus();
+        } else if (!event.shiftKey && document.activeElement === buttons[buttons.length - 1]) {
+          event.preventDefault();
+          buttons[0]?.focus();
+        }
+      }
+    }
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [target, active]);
+
+  async function changeBlocked(user: UsuariAdmin, blocked: boolean) {
+    if (pendingRef.current || uncertain || (blocked && user.authUserId === currentUserId)) return;
+    pendingRef.current = true;
+    setPending(true);
+    setActionError('');
+    setNotice('');
+    try {
+      const updated = await patchAdminUser(tokenRef.current, user.id, { bloquejat: blocked });
+      setUsers(
+        (current) => current?.map((item) => (item.id === updated.id ? updated : item)) ?? null,
+      );
+      setTarget(null);
+      setNotice(
+        `Compte ${blocked ? 'bloquejat' : 'desbloquejat'} correctament: ${identify(updated)}.`,
+      );
+    } catch (cause) {
+      if (cause instanceof UsersApiError && (cause.status === 401 || cause.status === 403)) {
+        onAccessDenied();
+        return;
+      }
+      setTarget(null);
+      if (cause instanceof UsersApiError && cause.code === 'cannot_block_self') {
+        setActionError('No pots bloquejar el teu propi compte.');
+      } else if (cause instanceof UsersApiError && cause.status === 404) {
+        setActionError('Aquest usuari ja no existeix. Actualitza la llista.');
+        setUncertain(true);
+      } else if (cause instanceof UsersApiError && cause.status >= 400 && cause.status < 500) {
+        setActionError('No s’ha pogut canviar l’estat del compte. Torna-ho a provar.');
+      } else {
+        setActionError(
+          'No s’ha pogut confirmar el resultat. Actualitza la llista abans de tornar-ho a provar.',
+        );
+        setUncertain(true);
+      }
+    } finally {
+      pendingRef.current = false;
+      setPending(false);
+    }
+  }
+
+  function refreshUsers() {
+    setActionError('');
+    setNotice('');
+    setUncertain(false);
+    setAttempt((value) => value + 1);
+  }
+
   const visibleUsers = useMemo(() => {
     const search = normalize(query.trim());
     return (users ?? []).filter((user) => {
@@ -56,6 +150,23 @@ export function UsersList({ accessToken, currentUserId, onAccessDenied }: Props)
   return (
     <section aria-labelledby="users-heading">
       <h2 id="users-heading">Usuaris</h2>
+      {notice ? (
+        <p ref={feedbackRef} tabIndex={-1} className="admin-message" role="status">
+          {notice}
+        </p>
+      ) : null}
+      {actionError ? (
+        <div>
+          <p ref={feedbackRef} tabIndex={-1} className="admin-message" role="alert">
+            {actionError}
+          </p>
+          {uncertain ? (
+            <button type="button" onClick={refreshUsers}>
+              Actualitza la llista
+            </button>
+          ) : null}
+        </div>
+      ) : null}
       {users === null && !error ? (
         <p className="admin-state" role="status">
           Carregant usuaris…
@@ -109,6 +220,7 @@ export function UsersList({ accessToken, currentUserId, onAccessDenied }: Props)
                     <th scope="col">Rol</th>
                     <th scope="col">Estat</th>
                     <th scope="col">Data de bloqueig</th>
+                    <th scope="col">Accions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -128,6 +240,29 @@ export function UsersList({ accessToken, currentUserId, onAccessDenied }: Props)
                         </span>
                       </td>
                       <td>
+                        {user.authUserId === currentUserId ? (
+                          <span>No pots bloquejar el teu compte</span>
+                        ) : (
+                          <button
+                            type="button"
+                            className={user.bloquejat ? 'button-secondary' : 'button-danger'}
+                            disabled={pending || uncertain}
+                            aria-label={`${user.bloquejat ? 'Desbloqueja' : 'Bloqueja'} ${identify(user)}`}
+                            onClick={(event) => {
+                              if (user.bloquejat) void changeBlocked(user, false);
+                              else {
+                                triggerRef.current = event.currentTarget;
+                                setActionError('');
+                                setNotice('');
+                                setTarget(user);
+                              }
+                            }}
+                          >
+                            {user.bloquejat ? 'Desbloqueja' : 'Bloqueja'}
+                          </button>
+                        )}
+                      </td>
+                      <td>
                         {user.dataBloqueig
                           ? new Intl.DateTimeFormat('ca-ES', {
                               dateStyle: 'medium',
@@ -143,6 +278,50 @@ export function UsersList({ accessToken, currentUserId, onAccessDenied }: Props)
           ) : null}
         </>
       ) : null}
+      {target && active ? (
+        <div className="punts-dialog-backdrop">
+          <div
+            ref={dialogRef}
+            className="punts-confirm-dialog"
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="block-title"
+            aria-describedby="block-description"
+          >
+            <h3 id="block-title">Bloquejar compte</h3>
+            <p id="block-description">
+              Vols bloquejar <strong>{identify(target)}</strong>? El compte no podrà utilitzar les
+              funcions protegides de l’API. Podràs desbloquejar-lo més endavant.
+            </p>
+            <div className="punt-form-actions">
+              <button
+                ref={cancelRef}
+                type="button"
+                disabled={pending}
+                onClick={() => {
+                  setTarget(null);
+                  triggerRef.current?.focus();
+                }}
+              >
+                Cancel·la
+              </button>
+              <button
+                type="button"
+                disabled={pending}
+                onClick={() => void changeBlocked(target, true)}
+              >
+                {pending ? 'Bloquejant…' : 'Confirma el bloqueig'}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </section>
   );
+}
+
+function identify(user: UsuariAdmin) {
+  return user.email
+    ? `${user.nom ?? 'Sense nom'} (${user.email})`
+    : `${user.nom ?? 'Sense nom'} (ID: ${user.id})`;
 }
