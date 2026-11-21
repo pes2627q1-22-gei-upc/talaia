@@ -1,12 +1,13 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react-native';
 import { useRouter } from 'expo-router';
 import type { PropsWithChildren } from 'react';
-import { Linking } from 'react-native';
+import { Linking, processColor } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import i18n from '@/core/i18n';
-import { motion } from '@/core/theme/tokens';
+import { type ThemeName, ThemeProvider } from '@/core/theme/theme';
+import { colors, colorsVermell, motion } from '@/core/theme/tokens';
 import { createQueryWrapper } from '@/test-utils/queryWrapper';
 
 import { addDays, nightOf } from '../exploreModel';
@@ -33,15 +34,17 @@ const METRICS = {
   insets: { top: 59, left: 0, right: 0, bottom: 34 },
 };
 
-function renderScreen() {
+function renderScreen(theme: ThemeName = 'normal') {
   const QueryWrapper = createQueryWrapper();
   function Wrapper({ children }: PropsWithChildren) {
     return (
-      <GestureHandlerRootView>
-        <SafeAreaProvider initialMetrics={METRICS}>
-          <QueryWrapper>{children}</QueryWrapper>
-        </SafeAreaProvider>
-      </GestureHandlerRootView>
+      <ThemeProvider name={theme}>
+        <GestureHandlerRootView>
+          <SafeAreaProvider initialMetrics={METRICS}>
+            <QueryWrapper>{children}</QueryWrapper>
+          </SafeAreaProvider>
+        </GestureHandlerRootView>
+      </ThemeProvider>
     );
   }
   return render(<ExploreScreen />, { wrapper: Wrapper });
@@ -161,11 +164,40 @@ describe('ExploreScreen', () => {
     );
   });
 
-  it('«Mostra el mapa» obre el mapa sense cercar, també sense ubicació', async () => {
+  it('«Mostra tots els punts al mapa» és un botó visible, amb vora, no un enllaç', async () => {
+    await renderScreen();
+    const browse = screen.getByRole('button', { name: 'Mostra tots els punts al mapa' });
+    expect(browse).toHaveStyle({ backgroundColor: colors.sheet, borderColor: colors.vora });
+    // La icona del mapa hi és i, en el tema normal, es veu amb el seu color.
+    const icon = within(browse).getByTestId('explore-map-icon');
+    expect(icon.props.tintColor).toBeUndefined();
+  });
+
+  it('en mode nit, la icona del mapa es tenyeix com el text del botó', async () => {
+    await renderScreen('vermell');
+    const browse = screen.getByRole('button', { name: 'Mostra tots els punts al mapa' });
+    expect(within(browse).getByText('Mostra tots els punts al mapa')).toHaveStyle({
+      color: colorsVermell.lluna,
+    });
+    const icon = within(browse).getByTestId('explore-map-icon');
+    // expo-image rep el color ja processat (ARGB), com a ThemeProvider.test.tsx.
+    expect(icon.props.tintColor).toBe(processColor(colorsVermell.lluna));
+  });
+
+  it.each([
+    ['es', 'Ver todos los puntos en el mapa'],
+    ['en', 'See all spots on the map'],
+  ])('el botó del mapa està traduït (%s)', async (language, label) => {
+    await i18n.changeLanguage(language);
+    await renderScreen();
+    expect(screen.getByRole('button', { name: label })).toBeOnTheScreen();
+  });
+
+  it('«Mostra tots els punts al mapa» obre el mapa sense cercar, també sense ubicació', async () => {
     jest.mocked(getCurrentPlace).mockResolvedValue({ status: 'denied', canAskAgain: true });
     await renderScreen();
     await screen.findByText('Activa la ubicació');
-    await fireEvent.press(screen.getByRole('button', { name: 'Mostra el mapa' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Mostra tots els punts al mapa' }));
     expect(push).toHaveBeenCalledWith('/recomanacions');
   });
 
@@ -179,7 +211,7 @@ describe('ExploreScreen', () => {
     expect(search).toBeDisabled();
     await fireEvent.press(search);
     expect(push).not.toHaveBeenCalled();
-    expect(screen.getByRole('button', { name: 'Mostra el mapa' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Mostra tots els punts al mapa' })).toBeEnabled();
   });
 
   it.each(['denied', 'error'] as const)(

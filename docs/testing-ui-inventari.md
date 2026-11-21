@@ -96,6 +96,7 @@ automàtiques següents, sense modificar funcionalitats ni dependències:
 | --- | --- | --- |
 | Explora: ubicació | Cerca desactivada durant la localització; reintent d’error i permís des de la fila; configuració quan no es pot demanar permís | `features/explore/__tests__/ExploreScreen.test.tsx` |
 | Explora: dia i selectors | Demà/aquesta nit amb data correcta a la cerca; cancel·lació del calendari; reobertura del dia personalitzat; roda de l’hora final; tancament amb Fet i conservació de la franja | `features/explore/__tests__/ExploreScreen.test.tsx` |
+| Explora: accés al mapa (TG-265) | «Mostra tots els punts al mapa» és un botó secundari amb vora i icona, no un enllaç; etiqueta en ca/es/en; obre el mapa sense cercar, també sense ubicació | `features/explore/__tests__/ExploreScreen.test.tsx` |
 | Fitxa: accions | Com arribar amb les coordenades correctes; error en obrir Maps; avís provisional de Crea un pla | `features/point/__tests__/PointDetailStates.test.tsx` |
 | Fitxa: estats | Càrrega inicial; vista diürna; índex i metadades absents; hores buides, pendents o amb error; reintent des del desglossament; dades conservades i reintent desactivat durant el refresc | `features/point/__tests__/PointDetailStates.test.tsx` |
 | Fitxa: selecció | Retorn a la millor hora quan la seleccionada desapareix després d’una actualització | `features/point/__tests__/PointDetailStates.test.tsx` |
