@@ -18,6 +18,7 @@ jest.mock('@/core/api/httpClient', () => ({
 jest.mock('@/features/explore/locationRepository', () => ({ useCurrentPlaceQuery: jest.fn() }));
 // El WebView no existeix a Jest; es comprova la pantalla nativa amb el repository real.
 jest.mock('../PointLocationMap', () => () => null);
+jest.mock('../FavoriteButton', () => ({ FavoriteButton: () => null }));
 jest.mock('expo-router', () => ({
   ...jest.requireActual('expo-router'),
   useFocusEffect: (effect: () => void) => jest.requireActual('react').useEffect(effect, [effect]),

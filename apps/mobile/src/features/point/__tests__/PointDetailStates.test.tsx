@@ -1,18 +1,27 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
-import { Alert, Linking } from 'react-native';
+import { Alert, Linking, Platform } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import i18n from '@/core/i18n';
+import { useCurrentPlaceQuery } from '@/features/explore/locationRepository';
 
 import { asBreakdown, hour, point } from '../__fixtures__/point';
 import { PointDetailScreen } from '../PointDetailScreen';
-import { usePointBreakdownQuery, usePointDetailQuery } from '../pointRepository';
+import { directionsUrl } from '../pointModel';
+import {
+  usePointBreakdownQuery,
+  usePointDetailQuery,
+  usePointRoutesQuery,
+} from '../pointRepository';
 
 jest.mock('../pointRepository', () => ({
   usePointDetailQuery: jest.fn(),
   usePointBreakdownQuery: jest.fn(),
+  usePointRoutesQuery: jest.fn(),
 }));
+jest.mock('@/features/explore/locationRepository', () => ({ useCurrentPlaceQuery: jest.fn() }));
 jest.mock('../PointLocationMap', () => () => null);
+jest.mock('../FavoriteButton', () => ({ FavoriteButton: () => null }));
 const mockPush = jest.fn();
 jest.mock('expo-router', () => ({
   ...jest.requireActual('expo-router'),
@@ -64,6 +73,12 @@ beforeEach(async () => {
   await i18n.changeLanguage('ca');
   setDetail();
   setHours();
+  jest.mocked(useCurrentPlaceQuery).mockReturnValue({
+    data: { status: 'denied', canAskAgain: false },
+  } as ReturnType<typeof useCurrentPlaceQuery>);
+  jest.mocked(usePointRoutesQuery).mockReturnValue({
+    data: undefined,
+  } as ReturnType<typeof usePointRoutesQuery>);
 });
 afterEach(() => jest.restoreAllMocks());
 
@@ -82,9 +97,7 @@ it('obre Maps amb les coordenades del punt des de Com arribar', async () => {
   const open = jest.spyOn(Linking, 'openURL').mockResolvedValue();
   await render(page());
   await fireEvent.press(screen.getByRole('button', { name: 'Com arribar' }));
-  expect(open).toHaveBeenCalledWith(
-    'https://www.google.com/maps/dir/?api=1&destination=42.05,0.73',
-  );
+  expect(open).toHaveBeenCalledWith(directionsUrl(point.lat, point.lon, Platform.OS));
 });
 
 it('informa si Maps no es pot obrir', async () => {

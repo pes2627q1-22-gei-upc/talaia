@@ -19,6 +19,11 @@ const EnvSchema = z.object({
     (v) => (v === '' ? undefined : v),
     z.url().default('https://api.open-meteo.com/v1'),
   ),
+  // URL base de les rutes de Mobilicat (TG-135), sense credencials.
+  MOBILICAT_ROUTES_BASE_URL: z.preprocess(
+    (v) => (v === '' ? undefined : v),
+    z.url({ protocol: /^https?$/ }).default('https://api.mobili.cat'),
+  ),
   APROP_API_KEY: z.preprocess(
     (v) => (v === '' ? undefined : v),
     z
