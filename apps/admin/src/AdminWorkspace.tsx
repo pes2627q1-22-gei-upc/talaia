@@ -40,8 +40,12 @@ export function AdminWorkspace({ accessToken, onAccessDenied }: Props) {
           Punts
         </a>
       </nav>
-      <div id="admin-punts">
-        {notice ? <p role="status">{notice}</p> : null}
+      <div id="admin-punts" className="admin-workspace-content">
+        {notice ? (
+          <p className="admin-message" role="status">
+            {notice}
+          </p>
+        ) : null}
         {screen.kind === 'list' ? (
           <PuntsList
             accessToken={accessToken}

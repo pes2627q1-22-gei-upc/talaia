@@ -142,7 +142,7 @@ export function PuntsList({ accessToken, onAccessDenied, onCreate, onEdit }: Pro
   }
 
   return (
-    <section aria-labelledby="punts-heading">
+    <section className="punts-list" aria-labelledby="punts-heading">
       <div className="punts-heading-row">
         <h2 id="punts-heading">Punts d’observació</h2>
         <button type="button" onClick={onCreate}>
@@ -150,18 +150,32 @@ export function PuntsList({ accessToken, onAccessDenied, onCreate, onEdit }: Pro
         </button>
       </div>
 
-      {points === null && !error ? <p role="status">Carregant punts…</p> : null}
+      {points === null && !error ? (
+        <p className="admin-state" role="status">
+          Carregant punts…
+        </p>
+      ) : null}
       {error ? (
         <div>
-          <p role="alert">{error}</p>
+          <p className="admin-message" role="alert">
+            {error}
+          </p>
           <button type="button" onClick={() => setAttempt((current) => current + 1)}>
             Torna-ho a provar
           </button>
         </div>
       ) : null}
 
-      {statusNotice ? <p role="status">{statusNotice}</p> : null}
-      {statusError && !retireTarget ? <p role="alert">{statusError}</p> : null}
+      {statusNotice ? (
+        <p className="admin-message" role="status">
+          {statusNotice}
+        </p>
+      ) : null}
+      {statusError && !retireTarget ? (
+        <p className="admin-message" role="alert">
+          {statusError}
+        </p>
+      ) : null}
 
       {points !== null ? (
         <>
@@ -190,9 +204,15 @@ export function PuntsList({ accessToken, onAccessDenied, onCreate, onEdit }: Pro
             </label>
           </div>
 
-          {points.length === 0 ? <p role="status">Encara no hi ha punts al catàleg.</p> : null}
+          {points.length === 0 ? (
+            <p className="admin-state" role="status">
+              Encara no hi ha punts al catàleg.
+            </p>
+          ) : null}
           {points.length > 0 && visiblePoints.length === 0 ? (
-            <p role="status">No s’han trobat punts amb aquests criteris.</p>
+            <p className="admin-state" role="status">
+              No s’han trobat punts amb aquests criteris.
+            </p>
           ) : null}
           {visiblePoints.length > 0 ? (
             <div className="punts-table-scroll">
@@ -212,11 +232,20 @@ export function PuntsList({ accessToken, onAccessDenied, onCreate, onEdit }: Pro
                     <tr key={point.id}>
                       <th scope="row">{point.nom}</th>
                       <td>{point.municipi}</td>
-                      <td>{statusLabels[point.estat]}</td>
-                      <td>{originLabels[point.origen]}</td>
+                      <td>
+                        <span
+                          className={`punt-status punt-status--${point.estat.toLocaleLowerCase()}`}
+                        >
+                          {statusLabels[point.estat]}
+                        </span>
+                      </td>
+                      <td>
+                        <span className="punt-origin">{originLabels[point.origen]}</span>
+                      </td>
                       <td>
                         <div className="punt-row-actions">
                           <button
+                            className="button-secondary"
                             type="button"
                             aria-label={`Edita ${point.nom}`}
                             onClick={() => onEdit(point.id)}
@@ -225,6 +254,7 @@ export function PuntsList({ accessToken, onAccessDenied, onCreate, onEdit }: Pro
                           </button>
                           {point.estat === 'PUBLICAT' && point.slug !== REFERENCE_POINT_SLUG ? (
                             <button
+                              className="button-danger"
                               type="button"
                               aria-label={`Retira ${point.nom}`}
                               disabled={pendingId !== null}
@@ -239,6 +269,7 @@ export function PuntsList({ accessToken, onAccessDenied, onCreate, onEdit }: Pro
                           ) : null}
                           {point.estat === 'DESACTIVAT' ? (
                             <button
+                              className="button-secondary"
                               type="button"
                               aria-label={`Torna a publicar ${point.nom}`}
                               disabled={pendingId !== null}
@@ -272,7 +303,11 @@ export function PuntsList({ accessToken, onAccessDenied, onCreate, onEdit }: Pro
             <p id="retire-dialog-description">
               Vols retirar <strong>{retireTarget.nom}</strong>? Deixarà d’aparèixer a l’aplicació.
             </p>
-            {statusError ? <p role="alert">{statusError}</p> : null}
+            {statusError ? (
+              <p className="admin-message" role="alert">
+                {statusError}
+              </p>
+            ) : null}
             <div className="punt-form-actions">
               <button
                 ref={cancelRetireRef}

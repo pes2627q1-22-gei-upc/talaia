@@ -139,17 +139,24 @@ export function PuntForm({ accessToken, puntId, onCancel, onSaved, onAccessDenie
     }
   }
 
-  if (loading) return <p role="status">Carregant les dades del punt…</p>;
+  if (loading)
+    return (
+      <p className="admin-state" role="status">
+        Carregant les dades del punt…
+      </p>
+    );
 
   if (loadError) {
     return (
-      <section aria-labelledby="punt-form-heading">
+      <section className="punt-form-panel" aria-labelledby="punt-form-heading">
         <h2 id="punt-form-heading">Edita el punt</h2>
-        <p role="alert">{loadError}</p>
+        <p className="admin-message" role="alert">
+          {loadError}
+        </p>
         <button type="button" onClick={() => setLoadAttempt((current) => current + 1)}>
           Torna-ho a provar
         </button>{' '}
-        <button type="button" onClick={onCancel}>
+        <button className="button-secondary" type="button" onClick={onCancel}>
           Torna a la llista
         </button>
       </section>
@@ -157,15 +164,23 @@ export function PuntForm({ accessToken, puntId, onCancel, onSaved, onAccessDenie
   }
 
   return (
-    <section aria-labelledby="punt-form-heading">
+    <section className="punt-form-panel" aria-labelledby="punt-form-heading">
       <h2 id="punt-form-heading">{puntId ? 'Edita el punt' : 'Nou punt'}</h2>
       {original ? (
-        <p>
-          Estat actual: {statusLabels[original.estat]}. Origen:{' '}
-          {original.origen === 'OFICIAL' ? 'Oficial' : 'Comunitari'}.
+        <p className="admin-record-meta">
+          Estat actual:{' '}
+          <span className={`punt-status punt-status--${original.estat.toLocaleLowerCase()}`}>
+            {statusLabels[original.estat]}
+          </span>{' '}
+          Origen:{' '}
+          <span className="punt-origin">
+            {original.origen === 'OFICIAL' ? 'Oficial' : 'Comunitari'}
+          </span>
         </p>
       ) : null}
-      <p>Un punt nou o mogut pot quedar sense índex fins al proper càlcul.</p>
+      <p className="admin-form-note">
+        Un punt nou o mogut pot quedar sense índex fins al proper càlcul.
+      </p>
 
       <form className="punt-form" onSubmit={(event) => void submit(event)}>
         <fieldset>
@@ -318,18 +333,28 @@ export function PuntForm({ accessToken, puntId, onCancel, onSaved, onAccessDenie
               </select>
             </label>
           ) : original && (original.estat === 'PENDENT' || original.estat === 'REBUTJAT') ? (
-            <p>L’estat d’aquest punt només es pot canviar des de la moderació.</p>
+            <p className="admin-form-note">
+              L’estat d’aquest punt només es pot canviar des de la moderació.
+            </p>
           ) : null}
         </fieldset>
 
-        {formError ? <p role="alert">{formError}</p> : null}
-        {formStatus ? <p role="status">{formStatus}</p> : null}
+        {formError ? (
+          <p className="admin-message" role="alert">
+            {formError}
+          </p>
+        ) : null}
+        {formStatus ? (
+          <p className="admin-message" role="status">
+            {formStatus}
+          </p>
+        ) : null}
 
         <div className="punt-form-actions">
           <button type="submit" disabled={saving}>
             {saving ? 'Desant…' : puntId ? 'Desa els canvis' : 'Crea el punt'}
           </button>
-          <button type="button" onClick={onCancel} disabled={saving}>
+          <button className="button-secondary" type="button" onClick={onCancel} disabled={saving}>
             Cancel·la
           </button>
         </div>

@@ -140,24 +140,39 @@ export function App() {
   }
 
   return (
-    <main>
-      <h1>Talaia · Administració</h1>
-      {access === 'loading' || access === 'checking' ? <p>Comprovant l’accés…</p> : null}
+    <main className="admin-app">
+      <header className="admin-page-header">
+        <h1>
+          Talaia <span>· Administració</span>
+        </h1>
+      </header>
+      {access === 'loading' || access === 'checking' ? (
+        <p className="admin-state">Comprovant l’accés…</p>
+      ) : null}
       {access === 'error' ? (
-        <p role="alert">
+        <p className="admin-message" role="alert">
           No s’ha pogut comprovar l’accés. Revisa la configuració o la connexió i torna a carregar
           la pàgina.
         </p>
       ) : null}
       {access === 'denied' ? (
-        <>
-          <p role="alert">Aquest compte no té accés a l’administració.</p>
-          <button onClick={() => void signOut()}>Tanca la sessió</button>
-        </>
+        <section className="admin-auth-panel" aria-label="Accés denegat">
+          <p className="admin-message" role="alert">
+            Aquest compte no té accés a l’administració.
+          </p>
+          <button className="button-secondary" onClick={() => void signOut()}>
+            Tanca la sessió
+          </button>
+        </section>
       ) : null}
       {access === 'allowed' ? (
         <>
-          <p>Accés d’administrador confirmat.</p>
+          <div className="admin-access-row">
+            <p className="admin-access-status">Accés d’administrador confirmat.</p>
+            <button className="button-secondary" onClick={() => void signOut()}>
+              Tanca la sessió
+            </button>
+          </div>
           {adminToken ? (
             <AdminWorkspace
               key={adminToken}
@@ -165,13 +180,14 @@ export function App() {
               onAccessDenied={handleAdminAccessDenied}
             />
           ) : null}
-          <button onClick={() => void signOut()}>Tanca la sessió</button>
         </>
       ) : null}
       {access === 'signed-out' ? (
-        <section aria-label="Inicia sessió">
+        <section className="admin-auth-panel" aria-label="Inicia sessió">
           <p>Inicia sessió amb el mateix compte de Talaia que té el rol d’administrador.</p>
-          <button onClick={() => void signInGoogle()}>Continua amb Google</button>
+          <button className="button-secondary" onClick={() => void signInGoogle()}>
+            Continua amb Google
+          </button>
           {!codeSent ? (
             <form onSubmit={(event) => void sendCode(event)}>
               <label>
@@ -206,7 +222,11 @@ export function App() {
           )}
         </section>
       ) : null}
-      {message ? <p role="status">{message}</p> : null}
+      {message ? (
+        <p className="admin-message" role="status">
+          {message}
+        </p>
+      ) : null}
     </main>
   );
 }
