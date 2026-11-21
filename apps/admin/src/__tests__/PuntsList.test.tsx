@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import type { PuntAdmin } from '@talaia/shared';
@@ -50,6 +50,48 @@ function response(body: unknown, status = 200) {
 }
 
 describe('Llista de punts', () => {
+  it('permet reintentar la càrrega quan falla la petició', async () => {
+    const user = userEvent.setup();
+    const fetchMock = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('Connexió interrompuda'))
+      .mockResolvedValueOnce(response(PUNTS));
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(
+      <PuntsList
+        accessToken="token-admin"
+        onAccessDenied={vi.fn()}
+        onCreate={vi.fn()}
+        onEdit={vi.fn()}
+      />,
+    );
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('No s’ha pogut carregar la llista');
+    await user.click(screen.getByRole('button', { name: 'Torna-ho a provar' }));
+    expect(await screen.findByText('Mirador del Montsec')).toBeInTheDocument();
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('retorna a la pantalla d’inici quan la càrrega no està autoritzada', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => response({ error: { code: 'forbidden', message: 'Accés denegat' } }, 403)),
+    );
+    const onAccessDenied = vi.fn();
+
+    render(
+      <PuntsList
+        accessToken="token-admin"
+        onAccessDenied={onAccessDenied}
+        onCreate={vi.fn()}
+        onEdit={vi.fn()}
+      />,
+    );
+
+    await waitFor(() => expect(onAccessDenied).toHaveBeenCalledOnce());
+  });
+
   it('mostra les dades, el filtre, la cerca i les accions de crear i editar', async () => {
     const user = userEvent.setup();
     const fetch = vi.fn(
@@ -180,6 +222,35 @@ describe('Llista de punts', () => {
     expect(fetchMock).toHaveBeenCalledOnce();
   });
 
+  it('manté el focus dins del diàleg i permet tancar-lo amb Escape', async () => {
+    const user = userEvent.setup();
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => response(PUNTS)),
+    );
+
+    render(
+      <PuntsList
+        accessToken="token-admin"
+        onAccessDenied={vi.fn()}
+        onCreate={vi.fn()}
+        onEdit={vi.fn()}
+      />,
+    );
+
+    await user.click(await screen.findByRole('button', { name: 'Retira Mirador del Montsec' }));
+    const cancelButton = screen.getByRole('button', { name: 'Cancel·la' });
+    const confirmButton = screen.getByRole('button', { name: 'Confirma la retirada' });
+    expect(cancelButton).toHaveFocus();
+
+    fireEvent.keyDown(document, { key: 'Tab', shiftKey: true });
+    expect(confirmButton).toHaveFocus();
+    fireEvent.keyDown(document, { key: 'Tab' });
+    expect(cancelButton).toHaveFocus();
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+  });
+
   it('desactiva les accions mentre espera la resposta de l’API', async () => {
     const user = userEvent.setup();
     const updatedPoint = { ...PUNTS[0]!, estat: 'DESACTIVAT' as const };
@@ -245,6 +316,40 @@ describe('Llista de punts', () => {
       `/api/v1/admin/punts/${PUNTS[1]!.id}`,
       expect.objectContaining({ method: 'PATCH', body: '{"estat":"PUBLICAT"}' }),
     );
+  });
+
+  it('manté el punt desactivat i explica un error de l’API en tornar-lo a publicar', async () => {
+    const user = userEvent.setup();
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(response(PUNTS))
+      .mockResolvedValueOnce(
+        response(
+          {
+            error: { code: 'temporarily_unavailable', message: 'Servei temporalment indisponible' },
+          },
+          503,
+        ),
+      );
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(
+      <PuntsList
+        accessToken="token-admin"
+        onAccessDenied={vi.fn()}
+        onCreate={vi.fn()}
+        onEdit={vi.fn()}
+      />,
+    );
+
+    await user.click(
+      await screen.findByRole('button', { name: 'Torna a publicar Parc de Collserola' }),
+    );
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'No s’ha pogut tornar a publicar Parc de Collserola. Servei temporalment indisponible',
+    );
+    expect(screen.getByRole('row', { name: /Parc de Collserola/ })).toHaveTextContent('Desactivat');
   });
 
   it('no ofereix retirar el punt de referència d’Aprop', async () => {

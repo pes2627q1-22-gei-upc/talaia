@@ -24,7 +24,7 @@ const PUNT: PuntAdmin = {
   lon: 0.7364,
 };
 
-function jsonResponse(body: unknown, status: number) {
+function jsonResponse(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
     headers: { 'Content-Type': 'application/json' },
@@ -97,6 +97,130 @@ describe('Formulari de punts', () => {
       lat: 42.03,
       lon: PUNT.lon,
     });
+  });
+
+  it('permet editar les dades complementàries i crear el punt desactivat', async () => {
+    const user = userEvent.setup();
+    const fetch = vi.fn(async (_input: RequestInfo | URL, _init?: RequestInit) =>
+      jsonResponse(PUNT, 201),
+    );
+    vi.stubGlobal('fetch', fetch);
+    const onSaved = vi.fn();
+
+    render(
+      <PuntForm
+        accessToken={TOKEN}
+        onCancel={vi.fn()}
+        onSaved={onSaved}
+        onAccessDenied={vi.fn()}
+      />,
+    );
+
+    await user.type(screen.getByLabelText('Identificador (slug)'), 'mirador-prova');
+    await user.type(screen.getByLabelText('Nom'), 'Mirador de prova');
+    await user.type(screen.getByLabelText('Municipi'), 'Àger');
+    await user.type(screen.getByLabelText('Descripció'), 'Punt de prova.');
+    await user.type(screen.getByLabelText('Latitud'), '41.8');
+    await user.type(screen.getByLabelText('Longitud'), '1.1');
+    await user.type(screen.getByLabelText('Altitud (metres, opcional)'), '850');
+    await user.click(screen.getByLabelText('N'));
+    await user.click(screen.getByLabelText('N'));
+    await user.click(screen.getByLabelText('SW'));
+    await user.type(screen.getByLabelText('Accessibilitat (opcional)'), 'Accés a peu.');
+    await user.type(screen.getByLabelText('Foscor del cel SQM (10–23, opcional)'), '21.5');
+    await user.selectOptions(screen.getByLabelText('Estat inicial'), 'DESACTIVAT');
+    await user.click(screen.getByRole('button', { name: 'Crea el punt' }));
+
+    await waitFor(() => expect(onSaved).toHaveBeenCalledWith('created'));
+    expect(JSON.parse(String(fetch.mock.calls[0]?.[1]?.body))).toMatchObject({
+      slug: 'mirador-prova',
+      altitud: 850,
+      horitzoObert: ['SW'],
+      accessibilitat: 'Accés a peu.',
+      sqm: 21.5,
+      estat: 'DESACTIVAT',
+    });
+  });
+
+  it('mostra errors de càrrega amb opció de reintent i acaba mostrant les dades', async () => {
+    const user = userEvent.setup();
+    const fetch = vi
+      .fn((_input: RequestInfo | URL) => Promise.resolve(jsonResponse(PUNT)))
+      .mockResolvedValueOnce(
+        jsonResponse(
+          { error: { code: 'unavailable', message: 'Servei temporalment indisponible' } },
+          503,
+        ),
+      )
+      .mockResolvedValueOnce(jsonResponse(PUNT));
+    vi.stubGlobal('fetch', fetch);
+
+    render(
+      <PuntForm
+        accessToken={TOKEN}
+        puntId={PUNT.id}
+        onCancel={vi.fn()}
+        onSaved={vi.fn()}
+        onAccessDenied={vi.fn()}
+      />,
+    );
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Servei temporalment indisponible');
+    await user.click(screen.getByRole('button', { name: 'Torna-ho a provar' }));
+    expect(await screen.findByLabelText('Nom')).toHaveValue(PUNT.nom);
+    expect(fetch).toHaveBeenCalledTimes(2);
+  });
+
+  it('informa quan no hi ha canvis i quan l’estat pendent es gestiona des de moderació', async () => {
+    const user = userEvent.setup();
+    const pendingPoint = { ...PUNT, estat: 'PENDENT' as const };
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (_input: RequestInfo | URL) => jsonResponse(pendingPoint)),
+    );
+
+    render(
+      <PuntForm
+        accessToken={TOKEN}
+        puntId={PUNT.id}
+        onCancel={vi.fn()}
+        onSaved={vi.fn()}
+        onAccessDenied={vi.fn()}
+      />,
+    );
+
+    expect(await screen.findByText(/només es pot canviar des de la moderació/)).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Desa els canvis' }));
+    expect(await screen.findByRole('status')).toHaveTextContent('No hi ha canvis per desar.');
+  });
+
+  it('informa si el token deixa de tenir accés mentre es desa', async () => {
+    const user = userEvent.setup();
+    const fetch = vi.fn(async (_input: RequestInfo | URL, _init?: RequestInit) =>
+      jsonResponse({ error: { code: 'unauthorized', message: 'Accés denegat' } }, 403),
+    );
+    vi.stubGlobal('fetch', fetch);
+    const onAccessDenied = vi.fn();
+
+    render(
+      <PuntForm
+        accessToken={TOKEN}
+        onCancel={vi.fn()}
+        onSaved={vi.fn()}
+        onAccessDenied={onAccessDenied}
+      />,
+    );
+
+    await user.type(screen.getByLabelText('Identificador (slug)'), 'mirador-prova');
+    await user.type(screen.getByLabelText('Nom'), 'Mirador de prova');
+    await user.type(screen.getByLabelText('Municipi'), 'Àger');
+    await user.type(screen.getByLabelText('Descripció'), 'Punt de prova.');
+    await user.type(screen.getByLabelText('Latitud'), '41.8');
+    await user.type(screen.getByLabelText('Longitud'), '1.1');
+    await user.click(screen.getByRole('button', { name: 'Crea el punt' }));
+
+    await waitFor(() => expect(onAccessDenied).toHaveBeenCalledOnce());
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 
   it('crea un punt amb els camps obligatoris i conserva el text si l’API rebutja l’identificador', async () => {
