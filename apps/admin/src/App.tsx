@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 
+import { AdminWorkspace } from './AdminWorkspace';
 import { authClient, checkAdmin, completeAuthRedirect } from './auth';
-import { PuntsList } from './PuntsList';
 
 type Access = 'loading' | 'signed-out' | 'checking' | 'allowed' | 'denied' | 'error';
 
@@ -159,7 +159,11 @@ export function App() {
         <>
           <p>Accés d’administrador confirmat.</p>
           {adminToken ? (
-            <PuntsList accessToken={adminToken} onAccessDenied={handleAdminAccessDenied} />
+            <AdminWorkspace
+              key={adminToken}
+              accessToken={adminToken}
+              onAccessDenied={handleAdminAccessDenied}
+            />
           ) : null}
           <button onClick={() => void signOut()}>Tanca la sessió</button>
         </>

@@ -6,6 +6,8 @@ import { getAdminPunts, PuntsApiError } from './puntsApi';
 type Props = {
   accessToken: string;
   onAccessDenied: () => void;
+  onCreate: () => void;
+  onEdit: (puntId: string) => void;
 };
 
 type StatusFilter = 'TOTS' | EstatPunt;
@@ -22,7 +24,7 @@ const originLabels: Record<OrigenPunt, string> = {
   COMUNITAT: 'Comunitari',
 };
 
-export function PuntsList({ accessToken, onAccessDenied }: Props) {
+export function PuntsList({ accessToken, onAccessDenied, onCreate, onEdit }: Props) {
   const [points, setPoints] = useState<PuntAdmin[] | null>(null);
   const [error, setError] = useState('');
   const [attempt, setAttempt] = useState(0);
@@ -64,7 +66,12 @@ export function PuntsList({ accessToken, onAccessDenied }: Props) {
 
   return (
     <section aria-labelledby="punts-heading">
-      <h2 id="punts-heading">Punts d’observació</h2>
+      <div className="punts-heading-row">
+        <h2 id="punts-heading">Punts d’observació</h2>
+        <button type="button" onClick={onCreate}>
+          Nou punt
+        </button>
+      </div>
 
       {points === null && !error ? <p role="status">Carregant punts…</p> : null}
       {error ? (
@@ -117,6 +124,7 @@ export function PuntsList({ accessToken, onAccessDenied }: Props) {
                     <th scope="col">Municipi</th>
                     <th scope="col">Estat</th>
                     <th scope="col">Origen</th>
+                    <th scope="col">Accions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -126,6 +134,15 @@ export function PuntsList({ accessToken, onAccessDenied }: Props) {
                       <td>{point.municipi}</td>
                       <td>{statusLabels[point.estat]}</td>
                       <td>{originLabels[point.origen]}</td>
+                      <td>
+                        <button
+                          type="button"
+                          aria-label={`Edita ${point.nom}`}
+                          onClick={() => onEdit(point.id)}
+                        >
+                          Edita
+                        </button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>

@@ -26,6 +26,29 @@ select {
   margin: 1.5rem 0;
 }
 
+.punts-heading-row,
+.punt-form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.admin-sections {
+  margin: 1.5rem 0;
+  border-bottom: 1px solid #d5d9d6;
+}
+
+.admin-sections a {
+  display: inline-block;
+  padding: 0.75rem 1rem;
+  border-bottom: 3px solid #426c61;
+  color: inherit;
+  font-weight: 600;
+  text-decoration: none;
+}
+
 .punts-controls label {
   display: grid;
   flex: 1 1 16rem;
@@ -33,11 +56,73 @@ select {
 }
 
 .punts-controls input,
-.punts-controls select {
+.punts-controls select,
+.punt-form input,
+.punt-form select,
+.punt-form textarea {
   box-sizing: border-box;
   min-height: 2.75rem;
   max-width: 100%;
   padding: 0.5rem 0.65rem;
+}
+
+.punt-form {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.punt-form fieldset {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+  padding: 1rem;
+  border: 1px solid #d5d9d6;
+}
+
+.punt-form legend {
+  padding: 0 0.35rem;
+  font-weight: 600;
+}
+
+.punt-form label {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.punt-form-coordinates {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+  gap: 1rem;
+}
+
+.punt-form .horizon-options {
+  gap: 0.75rem;
+  border-style: dashed;
+}
+
+.direction-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(4rem, 1fr));
+  gap: 0.5rem;
+}
+
+.direction-options label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.direction-options input {
+  min-height: auto;
+}
+
+.field-hint {
+  margin: -0.5rem 0 0;
+  font-size: 0.9em;
+}
+
+.punt-form-actions {
+  justify-content: flex-start;
 }
 
 .punts-table-scroll {
