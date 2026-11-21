@@ -32,6 +32,37 @@ function response(body: unknown, status = 200) {
 }
 
 describe('Espai d’administració de punts', () => {
+  it('conserva el filtre i el formulari de punts en canviar de secció', async () => {
+    const user = userEvent.setup();
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => response([PUNT])),
+    );
+    const { rerender } = render(
+      <AdminWorkspace accessToken={TOKEN} currentUserId="admin-auth-id" onAccessDenied={vi.fn()} />,
+    );
+
+    await user.type(await screen.findByLabelText('Cerca per nom o municipi'), 'Àger');
+    await user.click(screen.getByRole('button', { name: 'Usuaris' }));
+    expect(screen.getByRole('heading', { name: 'Usuaris' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Usuaris' })).toHaveAttribute('aria-current', 'page');
+    await user.click(screen.getByRole('button', { name: 'Punts' }));
+    expect(screen.getByLabelText('Cerca per nom o municipi')).toHaveValue('Àger');
+
+    await user.click(screen.getByRole('button', { name: 'Nou punt' }));
+    await user.type(screen.getByLabelText('Nom'), 'Punt sense desar');
+    await user.click(screen.getByRole('button', { name: 'Usuaris' }));
+    rerender(
+      <AdminWorkspace
+        accessToken="token-renovat"
+        currentUserId="admin-auth-id"
+        onAccessDenied={vi.fn()}
+      />,
+    );
+    await user.click(screen.getByRole('button', { name: 'Punts' }));
+    expect(screen.getByLabelText('Nom')).toHaveValue('Punt sense desar');
+  });
+
   it('crea i edita un punt tornant a la llista després de cada acció', async () => {
     const user = userEvent.setup();
     let points: PuntAdmin[] = [];
@@ -54,7 +85,9 @@ describe('Espai d’administració de punts', () => {
     });
     vi.stubGlobal('fetch', fetchMock);
 
-    render(<AdminWorkspace accessToken={TOKEN} onAccessDenied={vi.fn()} />);
+    render(
+      <AdminWorkspace accessToken={TOKEN} currentUserId="admin-auth-id" onAccessDenied={vi.fn()} />,
+    );
 
     expect(await screen.findByText('Encara no hi ha punts al catàleg.')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Nou punt' }));
@@ -89,7 +122,9 @@ describe('Espai d’administració de punts', () => {
     });
     vi.stubGlobal('fetch', fetchMock);
 
-    render(<AdminWorkspace accessToken={TOKEN} onAccessDenied={vi.fn()} />);
+    render(
+      <AdminWorkspace accessToken={TOKEN} currentUserId="admin-auth-id" onAccessDenied={vi.fn()} />,
+    );
 
     await user.click(await screen.findByRole('button', { name: 'Edita Mirador del Montsec' }));
     expect(await screen.findByRole('heading', { name: 'Edita el punt' })).toBeInTheDocument();
