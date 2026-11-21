@@ -9,6 +9,9 @@ import { createEsdevenimentsService } from './esdeveniments/esdevenimentsService
 import { createFavoritsRepository } from './favorits/favoritsRepository';
 import { createFavoritsService } from './favorits/favoritsService';
 import { createBreakdownService } from './index/breakdownService';
+import { createMobilicatRoutesClient, MOBILICAT_ROUTES_TIMEOUT_MS } from './mobilicat/routesClient';
+import { createRutesService } from './mobilicat/rutesService';
+import type { RutesService } from './mobilicat/rutesService';
 import { createPuntsAdminRepository } from './punts/puntsAdminRepository';
 import { createPuntsAdminService } from './punts/puntsAdminService';
 import { createPlansRepository } from './plans/plansRepository';
@@ -33,6 +36,7 @@ let alertes;
 let dispositius;
 let esdeveniments;
 let favorits;
+let rutes: RutesService | undefined;
 let plans;
 let sqm;
 if (env.DATABASE_URL) {
@@ -48,6 +52,13 @@ if (env.DATABASE_URL) {
   // Cada canvi de l'administració descarta el document del mapa (TG-174).
   puntsAdmin = createPuntsAdminService(createPuntsAdminRepository(db), { mapa: punts });
   breakdown = createBreakdownService(puntsRepository);
+  rutes = createRutesService(
+    puntsRepository,
+    createMobilicatRoutesClient({
+      baseUrl: env.MOBILICAT_ROUTES_BASE_URL,
+      timeoutMs: MOBILICAT_ROUTES_TIMEOUT_MS,
+    }),
+  );
   const esdevenimentsRepository = createEsdevenimentsRepository(db);
   recomanacions = createRecomanacionsService(
     createRecomanacionsRepository(db),
@@ -63,7 +74,7 @@ if (env.DATABASE_URL) {
   sqm = createSqmRepository(db);
 } else {
   console.warn(
-    'Avís: sense DATABASE_URL. /api/v1/health funciona, però /api/v1/punts, /api/v1/punts/{id}/index, /api/v1/recomanacions, /api/v1/perfil (i /perfil/dispositius), /api/v1/admin, /api/v1/alertes, /api/v1/favorits, /api/v1/plans i /api/v1/esdeveniments responen 503. /api/v1/visibilitat funciona amb la foscor estimada.',
+    'Avís: sense DATABASE_URL. /api/v1/health funciona, però /api/v1/punts, /api/v1/punts/{id}, /api/v1/punts/{id}/index, /api/v1/punts/{id}/rutes, /api/v1/recomanacions, /api/v1/perfil (i /perfil/dispositius), /api/v1/admin, /api/v1/alertes, /api/v1/favorits, /api/v1/plans i /api/v1/esdeveniments responen 503. /api/v1/visibilitat funciona amb la foscor estimada.',
   );
 }
 
@@ -86,6 +97,7 @@ createApp({
   dispositius,
   esdeveniments,
   favorits,
+  rutes,
   plans,
 }).listen(env.API_PORT, (error) => {
   if (error) throw error;

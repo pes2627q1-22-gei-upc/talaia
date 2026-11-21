@@ -23,7 +23,7 @@ Cada `Feature` és un `Point` amb aquestes propietats:
 
 | Propietat | Tipus | Notes |
 |---|---|---|
-| `slug` | text | Únic i estable (`kebab-case`). El seed fa *upsert* per `slug`. |
+| `slug` | text | Únic i estable (`kebab-case`). El seed insereix per `slug` només si encara no existeix. |
 | `nom`, `municipi`, `descripcio` | text | En català. |
 | `altitud` | enter o `null` | Metres. S'omple amb `fill-altitudes.ts`. |
 | `sqm` | nombre (2 decimals) o `null` | Brillantor del cel al zenit en mag/arcsec² segons el mapa de la Generalitat; com més alt, més fosc. `null` = fora del mapa. S'omple amb `fill-sqm.ts`. |
@@ -34,7 +34,9 @@ Cada `Feature` és un `Point` amb aquestes propietats:
 
 Les coordenades venen del [geocodificador de l'ICGC](https://eines.icgc.cat/geocodificador) (consulta del 12/10/2026). Tots els punts són `origen = 'OFICIAL'` (sense creador) i `estat = 'PUBLICAT'`. L'índex **no** és aquí: el calcula el worker.
 
-Des de la web d'administració (TG-174) es poden crear, editar i retirar punts directament a la base de dades, sense passar per aquest fitxer. El seed no toca mai l'`estat`: un punt retirat continua retirat si es torna a aplicar. En canvi, sí que restaura les metadades i la ubicació dels punts que són aquí: un canvi fet des de l'administració a un d'aquests punts també s'ha de fer al GeoJSON perquè no es perdi en el pròxim `db reset` o `db push --include-seed`.
+Des de la web d'administració (TG-174) es poden crear, editar i retirar punts directament a la base de dades, sense passar per aquest fitxer. El seed fa `on conflict (slug) do nothing`: només insereix slugs que encara no existeixen i deixa intactes tots els camps d'una fila existent, inclosos l'estat, les metadades i la ubicació. Per tant, tornar a executar `db push --include-seed` no sobreescriu canvis fets des de l'administració. Corregir el GeoJSON tampoc actualitza les files d'una base que ja existeix; aquesta correcció s'ha d'aplicar explícitament des de la web o amb una migració.
+
+`db reset` esborra la base de dades i la torna a crear a partir de migracions i seeds. Abans d'un reset que hagi de conservar canvis fets des de l'administració, fes-ne una còpia. Per incloure punts oficials nous o metadades editades al nou catàleg inicial, incorpora'ls al GeoJSON i regenera el seed abans del reset; preserva i restaura també les dades relacionades que no són al catàleg. No facis servir `db reset` com a actualització ordinària.
 
 ### Flux
 
@@ -63,7 +65,7 @@ La font és el **Mapa de brillantor del cel nocturn de Catalunya 2024** (General
 | `scripts/fill-sqm.ts` | Omple l'`sqm` de tots els punts del GeoJSON a partir del GeoTIFF (2 decimals; cel·la més propera fins a 2 km si cal, i ho diu) |
 | `scripts/mapa-foscor.test.ts` | Tests amb cel·les reals de la font: `npm test -w data` |
 
-El GeoTIFF es pot comprovar amb GDAL si es té instal·lat (`gdalinfo -stats data/raw/mapa-sqm-2024.tif`; `gdallocationinfo -wgs84 … 0.7112 42.0294` dona el mateix que `sqmA`). Quan la Generalitat actualitzi el mapa: `build-mapa-foscor.ts` → `fill-sqm.ts` → `build-seed-punts.ts`, i els canvis d'`sqm` queden al diff del GeoJSON.
+El GeoTIFF es pot comprovar amb GDAL si es té instal·lat (`gdalinfo -stats data/raw/mapa-sqm-2024.tif`; `gdallocationinfo -wgs84 … 0.7112 42.0294` dona el mateix que `sqmA`). Quan la Generalitat actualitzi el mapa: `build-mapa-foscor.ts` → `fill-sqm.ts` → `build-seed-punts.ts`, i els canvis d'`sqm` queden al diff del GeoJSON. Com que el seed només insereix els slugs que encara no existeixen, generar dades noves no actualitza els punts d'una base existent. Per propagar-hi canvis calculats (`sqm`, `horitzo` o `horitzo_obert`), cal afegir i revisar una migració amb un `UPDATE` explícit per als slugs i camps afectats.
 
 ## Perfil d'horitzó (TG-116)
 
