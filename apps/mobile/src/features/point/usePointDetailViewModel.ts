@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { Alert, Linking } from 'react-native';
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { DireccioHoritzo, IndexHora } from '@talaia/shared';
 
@@ -27,6 +27,7 @@ const FACTORS = [
 export function usePointDetailViewModel(pointId: string) {
   const { t, i18n } = useTranslation();
   const router = useRouter();
+  const currentHour = useCurrentHour();
   const query = usePointDetailQuery(pointId);
   const breakdown = usePointBreakdownQuery(pointId);
   const point = query.data;
@@ -199,12 +200,11 @@ export function usePointDetailViewModel(pointId: string) {
     : undefined;
   const indexTime = point?.indexActual?.hora;
   const indexTimestamp = indexTime ? Date.parse(indexTime) : Number.NaN;
-  // «d'ara» només si l'índex és de l'hora de l'últim intent de refresc (l'API només dona l'índex de
-  // l'hora en curs). Si un refresc falla, la fitxa conserva l'índex antic i en diu el dia i l'hora.
-  const lastAttempt = Math.max(query.dataUpdatedAt, query.errorUpdatedAt);
+  // «d'ara» només si l'índex és de l'hora en curs. Si un refresc falla, o encara no ha arribat el de
+  // l'hora nova (al minut 5), la fitxa conserva l'índex antic i en diu el dia i l'hora.
   const currentLabel = !Number.isFinite(indexTimestamp)
     ? t('point.currentIndex')
-    : Math.floor(indexTimestamp / HOUR_MS) === Math.floor(lastAttempt / HOUR_MS)
+    : Math.floor(indexTimestamp / HOUR_MS) === currentHour
       ? t('point.indexNow', { time: twoDigitHours(clockFormatter.format(indexTimestamp)) })
       : t('point.indexAt', { time: twoDigitHours(dateTimeFormatter.format(indexTimestamp)) });
   // De dia, el Sol anul·la l'índex (ADR-0018): no és que estigui tapat, és que no és de nit.
@@ -289,4 +289,17 @@ export function usePointDetailViewModel(pointId: string) {
       void breakdown.refetch();
     },
   };
+}
+
+/** L'hora en curs (hores des de 1970), que canvia sola en començar cada hora. */
+function useCurrentHour() {
+  const [hour, setHour] = useState(() => Math.floor(Date.now() / HOUR_MS));
+  useEffect(() => {
+    const timer = setTimeout(
+      () => setHour(Math.floor(Date.now() / HOUR_MS)),
+      (hour + 1) * HOUR_MS - Date.now(),
+    );
+    return () => clearTimeout(timer);
+  }, [hour]);
+  return hour;
 }

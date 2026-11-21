@@ -340,6 +340,30 @@ it('refresca l’índex quan la fitxa queda oberta i diu «d’ara» només si �
   }
 });
 
+it('en canviar d’hora, l’índex de l’hora anterior deixa de ser «d’ara» abans del refresc', async () => {
+  jest.useFakeTimers();
+  try {
+    // 23:58 a Catalunya, amb l'índex de les 23:00.
+    jest.setSystemTime(new Date('2026-10-18T21:58:00Z'));
+    get.mockResolvedValue(
+      asPointResponse({ ...point, indexActual: { ...hour, hora: '2026-10-18T21:00:00Z' } }),
+    );
+    const { result, unmount } = await renderVm();
+    await waitFor(() => expect(result.current.status).toBe('ok'));
+    expect(result.current.currentLabel).toBe("Índex d'ara · 23:00");
+    const calls = get.mock.calls.length;
+    // 00:01: el refresc no toca fins a les 00:05:30.
+    await act(async () => {
+      await jest.advanceTimersByTimeAsync(3 * 60_000);
+    });
+    expect(get).toHaveBeenCalledTimes(calls);
+    expect(result.current.currentLabel).toMatch(/^Índex del 18 .*23:00$/);
+    await unmount();
+  } finally {
+    jest.useRealTimers();
+  }
+});
+
 it('sense hora a l’índex, en diu només que és l’actual', async () => {
   get.mockImplementation(respond({ ...point, indexActual: { ...hour, hora: 'no és una hora' } }));
   const { result } = await renderVm();
