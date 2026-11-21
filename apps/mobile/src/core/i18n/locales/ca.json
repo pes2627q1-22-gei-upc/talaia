@@ -151,15 +151,35 @@
     "whereToWatch": "On veure-ho"
   },
   "profile": {
+    "unsavedTitle": "Tens canvis sense desar",
+    "unsavedMessage": "Segur que vols marxar?",
+    "keepEditing": "Continua editant",
+    "discardChanges": "Descarta els canvis",
+    "logoutConfirmationTitle": "Vols tancar la sessió?",
+    "logoutConfirmationMessage": "Hauràs de tornar a entrar per accedir al teu compte.",
     "title": "Perfil",
+    "myProfile": "El meu perfil",
+    "myProfileHint": "Consulta les dades del compte",
+    "name": "Nom",
+    "addName": "Afegeix el teu nom",
+    "editName": "Edita el nom",
+    "save": "Desa",
+    "cancel": "Cancel·la",
+    "nameInvalid": "Escriu un nom d'entre 1 i 100 caràcters.",
+    "nameSaveError": "No s'ha pogut desar el nom. Torna-ho a provar.",
+    "loadError": "No s'ha pogut carregar el perfil.",
     "language": "Idioma",
+    "closeLanguage": "Tanca la tria d'idioma",
     "languages": {
       "ca": "Català",
       "es": "Castellà",
       "en": "Anglès"
     },
     "account": "Compte",
-    "plans": "Els meus plans"
+    "plans": "Els meus plans",
+    "plansHint": "Consulta els plans d'observació",
+    "savedPoints": "Punts favorits",
+    "comingSoon": "Properament"
   },
   "apiStatus": {
     "title": "Estat del servidor",

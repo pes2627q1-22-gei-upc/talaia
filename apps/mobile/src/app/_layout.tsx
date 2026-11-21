@@ -70,6 +70,18 @@ function RootStack() {
         }}
       />
       <Stack.Screen
+        name="el-meu-perfil"
+        options={{
+          headerShown: true,
+          title: '',
+          headerBackTitle: t('tabs.profile'),
+          headerStyle: { backgroundColor: colors.nit },
+          headerShadowVisible: false,
+          headerTintColor: colors.lluna,
+          headerBackButtonDisplayMode: 'minimal',
+        }}
+      />
+      <Stack.Screen
         name="benvinguda"
         options={{ presentation: 'fullScreenModal', animation: 'fade' }}
       />

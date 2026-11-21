@@ -1,0 +1,203 @@
+import { Image } from 'expo-image';
+import { usePreventRemove } from 'expo-router';
+import { Alert, KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
+
+import { makeStyles, useNightTint } from '@/core/theme/theme';
+import { radii, sizes, spacing } from '@/core/theme/tokens';
+import { AppText } from '@/shared/ui/AppText';
+import { PressableScale } from '@/shared/ui/PressableScale';
+import { Screen } from '@/shared/ui/Screen';
+import { Skeleton } from '@/shared/ui/Skeleton';
+import { StateMessage } from '@/shared/ui/StateMessage';
+import { TextField } from '@/shared/ui/TextField';
+
+import { useProfileViewModel } from './useProfileViewModel';
+
+const editIcon = require('@/assets/images/profile/edit.svg');
+const closeIcon = require('@/assets/images/profile/close.svg');
+const checkIcon = require('@/assets/images/profile/check.svg');
+
+/** Dades del compte amb edició del nom a la mateixa fila. */
+export function MyProfileScreen() {
+  const vm = useProfileViewModel();
+  const styles = useStyles();
+  const tint = useNightTint();
+  const checkTint = useNightTint('nit');
+  usePreventRemove(vm.nameEditOpen && (vm.nameChanged || vm.savingName), ({ repeat }) => {
+    if (vm.savingName) return;
+    const discard = () => {
+      vm.cancelNameEdit();
+      repeat();
+    };
+    if (Platform.OS === 'web') {
+      if (window.confirm(`${vm.unsavedTitle}\n${vm.unsavedMessage}`)) discard();
+      return;
+    }
+    Alert.alert(vm.unsavedTitle, vm.unsavedMessage, [
+      { text: vm.keepEditingLabel, style: 'cancel' },
+      { text: vm.discardChangesLabel, style: 'destructive', onPress: discard },
+    ]);
+  });
+  return (
+    <KeyboardAvoidingView
+      style={styles.root}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
+      <Screen title={vm.myProfileLabel} edges={['left', 'right', 'bottom']}>
+        <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.content}>
+          {vm.profileError ? (
+            <StateMessage
+              title={vm.profileError}
+              action={{ label: vm.auth.retryLabel, onPress: vm.retryProfile }}
+            />
+          ) : (
+            <>
+              <View style={styles.identity}>
+                <View style={styles.avatar}>
+                  {vm.avatarUrl ? (
+                    <Image
+                      source={{ uri: vm.avatarUrl }}
+                      style={styles.avatarImage}
+                      accessible={false}
+                    />
+                  ) : (
+                    <AppText variant="title" color="nit">
+                      {vm.initials}
+                    </AppText>
+                  )}
+                </View>
+                {vm.email ? (
+                  <AppText variant="body" color="boira">
+                    {vm.email}
+                  </AppText>
+                ) : null}
+              </View>
+              {vm.profileLoading ? (
+                <Skeleton height={sizes.button} />
+              ) : vm.nameEditOpen ? (
+                <View style={styles.editRow}>
+                  <View style={styles.editField}>
+                    <TextField
+                      label={vm.nameLabel}
+                      value={vm.draftName}
+                      onChangeText={vm.setDraftName}
+                      maxLength={100}
+                      autoCapitalize="words"
+                      autoCorrect={false}
+                      returnKeyType="done"
+                      onSubmitEditing={vm.saveName}
+                      error={vm.nameError}
+                      autoFocus
+                    />
+                  </View>
+                  <PressableScale
+                    accessibilityLabel={vm.saveLabel}
+                    accessibilityState={{ disabled: !vm.nameChanged || vm.savingName }}
+                    disabled={!vm.nameChanged || vm.savingName}
+                    onPress={vm.saveName}
+                    style={[
+                      styles.saveButton,
+                      (!vm.nameChanged || vm.savingName) && styles.disabled,
+                    ]}
+                  >
+                    <Image
+                      source={checkIcon}
+                      tintColor={checkTint}
+                      style={styles.editIcon}
+                      accessible={false}
+                    />
+                  </PressableScale>
+                  <PressableScale
+                    accessibilityLabel={vm.cancelLabel}
+                    accessibilityState={{ disabled: vm.savingName }}
+                    disabled={vm.savingName}
+                    onPress={vm.cancelNameEdit}
+                    style={[styles.cancelButton, vm.savingName && styles.disabled]}
+                  >
+                    <Image
+                      source={closeIcon}
+                      tintColor={tint}
+                      style={styles.editIcon}
+                      accessible={false}
+                    />
+                  </PressableScale>
+                </View>
+              ) : (
+                <PressableScale
+                  accessibilityLabel={vm.editNameLabel}
+                  onPress={vm.openNameEdit}
+                  style={styles.nameRow}
+                >
+                  <View style={styles.nameCopy}>
+                    <AppText variant="caption" color="boira">
+                      {vm.nameLabel}
+                    </AppText>
+                    <AppText variant="body">{vm.name}</AppText>
+                  </View>
+                  <Image
+                    source={editIcon}
+                    tintColor={tint}
+                    style={styles.editIcon}
+                    accessible={false}
+                  />
+                </PressableScale>
+              )}
+            </>
+          )}
+        </ScrollView>
+      </Screen>
+    </KeyboardAvoidingView>
+  );
+}
+
+const useStyles = makeStyles(({ colors }) => ({
+  root: { flex: 1 },
+  content: { gap: spacing.lg, paddingBottom: spacing.xl },
+  identity: { alignItems: 'center', gap: spacing.sm, paddingVertical: spacing.md },
+  avatar: {
+    width: sizes.button + spacing.lg,
+    height: sizes.button + spacing.lg,
+    borderRadius: radii.pill,
+    backgroundColor: colors.pedra,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  avatarImage: { width: sizes.button + spacing.lg, height: sizes.button + spacing.lg },
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    minHeight: sizes.button + spacing.md,
+    paddingVertical: spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.linia,
+  },
+  nameCopy: { flex: 1, gap: spacing.xs },
+  editIcon: { width: sizes.icon, height: sizes.icon },
+  editRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: spacing.xs,
+    paddingVertical: spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.linia,
+  },
+  editField: { flex: 1, minWidth: 0 },
+  saveButton: {
+    minWidth: sizes.touch,
+    minHeight: sizes.touch,
+    marginBottom: spacing.xs,
+    borderRadius: radii.sm,
+    backgroundColor: colors.far,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cancelButton: {
+    minWidth: sizes.touch,
+    minHeight: sizes.touch,
+    marginBottom: spacing.xs,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  disabled: { opacity: 0.4 },
+}));

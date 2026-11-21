@@ -151,15 +151,35 @@
     "whereToWatch": "Dónde verlo"
   },
   "profile": {
+    "unsavedTitle": "Tienes cambios sin guardar",
+    "unsavedMessage": "¿Seguro que quieres salir?",
+    "keepEditing": "Seguir editando",
+    "discardChanges": "Descartar los cambios",
+    "logoutConfirmationTitle": "¿Quieres cerrar sesión?",
+    "logoutConfirmationMessage": "Tendrás que volver a iniciar sesión para acceder a tu cuenta.",
     "title": "Perfil",
+    "myProfile": "Mi perfil",
+    "myProfileHint": "Consulta los datos de la cuenta",
+    "name": "Nombre",
+    "addName": "Añade tu nombre",
+    "editName": "Editar el nombre",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "nameInvalid": "Escribe un nombre de entre 1 y 100 caracteres.",
+    "nameSaveError": "No se ha podido guardar el nombre. Vuelve a intentarlo.",
+    "loadError": "No se ha podido cargar el perfil.",
     "language": "Idioma",
+    "closeLanguage": "Cerrar la selección de idioma",
     "languages": {
       "ca": "Catalán",
       "es": "Castellano",
       "en": "Inglés"
     },
     "account": "Cuenta",
-    "plans": "Mis planes"
+    "plans": "Mis planes",
+    "plansHint": "Consulta tus planes de observación",
+    "savedPoints": "Puntos favoritos",
+    "comingSoon": "Próximamente"
   },
   "apiStatus": {
     "title": "Estado del servidor",

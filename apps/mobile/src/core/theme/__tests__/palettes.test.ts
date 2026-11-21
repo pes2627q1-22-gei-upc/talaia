@@ -13,6 +13,7 @@ const accents: ColorToken[] = [
   'ras',
   'jus',
   'tap',
+  'perill',
   'pedra',
   'fenomenEstels',
   'fenomenLluna',
