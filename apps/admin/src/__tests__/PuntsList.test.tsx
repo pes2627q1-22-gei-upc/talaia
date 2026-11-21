@@ -42,6 +42,13 @@ const PUNTS: PuntAdmin[] = [
   },
 ];
 
+function response(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { 'Content-Type': 'application/json' },
+  });
+}
+
 describe('Llista de punts', () => {
   it('mostra les dades, el filtre, la cerca i les accions de crear i editar', async () => {
     const user = userEvent.setup();
@@ -111,5 +118,234 @@ describe('Llista de punts', () => {
 
     await user.type(screen.getByLabelText('Cerca per nom o municipi'), 'Àger');
     expect(screen.getByRole('status')).toHaveTextContent('No s’han trobat punts');
+  });
+
+  it('demana confirmació en retirar i actualitza l’estat quan respon l’API', async () => {
+    const user = userEvent.setup();
+    const updatedPoint = { ...PUNTS[0]!, estat: 'DESACTIVAT' as const };
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(response(PUNTS))
+      .mockResolvedValueOnce(response(updatedPoint));
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(
+      <PuntsList
+        accessToken="token-admin"
+        onAccessDenied={vi.fn()}
+        onCreate={vi.fn()}
+        onEdit={vi.fn()}
+      />,
+    );
+
+    await user.click(await screen.findByRole('button', { name: 'Retira Mirador del Montsec' }));
+    expect(screen.getByRole('alertdialog')).toHaveTextContent('Mirador del Montsec');
+    expect(screen.getByRole('alertdialog')).toHaveTextContent('Deixarà d’aparèixer a l’aplicació');
+
+    await user.click(screen.getByRole('button', { name: 'Confirma la retirada' }));
+
+    expect(
+      await screen.findByText('Mirador del Montsec s’ha retirat i ja no apareix a l’aplicació.'),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('row', { name: /Mirador del Montsec/ })).toHaveTextContent(
+      'Desactivat',
+    );
+    expect(
+      screen.getByRole('button', { name: 'Torna a publicar Mirador del Montsec' }),
+    ).toBeInTheDocument();
+    expect(fetchMock).toHaveBeenLastCalledWith(
+      `/api/v1/admin/punts/${PUNTS[0]!.id}`,
+      expect.objectContaining({ method: 'PATCH', body: '{"estat":"DESACTIVAT"}' }),
+    );
+  });
+
+  it('permet cancel·lar la retirada sense enviar una petició de canvi', async () => {
+    const user = userEvent.setup();
+    const fetchMock = vi.fn(async () => response(PUNTS));
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(
+      <PuntsList
+        accessToken="token-admin"
+        onAccessDenied={vi.fn()}
+        onCreate={vi.fn()}
+        onEdit={vi.fn()}
+      />,
+    );
+
+    await user.click(await screen.findByRole('button', { name: 'Retira Mirador del Montsec' }));
+    await user.click(screen.getByRole('button', { name: 'Cancel·la' }));
+
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+    expect(fetchMock).toHaveBeenCalledOnce();
+  });
+
+  it('desactiva les accions mentre espera la resposta de l’API', async () => {
+    const user = userEvent.setup();
+    const updatedPoint = { ...PUNTS[0]!, estat: 'DESACTIVAT' as const };
+    let resolvePatch: (value: Response) => void = () => undefined;
+    const pendingResponse = new Promise<Response>((resolve) => {
+      resolvePatch = resolve;
+    });
+    const fetchMock = vi.fn((_input: RequestInfo | URL, init?: RequestInit) =>
+      init?.method === 'PATCH' ? pendingResponse : Promise.resolve(response(PUNTS)),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(
+      <PuntsList
+        accessToken="token-admin"
+        onAccessDenied={vi.fn()}
+        onCreate={vi.fn()}
+        onEdit={vi.fn()}
+      />,
+    );
+
+    await user.click(await screen.findByRole('button', { name: 'Retira Mirador del Montsec' }));
+    await user.click(screen.getByRole('button', { name: 'Confirma la retirada' }));
+
+    expect(screen.getByRole('button', { name: 'Retirant…' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Cancel·la' })).toBeDisabled();
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+
+    resolvePatch(response(updatedPoint));
+    expect(
+      await screen.findByText('Mirador del Montsec s’ha retirat i ja no apareix a l’aplicació.'),
+    ).toBeInTheDocument();
+  });
+
+  it('torna a publicar directament, sense obrir un diàleg de confirmació', async () => {
+    const user = userEvent.setup();
+    const updatedPoint = { ...PUNTS[1]!, estat: 'PUBLICAT' as const };
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(response(PUNTS))
+      .mockResolvedValueOnce(response(updatedPoint));
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(
+      <PuntsList
+        accessToken="token-admin"
+        onAccessDenied={vi.fn()}
+        onCreate={vi.fn()}
+        onEdit={vi.fn()}
+      />,
+    );
+
+    await user.click(
+      await screen.findByRole('button', { name: 'Torna a publicar Parc de Collserola' }),
+    );
+
+    expect(
+      await screen.findByText('Parc de Collserola s’ha tornat a publicar.'),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+    expect(screen.getByRole('row', { name: /Parc de Collserola/ })).toHaveTextContent('Publicat');
+    expect(fetchMock).toHaveBeenLastCalledWith(
+      `/api/v1/admin/punts/${PUNTS[1]!.id}`,
+      expect.objectContaining({ method: 'PATCH', body: '{"estat":"PUBLICAT"}' }),
+    );
+  });
+
+  it('no ofereix retirar el punt de referència d’Aprop', async () => {
+    const referencePoint = {
+      ...PUNTS[0]!,
+      id: '5f4e3d2c-1b0a-4987-9c6d-5e4f3a2b1c0d',
+      slug: 'centre-observacio-univers',
+      nom: 'Centre d’Observació de l’Univers',
+    };
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => response([referencePoint])),
+    );
+
+    render(
+      <PuntsList
+        accessToken="token-admin"
+        onAccessDenied={vi.fn()}
+        onCreate={vi.fn()}
+        onEdit={vi.fn()}
+      />,
+    );
+
+    expect(
+      await screen.findByRole('row', { name: /Centre d’Observació de l’Univers/ }),
+    ).toHaveTextContent('Publicat');
+    expect(
+      screen.queryByRole('button', { name: 'Retira Centre d’Observació de l’Univers' }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("conserva l'estat si l’API rebutja la retirada i n’explica el motiu", async () => {
+    const user = userEvent.setup();
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(response(PUNTS))
+      .mockResolvedValueOnce(
+        response(
+          {
+            error: {
+              code: 'reference_point_required',
+              message: 'Aquest punt no es pot retirar',
+            },
+          },
+          409,
+        ),
+      );
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(
+      <PuntsList
+        accessToken="token-admin"
+        onAccessDenied={vi.fn()}
+        onCreate={vi.fn()}
+        onEdit={vi.fn()}
+      />,
+    );
+
+    await user.click(await screen.findByRole('button', { name: 'Retira Mirador del Montsec' }));
+    await user.click(screen.getByRole('button', { name: 'Confirma la retirada' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Aquest és el punt de referència del calendari d’Aprop i no es pot retirar.',
+    );
+    expect(screen.getByRole('row', { name: /Mirador del Montsec/ })).toHaveTextContent('Publicat');
+    expect(screen.getByRole('alertdialog')).toBeInTheDocument();
+  });
+
+  it('explica que els punts pendents o rebutjats només es canvien des de moderació', async () => {
+    const user = userEvent.setup();
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(response(PUNTS))
+      .mockResolvedValueOnce(
+        response(
+          {
+            error: {
+              code: 'moderation_required',
+              message: 'Cal fer servir la moderació',
+            },
+          },
+          409,
+        ),
+      );
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(
+      <PuntsList
+        accessToken="token-admin"
+        onAccessDenied={vi.fn()}
+        onCreate={vi.fn()}
+        onEdit={vi.fn()}
+      />,
+    );
+
+    await user.click(await screen.findByRole('button', { name: 'Retira Mirador del Montsec' }));
+    await user.click(screen.getByRole('button', { name: 'Confirma la retirada' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Aquest punt és pendent o rebutjat; el seu estat només es pot canviar des de moderació.',
+    );
+    expect(screen.getByRole('row', { name: /Mirador del Montsec/ })).toHaveTextContent('Publicat');
   });
 });

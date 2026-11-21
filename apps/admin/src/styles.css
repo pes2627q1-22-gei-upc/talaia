@@ -143,6 +143,36 @@ select {
   vertical-align: top;
 }
 
+.punt-row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.punts-dialog-backdrop {
+  position: fixed;
+  z-index: 10;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgb(20 32 29 / 55%);
+  inset: 0;
+}
+
+.punts-confirm-dialog {
+  box-sizing: border-box;
+  width: min(100%, 32rem);
+  padding: 1.5rem;
+  border: 1px solid #d5d9d6;
+  border-radius: 0.5rem;
+  background: white;
+  box-shadow: 0 1rem 3rem rgb(20 32 29 / 20%);
+}
+
+.punts-confirm-dialog h3 {
+  margin-top: 0;
+}
+
 .visually-hidden {
   position: absolute;
   width: 1px;
