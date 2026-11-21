@@ -145,6 +145,9 @@ describe('Llista d’usuaris', () => {
     expect(blocked).toHaveTextContent('Sense correu');
     expect(blocked).toHaveTextContent('Bloquejat');
     expect(within(blocked).getByText(/19.*nov.*2026/)).toBeInTheDocument();
+    const cells = within(blocked).getAllByRole('cell');
+    expect(cells[3]).toHaveTextContent(/19.*nov.*2026/);
+    expect(within(cells[4]!).getByRole('button', { name: /Desbloqueja/ })).toBeInTheDocument();
     expect(new Headers(fetchMock.mock.calls[0]?.[1]?.headers).get('Authorization')).toBe(
       'Bearer token',
     );

@@ -2,6 +2,7 @@ import type { UsuariAdmin } from '@talaia/shared';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { getAdminUsers, patchAdminUser, UsersApiError } from './usersApi';
+import { ScrollableTable } from './ScrollableTable';
 
 type Props = {
   accessToken: string;
@@ -210,7 +211,7 @@ export function UsersList({ accessToken, currentUserId, active, onAccessDenied }
             <p className="admin-state">No s’han trobat usuaris amb aquests criteris.</p>
           ) : null}
           {visibleUsers.length > 0 ? (
-            <div className="punts-table-scroll">
+            <ScrollableTable label="Llista d’usuaris">
               <table>
                 <caption className="visually-hidden">Llista d’usuaris</caption>
                 <thead>
@@ -240,6 +241,14 @@ export function UsersList({ accessToken, currentUserId, active, onAccessDenied }
                         </span>
                       </td>
                       <td>
+                        {user.dataBloqueig
+                          ? new Intl.DateTimeFormat('ca-ES', {
+                              dateStyle: 'medium',
+                              timeStyle: 'short',
+                            }).format(new Date(user.dataBloqueig))
+                          : '—'}
+                      </td>
+                      <td>
                         {user.authUserId === currentUserId ? (
                           <span>No pots bloquejar el teu compte</span>
                         ) : (
@@ -262,19 +271,11 @@ export function UsersList({ accessToken, currentUserId, active, onAccessDenied }
                           </button>
                         )}
                       </td>
-                      <td>
-                        {user.dataBloqueig
-                          ? new Intl.DateTimeFormat('ca-ES', {
-                              dateStyle: 'medium',
-                              timeStyle: 'short',
-                            }).format(new Date(user.dataBloqueig))
-                          : '—'}
-                      </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-            </div>
+            </ScrollableTable>
           ) : null}
         </>
       ) : null}
