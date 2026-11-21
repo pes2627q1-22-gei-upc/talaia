@@ -47,7 +47,9 @@ function googleButton() {
 }
 
 function lastAuthorization(fetch: ReturnType<typeof stubAdminApi>) {
-  const [url, init] = fetch.mock.lastCall!;
+  const [url, init] = [...fetch.mock.calls]
+    .reverse()
+    .find(([requestUrl]) => String(requestUrl) === '/api/v1/admin/me')!;
   return { url, authorization: new Headers(init?.headers).get('Authorization') };
 }
 
@@ -299,7 +301,7 @@ describe('Tancament i caducitat de la sessió', () => {
 
     await user.click(await screen.findByRole('button', { name: 'Tanca la sessió' }));
 
-    expect(await screen.findByRole('status')).toHaveTextContent('No s’ha pogut tancar la sessió.');
+    expect(await screen.findByText('No s’ha pogut tancar la sessió.')).toBeInTheDocument();
     expect(screen.getByText(CONFIRMED)).toBeInTheDocument();
   });
 

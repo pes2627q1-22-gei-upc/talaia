@@ -1,11 +1,13 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useState, type FormEvent } from 'react';
 
+import { AdminWorkspace } from './AdminWorkspace';
 import { authClient, checkAdmin, completeAuthRedirect } from './auth';
 
 type Access = 'loading' | 'signed-out' | 'checking' | 'allowed' | 'denied' | 'error';
 
 export function App() {
   const [access, setAccess] = useState<Access>('loading');
+  const [adminToken, setAdminToken] = useState<string | null>(null);
   const [email, setEmail] = useState('');
   const [code, setCode] = useState('');
   const [codeSent, setCodeSent] = useState(false);
@@ -24,6 +26,7 @@ export function App() {
       const id = ++checkId;
       if (!token) {
         if (active) {
+          setAdminToken(null);
           setEmail('');
           setCode('');
           setCodeSent(false);
@@ -32,12 +35,19 @@ export function App() {
         }
         return;
       }
+      setAdminToken(null);
       setAccess('checking');
       try {
         const result = await checkAdmin(token);
-        if (active && id === checkId) setAccess(result);
+        if (active && id === checkId) {
+          setAdminToken(result === 'allowed' ? token : null);
+          setAccess(result);
+        }
       } catch {
-        if (active && id === checkId) setAccess('error');
+        if (active && id === checkId) {
+          setAdminToken(null);
+          setAccess('error');
+        }
       }
     };
     const {
@@ -63,6 +73,11 @@ export function App() {
       active = false;
       subscription.unsubscribe();
     };
+  }, []);
+
+  const handleAdminAccessDenied = useCallback(() => {
+    setAdminToken(null);
+    setAccess('denied');
   }, []);
 
   async function signInGoogle() {
@@ -125,32 +140,54 @@ export function App() {
   }
 
   return (
-    <main>
-      <h1>Talaia · Administració</h1>
-      {access === 'loading' || access === 'checking' ? <p>Comprovant l’accés…</p> : null}
+    <main className="admin-app">
+      <header className="admin-page-header">
+        <h1>
+          Talaia <span>· Administració</span>
+        </h1>
+      </header>
+      {access === 'loading' || access === 'checking' ? (
+        <p className="admin-state">Comprovant l’accés…</p>
+      ) : null}
       {access === 'error' ? (
-        <p role="alert">
+        <p className="admin-message" role="alert">
           No s’ha pogut comprovar l’accés. Revisa la configuració o la connexió i torna a carregar
           la pàgina.
         </p>
       ) : null}
       {access === 'denied' ? (
-        <>
-          <p role="alert">Aquest compte no té accés a l’administració.</p>
-          <button onClick={() => void signOut()}>Tanca la sessió</button>
-        </>
+        <section className="admin-auth-panel" aria-label="Accés denegat">
+          <p className="admin-message" role="alert">
+            Aquest compte no té accés a l’administració.
+          </p>
+          <button className="button-secondary" onClick={() => void signOut()}>
+            Tanca la sessió
+          </button>
+        </section>
       ) : null}
       {access === 'allowed' ? (
         <>
-          <p>Accés d’administrador confirmat.</p>
-          <p>La gestió de punts s’afegirà en una tasca posterior.</p>
-          <button onClick={() => void signOut()}>Tanca la sessió</button>
+          <div className="admin-access-row">
+            <p className="admin-access-status">Accés d’administrador confirmat.</p>
+            <button className="button-secondary" onClick={() => void signOut()}>
+              Tanca la sessió
+            </button>
+          </div>
+          {adminToken ? (
+            <AdminWorkspace
+              key={adminToken}
+              accessToken={adminToken}
+              onAccessDenied={handleAdminAccessDenied}
+            />
+          ) : null}
         </>
       ) : null}
       {access === 'signed-out' ? (
-        <section aria-label="Inicia sessió">
+        <section className="admin-auth-panel" aria-label="Inicia sessió">
           <p>Inicia sessió amb el mateix compte de Talaia que té el rol d’administrador.</p>
-          <button onClick={() => void signInGoogle()}>Continua amb Google</button>
+          <button className="button-secondary" onClick={() => void signInGoogle()}>
+            Continua amb Google
+          </button>
           {!codeSent ? (
             <form onSubmit={(event) => void sendCode(event)}>
               <label>
@@ -185,7 +222,11 @@ export function App() {
           )}
         </section>
       ) : null}
-      {message ? <p role="status">{message}</p> : null}
+      {message ? (
+        <p className="admin-message" role="status">
+          {message}
+        </p>
+      ) : null}
     </main>
   );
 }
