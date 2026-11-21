@@ -139,6 +139,11 @@ export function PointDetailScreen({ pointId }: { pointId: string }) {
                   {vm.routeSummary}
                 </AppText>
               ) : null}
+              {vm.routeMessage ? (
+                <AppText variant="small" color="boira" accessibilityLiveRegion="polite">
+                  {vm.routeMessage}
+                </AppText>
+              ) : null}
               {vm.staleMessage ? (
                 <View accessibilityLiveRegion="polite" style={styles.staleMessage}>
                   <AppText variant="small" color="jus">

@@ -98,6 +98,38 @@ it('manté la fitxa i el botó quan Mobilicat no respon', async () => {
     ),
   );
   expect(screen.queryByText(/km · .* min/)).toBeNull();
+  expect(
+    screen.getByText('La distància i el temps no estan disponibles ara mateix.'),
+  ).toBeOnTheScreen();
+});
+
+it('explica quan Mobilicat retorna no disponible', async () => {
+  jest.mocked(useCurrentPlaceQuery).mockReturnValue({
+    data: { status: 'ready', place: { name: 'Barcelona', lat: 41.385, lon: 2.17 } },
+  } as ReturnType<typeof useCurrentPlaceQuery>);
+  const pointResponse = respond();
+  get.mockImplementation((path) =>
+    path.endsWith('/rutes')
+      ? Promise.resolve({ estat: 'no_disponible', destacada: null, alternatives: [] })
+      : pointResponse(path),
+  );
+  await renderScreen();
+  expect(
+    await screen.findByText('La distància i el temps no estan disponibles ara mateix.'),
+  ).toBeOnTheScreen();
+  expect(screen.getByRole('button', { name: 'Com arribar' })).toBeOnTheScreen();
+});
+
+it('explica que cal ubicació si no hi ha permís', async () => {
+  await renderScreen();
+  expect(
+    await screen.findByText('Activa la ubicació per veure la distància i el temps fins al punt.'),
+  ).toBeOnTheScreen();
+  expect(get).not.toHaveBeenCalledWith(
+    '/punts/montsec/rutes',
+    expect.anything(),
+    expect.anything(),
+  );
 });
 
 it('mostra les dades i les hores amb etiquetes accessibles', async () => {

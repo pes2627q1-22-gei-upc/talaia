@@ -178,6 +178,15 @@ export function usePointDetailViewModel(pointId: string) {
           minutes: number.format(Math.ceil(route.duradaSegons / 60)),
         })
       : undefined;
+  const routeMessage = routeSummary
+    ? undefined
+    : currentPlace.data?.status === 'denied'
+      ? t('point.routeNeedsLocation')
+      : currentPlace.isError || routes.isError || routes.data?.estat === 'no_disponible'
+        ? t('point.routeUnavailable')
+        : routes.data?.estat === 'sense_rutes'
+          ? t('point.routeNotFound')
+          : undefined;
   const altitude =
     point?.altitud == null
       ? t('point.unavailable')
@@ -231,6 +240,7 @@ export function usePointDetailViewModel(pointId: string) {
     altitude,
     altitudeTag: t('point.altitudeTag', { value: altitude }),
     routeSummary,
+    routeMessage,
     skyDarkness:
       point?.sqm == null || !Number.isFinite(point.sqm)
         ? undefined
