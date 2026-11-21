@@ -300,11 +300,39 @@ describe('POST /api/v1/plans', () => {
     ['dataHoraFi abans de dataHoraInici', { ...NOU, dataHoraFi: '2026-11-17T20:00:00Z' }],
     ['un esdevenimentId mal format', { ...NOU, esdevenimentId: 'Leònides 2026' }],
     ['unes notes buides', { ...NOU, notes: '' }],
-    ['unes notes massa llargues', { ...NOU, notes: 'x'.repeat(1001) }],
     ['un perfilId (l’usuari només surt del JWT)', { ...NOU, perfilId: PERE.perfil }],
     ['un cos buit', undefined],
   ])('amb %s respon 400 validation_error', async (_cas, body) => {
     const res = await crea(MARIA.auth, body);
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe('validation_error');
+    expect(repo.create).not.toHaveBeenCalled();
+  });
+
+  // Els límits de mida de `routes/plans.ts`: un valor al límit passa la validació i un caràcter
+  // més és un 400.
+  it.each<[string, Partial<PlaNou>]>([
+    ['notes', { notes: 'x'.repeat(1000) }],
+    ['calendariEventId', { calendariEventId: 'x'.repeat(255) }],
+  ])('%s al límit de mida es desa sencer', async (camp, extra) => {
+    const res = await crea(MARIA.auth, { ...NOU, ...extra });
+    expect(res.status).toBe(201);
+    expect(res.body[camp]).toBe(extra[camp as keyof PlaNou]);
+  });
+
+  it('un esdevenimentId de 200 caràcters passa la validació (i el repositori no el troba)', async () => {
+    const res = await crea(MARIA.auth, { ...NOU, esdevenimentId: 'a'.repeat(200) });
+    expect(repo.create).toHaveBeenCalled();
+    expect(res.status).toBe(422);
+    expect(res.body.error.code).toBe('event_not_found');
+  });
+
+  it.each<[string, Partial<PlaNou>]>([
+    ['notes', { notes: 'x'.repeat(1001) }],
+    ['esdevenimentId', { esdevenimentId: 'a'.repeat(201) }],
+    ['calendariEventId', { calendariEventId: 'x'.repeat(256) }],
+  ])('%s un caràcter per sobre del límit respon 400 validation_error', async (_camp, extra) => {
+    const res = await crea(MARIA.auth, { ...NOU, ...extra });
     expect(res.status).toBe(400);
     expect(res.body.error.code).toBe('validation_error');
     expect(repo.create).not.toHaveBeenCalled();
@@ -384,6 +412,33 @@ describe('GET /api/v1/plans', () => {
     expect(inicis(await llista(MARIA.auth, '?quan=passats'))).toEqual(['2026-11-16T02:00:00.000Z']);
   });
 
+  // Aquests límits passen pel repositori en memòria: proven el servei i el doble, no l'SQL. El
+  // límit real (`fiEfectiu >= ara` i el migdia de després de la nit) el protegeixen els tests de
+  // futurs i passats de `plans/__tests__/plansRepository.test.ts`.
+  it.each([
+    ['acaba just ara', 'futurs', '2026-11-16T12:00:00.000Z'],
+    ['acaba 1 ms abans d’ara', 'passats', '2026-11-16T11:59:59.999Z'],
+    ['acaba d’aquí a 1 s', 'futurs', '2026-11-16T12:00:01.000Z'],
+  ])('un pla que %s és dels %s', async (_cas, quan, dataHoraFi) => {
+    await crea(MARIA.auth, { puntId: MONTSEC, dataHoraInici: '2026-11-16T09:00:00Z', dataHoraFi });
+    expect((await llista(MARIA.auth, `?quan=${quan}`)).body).toMatchObject([{ dataHoraFi }]);
+  });
+
+  it.each([
+    ['les 12:00 locals', 'futurs', new Date('2026-11-16T11:00:00.000Z')],
+    ['1 ms després de les 12:00 locals', 'passats', new Date('2026-11-16T11:00:00.001Z')],
+  ])('sense dataHoraFi, a %s de després de la nit, el pla és dels %s', async (_c, quan, ara) => {
+    app = createApp({
+      supabaseUrl,
+      jwks,
+      profileStore,
+      plans: createPlansService(repo, { now: () => ara }),
+    });
+    // Les 22:00 locals del 15: la nit del 15 s'acaba a les 12:00 locals del 16.
+    await crea(MARIA.auth, { puntId: MONTSEC, dataHoraInici: '2026-11-15T21:00:00Z' });
+    expect(inicis(await llista(MARIA.auth, `?quan=${quan}`))).toEqual(['2026-11-15T21:00:00.000Z']);
+  });
+
   it('?quan=passats: els acabats, del més recent al més antic', async () => {
     await creaTres(MARIA.auth);
     await crea(MARIA.auth, { puntId: MONTSEC, dataHoraInici: '2026-11-10T21:00:00Z' });
@@ -443,6 +498,14 @@ describe('GET /api/v1/plans/{id}', () => {
     expect(dePere.body).toEqual(noExisteix.body);
     expect(dePere.body.error.code).toBe('plan_not_found');
     expect(repo.findById).toHaveBeenCalledWith(PERE.perfil, pla.id);
+  });
+
+  it('el pla d’un punt retirat després de crear-lo respon 200 amb publicat: false', async () => {
+    const { body: pla } = await crea(MARIA.auth, NOU);
+    retirats.add(MONTSEC);
+    const res = await llegeix(MARIA.auth, pla.id);
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ ...pla, punt: { ...pla.punt, publicat: false } });
   });
 
   it('respon 400 validation_error si l’id no és un UUID', async () => {
