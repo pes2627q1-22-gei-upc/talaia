@@ -1,11 +1,13 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useState, type FormEvent } from 'react';
 
 import { authClient, checkAdmin, completeAuthRedirect } from './auth';
+import { PuntsList } from './PuntsList';
 
 type Access = 'loading' | 'signed-out' | 'checking' | 'allowed' | 'denied' | 'error';
 
 export function App() {
   const [access, setAccess] = useState<Access>('loading');
+  const [adminToken, setAdminToken] = useState<string | null>(null);
   const [email, setEmail] = useState('');
   const [code, setCode] = useState('');
   const [codeSent, setCodeSent] = useState(false);
@@ -24,6 +26,7 @@ export function App() {
       const id = ++checkId;
       if (!token) {
         if (active) {
+          setAdminToken(null);
           setEmail('');
           setCode('');
           setCodeSent(false);
@@ -32,12 +35,19 @@ export function App() {
         }
         return;
       }
+      setAdminToken(null);
       setAccess('checking');
       try {
         const result = await checkAdmin(token);
-        if (active && id === checkId) setAccess(result);
+        if (active && id === checkId) {
+          setAdminToken(result === 'allowed' ? token : null);
+          setAccess(result);
+        }
       } catch {
-        if (active && id === checkId) setAccess('error');
+        if (active && id === checkId) {
+          setAdminToken(null);
+          setAccess('error');
+        }
       }
     };
     const {
@@ -63,6 +73,11 @@ export function App() {
       active = false;
       subscription.unsubscribe();
     };
+  }, []);
+
+  const handleAdminAccessDenied = useCallback(() => {
+    setAdminToken(null);
+    setAccess('denied');
   }, []);
 
   async function signInGoogle() {
@@ -143,7 +158,9 @@ export function App() {
       {access === 'allowed' ? (
         <>
           <p>Accés d’administrador confirmat.</p>
-          <p>La gestió de punts s’afegirà en una tasca posterior.</p>
+          {adminToken ? (
+            <PuntsList accessToken={adminToken} onAccessDenied={handleAdminAccessDenied} />
+          ) : null}
           <button onClick={() => void signOut()}>Tanca la sessió</button>
         </>
       ) : null}
