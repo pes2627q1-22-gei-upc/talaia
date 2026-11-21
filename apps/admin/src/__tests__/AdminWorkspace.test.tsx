@@ -32,6 +32,41 @@ function response(body: unknown, status = 200) {
 }
 
 describe('Espai d’administració de punts', () => {
+  it('carrega usuaris en obrir la secció i conserva la cerca en canviar de secció', async () => {
+    const user = userEvent.setup();
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      if (String(input) === '/api/v1/admin/usuaris') {
+        return response([
+          {
+            id: '1',
+            authUserId: 'admin-auth-id',
+            nom: 'Àngela',
+            email: 'admin@example.cat',
+            rol: 'admin',
+            bloquejat: false,
+            dataBloqueig: null,
+          },
+        ]);
+      }
+      return response([PUNT]);
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    render(
+      <AdminWorkspace accessToken={TOKEN} currentUserId="admin-auth-id" onAccessDenied={vi.fn()} />,
+    );
+    await screen.findByRole('row', { name: /Mirador del Montsec/ });
+    expect(fetchMock.mock.calls.some(([url]) => String(url).endsWith('/usuaris'))).toBe(false);
+    await user.click(screen.getByRole('button', { name: 'Usuaris' }));
+    await user.type(await screen.findByLabelText('Cerca per nom o correu'), 'angela');
+    await user.click(screen.getByRole('button', { name: 'Punts' }));
+    await user.click(screen.getByRole('button', { name: 'Usuaris' }));
+    expect(screen.getByLabelText('Cerca per nom o correu')).toHaveValue('angela');
+    expect(screen.getByRole('row', { name: /Àngela/ })).toBeInTheDocument();
+    expect(fetchMock.mock.calls.filter(([url]) => String(url).endsWith('/usuaris'))).toHaveLength(
+      1,
+    );
+  });
+
   it('conserva el filtre i el formulari de punts en canviar de secció', async () => {
     const user = userEvent.setup();
     vi.stubGlobal(

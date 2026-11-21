@@ -2,6 +2,7 @@ import { useState } from 'react';
 
 import { PuntForm } from './PuntForm';
 import { PuntsList } from './PuntsList';
+import { UsersList } from './UsersList';
 
 type Screen = { kind: 'list' } | { kind: 'create' } | { kind: 'edit'; puntId: string };
 
@@ -11,8 +12,9 @@ type Props = {
   onAccessDenied: () => void;
 };
 
-export function AdminWorkspace({ accessToken, onAccessDenied }: Props) {
+export function AdminWorkspace({ accessToken, currentUserId, onAccessDenied }: Props) {
   const [section, setSection] = useState<'points' | 'users'>('points');
+  const [usersVisited, setUsersVisited] = useState(false);
   const [screen, setScreen] = useState<Screen>({ kind: 'list' });
   const [notice, setNotice] = useState('');
 
@@ -48,7 +50,10 @@ export function AdminWorkspace({ accessToken, onAccessDenied }: Props) {
         <button
           type="button"
           aria-current={section === 'users' ? 'page' : undefined}
-          onClick={() => setSection('users')}
+          onClick={() => {
+            setUsersVisited(true);
+            setSection('users');
+          }}
         >
           Usuaris
         </button>
@@ -78,8 +83,13 @@ export function AdminWorkspace({ accessToken, onAccessDenied }: Props) {
         )}
       </div>
       <div id="admin-usuaris" className="admin-workspace-content" hidden={section !== 'users'}>
-        <h2>Usuaris</h2>
-        <p className="admin-state">La gestió d’usuaris estarà disponible pròximament.</p>
+        {usersVisited ? (
+          <UsersList
+            accessToken={accessToken}
+            currentUserId={currentUserId}
+            onAccessDenied={onAccessDenied}
+          />
+        ) : null}
       </div>
     </section>
   );
