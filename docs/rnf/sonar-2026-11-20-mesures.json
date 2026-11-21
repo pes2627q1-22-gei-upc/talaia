@@ -1,0 +1,36 @@
+{
+  "component": {
+    "id": "AaEaO60cFwddAxSUx_MO",
+    "key": "pes2627q1-22-gei-upc_talaia",
+    "name": "talaia",
+    "qualifier": "TRK",
+    "measures": [
+      { "metric": "coverage", "value": "93.4", "bestValue": false },
+      { "metric": "reliability_rating", "value": "1.0", "bestValue": true },
+      { "metric": "code_smells", "value": "1", "bestValue": false },
+      { "metric": "security_rating", "value": "1.0", "bestValue": true },
+      {
+        "metric": "new_coverage",
+        "periods": [{ "index": 1, "value": "93.46571456519612", "bestValue": false }]
+      },
+      { "metric": "security_hotspots_reviewed", "value": "100.0", "bestValue": true },
+      { "metric": "sqale_rating", "value": "1.0", "bestValue": true },
+      { "metric": "bugs", "value": "0", "bestValue": true },
+      { "metric": "alert_status", "value": "OK" },
+      { "metric": "lines_to_cover", "value": "6632" },
+      { "metric": "uncovered_lines", "value": "321", "bestValue": false },
+      { "metric": "ncloc", "value": "22155" },
+      { "metric": "vulnerabilities", "value": "0", "bestValue": true },
+      {
+        "metric": "new_uncovered_lines",
+        "periods": [{ "index": 1, "value": "311", "bestValue": false }]
+      },
+      { "metric": "new_lines_to_cover", "periods": [{ "index": 1, "value": "6525" }] },
+      {
+        "metric": "new_duplicated_lines_density",
+        "periods": [{ "index": 1, "value": "0.09873653800442486", "bestValue": false }]
+      }
+    ]
+  },
+  "periods": [{ "index": 1, "mode": "previous_version", "date": "2026-10-08T06:38:09+0000" }]
+}

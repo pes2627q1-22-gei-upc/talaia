@@ -104,7 +104,7 @@ A `apps/mobile/src/shared/ui/`. Cap pantalla torna a definir un botó, una targe
 
 L'índex, al Figma, és només la xifra amb el color de la franja i l'etiqueta: ni anell ni barra. L'anell és dels marcadors del mapa (capa de MapLibre, TG-90) i les barres, del desglossament per factors (TG-105).
 
-El full del rànquing es pot arrossegar per la nansa cap avall per plegar-lo i cap amunt per recuperar-lo (TG-141), amb Reanimated i una acció accessible equivalent. Encara no hi són: les etiquetes i la llegenda del mapa (TG-89/TG-90/TG-102) i les icones de Talaia (`Button` ja accepta `icon`). La barra de pestanyes és la nativa (`NativeTabs`), amb quatre pestanyes (Explora, Calendari, Alertes i Perfil) i l'activa en `far`.
+El full del rànquing es pot arrossegar per la nansa cap avall per plegar-lo i cap amunt per recuperar-lo (TG-141), amb Reanimated i una acció accessible equivalent. Encara no hi són: les etiquetes i la llegenda del mapa (TG-89/TG-90/TG-102) i les icones de Talaia (`Button` ja accepta `icon`). La barra de pestanyes és pròpia (`core/navigation/TabBar.tsx`, ADR-0037), amb quatre pestanyes (Explora, Calendari, Alertes i Perfil): una càpsula `card` sota les pantalles, l'activa en `far` sobre `crep` i les altres en `boira`.
 
 ## Moviment i fluïdesa
 
@@ -177,5 +177,5 @@ Estil nocturn propi sobre les tessel·les vectorials de l'ICGC, recolorit amb aq
 ## Regles
 
 - Cap color, mida de font o espaiat escrit a mà a les pantalles: sempre des dels tokens del tema.
-- Contrast mínim WCAG AA per al text.
+- Contrast mínim WCAG AA per al text: ho comprova `core/theme/__tests__/contrast.test.ts` (RNF05, `docs/rnf.md`). `tap` sobre `crep` (3,9:1) només val per a text gran.
 - Tots els textos visibles passen per i18n.

@@ -29,18 +29,12 @@ jest.mock('expo-router', () => ({
     return <Text>{`Redirecció: ${href}`}</Text>;
   },
 }));
-jest.mock('expo-router/native-tabs', () => {
+jest.mock('expo-router/js-tabs', () => {
   const { View, Text } = jest.requireActual('react-native');
-  const NativeTabs = Object.assign(
-    ({ children }: { children: ReactNode }) => <View>{children}</View>,
-    {
-      Trigger: Object.assign(({ children }: { children: ReactNode }) => <View>{children}</View>, {
-        Label: Text,
-        Icon: () => null,
-      }),
-    },
-  );
-  return { NativeTabs };
+  const Tabs = Object.assign(({ children }: { children: ReactNode }) => <View>{children}</View>, {
+    Screen: ({ options }: { options: { title: string } }) => <Text>{options.title}</Text>,
+  });
+  return { Tabs };
 });
 
 beforeEach(async () => {

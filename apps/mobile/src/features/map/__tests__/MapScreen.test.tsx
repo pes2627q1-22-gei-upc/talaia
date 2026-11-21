@@ -806,15 +806,14 @@ describe('MapScreen amb una cerca (TG-102, mockup 03)', () => {
   });
 
   it.each(['ios', 'android'] as const)(
-    'el full respecta el menú inferior a %s sense duplicar-ne el marge',
+    'a %s, el full no deixa marge per a la barra de pestanyes, que ja queda a sota',
     async (platform) => {
       const original = Platform.OS;
       Object.defineProperty(Platform, 'OS', { configurable: true, value: platform });
       try {
         await render(<MapScreen />, { wrapper: GestureHandlerRootView });
         const safeArea = screen.getByTestId('ranking-safe-area');
-        if (platform === 'ios') expect(safeArea.props.edges).toMatchObject({ bottom: true });
-        else expect(safeArea.props.edges).toBeUndefined();
+        expect(safeArea.props.edges).toBeUndefined();
         expect(
           StyleSheet.flatten(screen.getByTestId('ranking-sheet').props.style).paddingBottom,
         ).toBe(8);
