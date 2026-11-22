@@ -159,6 +159,7 @@
     "logoutConfirmationMessage": "Tendrás que volver a iniciar sesión para acceder a tu cuenta.",
     "title": "Perfil",
     "myProfile": "Mi perfil",
+    "back": "Volver al perfil",
     "myProfileHint": "Consulta los datos de la cuenta",
     "name": "Nombre",
     "addName": "Añade tu nombre",

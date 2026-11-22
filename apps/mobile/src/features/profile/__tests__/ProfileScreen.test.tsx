@@ -24,7 +24,8 @@ jest.mock('@/features/apiStatus/ApiStatusCard', () => ({ ApiStatusCard: () => nu
 jest.mock('expo-router', () => ({ useRouter: jest.fn(), usePreventRemove: jest.fn() }));
 
 const push = jest.fn();
-jest.mocked(useRouter).mockReturnValue({ push } as unknown as ReturnType<typeof useRouter>);
+const back = jest.fn();
+jest.mocked(useRouter).mockReturnValue({ push, back } as unknown as ReturnType<typeof useRouter>);
 
 type Auth = ReturnType<typeof useAuthViewModel>;
 
@@ -192,6 +193,12 @@ describe('ProfileScreen · sessió (HU35)', () => {
       'accessibilityElementsHidden',
       true,
     );
+  });
+
+  it('porta el seu botó enrere i torna al perfil', async () => {
+    await renderProfile(auth(), true);
+    await fireEvent.press(screen.getByRole('button', { name: 'Torna al perfil' }));
+    expect(back).toHaveBeenCalledTimes(1);
   });
 
   it('edita el nom i mostra el valor que ha desat l’API', async () => {

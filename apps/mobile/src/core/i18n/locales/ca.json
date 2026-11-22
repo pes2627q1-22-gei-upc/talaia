@@ -159,6 +159,7 @@
     "logoutConfirmationMessage": "Hauràs de tornar a entrar per accedir al teu compte.",
     "title": "Perfil",
     "myProfile": "El meu perfil",
+    "back": "Torna al perfil",
     "myProfileHint": "Consulta les dades del compte",
     "name": "Nom",
     "addName": "Afegeix el teu nom",

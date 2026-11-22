@@ -64,7 +64,9 @@ describe('contrast del text (RNF05, WCAG AA)', () => {
 
   it.each(
     THEMES.flatMap((theme) =>
-      (['far', 'lluna', 'ras', 'jus', 'tap'] as const).map((fill) => [theme, fill] as const),
+      (['far', 'lluna', 'ras', 'jus', 'tap', 'pedra'] as const).map(
+        (fill) => [theme, fill] as const,
+      ),
     ),
   )('%s: nit sobre %s (botons i xips plens) arriba a 4,5:1', (theme, fill) => {
     expect(contrast(theme, 'nit', fill)).toBeGreaterThanOrEqual(AA);

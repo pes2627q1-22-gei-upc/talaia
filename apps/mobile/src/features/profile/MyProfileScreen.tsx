@@ -37,7 +37,7 @@ export function MyProfileScreen() {
       style={styles.root}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <Screen title={vm.myProfileLabel} edges={['left', 'right', 'bottom']}>
+      <Screen title={vm.myProfileLabel} back={vm.back}>
         <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.content}>
           {vm.profileError ? (
             <StateMessage

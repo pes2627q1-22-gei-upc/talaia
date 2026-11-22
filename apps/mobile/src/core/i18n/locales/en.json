@@ -159,6 +159,7 @@
     "logoutConfirmationMessage": "You'll need to sign in again to access your account.",
     "title": "Profile",
     "myProfile": "My profile",
+    "back": "Back to profile",
     "myProfileHint": "View your account details",
     "name": "Name",
     "addName": "Add your name",

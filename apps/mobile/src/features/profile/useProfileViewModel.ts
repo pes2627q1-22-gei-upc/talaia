@@ -63,6 +63,7 @@ export function useProfileViewModel() {
     auth,
     title: t('profile.title'),
     myProfileLabel: t('profile.myProfile'),
+    back: { label: t('profile.back'), onPress: () => router.back() },
     myProfileHint: t('profile.myProfileHint'),
     openMyProfile: () => router.push('/el-meu-perfil'),
     name: profile.isError ? '' : (name ?? t('profile.addName')),
