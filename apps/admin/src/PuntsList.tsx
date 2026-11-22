@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { EstatPunt, OrigenPunt, PuntAdmin } from '@talaia/shared';
 
 import { getAdminPunts, patchAdminPunt, PuntsApiError } from './puntsApi';
+import { ScrollableTable } from './ScrollableTable';
 
 type Props = {
   accessToken: string;
@@ -218,7 +219,7 @@ export function PuntsList({ accessToken, onAccessDenied, onCreate, onEdit }: Pro
             </p>
           ) : null}
           {visiblePoints.length > 0 ? (
-            <div className="punts-table-scroll">
+            <ScrollableTable label="Llista de punts d’observació">
               <table>
                 <caption className="visually-hidden">Llista de punts d’observació</caption>
                 <thead>
@@ -287,7 +288,7 @@ export function PuntsList({ accessToken, onAccessDenied, onCreate, onEdit }: Pro
                   ))}
                 </tbody>
               </table>
-            </div>
+            </ScrollableTable>
           ) : null}
         </>
       ) : null}

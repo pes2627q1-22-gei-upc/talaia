@@ -14,7 +14,7 @@ import { useTranslation } from 'react-i18next';
 import { LogBox } from 'react-native';
 
 import { AppProviders } from '@/core/providers/AppProviders';
-import { stackOptions } from '@/core/navigation/transitions';
+import { rootStackOptions, statusBarPerScreen } from '@/core/navigation/transitions';
 import { useTheme } from '@/core/theme/theme';
 import { EmailLoginCloseButton } from '@/features/auth/EmailLoginCloseButton';
 
@@ -28,9 +28,9 @@ LogBox.ignoreLogs(["Unable to find the 'DomWebView' view"]);
 
 function RootStack() {
   const { t } = useTranslation();
-  const { colors } = useTheme();
+  const { name, colors } = useTheme();
   return (
-    <Stack screenOptions={stackOptions}>
+    <Stack screenOptions={rootStackOptions(name === 'vermell')}>
       {/* Des de la benvinguda, l'app entra amb una fosa (la benvinguda ja ha fet la seva sortida). */}
       <Stack.Screen name="(tabs)" options={{ animation: 'fade' }} />
       <Stack.Screen
@@ -118,8 +118,8 @@ function ThemedApp() {
   );
   return (
     <NavigationThemeProvider value={navigationTheme}>
-      {/* En mode nit, l'hora i la bateria de l'iOS surten en blanc i no es poden tenyir: s'amaguen. */}
-      <StatusBar style="light" hidden={name === 'vermell'} />
+      {/* A iOS fora d'Expo Go la barra va per pantalla (`rootStackOptions`). */}
+      {!statusBarPerScreen() && <StatusBar style="light" hidden={name === 'vermell'} />}
       <RootStack />
     </NavigationThemeProvider>
   );

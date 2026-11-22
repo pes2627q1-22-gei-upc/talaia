@@ -2,15 +2,19 @@ import { useState } from 'react';
 
 import { PuntForm } from './PuntForm';
 import { PuntsList } from './PuntsList';
+import { UsersList } from './UsersList';
 
 type Screen = { kind: 'list' } | { kind: 'create' } | { kind: 'edit'; puntId: string };
 
 type Props = {
   accessToken: string;
+  currentUserId: string;
   onAccessDenied: () => void;
 };
 
-export function AdminWorkspace({ accessToken, onAccessDenied }: Props) {
+export function AdminWorkspace({ accessToken, currentUserId, onAccessDenied }: Props) {
+  const [section, setSection] = useState<'points' | 'users'>('points');
+  const [usersVisited, setUsersVisited] = useState(false);
   const [screen, setScreen] = useState<Screen>({ kind: 'list' });
   const [notice, setNotice] = useState('');
 
@@ -34,13 +38,27 @@ export function AdminWorkspace({ accessToken, onAccessDenied }: Props) {
   }
 
   return (
-    <section className="admin-workspace" aria-label="Administració de punts">
+    <section className="admin-workspace" aria-label="Administració">
       <nav className="admin-sections" aria-label="Seccions d’administració">
-        <a href="#admin-punts" aria-current="page">
+        <button
+          type="button"
+          aria-current={section === 'points' ? 'page' : undefined}
+          onClick={() => setSection('points')}
+        >
           Punts
-        </a>
+        </button>
+        <button
+          type="button"
+          aria-current={section === 'users' ? 'page' : undefined}
+          onClick={() => {
+            setUsersVisited(true);
+            setSection('users');
+          }}
+        >
+          Usuaris
+        </button>
       </nav>
-      <div id="admin-punts" className="admin-workspace-content">
+      <div id="admin-punts" className="admin-workspace-content" hidden={section !== 'points'}>
         {notice ? (
           <p className="admin-message" role="status">
             {notice}
@@ -63,6 +81,16 @@ export function AdminWorkspace({ accessToken, onAccessDenied }: Props) {
             onAccessDenied={onAccessDenied}
           />
         )}
+      </div>
+      <div id="admin-usuaris" className="admin-workspace-content" hidden={section !== 'users'}>
+        {usersVisited ? (
+          <UsersList
+            accessToken={accessToken}
+            currentUserId={currentUserId}
+            active={section === 'users'}
+            onAccessDenied={onAccessDenied}
+          />
+        ) : null}
       </div>
     </section>
   );
