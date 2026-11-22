@@ -1,7 +1,7 @@
 import { Image } from 'expo-image';
 import { ScrollView, View } from 'react-native';
 
-import { makeStyles, useNightTint } from '@/core/theme/theme';
+import { makeStyles, useNightTint, useTheme } from '@/core/theme/theme';
 import { radii, sizes, spacing } from '@/core/theme/tokens';
 import { ApiStatusCard } from '@/features/apiStatus/ApiStatusCard';
 import { AppText } from '@/shared/ui/AppText';
@@ -27,9 +27,10 @@ type MenuRowProps = {
   hint: string;
   onPress?: () => void;
   badge?: string;
+  value?: string;
 };
 
-function MenuRow({ icon, label, hint, onPress, badge }: MenuRowProps) {
+function MenuRow({ icon, label, hint, onPress, badge, value }: MenuRowProps) {
   const styles = useStyles();
   const tint = useNightTint();
   const content = (
@@ -41,9 +42,11 @@ function MenuRow({ icon, label, hint, onPress, badge }: MenuRowProps) {
         <AppText variant="label" numberOfLines={2}>
           {label}
         </AppText>
-        <AppText variant="caption" color="boira" numberOfLines={2}>
-          {hint}
-        </AppText>
+        {!badge ? (
+          <AppText variant="caption" color="boira" numberOfLines={2}>
+            {hint}
+          </AppText>
+        ) : null}
       </View>
       {badge ? (
         <View style={styles.badge}>
@@ -57,7 +60,12 @@ function MenuRow({ icon, label, hint, onPress, badge }: MenuRowProps) {
     </>
   );
   return onPress ? (
-    <PressableScale onPress={onPress} accessibilityLabel={label} style={styles.menuRow}>
+    <PressableScale
+      onPress={onPress}
+      accessibilityLabel={value ? `${label}, ${value}` : label}
+      accessibilityHint={hint}
+      style={styles.menuRow}
+    >
       {content}
     </PressableScale>
   ) : (
@@ -70,6 +78,7 @@ function MenuRow({ icon, label, hint, onPress, badge }: MenuRowProps) {
 export function ProfileScreen() {
   const vm = useProfileViewModel();
   const styles = useStyles();
+  const { name: themeName } = useTheme();
   const logoutTint = useNightTint('perill');
   return (
     <Screen title={vm.title}>
@@ -78,20 +87,21 @@ export function ProfileScreen() {
           <>
             <View style={styles.identity}>
               <View style={styles.avatar}>
-                {vm.avatarUrl ? (
+                {vm.avatarUrl && themeName !== 'vermell' ? (
                   <Image
                     source={{ uri: vm.avatarUrl }}
                     style={styles.avatarImage}
                     accessible={false}
+                    testID="profile-avatar-image"
                   />
                 ) : (
-                  <AppText variant="title" color="nit">
+                  <AppText variant="title" color="nit" accessible={false}>
                     {vm.initials}
                   </AppText>
                 )}
               </View>
               <View style={styles.identityCopy}>
-                {vm.profileLoading ? (
+                {vm.profileError ? null : vm.profileLoading ? (
                   <Skeleton width="65%" height={sizes.icon} />
                 ) : (
                   <AppText variant="heading" numberOfLines={2}>
@@ -124,13 +134,14 @@ export function ProfileScreen() {
               <MenuRow
                 icon={savedIcon}
                 label={vm.savedPointsLabel}
-                hint={vm.comingSoonLabel}
                 badge={vm.comingSoonLabel}
+                hint={vm.comingSoonLabel}
               />
               <MenuRow
                 icon={languageIcon}
                 label={vm.languageLabel}
                 hint={vm.languageValue}
+                value={vm.languageValue}
                 onPress={vm.toggleLanguage}
               />
             </View>
@@ -161,6 +172,7 @@ export function ProfileScreen() {
               icon={languageIcon}
               label={vm.languageLabel}
               hint={vm.languageValue}
+              value={vm.languageValue}
               onPress={vm.toggleLanguage}
             />
           </View>

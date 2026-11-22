@@ -45,6 +45,10 @@ export function useProfileViewModel() {
       setNameError(t('profile.nameInvalid'));
       return;
     }
+    if (trimmed === (name ?? '')) {
+      cancelNameEdit();
+      return;
+    }
     setNameError(null);
     try {
       await updateName.mutateAsync(trimmed);
@@ -61,7 +65,7 @@ export function useProfileViewModel() {
     myProfileLabel: t('profile.myProfile'),
     myProfileHint: t('profile.myProfileHint'),
     openMyProfile: () => router.push('/el-meu-perfil'),
-    name: name ?? t('profile.addName'),
+    name: profile.isError ? '' : (name ?? t('profile.addName')),
     email,
     avatarUrl: profile.data?.avatarUrl ?? null,
     initials: profileInitials(name, email),
@@ -113,7 +117,6 @@ export function useProfileViewModel() {
       setLogoutConfirmationOpen(false);
       void auth.signOut();
     },
-    accountLabel: t('profile.account'),
     plans: auth.isAuthenticated
       ? {
           label: t('profile.plans'),

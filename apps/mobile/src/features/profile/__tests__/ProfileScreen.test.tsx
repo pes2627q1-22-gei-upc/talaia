@@ -1,12 +1,12 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import { usePreventRemove, useRouter } from 'expo-router';
-import { Alert } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import type { Perfil } from '@talaia/shared';
 
 import { apiGet, apiPatch } from '@/core/api/httpClient';
 import i18n, { LANGUAGE_KEY } from '@/core/i18n';
+import { ThemeProvider, type ThemeName } from '@/core/theme/theme';
 import { useAuthViewModel } from '@/features/auth/useAuthViewModel';
 import { createQueryWrapper } from '@/test-utils/queryWrapper';
 
@@ -61,19 +61,21 @@ function auth(overrides: Partial<Auth> = {}): Auth {
   return { ...base, ...overrides };
 }
 
-async function renderProfile(state: Auth, detail = false) {
+async function renderProfile(state: Auth, detail = false, theme: ThemeName = 'normal') {
   jest.mocked(useAuthViewModel).mockReturnValue(state);
   const QueryWrapper = createQueryWrapper();
-  await render(
+  return await render(
     <QueryWrapper>
-      <SafeAreaProvider
-        initialMetrics={{
-          frame: { x: 0, y: 0, width: 393, height: 852 },
-          insets: { top: 59, left: 0, right: 0, bottom: 34 },
-        }}
-      >
-        {detail ? <MyProfileScreen /> : <ProfileScreen />}
-      </SafeAreaProvider>
+      <ThemeProvider name={theme}>
+        <SafeAreaProvider
+          initialMetrics={{
+            frame: { x: 0, y: 0, width: 393, height: 852 },
+            insets: { top: 59, left: 0, right: 0, bottom: 34 },
+          }}
+        >
+          {detail ? <MyProfileScreen /> : <ProfileScreen />}
+        </SafeAreaProvider>
+      </ThemeProvider>
     </QueryWrapper>,
   );
 }
@@ -93,7 +95,11 @@ describe('ProfileScreen · sessió (HU35)', () => {
       const previous = language === 'ca' ? 'en' : 'ca';
       await i18n.changeLanguage(previous);
       await renderProfile(auth());
-      await fireEvent.press(screen.getByRole('button', { name: i18n.t('profile.language') }));
+      await fireEvent.press(
+        screen.getByRole('button', {
+          name: `${i18n.t('profile.language')}, ${i18n.t(`profile.languages.${previous}`)}`,
+        }),
+      );
       const targetLabel = i18n.t(`profile.languages.${language}`);
       expect(
         screen.getByRole('radio', { name: i18n.t(`profile.languages.${previous}`) }),
@@ -104,8 +110,8 @@ describe('ProfileScreen · sessió (HU35)', () => {
         screen.getByRole('header', { name: i18n.t('profile.title', { lng: language }) }),
       ).toBeOnTheScreen();
       expect(
-        screen.getByText(i18n.t(`profile.languages.${language}`, { lng: language })),
-      ).toBeOnTheScreen();
+        screen.getAllByText(i18n.t(`profile.languages.${language}`, { lng: language })).length,
+      ).toBeGreaterThan(0);
       expect(AsyncStorage.setItem).toHaveBeenCalledWith(LANGUAGE_KEY, language);
     },
   );
@@ -113,7 +119,9 @@ describe('ProfileScreen · sessió (HU35)', () => {
   it('l’opció del menú obre «El meu perfil»', async () => {
     await renderProfile(auth());
     expect(screen.getByText('Consulta les dades del compte')).toBeOnTheScreen();
-    await fireEvent.press(screen.getByRole('button', { name: 'El meu perfil' }));
+    const myProfile = screen.getByRole('button', { name: 'El meu perfil' });
+    expect(myProfile).toHaveProp('accessibilityHint', 'Consulta les dades del compte');
+    await fireEvent.press(myProfile);
     expect(push).toHaveBeenCalledWith('/el-meu-perfil');
     expect(screen.getByRole('button', { name: 'Tanca la sessió' })).toBeOnTheScreen();
   });
@@ -137,8 +145,37 @@ describe('ProfileScreen · sessió (HU35)', () => {
     expect(screen.getByText('laia@example.cat')).toBeOnTheScreen();
     expect(screen.getByText('LP')).toBeOnTheScreen();
     expect(screen.getByText('Punts favorits')).toBeOnTheScreen();
+    expect(screen.getAllByText('Properament')).toHaveLength(1);
     expect(screen.queryByRole('button', { name: 'Alertes' })).toBeNull();
     expect(get).toHaveBeenCalledWith('/perfil', undefined, { signal: expect.any(AbortSignal) });
+    expect(screen.getByRole('button', { name: 'Idioma, Català' })).toBeOnTheScreen();
+  });
+
+  it('si falla la càrrega, mostra l’error sense suggerir que falta el nom', async () => {
+    get.mockRejectedValue(new Error('offline'));
+    await renderProfile(auth());
+    expect(await screen.findByText("No s'ha pogut carregar el perfil.")).toBeOnTheScreen();
+    expect(screen.queryByText('Afegeix el teu nom')).toBeNull();
+  });
+
+  it('amaga la foto en mode nit i mostra les inicials', async () => {
+    get.mockResolvedValue({ ...profile, avatarUrl: 'https://example.cat/avatar.jpg' });
+    await renderProfile(auth(), false, 'vermell');
+    expect(await screen.findByText('LP')).toBeOnTheScreen();
+    expect(screen.queryByTestId('profile-avatar-image')).toBeNull();
+  });
+
+  it('mostra la foto en el tema normal', async () => {
+    get.mockResolvedValue({ ...profile, avatarUrl: 'https://example.cat/avatar.jpg' });
+    await renderProfile(auth());
+    expect(await screen.findByTestId('profile-avatar-image')).toBeOnTheScreen();
+  });
+
+  it('mostra les inicials en el detall en mode nit', async () => {
+    get.mockResolvedValue({ ...profile, avatarUrl: 'https://example.cat/avatar.jpg' });
+    await renderProfile(auth(), true, 'vermell');
+    expect(await screen.findByText('LP')).toBeOnTheScreen();
+    expect(screen.queryByTestId('profile-avatar-image')).toBeNull();
   });
 
   it('edita el nom i mostra el valor que ha desat l’API', async () => {
@@ -146,7 +183,7 @@ describe('ProfileScreen · sessió (HU35)', () => {
     await renderProfile(auth(), true);
     expect(screen.queryByRole('button', { name: 'Desa' })).toBeNull();
     await screen.findByText('Laia Puig');
-    await fireEvent.press(screen.getByRole('button', { name: 'Edita el nom' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Edita el nom, Laia Puig' }));
     await waitFor(() => expect(screen.getByLabelText('Nom')).toHaveProp('value', 'Laia Puig'));
     await act(async () => fireEvent.changeText(screen.getByLabelText('Nom'), '  Laia Soler  '));
     await act(async () => fireEvent.press(screen.getByRole('button', { name: 'Desa' })));
@@ -159,7 +196,7 @@ describe('ProfileScreen · sessió (HU35)', () => {
     patch.mockRejectedValue(new Error('offline'));
     await renderProfile(auth(), true);
     await screen.findByText('Laia Puig');
-    await fireEvent.press(screen.getByRole('button', { name: 'Edita el nom' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Edita el nom, Laia Puig' }));
     await waitFor(() => expect(screen.getByLabelText('Nom')).toHaveProp('value', 'Laia Puig'));
     await act(async () => fireEvent.changeText(screen.getByLabelText('Nom'), '   '));
     await act(async () => fireEvent.press(screen.getByRole('button', { name: 'Desa' })));
@@ -176,7 +213,7 @@ describe('ProfileScreen · sessió (HU35)', () => {
   it('cancel·lar l’edició conserva el nom anterior', async () => {
     await renderProfile(auth(), true);
     await screen.findByText('Laia Puig');
-    await fireEvent.press(screen.getByRole('button', { name: 'Edita el nom' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Edita el nom, Laia Puig' }));
     await act(async () => fireEvent.changeText(screen.getByLabelText('Nom'), 'Nom temporal'));
     await fireEvent.press(screen.getByRole('button', { name: 'Cancel·la' }));
     expect(patch).not.toHaveBeenCalled();
@@ -184,25 +221,36 @@ describe('ProfileScreen · sessió (HU35)', () => {
     expect(screen.queryByLabelText('Nom')).toBeNull();
   });
 
+  it('la tecla de retorn no envia un nom igual ni un nom de més de 100 caràcters', async () => {
+    await renderProfile(auth(), true);
+    await screen.findByText('Laia Puig');
+    await fireEvent.press(screen.getByRole('button', { name: 'Edita el nom, Laia Puig' }));
+    await act(async () => fireEvent(screen.getByLabelText('Nom'), 'submitEditing'));
+    expect(patch).not.toHaveBeenCalled();
+    await fireEvent.press(screen.getByRole('button', { name: 'Edita el nom, Laia Puig' }));
+    await act(async () => fireEvent.changeText(screen.getByLabelText('Nom'), 'A'.repeat(101)));
+    await act(async () => fireEvent(screen.getByLabelText('Nom'), 'submitEditing'));
+    expect(screen.getByRole('alert')).toHaveTextContent("Escriu un nom d'entre 1 i 100 caràcters.");
+    expect(patch).not.toHaveBeenCalled();
+  });
+
   it('en tirar enrere amb el nom modificat demana si es volen descartar els canvis', async () => {
-    const alert = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
     const repeat = jest.fn();
     await renderProfile(auth(), true);
     await screen.findByText('Laia Puig');
-    await fireEvent.press(screen.getByRole('button', { name: 'Edita el nom' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Edita el nom, Laia Puig' }));
     await act(async () => fireEvent.changeText(screen.getByLabelText('Nom'), 'Nom temporal'));
     const guard = jest.mocked(usePreventRemove).mock.calls.at(-1);
     expect(guard?.[0]).toBe(true);
     await act(async () => (guard?.[1] as (event: { repeat: () => void }) => void)({ repeat }));
-    expect(alert).toHaveBeenCalledWith(
-      'Tens canvis sense desar',
-      'Segur que vols marxar?',
-      expect.any(Array),
-    );
+    expect(screen.getByRole('header', { name: 'Tens canvis sense desar' })).toBeOnTheScreen();
+    expect(screen.getByText('Segur que vols marxar?')).toBeOnTheScreen();
     expect(repeat).not.toHaveBeenCalled();
-    await act(async () => alert.mock.calls.at(-1)?.[2]?.[1]?.onPress?.());
+    await fireEvent.press(screen.getByRole('button', { name: 'Continua editant' }));
+    expect(repeat).not.toHaveBeenCalled();
+    await act(async () => (guard?.[1] as (event: { repeat: () => void }) => void)({ repeat }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Descarta els canvis' }));
     expect(repeat).toHaveBeenCalledTimes(1);
-    alert.mockRestore();
   });
 
   it('sense sessió no hi ha res a tancar', async () => {

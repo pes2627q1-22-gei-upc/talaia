@@ -62,7 +62,6 @@ describe('useProfileViewModel', () => {
       wrapper: createQueryWrapper(),
     });
     expect(result.current.auth).toMatchObject({ isAuthenticated: true });
-    expect(result.current.accountLabel).toBe('Compte');
     expect(result.current.email).toBe('maria@example.com');
     // Amb sessió, l'entrada a «Els meus plans» (TG-160).
     expect(result.current.plans?.label).toBe('Els meus plans');

@@ -1,12 +1,15 @@
 import { Image } from 'expo-image';
 import { usePreventRemove } from 'expo-router';
-import { Alert, KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
+import { useState } from 'react';
+import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
 
-import { makeStyles, useNightTint } from '@/core/theme/theme';
+import { makeStyles, useNightTint, useTheme } from '@/core/theme/theme';
 import { radii, sizes, spacing } from '@/core/theme/tokens';
 import { AppText } from '@/shared/ui/AppText';
+import { Button } from '@/shared/ui/Button';
 import { PressableScale } from '@/shared/ui/PressableScale';
 import { Screen } from '@/shared/ui/Screen';
+import { Sheet } from '@/shared/ui/Sheet';
 import { Skeleton } from '@/shared/ui/Skeleton';
 import { StateMessage } from '@/shared/ui/StateMessage';
 import { TextField } from '@/shared/ui/TextField';
@@ -21,22 +24,13 @@ const checkIcon = require('@/assets/images/profile/check.svg');
 export function MyProfileScreen() {
   const vm = useProfileViewModel();
   const styles = useStyles();
+  const { name: themeName } = useTheme();
   const tint = useNightTint();
   const checkTint = useNightTint('nit');
+  const [pendingRepeat, setPendingRepeat] = useState<(() => void) | null>(null);
   usePreventRemove(vm.nameEditOpen && (vm.nameChanged || vm.savingName), ({ repeat }) => {
     if (vm.savingName) return;
-    const discard = () => {
-      vm.cancelNameEdit();
-      repeat();
-    };
-    if (Platform.OS === 'web') {
-      if (window.confirm(`${vm.unsavedTitle}\n${vm.unsavedMessage}`)) discard();
-      return;
-    }
-    Alert.alert(vm.unsavedTitle, vm.unsavedMessage, [
-      { text: vm.keepEditingLabel, style: 'cancel' },
-      { text: vm.discardChangesLabel, style: 'destructive', onPress: discard },
-    ]);
+    setPendingRepeat(() => repeat);
   });
   return (
     <KeyboardAvoidingView
@@ -54,14 +48,15 @@ export function MyProfileScreen() {
             <>
               <View style={styles.identity}>
                 <View style={styles.avatar}>
-                  {vm.avatarUrl ? (
+                  {vm.avatarUrl && themeName !== 'vermell' ? (
                     <Image
                       source={{ uri: vm.avatarUrl }}
                       style={styles.avatarImage}
                       accessible={false}
+                      testID="profile-avatar-image"
                     />
                   ) : (
-                    <AppText variant="title" color="nit">
+                    <AppText variant="title" color="nit" accessible={false}>
                       {vm.initials}
                     </AppText>
                   )}
@@ -124,7 +119,7 @@ export function MyProfileScreen() {
                 </View>
               ) : (
                 <PressableScale
-                  accessibilityLabel={vm.editNameLabel}
+                  accessibilityLabel={`${vm.editNameLabel}, ${vm.name}`}
                   onPress={vm.openNameEdit}
                   style={styles.nameRow}
                 >
@@ -146,6 +141,38 @@ export function MyProfileScreen() {
           )}
         </ScrollView>
       </Screen>
+      <Sheet
+        visible={pendingRepeat !== null}
+        title={vm.unsavedTitle}
+        closeLabel={vm.keepEditingLabel}
+        onClose={() => setPendingRepeat(null)}
+      >
+        <AppText variant="body" color="boira">
+          {vm.unsavedMessage}
+        </AppText>
+        <View style={styles.confirmActions}>
+          <Button
+            label={vm.keepEditingLabel}
+            variant="secondary"
+            onPress={() => setPendingRepeat(null)}
+            style={styles.confirmAction}
+          />
+          <PressableScale
+            accessibilityLabel={vm.discardChangesLabel}
+            onPress={() => {
+              const repeat = pendingRepeat;
+              setPendingRepeat(null);
+              vm.cancelNameEdit();
+              repeat?.();
+            }}
+            style={styles.confirmAction}
+          >
+            <AppText variant="label" color="perill">
+              {vm.discardChangesLabel}
+            </AppText>
+          </PressableScale>
+        </View>
+      </Sheet>
     </KeyboardAvoidingView>
   );
 }
@@ -200,4 +227,11 @@ const useStyles = makeStyles(({ colors }) => ({
     justifyContent: 'center',
   },
   disabled: { opacity: 0.4 },
+  confirmActions: { flexDirection: 'row', gap: spacing.sm },
+  confirmAction: {
+    flex: 1,
+    minHeight: sizes.button,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 }));
