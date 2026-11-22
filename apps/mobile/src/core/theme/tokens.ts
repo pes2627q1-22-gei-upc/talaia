@@ -84,13 +84,13 @@ export const colorsVermell = {
   far: '#FF0000',
   ubicacio: '#FF0000',
   ras: '#FF0000',
-  jus: '#DC0000',
-  tap: '#BE0000',
-  pedra: '#C80000',
-  fenomenEstels: '#C80000',
-  fenomenLluna: '#C80000',
-  fenomenSol: '#C80000',
-  fenomenConjuncio: '#C80000',
+  jus: '#F80000',
+  tap: '#F20000',
+  pedra: '#F20000',
+  fenomenEstels: '#F20000',
+  fenomenLluna: '#F20000',
+  fenomenSol: '#F20000',
+  fenomenConjuncio: '#F20000',
 } as const satisfies Record<ColorToken, string>;
 
 export const gradientsVermell = {

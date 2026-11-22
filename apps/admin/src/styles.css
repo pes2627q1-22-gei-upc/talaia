@@ -326,13 +326,15 @@ textarea {
   border-bottom: 1px solid var(--admin-line);
 }
 
-.admin-sections a {
+.admin-sections button {
   display: inline-flex;
   min-height: 2.85rem;
   align-items: center;
   padding: 0.6rem 1rem;
+  border: 0;
   border-bottom: 3px solid transparent;
   border-radius: 0.45rem 0.45rem 0 0;
+  background: transparent;
   color: var(--admin-muted);
   font-weight: 600;
   text-decoration: none;
@@ -342,12 +344,12 @@ textarea {
     border-color 120ms ease;
 }
 
-.admin-sections a:hover {
+.admin-sections button:hover:not(:disabled) {
   background: var(--admin-surface-soft);
   color: var(--admin-ink);
 }
 
-.admin-sections a[aria-current='page'] {
+.admin-sections button[aria-current='page'] {
   border-bottom-color: var(--admin-teal-ink);
   background: var(--admin-teal-soft);
   color: var(--admin-ink);
@@ -380,11 +382,22 @@ textarea {
   font-weight: 600;
 }
 
+.table-scroll-hint {
+  margin: 0 0 0.5rem;
+  color: var(--admin-muted);
+  font-size: 0.85rem;
+}
+
 .punts-table-scroll {
   overflow-x: auto;
   border: 1px solid var(--admin-line);
   border-radius: 0.55rem;
   scrollbar-color: #aab6b0 transparent;
+}
+
+.punts-table-scroll:focus-visible {
+  outline: 3px solid var(--admin-teal-ink);
+  outline-offset: 2px;
 }
 
 .punts-table-scroll table {

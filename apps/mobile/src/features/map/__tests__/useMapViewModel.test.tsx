@@ -3,7 +3,6 @@ import { router } from 'expo-router';
 import { AppState, type AppStateStatus, Linking } from 'react-native';
 
 import i18n from '@/core/i18n';
-import { colors } from '@/core/theme/tokens';
 
 import type { CurrentPlace } from '../../explore/locationRepository';
 import type { RecommendationParams } from '../../recommendations/recommendationsModel';
@@ -284,7 +283,6 @@ describe('«A prop meu» des del mapa (HU02)', () => {
       lat: 41.981,
       lon: 2.825,
       label: 'Punt de sortida',
-      color: colors.far,
     });
     mockParams = { aprop: 'aqui', lat: '41.981', lon: '2.825' };
     const { result: here } = await renderHook(() => useMapViewModel());
@@ -320,7 +318,6 @@ describe('punt triat al mapa (HU05, mockup 04)', () => {
       lat: 42.01,
       lon: 1.31,
       label: 'Punt triat',
-      color: colors.far,
     });
     expect(router.push).not.toHaveBeenCalled();
     await act(async () => result.current.spot?.onClose());

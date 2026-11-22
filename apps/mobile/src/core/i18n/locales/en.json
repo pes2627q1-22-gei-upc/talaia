@@ -169,6 +169,7 @@
     "retry": "Try again"
   },
   "point": {
+    "back": "Back",
     "title": "Observation spot",
     "currentIndex": "Current visibility index",
     "noIndex": "Index not available yet",
@@ -565,6 +566,7 @@
   },
   "plans": {
     "new": {
+      "back": "Back",
       "header": "New plan",
       "title": "Stargazing plan",
       "point": "Viewpoint",
@@ -635,6 +637,7 @@
       }
     },
     "list": {
+      "back": "Back to profile",
       "header": "My plans",
       "title": "My plans",
       "upcoming": "Upcoming",

@@ -48,5 +48,38 @@ export default defineConfig([
       'import/resolver': { typescript: { project: 'apps/mobile/tsconfig.json' } },
     },
   },
+  {
+    // ADR-0032: els colors canvien en mode nit, i per això van pel tema.
+    files: ['apps/mobile/src/**'],
+    ignores: [
+      'apps/mobile/src/core/theme/**',
+      '**/__tests__/**',
+      // El canvas del mapa sempre va amb la paleta normal: en mode nit, el filtre el passa a vermell.
+      'apps/mobile/src/features/map/style/nightStyle.ts',
+      // La intro de la benvinguda queda en el tema normal.
+      'apps/mobile/src/features/auth/intro/**',
+    ],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: '@/core/theme/tokens',
+              importNames: [
+                'colors',
+                'gradients',
+                'pointMapColors',
+                'colorsVermell',
+                'gradientsVermell',
+                'pointMapColorsVermell',
+              ],
+              message: 'Els colors canvien amb el tema: useTheme() o makeStyles() (ADR-0032).',
+            },
+          ],
+        },
+      ],
+    },
+  },
   prettier,
 ]);

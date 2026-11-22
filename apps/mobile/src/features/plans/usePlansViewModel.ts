@@ -117,6 +117,7 @@ export function usePlansViewModel() {
 
   return {
     title: t('plans.list.title'),
+    back: { label: t('plans.list.back'), onPress: () => router.back() },
     tab,
     tabs: (['futurs', 'passats'] as const).map((key) => ({
       key,

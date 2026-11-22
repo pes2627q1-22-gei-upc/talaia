@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
+import type { Session } from '@supabase/supabase-js';
 
 import { AdminWorkspace } from './AdminWorkspace';
 import { authClient, checkAdmin, completeAuthRedirect } from './auth';
@@ -8,8 +9,10 @@ type Access = 'loading' | 'signed-out' | 'checking' | 'allowed' | 'denied' | 'er
 export function App() {
   const [access, setAccess] = useState<Access>('loading');
   const [adminToken, setAdminToken] = useState<string | null>(null);
+  const [adminUserId, setAdminUserId] = useState<string | null>(null);
   const accessRef = useRef<Access>('loading');
   const adminTokenRef = useRef<string | null>(null);
+  const adminUserIdRef = useRef<string | null>(null);
   const [email, setEmail] = useState('');
   const [code, setCode] = useState('');
   const [codeSent, setCodeSent] = useState(false);
@@ -24,12 +27,16 @@ export function App() {
     const client = authClient;
     let active = true;
     let checkId = 0;
-    const check = async (token: string | undefined) => {
+    const check = async (session: Session | null) => {
       const id = ++checkId;
-      if (!token) {
+      const token = session?.access_token;
+      const userId = session?.user.id;
+      if (!token || !userId) {
         if (active) {
           adminTokenRef.current = null;
           setAdminToken(null);
+          adminUserIdRef.current = null;
+          setAdminUserId(null);
           setEmail('');
           setCode('');
           setCodeSent(false);
@@ -40,13 +47,15 @@ export function App() {
         return;
       }
       // Revalidar una sessió renovada en segon pla no ha de desmuntar l'espai ni perdre'n l'estat.
-      const wasAllowed = accessRef.current === 'allowed';
+      const wasAllowed = accessRef.current === 'allowed' && adminUserIdRef.current === userId;
       if (wasAllowed) {
         adminTokenRef.current = token;
         setAdminToken(token);
       } else {
         adminTokenRef.current = null;
         setAdminToken(null);
+        adminUserIdRef.current = null;
+        setAdminUserId(null);
         accessRef.current = 'checking';
         setAccess('checking');
       }
@@ -55,6 +64,8 @@ export function App() {
         if (active && id === checkId) {
           adminTokenRef.current = result === 'allowed' ? token : null;
           setAdminToken(result === 'allowed' ? token : null);
+          adminUserIdRef.current = result === 'allowed' ? userId : null;
+          setAdminUserId(result === 'allowed' ? userId : null);
           accessRef.current = result;
           setAccess(result);
           setMessage('');
@@ -77,14 +88,14 @@ export function App() {
     const {
       data: { subscription },
     } = client.auth.onAuthStateChange((_event, session) => {
-      if (active) void check(session?.access_token);
+      if (active) void check(session);
     });
     const start = async () => {
       try {
         await completeAuthRedirect();
         const { data, error } = await client.auth.getSession();
         if (error) throw error;
-        if (active) void check(data.session?.access_token);
+        if (active) void check(data.session);
       } catch {
         if (active) {
           setMessage('No s’ha pogut completar l’inici de sessió. Torna-ho a provar.');
@@ -103,6 +114,8 @@ export function App() {
   const handleAdminAccessDenied = useCallback(() => {
     adminTokenRef.current = null;
     setAdminToken(null);
+    adminUserIdRef.current = null;
+    setAdminUserId(null);
     accessRef.current = 'denied';
     setAccess('denied');
   }, []);
@@ -200,8 +213,12 @@ export function App() {
               Tanca la sessió
             </button>
           </div>
-          {adminToken ? (
-            <AdminWorkspace accessToken={adminToken} onAccessDenied={handleAdminAccessDenied} />
+          {adminToken && adminUserId ? (
+            <AdminWorkspace
+              accessToken={adminToken}
+              currentUserId={adminUserId}
+              onAccessDenied={handleAdminAccessDenied}
+            />
           ) : null}
         </>
       ) : null}

@@ -169,6 +169,7 @@
     "retry": "Reintentar"
   },
   "point": {
+    "back": "Atrás",
     "title": "Punto de observación",
     "currentIndex": "Índice actual de visibilidad",
     "noIndex": "Índice aún no disponible",
@@ -565,6 +566,7 @@
   },
   "plans": {
     "new": {
+      "back": "Atrás",
       "header": "Nuevo plan",
       "title": "Plan de observación",
       "point": "Punto de observación",
@@ -635,6 +637,7 @@
       }
     },
     "list": {
+      "back": "Volver al perfil",
       "header": "Mis planes",
       "title": "Mis planes",
       "upcoming": "Próximos",
