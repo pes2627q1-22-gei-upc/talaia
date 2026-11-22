@@ -18,6 +18,7 @@ Font de veritat visual: els mockups de **Figma** (16 pantalles). Aquest document
 | `far` | `#FFB547` | Accent principal (CTA, destacats) |
 | `ras` | `#5FD4C4` | Índex bo / cel ras |
 | `tap` | `#E0708A` | Índex dolent / cel tapat, errors |
+| `perill` | `#FF7474` | Accions destructives, com tancar la sessió o descartar canvis |
 | `jus` | `#E3C58F` | Índex regular |
 | `pedra` | `#D9C4A0` | Accent càlid secundari |
 | `fenomenEstels` | `#DDD0B8` | Calendari: pluges d'estels |
@@ -39,18 +40,18 @@ Quan s'observa, l'app passa a vermell sobre negre: el blau i el verd trenquen l'
 
 | Token | `vermell` | | Token | `vermell` |
 |---|---|---|---|---|
-| `nit` | `#000000` | | `lluna` · `far` · `ubicacio` · `ras` | `#FF0000` |
+| `nit` | `#000000` | | `lluna` · `far` · `ubicacio` · `ras` · `perill` | `#FF0000` |
 | `card` | `#0F0000` | | `boira` | `#F20000` |
-| `sheet` | `#120000` | | `jus` | `#DC0000` |
-| `vel` | `#170000` | | `tap` | `#BE0000` |
-| `crep` | `#1C0000` | | `pedra` · `fenomen*` | `#C80000` |
+| `sheet` | `#120000` | | `jus` | `#F80000` |
+| `vel` | `#170000` | | `tap` · `pedra` · `fenomen*` | `#F20000` |
+| `crep` | `#1C0000` | | | |
 | `linia` | `#2E0000` | | | |
 | `vora` | `#5A0000` | | | |
 
-- **Regles,** comprovades per `core/theme/__tests__/palettes.test.ts`: només el canal vermell, el text ≥ 4,5:1 i els accents ≥ 3:1 sobre totes les superfícies (de `nit` a `crep`).
+- **Regles,** comprovades per `palettes.test.ts` i `contrast.test.ts` (`core/theme/__tests__/`): només el canal vermell, i el text ≥ 4,5:1 sobre totes les superfícies (de `nit` a `crep`), com en el tema normal. Les franges, les categories i els errors també són text.
 - **El text principal i el secundari surten gairebé iguals:** el contrast màxim sobre el negre és 5,25:1. La jerarquia la fan la mida i el pes.
 - **Les franges de l'índex i les categories del calendari no es distingeixen pel color.** Al costat sempre hi ha d'haver el número o el text.
-- **Com es fa servir:** les pantalles no importen `colors`: fan servir `useTheme()` i `makeStyles()` (`core/theme/theme.tsx`), i així es tornen a pintar quan canvia el tema.
+- **Com es fa servir:** les pantalles no importen `colors`: fan servir `useTheme()` i `makeStyles()` (`core/theme/theme.tsx`), i així es tornen a pintar quan canvia el tema. Una regla d'ESLint (`no-restricted-imports`) ho fa complir.
 - **Icones SVG:** els SVG porten el seu color. Una icona que no té `tintColor` el pren de `useNightTint()`, que en mode nit dona `lluna` (o `nit` amb `useNightTint('nit')`, sobre un botó `primary`) i en el tema normal no fa res.
 - **Mapes:** les DOM components (`NightMap`, `PointLocationMapContent` i `ZonePickerMap`) no veuen el tema. Reben `night`, posen `filter: grayscale(1)` només al canvas de MapLibre i, a sobre de tot, una capa `#FF0000` amb `mix-blend-mode: multiply` (`core/theme/nightMap.ts`). El que es dibuixa al canvas rep la paleta normal, i el filtre el passa a vermell. Els marcadors HTML, l'atribució i els controls reben la del tema: el gris els apagaria (`#FF0000` → `#360000`), i la capa no els canvia.
 

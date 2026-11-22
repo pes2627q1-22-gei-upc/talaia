@@ -174,13 +174,14 @@ Text normal ≥ 4,5:1; text gran (24 pt, o 18,7 pt en negreta) ≥ 3:1.
 | `ras` | 10,03 | 9,25 | 9,03 | 7,96 | 6,72 |
 | `jus` | 10,84 | 10,00 | 9,76 | 8,60 | 7,26 |
 | `tap` | 5,88 | 5,42 | 5,29 | 4,66 | **3,93** |
+| `perill` | 6,86 | 6,33 | 6,18 | 5,44 | 4,59 |
 | `pedra` | 10,59 | 9,76 | 9,53 | 8,40 | 7,09 |
 | `fenomen*` (els quatre) | ≥ 8,71 | ≥ 8,03 | ≥ 7,84 | ≥ 6,91 | ≥ 5,84 |
 
-- 54 dels 55 parells arriben a 4,5:1. `tap` sobre `crep` (3,93:1) només val per a text gran; avui no hi ha text `tap` sobre `crep`.
+- 59 dels 60 parells arriben a 4,5:1. `tap` sobre `crep` (3,93:1) només val per a text gran; avui no hi ha text `tap` sobre `crep`.
 - `nit` sobre els botons i xips plens: `far` 10,25, `lluna` 15,81, `ras` 10,03, `jus` 10,84, `tap` 5,88.
 - Els botons desactivats (opacitat 0,4) en queden exempts (WCAG 1.4.3).
-- **El mode nit (paleta `vermell`, [ADR-0032](decisions/0032-mode-nit-vermell.md)) no entra en aquesta mesura:** la taula és del tema normal. Hi ha textos que no arriben a 4,5:1; és pendent de la TG-239 (Joan).
+- **El mode nit (paleta `vermell`, [ADR-0032](decisions/0032-mode-nit-vermell.md)) no entrava en aquesta mesura,** que és del tema normal. Des del 21/11 (TG-239), els 60 parells també hi arriben: de 4,55:1 (`boira`, `tap`, `pedra` i `fenomen*` sobre `crep`) a 5,25:1 (`lluna` i `perill` sobre `nit`). `nit` sobre els plens: `far`, `lluna` i `ras` 5,25, `jus` 4,99 i `tap` 4,78. `contrast.test.ts` comprova els dos temes.
 - **A comprovar al dispositiu:** a la benvinguda, el text legal (`boira`, `caption`) i l'error (`tap`) són sobre el cel. Si al darrere hi ha el final del degradat (`#2F3680`), fan 4,30:1 i 3,50:1, per sota de 4,5. L'Accessibility Inspector de Xcode (Color contrast) ho mesura sobre la pantalla real.
 
 ### Revisió al dispositiu (pendent)
@@ -203,7 +204,7 @@ Per pantalla, amb VoiceOver (iPhone), TalkBack (Android) i l'auditoria de l'Acce
 3. **RNF02 · `/esdeveniments`:** mesurar-lo amb el JWT d'un compte de prova (`TALAIA_JWT`), com hi entra l'app, en lloc de la clau d'Aprop.
 4. **RNF02 · VM:** mirar al log de Nginx si el NAT conserva la IP del client, i repetir `/punts` amb `docker stats` per explicar la tanda 2.
 5. **RNF02 · Taiga:** a la TG-123, canviar «autocannon o k6» per `npm run rnf:api` i el límit de 41 peticions per ràfega des d'una IP (Hugo).
-6. **RNF05:** informar-ne el responsable dels components (Joan): `Button` `text`, els enllaços de text de les pantalles i `Slider`, a 44 pt (el `hitSlop` del `Chip` n'és el model). Contrast del mode nit (TG-239). Revisió de les pantalles al dispositiu.
+6. **RNF05:** informar-ne el responsable dels components (Joan): `Button` `text`, els enllaços de text de les pantalles i `Slider`, a 44 pt (el `hitSlop` del `Chip` n'és el model). Revisió de les pantalles al dispositiu.
 7. **RNF04, RNF06, RNF07 i RNF08:** primera mesura a la TG-224 (Sprint 3). L'RNF04 es mesura «durant les setmanes de la demo»: si abans del 23/11 no hi ha un monitor extern que consulti `/health` periòdicament des de fora de la VM, d'aquella setmana no en tindrem dades.
 8. Repetir aquesta mesura després de la `release/0.2.0` (20/11) i afegir-la aquí com a «Segona mesura». L'RNF03 ja no té res pendent: des de la PR #142 Sonar analitza tot el codi.
 

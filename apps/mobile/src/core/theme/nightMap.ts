@@ -16,4 +16,6 @@ export const NIGHT_MAP_TINT = {
   background: '#FF0000',
   mixBlendMode: 'multiply',
   pointerEvents: 'none',
+  // Per sobre dels controls de MapLibre (`z-index: 2`): si no, una caixa blanca hi quedava a sota.
+  zIndex: 10,
 } as const;
