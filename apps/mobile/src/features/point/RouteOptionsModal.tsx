@@ -5,16 +5,15 @@ import { useTranslation } from 'react-i18next';
 import { Modal, ScrollView, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { makeStyles, useNightTint, useTheme } from '@/core/theme/theme';
+import { makeStyles, useTheme } from '@/core/theme/theme';
 import { fonts, radii, sizes, spacing } from '@/core/theme/tokens';
 import { AppText } from '@/shared/ui/AppText';
 import { Button } from '@/shared/ui/Button';
 import { Card } from '@/shared/ui/Card';
-import { PressableScale } from '@/shared/ui/PressableScale';
+import { BackButton } from '@/shared/ui/BackButton';
 
 import { RouteDepartureControl, RouteDeparturePicker } from './RouteDeparturePicker';
 
-const backIcon = require('@/assets/images/event/back.svg');
 const chevronDownIcon = require('@/assets/images/calendar/chevron-down.svg');
 const infoIcon = require('@/assets/images/point/info.svg');
 const routeDate = new Intl.DateTimeFormat('en-GB', {
@@ -63,7 +62,6 @@ export function RouteOptionsModal({
   onOpenMaps,
 }: Props) {
   const { t, i18n } = useTranslation();
-  const nightTint = useNightTint();
   const { colors } = useTheme();
   const styles = useStyles();
   const insets = useSafeAreaInsets();
@@ -123,20 +121,12 @@ export function RouteOptionsModal({
             { paddingTop: Math.max(insets.top, spacing.xl + spacing.lg) + spacing.md },
           ]}
         >
-          <PressableScale
+          <BackButton
             onPress={back}
-            accessibilityLabel={t(
+            label={t(
               editingDeparture ? 'point.routeDeparturePickerBack' : 'point.routeOptionsBack',
             )}
-            style={styles.back}
-          >
-            <Image
-              source={backIcon}
-              tintColor={nightTint}
-              style={styles.backIcon}
-              accessible={false}
-            />
-          </PressableScale>
+          />
         </View>
         <ScrollView
           key={editingDeparture ? 'departure' : 'routes'}
@@ -388,17 +378,6 @@ const useStyles = makeStyles(({ colors }) => ({
   },
   intro: { gap: spacing.sm },
   departureForm: { gap: spacing.lg },
-  back: {
-    width: sizes.touch,
-    height: sizes.touch,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: radii.pill,
-    borderWidth: 1,
-    borderColor: colors.vora,
-    backgroundColor: colors.nit,
-  },
-  backIcon: { width: 7.33, height: 12.83 },
   list: { padding: spacing.ml, gap: spacing.md },
   source: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
   infoIcon: { width: sizes.iconSmall, height: sizes.iconSmall },
