@@ -93,8 +93,18 @@ export function NewAlertScreen({ alert }: { alert?: Alerta } = {}) {
 
   return (
     <View style={styles.root}>
+      {/*
+        Com a Explora: dalt, l'àrea segura; baix, a iOS la barra de pestanyes es pinta a sobre del
+        contingut i `contentInsetAdjustmentBehavior` hi aparta el final («Crea l'alerta»). A
+        Android no fa res: la barra ja queda fora de la pantalla.
+      */}
       <SafeAreaView edges={['top']} style={styles.safeArea} testID="new-alert-safe-area">
-        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <ScrollView
+          contentInsetAdjustmentBehavior="automatic"
+          contentContainerStyle={styles.content}
+          showsVerticalScrollIndicator={false}
+          testID="new-alert-scroll"
+        >
           <Enter index={0}>
             <View style={styles.header}>
               <PressableScale

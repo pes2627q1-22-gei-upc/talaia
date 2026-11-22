@@ -103,6 +103,13 @@ describe('NewAlertScreen', () => {
     expect(within(safeArea).getByRole('button', { name: 'Enrere' })).toBeOnTheScreen();
   });
 
+  it('a iOS, el final del formulari s’aparta de la barra de pestanyes (TG-267)', async () => {
+    await renderScreen();
+    const scroll = screen.getByTestId('new-alert-scroll');
+    expect(scroll.props.contentInsetAdjustmentBehavior).toBe('automatic');
+    expect(within(scroll).getByRole('button', { name: "Crea l'alerta" })).toBeOnTheScreen();
+  });
+
   it('els rètols llargs es poden partir en lloc de tapar el valor o sortir de la pantalla', async () => {
     await i18n.changeLanguage('es');
     await renderScreen();

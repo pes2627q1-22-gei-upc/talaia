@@ -29,16 +29,56 @@ export default defineConfig([
     },
   },
   {
-    // Scripts de Node en JavaScript (supabase/scripts i scripts/sm): sense TypeScript, no-undef
-    // necessita els globals.
+    // Scripts de Node en JavaScript (supabase/scripts, scripts/sm i scripts/rnf): sense TypeScript,
+    // no-undef necessita els globals.
     files: ['supabase/scripts/**/*.mjs', 'scripts/**/*.mjs'],
-    languageOptions: { globals: { console: 'readonly', process: 'readonly', fetch: 'readonly' } },
+    languageOptions: {
+      globals: {
+        console: 'readonly',
+        process: 'readonly',
+        fetch: 'readonly',
+        AbortSignal: 'readonly',
+      },
+    },
   },
   {
     files: ['apps/mobile/**'],
     extends: [expo],
     settings: {
       'import/resolver': { typescript: { project: 'apps/mobile/tsconfig.json' } },
+    },
+  },
+  {
+    // ADR-0032: els colors canvien en mode nit, i per això van pel tema.
+    files: ['apps/mobile/src/**'],
+    ignores: [
+      'apps/mobile/src/core/theme/**',
+      '**/__tests__/**',
+      // El canvas del mapa sempre va amb la paleta normal: en mode nit, el filtre el passa a vermell.
+      'apps/mobile/src/features/map/style/nightStyle.ts',
+      // La intro de la benvinguda queda en el tema normal.
+      'apps/mobile/src/features/auth/intro/**',
+    ],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: '@/core/theme/tokens',
+              importNames: [
+                'colors',
+                'gradients',
+                'pointMapColors',
+                'colorsVermell',
+                'gradientsVermell',
+                'pointMapColorsVermell',
+              ],
+              message: 'Els colors canvien amb el tema: useTheme() o makeStyles() (ADR-0032).',
+            },
+          ],
+        },
+      ],
     },
   },
   prettier,

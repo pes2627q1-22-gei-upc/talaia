@@ -169,6 +169,7 @@
     "retry": "Torna-ho a provar"
   },
   "point": {
+    "back": "Enrere",
     "title": "Punt d'observació",
     "currentIndex": "Índex actual de visibilitat",
     "noIndex": "Índex encara no disponible",
@@ -210,6 +211,11 @@
     "accessibility": "Accessibilitat",
     "directions": "Com arribar",
     "createPlan": "Crea un pla",
+    "addFavorite": "Desa el lloc com a favorit",
+    "removeFavorite": "Treu el lloc dels favorits",
+    "favoriteLogin": "Inicia la sessió per desar aquest punt.",
+    "favoriteError": "No hem pogut desar el favorit. Torna-ho a provar.",
+    "favoriteRemoveError": "No hem pogut treure el favorit. Torna-ho a provar.",
     "mapsErrorTitle": "No hem pogut obrir el mapa",
     "mapsErrorMessage": "Torna-ho a provar d'aquí a un moment.",
     "timezone": "Hora local de Catalunya · Europe/Madrid",
@@ -561,6 +567,7 @@
   },
   "plans": {
     "new": {
+      "back": "Enrere",
       "header": "Nou pla",
       "title": "Pla d'observació",
       "point": "Punt d'observació",
@@ -631,6 +638,7 @@
       }
     },
     "list": {
+      "back": "Torna al perfil",
       "header": "Els meus plans",
       "title": "Els meus plans",
       "upcoming": "Propers",

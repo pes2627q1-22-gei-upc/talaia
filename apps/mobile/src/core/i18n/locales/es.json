@@ -169,6 +169,7 @@
     "retry": "Reintentar"
   },
   "point": {
+    "back": "Atrás",
     "title": "Punto de observación",
     "currentIndex": "Índice actual de visibilidad",
     "noIndex": "Índice aún no disponible",
@@ -210,6 +211,11 @@
     "accessibility": "Accesibilidad",
     "directions": "Cómo llegar",
     "createPlan": "Crea un plan",
+    "addFavorite": "Guardar el lugar como favorito",
+    "removeFavorite": "Quitar el lugar de favoritos",
+    "favoriteLogin": "Inicia sesión para guardar este punto.",
+    "favoriteError": "No hemos podido guardar el favorito. Vuelve a intentarlo.",
+    "favoriteRemoveError": "No hemos podido quitar el favorito. Vuelve a intentarlo.",
     "mapsErrorTitle": "No hemos podido abrir el mapa",
     "mapsErrorMessage": "Vuelve a intentarlo dentro de un momento.",
     "timezone": "Hora local de Cataluña · Europe/Madrid",
@@ -561,6 +567,7 @@
   },
   "plans": {
     "new": {
+      "back": "Atrás",
       "header": "Nuevo plan",
       "title": "Plan de observación",
       "point": "Punto de observación",
@@ -631,6 +638,7 @@
       }
     },
     "list": {
+      "back": "Volver al perfil",
       "header": "Mis planes",
       "title": "Mis planes",
       "upcoming": "Próximos",

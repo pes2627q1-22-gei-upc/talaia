@@ -21,9 +21,10 @@ jest.mock('expo-haptics');
 const get = jest.mocked(apiGet);
 const push = jest.fn();
 const navigate = jest.fn();
+const back = jest.fn();
 jest
   .mocked(useRouter)
-  .mockReturnValue({ push, navigate } as unknown as ReturnType<typeof useRouter>);
+  .mockReturnValue({ push, navigate, back } as unknown as ReturnType<typeof useRouter>);
 
 const METRICS = {
   frame: { x: 0, y: 0, width: 393, height: 852 },
@@ -56,6 +57,13 @@ beforeEach(async () => {
   push.mockReset();
   navigate.mockReset();
   await i18n.changeLanguage('ca');
+});
+
+it('porta el seu botó enrere, fix sobre el títol, que torna al perfil', async () => {
+  serve({ futurs: [plan()], passats: [] });
+  await renderScreen();
+  await fireEvent.press(screen.getByRole('button', { name: 'Torna al perfil' }));
+  expect(back).toHaveBeenCalledTimes(1);
 });
 
 it('ensenya els propers amb esquelets mentre carreguen i obre la fitxa en tocar-ne un', async () => {

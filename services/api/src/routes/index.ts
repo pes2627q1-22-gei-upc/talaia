@@ -12,6 +12,7 @@ import type { PuntsAdminService } from '../punts/puntsAdminService';
 import type { PlansService } from '../plans/plansService';
 import type { PuntsService } from '../punts/puntsService';
 import type { RecomanacionsService } from '../recomanacions/recomanacionsService';
+import type { RutesService } from '../mobilicat/rutesService';
 import type { ProfileStore } from '../services/profileService';
 import type { PushDeviceStore } from '../services/pushDeviceService';
 import type { VisibilitatService } from '../visibilitat/visibilitatService';
@@ -27,6 +28,7 @@ import { createPlansRouter } from './plans';
 import { createPuntIndexRouter } from './puntIndex';
 import { createPuntsRouter } from './punts';
 import { createRecomanacionsRouter } from './recomanacions';
+import { createRutesRouter } from './rutes';
 import { createVisibilitatRouter } from './visibilitat';
 
 /**
@@ -53,6 +55,8 @@ export type ApiDeps = {
   apropApiKey?: string;
   /** `POST`, `GET` i `DELETE /favorits` (TG-169). */
   favorits?: FavoritsService;
+  /** `GET /punts/{id}/rutes` (TG-135). */
+  rutes?: RutesService;
   /** `POST` i `GET /plans` (TG-156). */
   plans?: PlansService;
 };
@@ -72,25 +76,28 @@ export function createApiRouter({
   esdeveniments,
   apropApiKey,
   favorits,
+  rutes,
   plans,
 }: ApiDeps & { profileStore: ProfileStore; alertes: AlertesStore }): Router {
   const router = Router();
+  // Un sol middleware per a totes les rutes d'usuari (JWT vàlid i compte no bloquejat).
+  const requireUser = requireAuth({
+    supabaseUrl,
+    jwks,
+    accountStatus: (authUserId) => profileStore.getAccountStatus(authUserId),
+  });
+
   router.use('/health', healthRouter);
   router.use('/punts', createPuntsRouter(punts));
   router.use('/punts', createPuntIndexRouter(breakdown));
+  router.use('/punts', createRutesRouter(rutes, requireUser));
   router.use('/recomanacions', createRecomanacionsRouter(recomanacions));
   router.use('/visibilitat', createVisibilitatRouter(visibilitat));
   router.use(
     '/esdeveniments',
     createEsdevenimentsRouter(esdeveniments, apropApiKey, { supabaseUrl, jwks }),
   );
-  // Totes les rutes d'usuari passen per aquí: JWT vàlid i compte no bloquejat (403
-  // `account_blocked`, TG-177). Les rutes noves (alertes, plans, favorits) han de fer servir aquest.
-  const requireUser = requireAuth({
-    supabaseUrl,
-    jwks,
-    accountStatus: (authUserId) => profileStore.getAccountStatus(authUserId),
-  });
+  // Totes les rutes d'usuari passen pel mateix `requireUser` (403 `account_blocked`, TG-177).
   router.use(createAuthRouter({ requireUser, profileStore }));
   router.use(createDispositiusRouter({ requireUser, store: dispositius }));
   router.use('/admin', createAdminRouter({ requireUser, profileStore, puntsAdmin }));

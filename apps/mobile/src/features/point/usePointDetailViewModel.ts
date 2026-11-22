@@ -210,6 +210,7 @@ export function usePointDetailViewModel(pointId: string) {
     coordinates: point ? { lat: point.lat, lon: point.lon } : undefined,
     mapLabel: t('point.mapA11y', { name: point?.nom }),
     mapCreditsLabel: t('point.mapCredits'),
+    backLabel: t('point.back'),
     mapStyle: nightStyle,
     mapUnavailable: t('point.mapUnavailable'),
     daytime,

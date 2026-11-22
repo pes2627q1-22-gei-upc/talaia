@@ -12,6 +12,7 @@ npm run api                   # = npm run dev -w services/api, amb recàrrega
 - Salut: <http://localhost:3000/api/v1/health>
 - Punts del mapa: <http://localhost:3000/api/v1/punts> (cal `DATABASE_URL`)
 - Fitxa d'un punt: `http://localhost:3000/api/v1/punts/<id>?hores=24`
+- Rutes fins a un punt: `GET /api/v1/punts/{id}/rutes?lat=41.3851&lon=2.1734` (cal `DATABASE_URL`)
 - Calendari: `GET /api/v1/esdeveniments?des_de=2026-10-01&fins_a=2026-10-31` (JWT de Talaia o `X-API-Key` d'Aprop)
 - Detall del fenomen: `GET /api/v1/esdeveniments/{id}` (mateixa autenticació; `Accept-Language: ca|es|en`, amb fallback al català)
 - Desglossament de l'índex d'un punt: `http://localhost:3000/api/v1/punts/{id}/index?nit=2026-10-19` (cal `DATABASE_URL`)
@@ -42,9 +43,10 @@ Es llegeixen del `.env` de l'**arrel** del repo (`dev` i `start` el carreguen am
 | Variable | Per defecte | Què és |
 |---|---|---|
 | `API_PORT` | `3000` | Port on escolta l'API |
-| `DATABASE_URL` | — | Postgres (`postgresql://…`). **Opcional:** sense ella l'API arrenca amb un avís, `/health` funciona i `/punts`, `/punts/{id}`, `/punts/{id}/index`, `/recomanacions`, `/perfil`, `/perfil/dispositius`, `/admin`, `/alertes`, `/favorits` i `/plans` responen 503 `database_unavailable`, i `/visibilitat` funciona amb la foscor estimada. Amb Supabase local: `postgresql://postgres:postgres@127.0.0.1:54322/postgres` |
+| `DATABASE_URL` | — | Postgres (`postgresql://…`). **Opcional:** sense ella l'API arrenca amb un avís, `/health` funciona i `/punts`, `/punts/{id}`, `/punts/{id}/index`, `/punts/{id}/rutes`, `/recomanacions`, `/perfil`, `/perfil/dispositius`, `/admin`, `/alertes`, `/favorits` i `/plans` responen 503 `database_unavailable`, i `/visibilitat` funciona amb la foscor estimada. Amb Supabase local: `postgresql://postgres:postgres@127.0.0.1:54322/postgres` |
 | `SUPABASE_URL` | `http://127.0.0.1:54321` | URL del projecte de Supabase. `requireAuth` hi valida els JWT amb el JWKS (`/auth/v1/.well-known/jwks.json`, ADR-0023): 401 si el token és dolent, 503 si Supabase no respon. Al compose de la VM és obligatòria |
 | `OPEN_METEO_BASE_URL` | `https://api.open-meteo.com/v1` | URL base d'Open-Meteo, la mateixa que fa servir el worker: `GET /visibilitat` hi demana la previsió de les ubicacions que no són al catàleg |
+| `MOBILICAT_ROUTES_BASE_URL` | `https://api.mobili.cat` | URL base del servei de rutes de Mobilicat. La petició de Talaia a Mobilicat no requereix autenticació. L'API hi afegeix `GET /routes` |
 | `APROP_API_KEY` | — | Secret de l'API assignat a Aprop. No s'inclou al repositori ni a l'app; sense configurar-lo, l'accés amb API key retorna 503, però l'accés JWT continua disponible. |
 
 Una variable nova s'afegeix a l'esquema de `src/config/env.ts` i a `.env.example`. Cap secret al repo.
@@ -69,6 +71,7 @@ src/
     favorits.ts         POST, GET i DELETE /favorits: els punts favorits de l'usuari del JWT (HU25–HU27)
     plans.ts            POST, GET i GET {id} /plans: els plans d'observació de l'usuari del JWT (HU12)
     puntIndex.ts        GET /punts/{id}/index: desglossament de l'índex per hores i factors (HU04)
+    rutes.ts            GET /punts/{id}/rutes: alternatives des de l'origen de l'usuari (TG-135)
     recomanacions.ts    GET /recomanacions (validació de la consulta i OpenAPI)
     adminPunts.ts       /admin/punts: crear, editar i retirar punts (HU39), muntat a admin.ts
     visibilitat.ts      GET /visibilitat: índex d'una ubicació qualsevol (X-Cache i OpenAPI)
@@ -80,6 +83,9 @@ src/
     puntsService.ts     Memòria cau i bbox del mapa, i fitxa amb l'índex per hores; errors de la base de dades → 503
     puntsAdminRepository.ts  Consultes de l'administració: tots els punts, crear i editar (HU39)
     puntsAdminService.ts     Regles de l'estat, 409 si l'slug existeix, 404, 503, i descarta el document del mapa a cada canvi
+  mobilicat/
+    routesClient.ts     Client HTTP de GET /routes: validació, timeout i errors tipats
+    rutesService.ts     Punt publicat + origen → resum de rutes o resposta parcial
   esdeveniments/
     dates.ts            Límits del dia civil de Catalunya convertits a UTC
     esdevenimentsRepository.ts  Consulta Kysely del calendari i el punt oficial
@@ -99,7 +105,7 @@ src/
   recomanacions/
     franja.ts           Franja horària local de Catalunya (Europe/Madrid) → UTC, amb el canvi d'hora
     finestra.ts         Finestra horària d'un esdeveniment del calendari (codi pur, TG-140)
-    rutes.ts            Temps en cotxe ↔ radi en línia recta, fins que hi hagi Mobilicat
+    rutes.ts            Estimació del temps en cotxe per al radi de /recomanacions
     recomanacionsRepository.ts  Punts dins del radi (PostGIS) i índex de la franja
     recomanacionsService.ts     Rànquing: millor hora, mitjana i distància; errors de la base de dades → 503
   visibilitat/
@@ -195,6 +201,60 @@ El desglossament de l'índex d'un punt per a una nit: una entrada per hora amb e
 - **HTTP:** `Cache-Control: public, max-age=<segons fins a la propera hora>`, com `/punts`: l'índex només canvia quan el worker recalcula.
 - **Comparteix amb `/punts/{id}`** les consultes del repositori (`findPublished`, `indexHores`) i l'esquema `IndexHora` de l'OpenAPI (`src/index/indexSchemas.ts`); la ruta és un router a part (`routes/puntIndex.ts`).
 
+## `GET /punts/{id}/rutes` (TG-135)
+
+Consulta separada de la fitxa: l'app envia l'origen de la ubicació actual del dispositiu i l'API
+resol el destí amb les coordenades del punt publicat. La fitxa `GET /punts/{id}` no crida
+Mobilicat; si el proveïdor falla, la fitxa es continua mostrant. La consulta de rutes requereix
+autenticació Talaia per no exposar públicament un intermediari cap a Mobilicat, i porta
+`Cache-Control: private, no-store`, perquè la query conté la ubicació de l'usuari.
+
+```http
+GET /api/v1/punts/6f1c2b7e-3a9d-4c58-9e0b-2d7f1a4c8b35/rutes?lat=41.3851&lon=2.1734
+```
+
+`id` ha de ser un UUID publicat. `lat` i `lon` són coordenades WGS84 de l'origen, amb latitud
+entre −90 i 90 i longitud entre −180 i 180. Cal `DATABASE_URL` per resoldre el destí.
+Abans d'enviar l'origen a Mobilicat, Talaia arrodoneix les coordenades a tres decimals (uns 100 m
+de precisió) per no transmetre la ubicació exacta del dispositiu. Les hores de les alternatives es
+retornen en UTC amb el sufix `Z`.
+
+Per cada consulta, l'API fa una sola petició a Mobilicat amb l'instant actual en UTC,
+`timePreference=DEPART_AT`, els modes `WALK,BIKE,BIKE_SHARE,CAR,PUBLIC_TRANSPORT` i `limit=5`.
+Mobilicat ordena les alternatives de millor a pitjor: la primera és la que arriba abans per a una
+sortida ara. Això no implica que sigui la de menor durada. L'absència d'un mode en les alternatives
+rebudes tampoc demostra que no hi hagi cap ruta d'aquell mode.
+
+La resposta és `RutesPunt` (`@talaia/shared`), amb `estat`, `destacada` i `alternatives`. Cada
+alternativa conserva els totals de Mobilicat (`distanciaMetres`, `duradaSegons`), la sortida i
+l'arribada, els transbordaments i els modes dels trams; els trams de transport públic poden incloure
+el tipus de vehicle, la línia i l'operador. `destacada` repeteix la primera alternativa de la llista.
+No es recalculen els totals a partir dels trams. Si Mobilicat retorna una durada o una distància
+decimal, el client l'arrodoneix a l'enter més proper per mantenir el contracte de Talaia. No cal que
+la resposta inclogui `walkDistanceMeters`, perquè Talaia no l'utilitza. Cada alternativa es valida
+per separat: una ruta malformada o amb un mode de tram desconegut s'omet, però es conserven les altres
+que siguin vàlides; si cap no ho és, la resposta parcial és `no_disponible`.
+
+| `estat` | `destacada` i `alternatives` | Significat |
+|---|---|---|
+| `disponible` | Ruta destacada i fins a cinc alternatives | Mobilicat ha retornat rutes. |
+| `sense_rutes` | `null` i `[]` | Mobilicat ha respost 200 amb `routes: []`; no s'han trobat propostes amb aquests modes i aquest horari. |
+| `no_disponible` | `null` i `[]` | Timeout, error HTTP (inclòs el 501 mentre l'endpoint del proveïdor no estigui activat), error de xarxa o resposta invàlida. La ruta de Talaia respon 200 amb aquest estat parcial. |
+
+Un JWT absent o invàlid dona 401 `unauthorized`; un compte bloquejat dona 403 `account_blocked`;
+un UUID invàlid o coordenades fora de rang donen 400 `validation_error`; un punt no publicat dona
+404 `punt_not_found`; un error de base de dades dona 503 `database_unavailable`. Talaia respon 429
+`too_many_requests` amb `Retry-After` si el compte o la instància ha de respectar l'interval mínim
+de **5 s** abans de consultar de nou. Mobilicat té un timeout inicial de **5 s** i Talaia no hi fa
+reintents automàtics.
+
+El limitador en memòria aplica els cinc segons per compte i globalment: totes les persones usuàries
+comparteixen el límit global de la instància (fins a 12 consultes per minut). Això assumeix que
+Mobilicat veu la instància de Talaia com un únic dispositiu i compleix la interpretació més estricta
+de la seva instrucció. El desplegament actual té una sola instància d'API; si s'afegeixen rèpliques,
+caldrà coordinar el limitador amb un magatzem compartit. TG-136 ha d'evitar duplicats mentre una
+consulta és en curs i respectar també `Retry-After`.
+
 ## `GET /recomanacions` (HU01, TG-100; HU02, TG-133; HU11, TG-140)
 
 El rànquing de punts per a la consulta de «Què vols veure?» (`ParametresRecomanacions` → `RecomanacionsResposta` a `@talaia/shared`). Només l'origen és obligatori: `lat` i `lon`. La resta és opcional, i el servei l'omple (`resolConsulta`):
@@ -210,7 +270,7 @@ El rànquing de punts per a la consulta de «Què vols veure?» (`ParametresReco
 
 **«A prop meu»** (HU02): amb només la ubicació de l'usuari, `?lat=41.39&lon=2.17` torna el rànquing de la nit en curs a 60 minuts en cotxe. La resposta porta la `data` i el `tempsMaxim` que s'han fet servir, perquè l'app ensenyi la consulta resolta. La mateixa definició valida i documenta la query (ADR-0011).
 
-- **Radi:** fins que hi hagi el servei de rutes de Mobilicat (`docs/serveis-externs.md`), el temps en cotxe es converteix en un radi en línia recta amb **60 km/h** i un **desviament ×1,3** per les carreteres (`rutes.ts`): 150 min → 115,4 km. El `tempsEstimat` de cada punt surt de la mateixa fórmula a la inversa.
+- **Radi:** aquest rànquing continua estimant el temps en cotxe amb un radi en línia recta a **60 km/h** i un **desviament ×1,3** per les carreteres (`rutes.ts`): 150 min → 115,4 km. El `tempsEstimat` de cada punt surt de la mateixa fórmula a la inversa. La consulta directa a Mobilicat s'utilitza a `GET /punts/{id}/rutes`.
 - **Nit i franja:** una nit va de les 12:00 locals de `data` a les 12:00 de l'endemà, com a `GET /punts/{id}/index` (`INICI_NIT` a `franja.ts`). Una hora d'abans de les 12 és la de l'endemà: de 01 a 05 amb `data=2026-10-21` és la matinada del 22. Si `finsA` < `desDe`, la franja acaba l'endemà de `desDe`. Es passa a UTC amb el canvi d'hora. Si ja ha començat, només compten les hores des de l'hora en curs; si ja ha acabat, 400 `franja_passada`.
 - **Rànquing:** per a cada punt publicat dins del radi, la **millor hora** de la franja (l'índex més alt; la primera si n'hi ha d'empatades), la **mitjana** i `horesAmbIndex` (de quantes hores surt la mitjana). S'ordena per la millor hora, després per la mitjana i després per la distància. Es retornen els `limit` primers; `total` diu quants punts hi ha dins del radi.
 - **Sense índex** (una nit més enllà de la previsió, ~4 dies): 200 amb `millorHora` i `mitjana` a `null` i els punts per distància. L'app hi pot dir «encara no hi ha previsió».
@@ -334,7 +394,7 @@ Errors: JWT absent o invàlid → 401 `unauthorized`; compte bloquejat → 403 `
 
 ## Rol d'administrador i comptes bloquejats (TG-177, HU41)
 
-`perfils.rol` (`usuari` o `admin`) i `perfils.bloquejat` (ADR-0029). `routes/index.ts` crea un sol `requireUser` (`requireAuth` amb `accountStatus`): valida el JWT i llegeix el perfil, i si el compte està bloquejat respon **403 `account_blocked`**. Totes les rutes d'usuari l'han de fer servir; les rutes públiques (`/health`, `/punts`, `/recomanacions`, `/visibilitat`, `/esdeveniments`) no hi miren. `requireAdmin`, posat al darrere, només deixa passar els administradors: si no, 403 `forbidden`.
+`perfils.rol` (`usuari` o `admin`) i `perfils.bloquejat` (ADR-0029). `routes/index.ts` crea un sol `requireUser` (`requireAuth` amb `accountStatus`): valida el JWT i llegeix el perfil, i si el compte està bloquejat respon **403 `account_blocked`**. Totes les rutes d'usuari l'han de fer servir; les rutes públiques (`/health`, `/punts`, `/punts/{id}`, `/punts/{id}/index`, `/recomanacions`, `/visibilitat`, `/esdeveniments`) no hi miren. `GET /punts/{id}/rutes` també fa servir `requireUser` per protegir la quota compartida de Mobilicat. `requireAdmin`, posat al darrere, només deixa passar els administradors: si no, 403 `forbidden`.
 
 Per fer administrador algú, al SQL Editor de Supabase:
 
@@ -375,7 +435,7 @@ El punt de referència de `/esdeveniments` (`centre-observacio-univers`, ADR-002
 
 **Moure un punt.** Si un `PATCH` mou el punt més de 10 m (`MATEIX_LLOC_M`), el que era del lloc d'abans no es conserva, tot en la mateixa transacció: s'esborra l'índex que el worker n'havia calculat (`index_visibilitat`), de manera que el mapa i la fitxa el mostren sense índex (gris) i no amb el d'un altre lloc fins a la propera hora del worker; `horitzo` torna a `null`; l'estació XEMA passa a ser la més propera al lloc nou, i `sqm` torna a `null` llevat que el `PATCH` en porti un de **diferent** del que hi havia. Així, si la web envia el punt sencer en moure'l, l'`sqm` antic que hi viatja no es conserva com si fos del lloc nou. Per desar el mateix `sqm` al lloc nou (la mateixa cel·la d'1 km), cal un segon `PATCH` sense moure'l. A menys de 10 m és el mateix lloc (l'arrodoniment del formulari): només canvien les coordenades. El document del mapa es descarta com a qualsevol canvi.
 
-**Punts del seed.** Els 32 punts del catàleg inicial surten de `data/punts_observacio.geojson` (ADR-0017). Si es torna a aplicar el seed (`supabase db reset` o `db push --include-seed`), en restaura les metadades i la ubicació, però no l'`estat`: un punt retirat continua retirat. Un canvi de metadades d'un punt del seed fet des de l'administració s'ha de copiar també al GeoJSON perquè no es perdi.
+**Punts del seed.** Els 32 punts del catàleg inicial surten de `data/punts_observacio.geojson` (ADR-0017). El seed insereix només els slugs que encara no existeixen (`on conflict (slug) do nothing`): si el slug ja hi és, no modifica cap camp, tant si la fila és oficial com comunitària. Per això, tornar a executar `db push --include-seed` no sobreescriu canvis fets des de l'administració, i corregir el GeoJSON no actualitza files d'una base existent. `supabase db reset` esborra la base i torna a carregar els valors del GeoJSON; abans de fer-lo, cal preservar els punts creats o editats des de l'administració i les dades relacionades que s'hagin de conservar. Si es volen incloure punts oficials nous o metadades editades al catàleg inicial després del reset, actualitza el GeoJSON i regenera el seed. No s'ha d'utilitzar `db reset` com a actualització ordinària.
 
 Errors: 401 `unauthorized`; 403 `forbidden` o `account_blocked`; 400 `validation_error`; 404 `punt_not_found`; 409 `slug_already_exists` (`POST`), o `moderation_required` o `reference_point_required` (`PATCH`); 503 `database_unavailable`.
 

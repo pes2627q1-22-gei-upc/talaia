@@ -5,8 +5,8 @@
  *   node data/scripts/build-seed-punts.ts --check    # valida i comprova que el seed versionat està al dia
  *
  * Node 22 executa TypeScript directament (type stripping), sense dependències.
- * El seed és idempotent: `on conflict (slug) do update`, així `supabase db reset`
- * i un `db push --include-seed` repetit no dupliquen punts.
+ * El seed és idempotent: `on conflict (slug) do nothing`. Només insereix slugs nous;
+ * les files que ja existeixen a la base no s'actualitzen.
  *
  * Les columnes han de coincidir amb la taula punts_observacio (migracions de TG-86, TG-97 i TG-116).
  */
@@ -88,6 +88,7 @@ export function generarSql(features: PuntFeature[]): string {
   const traduccions = llegirTraduccions(features);
   return `-- Generat per data/scripts/build-seed-punts.ts a partir del GeoJSON i data/traduccions/punts.json.
 -- No l'editis a mà: canvia les fonts i torna a executar el script. (TG-87, TG-164)
+-- Només s'insereixen slugs absents; les files existents queden intactes (ADR-0017, TG-175).
 -- Coordenades: geocodificador de l'ICGC. Punts oficials (sense creador) i publicats.
 -- sqm: brillantor del cel (mag/arcsec²) del mapa de contaminació lumínica de la Generalitat (TG-97).
 -- horitzo: alçada aparent de l'horitzó per grau d'azimut, del model d'elevacions de l'ICGC (TG-116).
@@ -96,19 +97,7 @@ insert into punts_observacio
   (slug, nom, municipi, descripcio, altitud, sqm, horitzo_obert, accessibilitat, textos, horitzo, origen, estat, ubicacio)
 values
 ${features.map((f) => fila(f, traduccions[f.properties.slug]!)).join(',\n')}
-on conflict (slug) do update set
-  nom = excluded.nom,
-  municipi = excluded.municipi,
-  descripcio = excluded.descripcio,
-  altitud = excluded.altitud,
-  sqm = excluded.sqm,
-  horitzo_obert = excluded.horitzo_obert,
-  accessibilitat = excluded.accessibilitat,
-  textos = excluded.textos,
-  horitzo = excluded.horitzo,
-  ubicacio = excluded.ubicacio
--- Un punt de la comunitat amb el mateix slug no se sobreescriu.
-where punts_observacio.origen = 'OFICIAL';
+on conflict (slug) do nothing;
 `;
 }
 

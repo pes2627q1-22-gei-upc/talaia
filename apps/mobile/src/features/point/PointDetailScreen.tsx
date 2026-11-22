@@ -10,6 +10,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { makeStyles, useNightTint, useTheme } from '@/core/theme/theme';
 import { fonts, motion, radii, sizes, spacing, typography } from '@/core/theme/tokens';
 import { AppText } from '@/shared/ui/AppText';
+import { BackButton } from '@/shared/ui/BackButton';
 import { Button } from '@/shared/ui/Button';
 import { Card } from '@/shared/ui/Card';
 import { IndexIndicator } from '@/shared/ui/IndexIndicator';
@@ -17,6 +18,7 @@ import { Skeleton } from '@/shared/ui/Skeleton';
 import { StateMessage } from '@/shared/ui/StateMessage';
 
 import { IndexBreakdown } from './IndexBreakdown';
+import { FavoriteButton } from './FavoriteButton';
 import PointLocationMap from './PointLocationMap';
 import { usePointDetailViewModel } from './usePointDetailViewModel';
 
@@ -121,69 +123,72 @@ export function PointDetailScreen({ pointId }: { pointId: string }) {
             </View>
           ) : null}
           <Animated.View entering={appear} style={styles.content}>
-            <View style={styles.heading}>
-              <View style={styles.tags}>
-                <AppText variant="tag" color="pedra" style={styles.tag}>
-                  {vm.municipality}
-                </AppText>
-                <AppText variant="tag" color="pedra" style={styles.tag}>
-                  {vm.altitudeTag}
-                </AppText>
-              </View>
-            </View>
-            {vm.staleMessage ? (
-              <View accessibilityLiveRegion="polite" style={styles.heading}>
-                <AppText variant="small" color="jus">
-                  {vm.staleMessage}
-                </AppText>
-                <Button
-                  variant="text"
-                  label={vm.retryLabel}
-                  onPress={vm.retry}
-                  disabled={vm.refreshing}
-                />
-              </View>
-            ) : null}
-            <Card style={styles.indexCard}>
-              {vm.currentIndex ? (
-                <View style={styles.indexValue}>
-                  <IndexIndicator index={vm.currentIndex} size="lg" />
+            <View style={styles.summary}>
+              <View style={styles.pointMeta}>
+                <View style={styles.tags}>
+                  <AppText variant="tag" color="pedra" style={styles.tag}>
+                    {vm.municipality}
+                  </AppText>
+                  <AppText variant="tag" color="pedra" style={styles.tag}>
+                    {vm.altitudeTag}
+                  </AppText>
                 </View>
-              ) : vm.daytime ? (
-                <View style={styles.indexValue}>
-                  <Image
-                    source={sunIcon}
-                    tintColor={colors.pedra}
-                    style={styles.daytimeIcon}
-                    accessible={false}
+                <FavoriteButton key={pointId} pointId={pointId} />
+              </View>
+              {vm.staleMessage ? (
+                <View accessibilityLiveRegion="polite" style={styles.staleMessage}>
+                  <AppText variant="small" color="jus">
+                    {vm.staleMessage}
+                  </AppText>
+                  <Button
+                    variant="text"
+                    label={vm.retryLabel}
+                    onPress={vm.retry}
+                    disabled={vm.refreshing}
                   />
                 </View>
               ) : null}
-              <View style={styles.indexCopy}>
-                <AppText
-                  variant="heading"
-                  color={vm.daytime ? 'lluna' : (vm.currentIndex?.franja ?? 'boira')}
-                >
-                  {vm.currentLevel ?? vm.noIndex}
-                </AppText>
-                <AppText variant="small" color="boira">
-                  {vm.currentLabel}
-                </AppText>
-                {vm.bestWindow ? (
-                  <AppText variant="small" color="boira">
-                    <Trans
-                      i18nKey="point.bestHour"
-                      values={vm.bestWindow}
-                      components={{
-                        strong: (
-                          <AppText variant="small" color="lluna" style={styles.bestHourStrong} />
-                        ),
-                      }}
+              <Card style={styles.indexCard}>
+                {vm.currentIndex ? (
+                  <View style={styles.indexValue}>
+                    <IndexIndicator index={vm.currentIndex} size="lg" />
+                  </View>
+                ) : vm.daytime ? (
+                  <View style={styles.indexValue}>
+                    <Image
+                      source={sunIcon}
+                      tintColor={colors.pedra}
+                      style={styles.daytimeIcon}
+                      accessible={false}
                     />
-                  </AppText>
+                  </View>
                 ) : null}
-              </View>
-            </Card>
+                <View style={styles.indexCopy}>
+                  <AppText
+                    variant="heading"
+                    color={vm.daytime ? 'lluna' : (vm.currentIndex?.franja ?? 'boira')}
+                  >
+                    {vm.currentLevel ?? vm.noIndex}
+                  </AppText>
+                  <AppText variant="small" color="boira">
+                    {vm.currentLabel}
+                  </AppText>
+                  {vm.bestWindow ? (
+                    <AppText variant="small" color="boira">
+                      <Trans
+                        i18nKey="point.bestHour"
+                        values={vm.bestWindow}
+                        components={{
+                          strong: (
+                            <AppText variant="small" color="lluna" style={styles.bestHourStrong} />
+                          ),
+                        }}
+                      />
+                    </AppText>
+                  ) : null}
+                </View>
+              </Card>
+            </View>
             <IndexBreakdown
               hours={vm.hours}
               defaultHourId={vm.defaultHourId}
@@ -284,12 +289,15 @@ export function PointDetailScreen({ pointId }: { pointId: string }) {
           />
         </View>
       ) : null}
+      {/* Sura sobre el mapa de la fitxa (mockup 05), també mentre carrega o si falla. */}
+      <BackButton label={vm.backLabel} style={[styles.back, { top: insets.top + spacing.sm }]} />
     </SafeAreaView>
   );
 }
 
 const useStyles = makeStyles(({ colors }) => ({
   root: { flex: 1, backgroundColor: colors.nit },
+  back: { position: 'absolute', left: spacing.md },
   scroll: { paddingBottom: spacing.lg },
   actions: {
     flexDirection: 'row',
@@ -302,6 +310,7 @@ const useStyles = makeStyles(({ colors }) => ({
   actionButton: { flex: 1, minWidth: 0, paddingHorizontal: spacing.sm },
   actionIcon: { width: sizes.icon, height: sizes.icon },
   content: { padding: spacing.ml, gap: spacing.lg },
+  summary: { gap: spacing.sm },
   map: {
     height: sizes.pointMap,
     width: '100%',
@@ -319,7 +328,8 @@ const useStyles = makeStyles(({ colors }) => ({
     bottom: -spacing.md,
     color: colors.lluna,
   },
-  heading: { gap: spacing.sm },
+  pointMeta: { gap: spacing.sm },
+  staleMessage: { gap: spacing.sm },
   tags: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   tag: {
     backgroundColor: colors.vel,

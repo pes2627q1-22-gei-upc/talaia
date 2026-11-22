@@ -1,6 +1,6 @@
 import { vi } from 'vitest';
 
-export type Session = { access_token: string };
+export type Session = { access_token: string; user?: { id: string } };
 type AuthEvent = 'INITIAL_SESSION' | 'SIGNED_IN' | 'SIGNED_OUT' | 'TOKEN_REFRESHED';
 type Listener = (event: AuthEvent, session: Session | null) => void;
 type AuthResult = { data?: unknown; error: Error | null };
@@ -12,12 +12,14 @@ const ok: AuthResult = { data: {}, error: null };
  * Com el real, avisa els subscriptors en iniciar o tancar sessió i en subscriure's.
  */
 export function createFakeSupabase(initialSession: Session | null = null) {
-  let session = initialSession;
+  const withUser = (value: Session | null) =>
+    value ? { ...value, user: value.user ?? { id: 'admin-auth-id' } } : null;
+  let session = withUser(initialSession);
   const listeners = new Set<Listener>();
 
   function emit(event: AuthEvent, next: Session | null) {
-    session = next;
-    for (const listener of listeners) listener(event, next);
+    session = withUser(next);
+    for (const listener of listeners) listener(event, session);
   }
 
   const auth = {
@@ -56,10 +58,16 @@ export function deferred<T>() {
   return { promise, resolve, reject };
 }
 
-/** Simula `GET /api/v1/admin/me`: cada crida rep el següent estat i l'últim es repeteix. */
+/** Simula `GET /api/v1/admin/me` i `GET /api/v1/admin/punts` per a les proves de l'admin. */
 export function stubAdminApi(...statuses: number[]) {
   const pending = [...statuses];
-  const fetch = vi.fn(async (_input: RequestInfo | URL, _init?: RequestInit) => {
+  const fetch = vi.fn(async (input: RequestInfo | URL, _init?: RequestInit) => {
+    if (String(input) === '/api/v1/admin/punts') {
+      return new Response('[]', {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
     const status = pending.length > 1 ? pending.shift()! : pending[0]!;
     return new Response(null, { status });
   });

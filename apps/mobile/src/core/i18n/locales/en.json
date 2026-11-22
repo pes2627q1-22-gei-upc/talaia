@@ -169,6 +169,7 @@
     "retry": "Try again"
   },
   "point": {
+    "back": "Back",
     "title": "Observation spot",
     "currentIndex": "Current visibility index",
     "noIndex": "Index not available yet",
@@ -210,6 +211,11 @@
     "accessibility": "Accessibility",
     "directions": "Get directions",
     "createPlan": "Create a plan",
+    "addFavorite": "Save this spot as a favorite",
+    "removeFavorite": "Remove this spot from favorites",
+    "favoriteLogin": "Sign in to save this spot.",
+    "favoriteError": "We couldn't save this favorite. Try again.",
+    "favoriteRemoveError": "We couldn't remove this favorite. Try again.",
     "mapsErrorTitle": "Could not open maps",
     "mapsErrorMessage": "Please try again in a moment.",
     "timezone": "Local time in Catalonia · Europe/Madrid",
@@ -561,6 +567,7 @@
   },
   "plans": {
     "new": {
+      "back": "Back",
       "header": "New plan",
       "title": "Stargazing plan",
       "point": "Viewpoint",
@@ -631,6 +638,7 @@
       }
     },
     "list": {
+      "back": "Back to profile",
       "header": "My plans",
       "title": "My plans",
       "upcoming": "Upcoming",

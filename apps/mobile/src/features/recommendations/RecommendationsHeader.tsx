@@ -28,15 +28,31 @@ export function RecommendationsSummary({ header }: { header: Header }) {
   );
 }
 
-/** Què vol dir el color dels marcadors. */
+/**
+ * Què vol dir el color dels marcadors. En mode nit el color no les distingeix, i cada franja té la
+ * forma del seu marcador: cel ras, ple; justet, anell; tapat, anell discontinu.
+ */
 export function IndexLegend({ items }: { items: Header['legend'] }) {
   const styles = useStyles();
-  const { colors } = useTheme();
+  const { name, colors } = useTheme();
+  const night = name === 'vermell';
   return (
     <View style={styles.legend}>
       {items.map((item) => (
         <View key={item.franja} style={styles.chip}>
-          <View style={[styles.dot, { backgroundColor: colors[item.franja] }]} />
+          <View
+            testID={`legend-${item.franja}`}
+            style={
+              night
+                ? [
+                    styles.nightDot,
+                    { borderColor: colors[item.franja] },
+                    item.franja === 'ras' && { backgroundColor: colors[item.franja] },
+                    item.franja === 'tap' && styles.dashed,
+                  ]
+                : [styles.dot, { backgroundColor: colors[item.franja] }]
+            }
+          />
           <AppText variant="tag">{item.label}</AppText>
         </View>
       ))}
@@ -69,4 +85,12 @@ const useStyles = makeStyles(({ colors }) => ({
     backgroundColor: colors.sheet,
   },
   dot: { width: sizes.legendDot, height: sizes.legendDot, borderRadius: radii.pill },
+  // Més gran que el punt: l'anell i l'anell discontinu s'han de veure.
+  nightDot: {
+    width: sizes.legendDot + spacing.xs,
+    height: sizes.legendDot + spacing.xs,
+    borderRadius: radii.pill,
+    borderWidth: 1.5,
+  },
+  dashed: { borderStyle: 'dashed' },
 }));

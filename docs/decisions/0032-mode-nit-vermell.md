@@ -32,10 +32,10 @@ Hi ha una segona paleta amb les mateixes claus que `colors`. Les regles són aqu
 
 - **Només el canal vermell:** a cada color, el verd i el blau són `00` (`#RR0000`, amb transparència o sense).
 - **Contrast del text:** el text és ≥ 4,5:1 sobre totes les superfícies.
-- **Contrast de la resta:** els accents, les franges i les categories són ≥ 3:1 sobre totes les superfícies, perquè també fan de vora o de punt sobre targetes i fulls.
-- **Comprovació:** un test de la paleta comprova les tres regles.
+- **Contrast de la resta:** la ubicació, que només és un punt al mapa, és ≥ 3:1 sobre totes les superfícies. Les franges, les categories i els errors també surten com a text, i per això compleixen la regla del text.
+- **Comprovació:** `palettes.test.ts` comprova el canal vermell, i `contrast.test.ts` el contrast, el mateix per als dos temes.
 
-Amb només el vermell, el contrast màxim sobre el negre és 5,25:1. Per això el text principal i el secundari surten gairebé iguals, i la jerarquia la fan la mida i el pes.
+Amb només el vermell, el contrast màxim sobre el negre és 5,25:1, i per arribar a 4,5:1 sobre `crep` cal com a mínim `#F10000`. Per això tot el text surt gairebé igual: la jerarquia la fan la mida i el pes, i les franges les distingeixen la forma (llegenda i marcadors), el número i el text.
 
 | Token | `normal` | `vermell` | Notes |
 |---|---|---|---|
@@ -49,9 +49,9 @@ Amb només el vermell, el contrast màxim sobre el negre és 5,25:1. Per això e
 | `lluna` | `#EEF0F7` | `#FF0000` | 5,0–5,25:1 |
 | `boira` | `#9AA3C7` | `#F20000` | ≥ 4,5:1 fins a `crep` |
 | `far` | `#FFB547` | `#FF0000` | El text sobre `far` és `nit` (5,25:1) |
-| `ras` · `jus` · `tap` | | `#FF0000` · `#DC0000` · `#BE0000` | ≥ 3:1 fins a `crep` (`tap`, 3,04:1). Només una pista: la franja la diuen el número i el text |
+| `ras` · `jus` · `tap` | | `#FF0000` · `#F80000` · `#F20000` | ≥ 4,5:1 fins a `crep` (`tap`, 4,55:1): també són text. El color no les distingeix |
 | `ubicacio` | `#4B9FFF` | `#FF0000` | |
-| `fenomen*`, `pedra` | | `#C80000` | ≥ 3:1 fins a `crep`. Les categories del calendari les diu el text |
+| `fenomen*`, `pedra` | | `#F20000` | ≥ 4,5:1 fins a `crep`. Les categories del calendari les diu el text |
 
 Els degradats i `pointMapColors` també tenen la seva versió vermella. A la TG-239 es poden ajustar els valors, sempre dins de les regles: el test és qui mana.
 
@@ -65,9 +65,9 @@ Els degradats i `pointMapColors` també tenen la seva versió vermella. A la TG-
   El context també arriba a les pantalles i als `Modal` que es presenten en una finestra nativa, perquè continuen sent fills de l'arbre de React.
 - **Estils:** `makeStyles((t) => StyleSheet.create({ … }))` en lloc d'un `StyleSheet.create` amb `colors` en carregar el mòdul. Crea els estils un sol cop per tema, quan cal, i el component els llegeix amb el hook que retorna.
 - **El que no són colors** (espaiats, radis, mides, tipografia i moviment) continua sent constant: el mode nit no hi toca.
-- **Fitxers sense React:** el codi que fa servir colors fora d'un component (`nightStyle`, `MarkerPalette`, `MapChrome`) rep la paleta com a paràmetre.
-- **Barra d'estat:** en mode nit s'amaga (`<StatusBar hidden />`). L'hora i la bateria de l'iOS sempre surten en blanc, i no es poden tenyir.
-- **Barrera:** a la TG-239, quan s'acabi de migrar, una regla `no-restricted-imports` d'ESLint no deixarà importar `colors`, `gradients` ni `pointMapColors` fora de `core/theme`. Així, el codi nou no se salta el tema.
+- **Fitxers sense React:** el codi que fa servir colors fora d'un component rep la paleta com a paràmetre (`MarkerPalette`, `MapChrome`). L'estil del mapa (`nightStyle`) i les capes del canvas sempre van amb la paleta normal: en mode nit, el filtre del canvas les passa a vermell (vegeu «Mapa»).
+- **Barra d'estat:** en mode nit s'amaga, perquè l'hora i la bateria de l'iOS sempre surten en blanc i no es poden tenyir. L'app fa servir escenes, i a iOS l'API global de `StatusBar` no l'amaga: la porta cada pantalla (`UIViewControllerBasedStatusBarAppearance` a `app.json`, i `statusBarHidden` i `statusBarStyle` al Stack arrel, que les pantalles de dins hereten). A Expo Go aquesta clau és `false` i les opcions del Stack hi peten, i a Android l'API global funciona: allà continua `<StatusBar hidden />`.
+- **Barrera:** la regla `no-restricted-imports` d'ESLint (`eslint.config.mjs`) no deixa importar `colors`, `gradients` ni `pointMapColors` (ni les variants vermelles) de `tokens` fora de `core/theme`. Així, el codi nou no se salta el tema. N'estan exempts els tests, `nightStyle` (el canvas) i la intro de la benvinguda, que queda en el tema normal. Qui necessiti la paleta normal a posta, la pren de `themes.normal`.
 
 ### Mapa
 
