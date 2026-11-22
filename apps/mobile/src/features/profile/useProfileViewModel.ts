@@ -126,7 +126,8 @@ export function useProfileViewModel() {
         }
       : null,
     savedPointsLabel: t('profile.savedPoints'),
-    comingSoonLabel: t('profile.comingSoon'),
+    savedPointsHint: t('profile.savedPointsHint'),
+    openSavedPoints: () => router.push('/favorits'),
     showApiStatus: __DEV__,
   };
 }

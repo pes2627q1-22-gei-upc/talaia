@@ -179,6 +179,11 @@
     "plans": "Mis planes",
     "plansHint": "Consulta tus planes de observación",
     "savedPoints": "Puntos favoritos",
+    "savedPointsHint": "Consulta los puntos que has guardado",
+    "savedPointsEmpty": "Todavía no tienes puntos favoritos.",
+    "savedPointsError": "No se han podido cargar los puntos favoritos.",
+    "openSavedPoint": "Abre la ficha del punto",
+    "retry": "Volver a intentar",
     "comingSoon": "Próximamente"
   },
   "apiStatus": {

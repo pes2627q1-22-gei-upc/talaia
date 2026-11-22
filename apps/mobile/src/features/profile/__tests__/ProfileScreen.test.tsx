@@ -154,7 +154,10 @@ describe('ProfileScreen · sessió (HU35)', () => {
       'no-hide-descendants',
     );
     expect(screen.getByText('Punts favorits')).toBeOnTheScreen();
-    expect(screen.getAllByText('Properament')).toHaveLength(1);
+    const favorites = screen.getByRole('button', { name: 'Punts favorits' });
+    expect(favorites).toHaveProp('accessibilityHint', 'Consulta els punts que has desat');
+    await fireEvent.press(favorites);
+    expect(push).toHaveBeenCalledWith('/favorits');
     expect(screen.queryByRole('button', { name: 'Alertes' })).toBeNull();
     expect(get).toHaveBeenCalledWith('/perfil', undefined, { signal: expect.any(AbortSignal) });
     const language = screen.getByRole('button', { name: 'Idioma, Català' });
