@@ -210,14 +210,19 @@ export function RouteOptionsModal({
                   return (
                     <Card
                       key={key}
-                      selected={index === 0}
                       style={styles.option}
                       onPress={hasDetails ? () => setExpanded(isExpanded ? null : key) : undefined}
                       accessibilityLabel={
                         hasDetails
-                          ? `${t(isExpanded ? 'point.routeHideJourney' : 'point.routeShowJourney')}: ${modeNames[mode]}`
+                          ? `${modeNames[mode]}, ${duration}, ${t('point.routeArrivalLabel', { context: arrival.format(new Date(route.arribada)).startsWith('01:') ? 'oneOClock' : undefined })} ${arrival.format(new Date(route.arribada))}${route.transbordaments ? `, ${t('point.routeTransfers', { count: route.transbordaments })}` : ''}`
                           : undefined
                       }
+                      accessibilityHint={
+                        hasDetails
+                          ? t(isExpanded ? 'point.routeHideJourney' : 'point.routeShowJourney')
+                          : undefined
+                      }
+                      accessibilityState={hasDetails ? { expanded: isExpanded } : undefined}
                     >
                       <View style={styles.optionToggle}>
                         <View style={styles.optionTop}>
@@ -246,7 +251,9 @@ export function RouteOptionsModal({
                         ) : null}
                         <View style={styles.optionMeta}>
                           <AppText variant="small" color="boira">
-                            {distance.format(route.distanciaMetres / 1000)} km
+                            {t('point.routeDistance', {
+                              value: distance.format(route.distanciaMetres / 1000),
+                            })}
                             {route.transbordaments > 0
                               ? ` · ${t('point.routeTransfers', { count: route.transbordaments })}`
                               : ''}
@@ -254,11 +261,18 @@ export function RouteOptionsModal({
                           <View style={styles.schedule}>
                             <AppText variant="small" color="boira">
                               {t('point.routeDeparture', {
+                                context: arrival.format(new Date(route.sortida)).startsWith('01:')
+                                  ? 'oneOClock'
+                                  : undefined,
                                 time: arrival.format(new Date(route.sortida)),
                               })}
                             </AppText>
                             <AppText variant="small" color="boira">
-                              {t('point.routeArrivalLabel')}{' '}
+                              {t('point.routeArrivalLabel', {
+                                context: arrival.format(new Date(route.arribada)).startsWith('01:')
+                                  ? 'oneOClock'
+                                  : undefined,
+                              })}{' '}
                               <AppText variant="small" color="lluna" style={styles.arrivalTime}>
                                 {arrival.format(new Date(route.arribada))}
                               </AppText>

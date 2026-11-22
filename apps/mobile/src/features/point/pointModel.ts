@@ -20,6 +20,6 @@ export const twoDigitHours = (text: string) =>
 export function directionsUrl(lat: number, lon: number, platform: string): string {
   const destination = `${lat},${lon}`;
   return platform === 'ios'
-    ? `http://maps.apple.com/?daddr=${destination}&dirflg=d`
-    : `https://www.google.com/maps/dir/?api=1&destination=${destination}&travelmode=driving`;
+    ? `http://maps.apple.com/?daddr=${destination}`
+    : `https://www.google.com/maps/dir/?api=1&destination=${destination}`;
 }

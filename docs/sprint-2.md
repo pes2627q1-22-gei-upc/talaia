@@ -45,14 +45,16 @@ Les tasques del Sprint 1 que no es tanquin el 28/10 s'hi afegeixen a la planning
 *Com a usuari, vull veure la distància i el temps fins al punt i obrir la navegació al mapa del mòbil, de manera que hi pugui arribar fàcilment.*
 
 **Criteris d'acceptació**
-- [ ] La fitxa del punt mostra la distància i el temps des de la ubicació de l'usuari, obtinguts del servei de Mobilicat.
-- [ ] «Com arribar» obre el mapa del mòbil (Apple Maps o Google Maps) amb el destí.
-- [ ] Si el servei de Mobilicat no respon, la fitxa es mostra igualment, sense distància ni temps.
+- [ ] En prémer «Com arribar» des de la fitxa del punt, es mostren les alternatives de Mobilicat des de la ubicació de l'usuari, amb la distància, la durada i l'hora d'arribada de cada ruta. Aquesta informació es consulta al full de rutes.
+- [ ] Es poden desplegar les rutes amb més d'un tram per consultar-ne el detall.
+- [ ] Es pot triar una data i hora de sortida futura i consultar les alternatives per a aquella sortida, o tornar a «Sortir ara».
+- [ ] Des d'una alternativa es pot obrir Maps amb el destí per iniciar la navegació.
+- [ ] Sense ubicació, sense rutes disponibles o si Mobilicat no respon, «Com arribar» obre Google Maps directament amb el destí, i la fitxa continua disponible.
 
 | Ref | Tasca | Responsable | Inici | Límit | h |
 |---|---|---|---|---|---|
 | TG-135 | Client del servei de rutes de Mobilicat a l'API (distància i temps), amb resposta parcial si no respon | Victor | 10/11 | 13/11 | 3 |
-| TG-136 | Distància, temps i botó «Com arribar» a la fitxa del punt, amb deep link al mapa del mòbil | Vinyet | 16/11 | 18/11 | 2 |
+| TG-136 | Botó «Com arribar» a la fitxa: alternatives de Mobilicat amb distància, temps i trams, selector de sortida i accés a Maps | Vinyet | 16/11 | 18/11 | 2 |
 | TG-137 | Tests del client de rutes (contracte i caiguda del servei) | Victor | 13/11 | 17/11 | 1 |
 
 ## HU10 · Consultar l'explicació i l'horari d'un fenomen · [TG-30](https://tree.taiga.io/project/mohamed-dari-pes_22_c_talaia/us/30)

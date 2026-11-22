@@ -169,6 +169,7 @@
     "retry": "Reintentar"
   },
   "point": {
+    "back": "Atrás",
     "title": "Punto de observación",
     "currentIndex": "Índice actual de visibilidad",
     "noIndex": "Índice aún no disponible",
@@ -208,14 +209,15 @@
     "description": "Descripción",
     "accessibility": "Accesibilidad",
     "directions": "Cómo llegar",
+    "routeDistance": "{{value}} km",
     "routeDurationMinutes": "{{minutes}} min",
     "routeDurationHours": "{{hours}} h",
     "routeDurationHoursMinutes": "{{hours}} h {{minutes}} min",
     "routeEarliest": "Destacada",
     "routeDayOffset_one": "+{{count}} día",
     "routeDayOffset_other": "+{{count}} días",
-    "routeShowJourney": "Ver el trayecto",
-    "routeHideJourney": "Ocultar el trayecto",
+    "routeShowJourney": "Muestra el trayecto",
+    "routeHideJourney": "Oculta el trayecto",
     "routeTransitMode": {
       "rail": "Tren",
       "metro": "Metro",
@@ -242,11 +244,13 @@
     "routeNoResults": "No hay rutas disponibles para esta hora. Puedes abrir el trayecto en Maps.",
     "routeOptionsSource": "Datos de Mobilicat",
     "routeDeparture": "Sale a las {{time}}",
+    "routeDeparture_oneOClock": "Sale a la {{time}}",
+    "routeArrivalLabel_oneOClock": "Llega a la",
     "routeArrivalLabel": "Llega a las",
     "routeTransfers_one": "{{count}} transbordo",
     "routeTransfers_other": "{{count}} transbordos",
     "routeMapsNote": "La aplicación de mapas calculará su propia ruta, que puede ser diferente.",
-    "openMaps": "Abrir en Maps",
+    "openMaps": "Ábrelo en Maps",
     "routeMode": {
       "walk": "A pie",
       "bike": "Bicicleta",
@@ -606,6 +610,7 @@
   },
   "plans": {
     "new": {
+      "back": "Atrás",
       "header": "Nuevo plan",
       "title": "Plan de observación",
       "point": "Punto de observación",
@@ -676,6 +681,7 @@
       }
     },
     "list": {
+      "back": "Volver al perfil",
       "header": "Mis planes",
       "title": "Mis planes",
       "upcoming": "Próximos",

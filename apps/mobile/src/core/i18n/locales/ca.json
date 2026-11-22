@@ -169,6 +169,7 @@
     "retry": "Torna-ho a provar"
   },
   "point": {
+    "back": "Enrere",
     "title": "Punt d'observació",
     "currentIndex": "Índex actual de visibilitat",
     "noIndex": "Índex encara no disponible",
@@ -208,14 +209,15 @@
     "description": "Descripció",
     "accessibility": "Accessibilitat",
     "directions": "Com arribar",
+    "routeDistance": "{{value}} km",
     "routeDurationMinutes": "{{minutes}} min",
     "routeDurationHours": "{{hours}} h",
     "routeDurationHoursMinutes": "{{hours}} h {{minutes}} min",
     "routeEarliest": "Destacada",
     "routeDayOffset_one": "+{{count}} dia",
     "routeDayOffset_other": "+{{count}} dies",
-    "routeShowJourney": "Veure el trajecte",
-    "routeHideJourney": "Amagar el trajecte",
+    "routeShowJourney": "Mostra el trajecte",
+    "routeHideJourney": "Amaga el trajecte",
     "routeTransitMode": {
       "rail": "Tren",
       "metro": "Metro",
@@ -242,11 +244,13 @@
     "routeNoResults": "No hi ha rutes disponibles per a aquesta hora. Pots obrir el trajecte a Maps.",
     "routeOptionsSource": "Dades de Mobilicat",
     "routeDeparture": "Surt a les {{time}}",
+    "routeDeparture_oneOClock": "Surt a la {{time}}",
+    "routeArrivalLabel_oneOClock": "Arriba a la",
     "routeArrivalLabel": "Arriba a les",
     "routeTransfers_one": "{{count}} transbordament",
     "routeTransfers_other": "{{count}} transbordaments",
     "routeMapsNote": "L'app de mapes calcularà el seu propi itinerari, que pot ser diferent.",
-    "openMaps": "Obrir a Maps",
+    "openMaps": "Obre-ho a Maps",
     "routeMode": {
       "walk": "A peu",
       "bike": "Bicicleta",
@@ -606,6 +610,7 @@
   },
   "plans": {
     "new": {
+      "back": "Enrere",
       "header": "Nou pla",
       "title": "Pla d'observació",
       "point": "Punt d'observació",
@@ -676,6 +681,7 @@
       }
     },
     "list": {
+      "back": "Torna al perfil",
       "header": "Els meus plans",
       "title": "Els meus plans",
       "upcoming": "Propers",

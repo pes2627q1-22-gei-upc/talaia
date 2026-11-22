@@ -169,6 +169,7 @@
     "retry": "Try again"
   },
   "point": {
+    "back": "Back",
     "title": "Observation spot",
     "currentIndex": "Current visibility index",
     "noIndex": "Index not available yet",
@@ -208,13 +209,14 @@
     "description": "Description",
     "accessibility": "Accessibility",
     "directions": "Get directions",
+    "routeDistance": "{{value}} km",
     "routeDurationMinutes": "{{minutes}} min",
     "routeDurationHours": "{{hours}} h",
     "routeDurationHoursMinutes": "{{hours}} h {{minutes}} min",
     "routeEarliest": "Featured",
     "routeDayOffset_one": "+{{count}} day",
     "routeDayOffset_other": "+{{count}} days",
-    "routeShowJourney": "View journey",
+    "routeShowJourney": "Show journey",
     "routeHideJourney": "Hide journey",
     "routeTransitMode": {
       "rail": "Train",
@@ -242,6 +244,8 @@
     "routeNoResults": "No routes are available for this time. You can open directions in Maps.",
     "routeOptionsSource": "Data from Mobilicat",
     "routeDeparture": "Departs at {{time}}",
+    "routeDeparture_oneOClock": "Departs at {{time}}",
+    "routeArrivalLabel_oneOClock": "Arrives at",
     "routeArrivalLabel": "Arrives at",
     "routeTransfers_one": "{{count}} transfer",
     "routeTransfers_other": "{{count}} transfers",
@@ -606,6 +610,7 @@
   },
   "plans": {
     "new": {
+      "back": "Back",
       "header": "New plan",
       "title": "Stargazing plan",
       "point": "Viewpoint",
@@ -676,6 +681,7 @@
       }
     },
     "list": {
+      "back": "Back to profile",
       "header": "My plans",
       "title": "My plans",
       "upcoming": "Upcoming",

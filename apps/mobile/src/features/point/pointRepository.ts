@@ -26,7 +26,7 @@ export function usePointRoutesQuery(
         { lat: origin!.lat, lon: origin!.lon, sortida: departure },
         { signal },
       ),
-    enabled: pointId.trim().length > 0 && !!origin,
+    enabled: false,
     staleTime: departure ? 5 * 60_000 : 0,
     retry: (count, error) => error instanceof ApiError && error.status === 429 && count < 1,
     retryDelay: 5_000,

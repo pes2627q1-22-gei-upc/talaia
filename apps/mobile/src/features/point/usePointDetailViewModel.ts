@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { Alert, Linking, Platform } from 'react-native';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { DireccioHoritzo, IndexHora } from '@talaia/shared';
 
@@ -35,6 +35,14 @@ export function usePointDetailViewModel(pointId: string) {
   const routes = usePointRoutesQuery(pointId, query.data ? origin : undefined, routeDeparture);
   const [routeOptionsVisible, setRouteOptionsVisible] = useState(false);
   const [openingDirections, setOpeningDirections] = useState(false);
+  const [routeRequested, setRouteRequested] = useState(false);
+  const previousDeparture = useRef(routeDeparture);
+  useEffect(() => {
+    if (previousDeparture.current !== routeDeparture) {
+      previousDeparture.current = routeDeparture;
+      if (routeRequested && routeOptionsVisible) void routes.refetch();
+    }
+  }, [routeDeparture, routeOptionsVisible, routeRequested, routes]);
   const point = query.data;
   const invalidId = !pointId.trim();
   const notFound =
@@ -181,23 +189,25 @@ export function usePointDetailViewModel(pointId: string) {
   };
   const openDirections = async () => {
     if (!point || openingDirections) return;
-    if (routeAlternatives.length > 0) {
-      setRouteOptionsVisible(true);
+    if (!origin) {
+      openMaps();
       return;
     }
-    if (origin && routes.isFetching && !routes.data) {
-      setOpeningDirections(true);
-      try {
-        const result = await routes.refetch();
-        if (result.data?.estat === 'disponible' && result.data.alternatives.length > 0) {
-          setRouteOptionsVisible(true);
-          return;
-        }
-      } finally {
-        setOpeningDirections(false);
+    setOpeningDirections(true);
+    try {
+      const result = await routes.refetch();
+      if (result.data?.estat === 'disponible' && result.data.alternatives.length > 0) {
+        setRouteRequested(true);
+        setRouteOptionsVisible(true);
+      } else {
+        openMaps();
       }
+    } finally {
+      setOpeningDirections(false);
     }
-    openMaps();
+  };
+  const changeRouteDeparture = (departure?: string) => {
+    setRouteDeparture(departure);
   };
   const altitude =
     point?.altitud == null
@@ -237,6 +247,7 @@ export function usePointDetailViewModel(pointId: string) {
     coordinates: point ? { lat: point.lat, lon: point.lon } : undefined,
     mapLabel: t('point.mapA11y', { name: point?.nom }),
     mapCreditsLabel: t('point.mapCredits'),
+    backLabel: t('point.back'),
     mapStyle: nightStyle,
     mapUnavailable: t('point.mapUnavailable'),
     daytime,
@@ -253,7 +264,7 @@ export function usePointDetailViewModel(pointId: string) {
     altitudeTag: t('point.altitudeTag', { value: altitude }),
     routeAlternatives,
     routeDeparture,
-    setRouteDeparture,
+    setRouteDeparture: changeRouteDeparture,
     routesLoading: routes.isFetching,
     routesError: routes.isError,
     routeOptionsVisible,

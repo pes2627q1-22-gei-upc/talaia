@@ -166,11 +166,9 @@ it('les hores sempre surten amb dues xifres (Hermes treu el zero)', () => {
 });
 
 it('obre la navegació al mapa propi del mòbil amb el destí', () => {
-  expect(directionsUrl(42.05, 0.73, 'ios')).toBe(
-    'http://maps.apple.com/?daddr=42.05,0.73&dirflg=d',
-  );
+  expect(directionsUrl(42.05, 0.73, 'ios')).toBe('http://maps.apple.com/?daddr=42.05,0.73');
   expect(directionsUrl(42.05, 0.73, 'android')).toBe(
-    'https://www.google.com/maps/dir/?api=1&destination=42.05,0.73&travelmode=driving',
+    'https://www.google.com/maps/dir/?api=1&destination=42.05,0.73',
   );
 });
 

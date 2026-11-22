@@ -113,10 +113,10 @@ it('obre les opcions de Mobilicat des de Com arribar i després el mapa del mòb
   await renderScreen();
   expect(await screen.findByRole('header', { name: point.nom })).toBeOnTheScreen();
   expect(screen.getByRole('button', { name: 'Com arribar' })).toBeOnTheScreen();
-  expect(get).toHaveBeenCalledWith(
+  expect(get).not.toHaveBeenCalledWith(
     '/punts/montsec/rutes',
-    { lat: 41.385, lon: 2.17 },
-    { signal: expect.any(AbortSignal) },
+    expect.anything(),
+    expect.anything(),
   );
   const open = jest.spyOn(Linking, 'openURL').mockResolvedValue();
   fireEvent.press(screen.getByRole('button', { name: 'Com arribar' }));
@@ -131,13 +131,12 @@ it('obre les opcions de Mobilicat des de Com arribar i després el mapa del mòb
   expect(StyleSheet.flatten(screen.getByText('11:27').props.style).fontFamily).toBe(fonts.bold);
   expect(screen.getByText('1 transbordament', { exact: false })).toBeOnTheScreen();
   expect(screen.getByText('+1 dia', { exact: false })).toBeOnTheScreen();
-  expect(screen.queryByRole('button', { name: 'Veure el trajecte: Cotxe' })).toBeNull();
-  fireEvent.press(screen.getByRole('button', { name: 'Veure el trajecte: Transport públic' }));
+  fireEvent.press(screen.getByRole('button', { name: /Transport públic, 27 min/ }));
   expect(await screen.findByText('Tren')).toBeOnTheScreen();
   expect(screen.getByText('Rodalies')).toBeOnTheScreen();
   fireEvent.press(screen.getByRole('button', { name: "Canvia l'hora de sortida: Ara" }));
   expect(await screen.findByRole('adjustable', { name: 'Hora de sortida' })).toBeOnTheScreen();
-  expect(screen.queryByRole('button', { name: 'Obrir a Maps' })).toBeNull();
+  expect(screen.queryByRole('button', { name: 'Obre-ho a Maps' })).toBeNull();
   expect(screen.queryByText('A peu → R1')).toBeNull();
   fireEvent.press(screen.getByRole('button', { name: 'Mostra les rutes' }));
   await waitFor(() =>
@@ -157,7 +156,7 @@ it('obre les opcions de Mobilicat des de Com arribar i després el mapa del mòb
   expect(screen.getByRole('header', { name: point.nom })).toBeOnTheScreen();
   fireEvent.press(screen.getByRole('button', { name: 'Com arribar' }));
   expect(await screen.findByRole('header', { name: 'Opcions per arribar-hi' })).toBeOnTheScreen();
-  fireEvent.press(screen.getByRole('button', { name: 'Obrir a Maps' }));
+  fireEvent.press(screen.getByRole('button', { name: 'Obre-ho a Maps' }));
   expect(open).toHaveBeenCalledWith(directionsUrl(point.lat, point.lon, Platform.OS));
   open.mockRestore();
 });
@@ -175,12 +174,10 @@ it('manté la fitxa i el botó quan Mobilicat no respon', async () => {
   await renderScreen();
   expect(await screen.findByRole('header', { name: point.nom })).toBeOnTheScreen();
   expect(screen.getByRole('button', { name: 'Com arribar' })).toBeOnTheScreen();
-  await waitFor(() =>
-    expect(get).toHaveBeenCalledWith(
-      '/punts/montsec/rutes',
-      { lat: 41.385, lon: 2.17 },
-      { signal: expect.any(AbortSignal) },
-    ),
+  expect(get).not.toHaveBeenCalledWith(
+    '/punts/montsec/rutes',
+    expect.anything(),
+    expect.anything(),
   );
   expect(screen.queryByText(/km · .* min/)).toBeNull();
   const open = jest.spyOn(Linking, 'openURL').mockResolvedValue();
