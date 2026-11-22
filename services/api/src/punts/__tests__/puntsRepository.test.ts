@@ -108,7 +108,7 @@ describe('puntsRepository.indexHores', () => {
     expect(await createPuntsRepository(db).indexHores('id-1', desDe, finsA)).toEqual([]);
 
     expect(queries[0]?.sql).toBe(
-      'select "hora", "valor", "franja", "factors", "foscor_estimada" from "index_visibilitat" where "punt_id" = $1 and "hora" >= $2 and "hora" < $3 order by "hora"',
+      'select "hora", "valor", "franja", "factors", "foscor_estimada", "versio", "humitat_corregida" from "index_visibilitat" where "punt_id" = $1 and "hora" >= $2 and "hora" < $3 order by "hora"',
     );
     expect(queries[0]?.parameters).toEqual(['id-1', desDe, finsA]);
   });

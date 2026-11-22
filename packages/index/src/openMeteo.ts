@@ -78,8 +78,15 @@ export const LLOCS_PER_PETICIO_PER_DEFECTE = 50;
 export type OpenMeteoClientOptions = {
   /** `OPEN_METEO_BASE_URL`, sense barra final (`https://api.open-meteo.com/v1`). */
   baseUrl: string;
-  /** Entre 1 i 16. */
+  /** Entre 0 i 16 (0 només amb `diesPassats`). */
   diesPrevisio?: number;
+  /**
+   * Dies sencers anteriors a avui (UTC) que també es demanen (`past_days`, de 0 a 92; per defecte,
+   * cap). Open-Meteo hi torna les primeres hores de cada passada del model, cosides: les mateixes
+   * dades que la seva API de previsions històriques. El worker les fa servir per mesurar el biaix
+   * de la humitat a les estacions de la XEMA (ADR-0038), amb `diesPrevisio: 0`.
+   */
+  diesPassats?: number;
   llocsPerPeticio?: number;
   /** Mil·lisegons abans d'abandonar una petició. */
   timeoutMs?: number;
@@ -180,13 +187,21 @@ export function createOpenMeteoClient(options: OpenMeteoClientOptions): OpenMete
   const {
     baseUrl,
     diesPrevisio = DIES_PREVISIO_PER_DEFECTE,
+    diesPassats = 0,
     llocsPerPeticio = LLOCS_PER_PETICIO_PER_DEFECTE,
     timeoutMs = TIMEOUT_MS_PER_DEFECTE,
     fetch: doFetch = fetch,
   } = options;
 
-  if (!Number.isInteger(diesPrevisio) || diesPrevisio < 1 || diesPrevisio > 16) {
-    throw new RangeError(`diesPrevisio ha de ser un enter entre 1 i 16 (rebut: ${diesPrevisio})`);
+  if (!Number.isInteger(diesPassats) || diesPassats < 0 || diesPassats > 92) {
+    throw new RangeError(`diesPassats ha de ser un enter entre 0 i 92 (rebut: ${diesPassats})`);
+  }
+  // Sense dies passats, almenys un de previsió: una petició sense cap dia no torna res.
+  const minimPrevisio = diesPassats > 0 ? 0 : 1;
+  if (!Number.isInteger(diesPrevisio) || diesPrevisio < minimPrevisio || diesPrevisio > 16) {
+    throw new RangeError(
+      `diesPrevisio ha de ser un enter entre ${minimPrevisio} i 16 (rebut: ${diesPrevisio})`,
+    );
   }
   if (!Number.isInteger(llocsPerPeticio) || llocsPerPeticio < 1) {
     throw new RangeError(`llocsPerPeticio ha de ser un enter positiu (rebut: ${llocsPerPeticio})`);
@@ -203,6 +218,7 @@ export function createOpenMeteoClient(options: OpenMeteoClientOptions): OpenMete
     url.searchParams.set('timezone', 'UTC');
     url.searchParams.set('timeformat', 'unixtime');
     url.searchParams.set('forecast_days', String(diesPrevisio));
+    if (diesPassats > 0) url.searchParams.set('past_days', String(diesPassats));
     for (const [param, unitat] of Object.entries(UNITATS)) url.searchParams.set(param, unitat);
     return url;
   }

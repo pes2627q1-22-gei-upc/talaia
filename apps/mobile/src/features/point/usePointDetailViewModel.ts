@@ -16,11 +16,24 @@ const oneOClock = (time: string) => (time.startsWith('01:') ? 'oneOClock' : unde
 /** Per saber si l'índex de la targeta és el de l'hora en curs. */
 const HOUR_MS = 60 * 60 * 1000;
 
-/** Els factors de l'índex v1 (ADR-0018), en l'ordre del mockup 05. El Sol, al final. */
+type Level = 'tap' | 'jus' | 'ras';
+const factorLevel = (value: number): Level => (value < 40 ? 'tap' : value < 70 ? 'jus' : 'ras');
+/**
+ * La humitat va de 70 a 100 (el factor no baixa de 0,7): amb les franges dels altres factors
+ * sortiria sempre en verd, fins i tot quan treu un 30 % a l'índex. Té les seves: 100 no resta res.
+ */
+const humidityLevel = (value: number): Level =>
+  value === 100 ? 'ras' : value >= 85 ? 'jus' : 'tap';
+
+/**
+ * Els factors de l'índex (ADR-0018, v1; ADR-0038, v2), en l'ordre del mockup 05. La humitat només
+ * hi és a la v2, i el Sol, al final.
+ */
 const FACTORS = [
   { key: 'nuvols', icon: 'cloud', label: 'clouds' },
   { key: 'foscor', icon: 'sparkle', label: 'darkness' },
   { key: 'lluna', icon: 'moon', label: 'moon' },
+  { key: 'humitat', icon: 'drop', label: 'humidity' },
   { key: 'sol', icon: 'sun', label: 'sun' },
 ] as const;
 
@@ -77,7 +90,7 @@ export function usePointDetailViewModel(pointId: string) {
         const value = Math.round(Math.min(1, Math.max(0, raw)) * 100);
         // El Sol només s'explica quan resta: al crepuscle.
         if (key === 'sol' && value === 100) return [];
-        const level: 'tap' | 'jus' | 'ras' = value < 40 ? 'tap' : value < 70 ? 'jus' : 'ras';
+        const level = key === 'humitat' ? humidityLevel(value) : factorLevel(value);
         const hint =
           key === 'foscor' && entry.foscorEstimada
             ? t('point.darknessEstimated')
@@ -85,8 +98,18 @@ export function usePointDetailViewModel(pointId: string) {
               ? t('point.factorHints.sol')
               : key === 'lluna' && value === 100
                 ? t('point.factorHints.lluna.none')
-                : t(`point.factorHints.${key}.${level}`);
-        return [{ key, icon, label: t(`point.${label}`), hint, value, level }];
+                : key === 'humitat'
+                  ? t(
+                      value === 100
+                        ? 'point.factorHints.humitat.none'
+                        : 'point.factorHints.humitat.some',
+                    )
+                  : t(`point.factorHints.${key}.${level}`);
+        // La cita de l'SMC és una condició d'ús de la XEMA (ADR-0025): va a part de la pista, que
+        // continua dient si la humitat resta o no.
+        const note =
+          key === 'humitat' && entry.humitatCorregida ? t('point.humidityCorrected') : undefined;
+        return [{ key, icon, label: t(`point.${label}`), hint, note, value, level }];
       });
     return [...(breakdown.data?.hores ?? [])]
       .filter((entry) => Number.isFinite(Date.parse(entry.hora)) && entry.factors?.sol > 0)

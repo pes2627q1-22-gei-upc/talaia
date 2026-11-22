@@ -194,6 +194,7 @@
     "clouds": "Clouds",
     "sun": "Sun",
     "moon": "Moon",
+    "humidity": "Humidity",
     "info": "About this spot",
     "openHorizon": "Open views",
     "openHorizonValue": "Toward {{directions}}",
@@ -232,7 +233,7 @@
     "mapUnavailable": "Could not load the map.",
     "indexNow": "Index now · {{time}}",
     "indexAt": "Index for {{time}}",
-    "indexExplanation": "The index goes from 0 to 100: the higher it is, the better you'll see the sky. It takes into account clouds, the darkness of the place, the Moon and the Sun.",
+    "indexExplanation": "The index goes from 0 to 100: the higher it is, the better you'll see the sky. It takes into account clouds, the darkness of the place, the Moon, humidity and the Sun.",
     "hoursTapHint": "Tap an hour to see its breakdown.",
     "hourA11yHint": "Shows the index breakdown for this hour",
     "tonight": "Tonight",
@@ -254,12 +255,17 @@
         "jus": "The Moon brightens the sky",
         "tap": "The Moon lights up the sky a lot"
       },
-      "sol": "There's still twilight"
+      "sol": "There's still twilight",
+      "humitat": {
+        "none": "Humidity isn't a problem",
+        "some": "Humidity washes out the sky"
+      }
     },
     "factorsAt": "Why the index is {{value}} at {{time}}",
     "factorsAt_oneOClock": "Why the index is {{value}} at {{time}}",
     "daytime": "It's daytime",
-    "daytimeHint": "The index counts from dusk onwards."
+    "daytimeHint": "The index counts from dusk onwards.",
+    "humidityCorrected": "Corrected with XEMA observations (Meteorological Service of Catalonia)"
   },
   "index": {
     "level": {
