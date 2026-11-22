@@ -12,7 +12,8 @@
       "usesAppleSignIn": true,
       "infoPlist": {
         "CFBundleAllowMixedLocalizations": true,
-        "CFBundleLocalizations": ["ca", "es", "en"]
+        "CFBundleLocalizations": ["ca", "es", "en"],
+        "UIViewControllerBasedStatusBarAppearance": true
       }
     },
     "locales": {
