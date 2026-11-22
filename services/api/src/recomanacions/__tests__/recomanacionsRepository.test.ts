@@ -52,7 +52,7 @@ describe('recomanacionsRepository.indexHores', () => {
     await createRecomanacionsRepository(db).indexHores(['a', 'b'], DES_DE, FINS_A);
 
     expect(queries[0]?.sql).toBe(
-      'select "punt_id", "hora", "valor", "franja", "factors", "foscor_estimada" from "index_visibilitat" where "punt_id" in ($1, $2) and "hora" >= $3 and "hora" < $4 order by "punt_id", "hora"',
+      'select "punt_id", "hora", "valor", "franja", "factors", "foscor_estimada", "versio", "humitat_corregida" from "index_visibilitat" where "punt_id" in ($1, $2) and "hora" >= $3 and "hora" < $4 order by "punt_id", "hora"',
     );
     expect(queries[0]?.parameters).toEqual(['a', 'b', DES_DE, FINS_A]);
   });

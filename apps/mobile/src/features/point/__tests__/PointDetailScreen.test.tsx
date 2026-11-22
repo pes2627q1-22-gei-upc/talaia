@@ -311,6 +311,41 @@ it('triar una hora en mostra els factors, també una hora atenuada', async () =>
   });
 });
 
+it('una hora de la v2 ensenya la fila d’humitat amb la cita de l’SMC; una de la v1, no (TG-184)', async () => {
+  get.mockImplementation(
+    respond(point, [
+      { ...hour, valor: 60 },
+      {
+        ...hour,
+        hora: '2026-10-18T23:00:00Z',
+        valor: 81,
+        versio: 2,
+        humitatCorregida: true,
+        factors: { ...hour.factors, humitat: 0.86 },
+      },
+    ]),
+  );
+  await renderScreen();
+  // La millor hora és la de la v2: la humitat hi surt amb la pista i, a sota, la cita.
+  expect(await screen.findByText("Per què a la 01:00 l'índex és 81")).toBeOnTheScreen();
+  expect(screen.getByText('Humitat')).toBeOnTheScreen();
+  expect(screen.getByText('La humitat enterboleix el cel')).toBeOnTheScreen();
+  expect(
+    screen.getByText(
+      'Corregida amb les observacions de la XEMA (Servei Meteorològic de Catalunya)',
+    ),
+  ).toBeOnTheScreen();
+  expect(
+    screen.getByLabelText(
+      'Humitat. La humitat enterboleix el cel. Corregida amb les observacions de la XEMA (Servei Meteorològic de Catalunya)',
+    ),
+  ).toHaveAccessibilityValue({ now: 86 });
+
+  await fireEvent.press(screen.getByLabelText(/23:00.*60 de 100/));
+  expect(screen.getByText("Per què a les 23:00 l'índex és 60")).toBeOnTheScreen();
+  expect(screen.queryByText('Humitat')).toBeNull();
+});
+
 it('manté totes les barres visibles quan no hi ha cap millor franja', async () => {
   get.mockImplementation(
     respond(

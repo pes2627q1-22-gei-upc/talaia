@@ -194,6 +194,7 @@
     "clouds": "Nubes",
     "sun": "Sol",
     "moon": "Luna",
+    "humidity": "Humedad",
     "info": "Información del punto",
     "openHorizon": "Vistas despejadas",
     "openHorizonValue": "Hacia {{directions}}",
@@ -281,7 +282,7 @@
     "mapUnavailable": "No se ha podido cargar el mapa.",
     "indexNow": "Índice actual · {{time}}",
     "indexAt": "Índice del {{time}}",
-    "indexExplanation": "El índice va de 0 a 100: cuanto más alto, mejor se verá el cielo. Tiene en cuenta las nubes, la oscuridad del lugar, la Luna y el Sol.",
+    "indexExplanation": "El índice va de 0 a 100: cuanto más alto, mejor se verá el cielo. Tiene en cuenta las nubes, la oscuridad del lugar, la Luna, la humedad y el Sol.",
     "hoursTapHint": "Toca una hora para ver su desglose.",
     "hourA11yHint": "Muestra el desglose del índice de esta hora",
     "tonight": "Esta noche",
@@ -303,12 +304,17 @@
         "jus": "La Luna aclara el cielo",
         "tap": "La Luna ilumina mucho el cielo"
       },
-      "sol": "Aún queda luz del crepúsculo"
+      "sol": "Aún queda luz del crepúsculo",
+      "humitat": {
+        "none": "La humedad no molesta",
+        "some": "La humedad enturbia el cielo"
+      }
     },
     "factorsAt": "Por qué a las {{time}} el índice es {{value}}",
     "factorsAt_oneOClock": "Por qué a la {{time}} el índice es {{value}}",
     "daytime": "Es de día",
-    "daytimeHint": "El índice cuenta a partir del anochecer."
+    "daytimeHint": "El índice cuenta a partir del anochecer.",
+    "humidityCorrected": "Corregida con las observaciones de la XEMA (Servicio Meteorológico de Cataluña)"
   },
   "index": {
     "level": {
