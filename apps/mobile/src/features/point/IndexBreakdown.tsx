@@ -28,6 +28,7 @@ type Factor = ViewModel['hours'][number]['factors'][number];
 
 const factorIcons = {
   cloud: require('@/assets/images/point/cloud.svg'),
+  drop: require('@/assets/images/point/drop.svg'),
   sun: require('@/assets/images/point/sun.svg'),
   sparkle: require('@/assets/images/point/sparkle.svg'),
   moon: require('@/assets/images/point/moon.svg'),
@@ -116,6 +117,11 @@ function FactorRow({ factor }: { factor: Factor }) {
             <AppText variant="small" color="boira">
               {factor.hint}
             </AppText>
+            {factor.note ? (
+              <AppText variant="small" color="boira">
+                {factor.note}
+              </AppText>
+            ) : null}
           </View>
           <AppText variant="heading" color={factor.level}>
             {factor.value}
@@ -123,7 +129,7 @@ function FactorRow({ factor }: { factor: Factor }) {
         </View>
         <View
           accessibilityRole="progressbar"
-          accessibilityLabel={`${factor.label}. ${factor.hint}`}
+          accessibilityLabel={[factor.label, factor.hint, factor.note].filter(Boolean).join('. ')}
           accessibilityValue={{ min: 0, max: 100, now: factor.value }}
           style={styles.factorTrack}
         >

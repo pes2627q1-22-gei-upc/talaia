@@ -254,7 +254,7 @@
       "sol": "Aún queda luz del crepúsculo",
       "humitat": {
         "none": "La humedad no molesta",
-        "some": "La humedad empobrece el cielo"
+        "some": "La humedad enturbia el cielo"
       }
     },
     "factorsAt": "Factores a las {{time}}",

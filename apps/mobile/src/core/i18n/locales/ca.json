@@ -254,7 +254,7 @@
       "sol": "Encara queda llum del crepuscle",
       "humitat": {
         "none": "La humitat no molesta",
-        "some": "La humitat empobreix el cel"
+        "some": "La humitat enterboleix el cel"
       }
     },
     "factorsAt": "Factors a les {{time}}",
