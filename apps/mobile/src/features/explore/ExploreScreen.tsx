@@ -31,6 +31,7 @@ const GOAL_ICONS: Record<ObjectiuObservacio, number> = {
 const locationIcon = require('@/assets/images/explora/ubicacio.svg');
 const clockIcon = require('@/assets/images/explora/rellotge.svg');
 const searchIcon = require('@/assets/images/explora/cerca.svg');
+const mapIcon = require('@/assets/images/explora/mapa.svg');
 
 /** Entrada en cascada, com `Screen`: fosa i 6 pt, com a molt 6 blocs. */
 function Enter({ index, children }: PropsWithChildren<{ index: number }>) {
@@ -49,6 +50,7 @@ function Enter({ index, children }: PropsWithChildren<{ index: number }>) {
 /** «Què vols veure?» (HU01, mockup 02): l'inici de la pestanya Explora. */
 export function ExploreScreen() {
   const nightTintOnPrimary = useNightTint('nit');
+  const nightTint = useNightTint();
   const styles = useStyles();
   const vm = useExploreViewModel();
   const [firstRow, secondRow] = [vm.goals.slice(0, 3), vm.goals.slice(3)];
@@ -176,10 +178,23 @@ export function ExploreScreen() {
               }
               style={styles.cta}
             />
+            {/*
+              TG-265: als tests de guerrilla, l'enllaç de text passava desapercebut. Un botó
+              secundari amb icona, a tota l'amplada, el fa visible sense competir amb la cerca.
+            */}
             <Button
               label={vm.browse.label}
               onPress={vm.browse.onPress}
-              variant="text"
+              variant="secondary"
+              icon={
+                <Image
+                  tintColor={nightTint}
+                  source={mapIcon}
+                  testID="explore-map-icon"
+                  style={styles.ctaIcon}
+                  accessible={false}
+                />
+              }
               style={styles.browse}
             />
           </Enter>
@@ -204,6 +219,5 @@ const useStyles = makeStyles(({ colors }) => ({
   limits: { flexDirection: 'row', justifyContent: 'space-between' },
   ctaIcon: { width: sizes.icon, height: sizes.icon },
   cta: { marginTop: spacing.ms },
-  // Centrat sota el botó principal, amb aire abans de la barra de pestanyes.
-  browse: { alignSelf: 'center', marginTop: spacing.sm },
+  browse: { marginTop: spacing.sm },
 }));
