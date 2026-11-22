@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { Alert, Linking, Platform } from 'react-native';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { DireccioHoritzo, IndexHora } from '@talaia/shared';
 
@@ -31,7 +31,10 @@ export function usePointDetailViewModel(pointId: string) {
   const breakdown = usePointBreakdownQuery(pointId);
   const currentPlace = useCurrentPlaceQuery();
   const origin = currentPlace.data?.status === 'ready' ? currentPlace.data.place : undefined;
-  const routes = usePointRoutesQuery(pointId, query.data ? origin : undefined);
+  const [routeDeparture, setRouteDeparture] = useState<string | undefined>();
+  const routes = usePointRoutesQuery(pointId, query.data ? origin : undefined, routeDeparture);
+  const [routeOptionsVisible, setRouteOptionsVisible] = useState(false);
+  const [openingDirections, setOpeningDirections] = useState(false);
   const point = query.data;
   const invalidId = !pointId.trim();
   const notFound =
@@ -168,25 +171,34 @@ export function usePointDetailViewModel(pointId: string) {
     undefined,
   )?.id;
   const number = new Intl.NumberFormat(locale, { maximumFractionDigits: 0 });
-  const route = routes.data?.estat === 'disponible' ? routes.data.destacada : null;
-  const routeSummary =
-    route && Number.isFinite(route.distanciaMetres) && Number.isFinite(route.duradaSegons)
-      ? t('point.routeSummary', {
-          distance: new Intl.NumberFormat(locale, { maximumFractionDigits: 1 }).format(
-            route.distanciaMetres / 1000,
-          ),
-          minutes: number.format(Math.ceil(route.duradaSegons / 60)),
-        })
-      : undefined;
-  const routeMessage = routeSummary
-    ? undefined
-    : currentPlace.data?.status === 'denied'
-      ? t('point.routeNeedsLocation')
-      : currentPlace.isError || routes.isError || routes.data?.estat === 'no_disponible'
-        ? t('point.routeUnavailable')
-        : routes.data?.estat === 'sense_rutes'
-          ? t('point.routeNotFound')
-          : undefined;
+  const routeAlternatives = routes.data?.estat === 'disponible' ? routes.data.alternatives : [];
+  const openMaps = () => {
+    if (!point) return;
+    if (routeOptionsVisible) setRouteOptionsVisible(false);
+    void Linking.openURL(directionsUrl(point.lat, point.lon, Platform.OS)).catch(() =>
+      Alert.alert(t('point.mapsErrorTitle'), t('point.mapsErrorMessage')),
+    );
+  };
+  const openDirections = async () => {
+    if (!point || openingDirections) return;
+    if (routeAlternatives.length > 0) {
+      setRouteOptionsVisible(true);
+      return;
+    }
+    if (origin && routes.isFetching && !routes.data) {
+      setOpeningDirections(true);
+      try {
+        const result = await routes.refetch();
+        if (result.data?.estat === 'disponible' && result.data.alternatives.length > 0) {
+          setRouteOptionsVisible(true);
+          return;
+        }
+      } finally {
+        setOpeningDirections(false);
+      }
+    }
+    openMaps();
+  };
   const altitude =
     point?.altitud == null
       ? t('point.unavailable')
@@ -239,8 +251,15 @@ export function usePointDetailViewModel(pointId: string) {
     bestWindow,
     altitude,
     altitudeTag: t('point.altitudeTag', { value: altitude }),
-    routeSummary,
-    routeMessage,
+    routeAlternatives,
+    routeDeparture,
+    setRouteDeparture,
+    routesLoading: routes.isFetching,
+    routesError: routes.isError,
+    routeOptionsVisible,
+    closeRouteOptions: () => setRouteOptionsVisible(false),
+    openingDirections,
+    openMaps,
     skyDarkness:
       point?.sqm == null || !Number.isFinite(point.sqm)
         ? undefined
@@ -262,12 +281,7 @@ export function usePointDetailViewModel(pointId: string) {
     accessibility: point?.accessibilitat?.trim(),
     directionsLabel: t('point.directions'),
     createPlanLabel: t('point.createPlan'),
-    openDirections: () => {
-      if (!point) return;
-      void Linking.openURL(directionsUrl(point.lat, point.lon, Platform.OS)).catch(() =>
-        Alert.alert(t('point.mapsErrorTitle'), t('point.mapsErrorMessage')),
-      );
-    },
+    openDirections,
     // El pla surt amb la millor franja de la nit com a hora de sortida, si n'hi ha (TG-157).
     createPlan: () =>
       router.push({

@@ -19,6 +19,7 @@ import { StateMessage } from '@/shared/ui/StateMessage';
 import { IndexBreakdown } from './IndexBreakdown';
 import { FavoriteButton } from './FavoriteButton';
 import PointLocationMap from './PointLocationMap';
+import { RouteOptionsModal } from './RouteOptionsModal';
 import { usePointDetailViewModel } from './usePointDetailViewModel';
 
 const appear = FadeIn.duration(motion.base).reduceMotion(ReduceMotion.System);
@@ -134,16 +135,6 @@ export function PointDetailScreen({ pointId }: { pointId: string }) {
                 </View>
                 <FavoriteButton key={pointId} pointId={pointId} />
               </View>
-              {vm.routeSummary ? (
-                <AppText variant="small" color="boira">
-                  {vm.routeSummary}
-                </AppText>
-              ) : null}
-              {vm.routeMessage ? (
-                <AppText variant="small" color="boira" accessibilityLiveRegion="polite">
-                  {vm.routeMessage}
-                </AppText>
-              ) : null}
               {vm.staleMessage ? (
                 <View accessibilityLiveRegion="polite" style={styles.staleMessage}>
                   <AppText variant="small" color="jus">
@@ -279,6 +270,7 @@ export function PointDetailScreen({ pointId }: { pointId: string }) {
               />
             }
             onPress={vm.openDirections}
+            disabled={vm.openingDirections}
             style={styles.actionButton}
           />
           <Button
@@ -298,6 +290,16 @@ export function PointDetailScreen({ pointId }: { pointId: string }) {
           />
         </View>
       ) : null}
+      <RouteOptionsModal
+        visible={vm.routeOptionsVisible}
+        alternatives={vm.routeAlternatives}
+        departure={vm.routeDeparture}
+        onDepartureChange={vm.setRouteDeparture}
+        loading={vm.routesLoading}
+        error={vm.routesError}
+        onClose={vm.closeRouteOptions}
+        onOpenMaps={vm.openMaps}
+      />
     </SafeAreaView>
   );
 }

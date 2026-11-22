@@ -1,36 +1,35 @@
-import type { DesglossamentIndex, PuntFitxa } from '@talaia/shared';
+import type { DesglossamentIndex, PuntFitxa, RutesPunt } from '@talaia/shared';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 
-import { apiGet } from '@/core/api/httpClient';
+import { ApiError, apiGet } from '@/core/api/httpClient';
 
 import type { PointDetailModel } from './pointModel';
 
 export const pointKeys = {
   detail: (pointId: string, language: string) => ['punts', 'detail', pointId, language] as const,
   breakdown: (pointId: string) => ['punts', 'breakdown', pointId] as const,
-  routes: (pointId: string, lat: number, lon: number) =>
-    ['punts', 'routes', pointId, lat.toFixed(3), lon.toFixed(3)] as const,
+  routes: (pointId: string, lat: number, lon: number, departure?: string) =>
+    ['punts', 'routes', pointId, lat.toFixed(3), lon.toFixed(3), departure ?? 'now'] as const,
 };
 
-/** Camps de l'endpoint de TG-135 que necessita la fitxa. */
-type PointRoutes = {
-  estat: 'disponible' | 'sense_rutes' | 'no_disponible';
-  destacada: { distanciaMetres: number; duradaSegons: number } | null;
-};
-
-export function usePointRoutesQuery(pointId: string, origin?: { lat: number; lon: number }) {
+export function usePointRoutesQuery(
+  pointId: string,
+  origin?: { lat: number; lon: number },
+  departure?: string,
+) {
   return useQuery({
-    queryKey: pointKeys.routes(pointId, origin?.lat ?? 0, origin?.lon ?? 0),
+    queryKey: pointKeys.routes(pointId, origin?.lat ?? 0, origin?.lon ?? 0, departure),
     queryFn: ({ signal }) =>
-      apiGet<PointRoutes>(
+      apiGet<RutesPunt>(
         `/punts/${encodeURIComponent(pointId)}/rutes`,
-        { lat: origin!.lat, lon: origin!.lon },
+        { lat: origin!.lat, lon: origin!.lon, sortida: departure },
         { signal },
       ),
     enabled: pointId.trim().length > 0 && !!origin,
-    staleTime: 5 * 60_000,
-    retry: false,
+    staleTime: departure ? 5 * 60_000 : 0,
+    retry: (count, error) => error instanceof ApiError && error.status === 429 && count < 1,
+    retryDelay: 5_000,
   });
 }
 

@@ -215,14 +215,16 @@ GET /api/v1/punts/6f1c2b7e-3a9d-4c58-9e0b-2d7f1a4c8b35/rutes?lat=41.3851&lon=2.1
 
 `id` ha de ser un UUID publicat. `lat` i `lon` són coordenades WGS84 de l'origen, amb latitud
 entre −90 i 90 i longitud entre −180 i 180. Cal `DATABASE_URL` per resoldre el destí.
+`sortida` és opcional: un instant ISO 8601 amb zona horària, per exemple
+`2026-11-23T18:30:00.000Z`. Si falta, la consulta es fa per sortir ara.
 Abans d'enviar l'origen a Mobilicat, Talaia arrodoneix les coordenades a tres decimals (uns 100 m
 de precisió) per no transmetre la ubicació exacta del dispositiu. Les hores de les alternatives es
 retornen en UTC amb el sufix `Z`.
 
-Per cada consulta, l'API fa una sola petició a Mobilicat amb l'instant actual en UTC,
+Per cada consulta, l'API fa una sola petició a Mobilicat amb `sortida` o l'instant actual en UTC,
 `timePreference=DEPART_AT`, els modes `WALK,BIKE,BIKE_SHARE,CAR,PUBLIC_TRANSPORT` i `limit=5`.
 Mobilicat ordena les alternatives de millor a pitjor: la primera és la que arriba abans per a una
-sortida ara. Això no implica que sigui la de menor durada. L'absència d'un mode en les alternatives
+sortida demanada. Això no implica que sigui la de menor durada. L'absència d'un mode en les alternatives
 rebudes tampoc demostra que no hi hagi cap ruta d'aquell mode.
 
 La resposta és `RutesPunt` (`@talaia/shared`), amb `estat`, `destacada` i `alternatives`. Cada
@@ -242,7 +244,7 @@ que siguin vàlides; si cap no ho és, la resposta parcial és `no_disponible`.
 | `no_disponible` | `null` i `[]` | Timeout, error HTTP (inclòs el 501 mentre l'endpoint del proveïdor no estigui activat), error de xarxa o resposta invàlida. La ruta de Talaia respon 200 amb aquest estat parcial. |
 
 Un JWT absent o invàlid dona 401 `unauthorized`; un compte bloquejat dona 403 `account_blocked`;
-un UUID invàlid o coordenades fora de rang donen 400 `validation_error`; un punt no publicat dona
+un UUID invàlid, coordenades fora de rang o `sortida` malformada donen 400 `validation_error`; un punt no publicat dona
 404 `punt_not_found`; un error de base de dades dona 503 `database_unavailable`. Talaia respon 429
 `too_many_requests` amb `Retry-After` si el compte o la instància ha de respectar l'interval mínim
 de **5 s** abans de consultar de nou. Mobilicat té un timeout inicial de **5 s** i Talaia no hi fa
