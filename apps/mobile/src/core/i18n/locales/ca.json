@@ -233,7 +233,7 @@
     "mapUnavailable": "No s'ha pogut carregar el mapa.",
     "indexNow": "Índex d'ara · {{time}}",
     "indexAt": "Índex del {{time}}",
-    "indexExplanation": "L'índex va de 0 a 100: com més alt, millor es veurà el cel. Té en compte els núvols, la foscor del lloc, la Lluna i el Sol.",
+    "indexExplanation": "L'índex va de 0 a 100: com més alt, millor es veurà el cel. Té en compte els núvols, la foscor del lloc, la Lluna, la humitat i el Sol.",
     "hoursTapHint": "Toca una hora per veure'n el desglossament.",
     "hourA11yHint": "Mostra el desglossament de l'índex d'aquesta hora",
     "tonight": "Aquesta nit",
