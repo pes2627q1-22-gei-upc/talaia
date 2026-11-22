@@ -169,6 +169,7 @@
     "retry": "Torna-ho a provar"
   },
   "point": {
+    "back": "Enrere",
     "title": "Punt d'observació",
     "currentIndex": "Índex actual de visibilitat",
     "noIndex": "Índex encara no disponible",
@@ -560,6 +561,7 @@
   },
   "plans": {
     "new": {
+      "back": "Enrere",
       "header": "Nou pla",
       "title": "Pla d'observació",
       "point": "Punt d'observació",
@@ -630,6 +632,7 @@
       }
     },
     "list": {
+      "back": "Torna al perfil",
       "header": "Els meus plans",
       "title": "Els meus plans",
       "upcoming": "Propers",

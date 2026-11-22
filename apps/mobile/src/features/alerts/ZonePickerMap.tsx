@@ -70,6 +70,12 @@ export default function ZonePickerMap({
       attributionControl: { compact: true, customAttribution: ATTRIBUTION },
     });
     map.touchZoomRotate.disableRotation();
+    // L'atribució compacta arrenca desplegada i tapava el mapa: es plega i queda al botó (i).
+    map.on('load', () => {
+      container.current
+        ?.querySelector('.maplibregl-ctrl-attrib')
+        ?.classList.remove('maplibregl-compact-show');
+    });
     map.on('moveend', () => {
       const { lat, lng } = map.getCenter();
       void report.current({ lat, lon: lng });
@@ -84,8 +90,9 @@ export default function ZonePickerMap({
       style={{ position: 'absolute', inset: 0, background: chrome.background }}
     >
       <style>{`
-        .maplibregl-ctrl-attrib { background: ${chrome.background}cc; color: ${chrome.text}; }
-        .maplibregl-ctrl-attrib a { color: ${chrome.link}; }
+        .maplibregl-ctrl-attrib { background-color: ${chrome.background} !important; color: ${chrome.text} !important; }
+        .maplibregl-ctrl-attrib a { color: ${chrome.link} !important; }
+        .maplibregl-ctrl-attrib-button { background-color: transparent !important; filter: invert(1); }
         ${night ? NIGHT_MAP_CSS : ''}
       `}</style>
       <div ref={container} style={{ position: 'absolute', inset: 0 }} />
