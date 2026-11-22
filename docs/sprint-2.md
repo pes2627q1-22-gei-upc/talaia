@@ -49,7 +49,7 @@ Les tasques del Sprint 1 que no es tanquin el 28/10 s'hi afegeixen a la planning
 - [ ] Es poden desplegar les rutes amb més d'un tram per consultar-ne el detall.
 - [ ] Es pot triar una data i hora de sortida futura i consultar les alternatives per a aquella sortida, o tornar a «Sortir ara».
 - [ ] Des d'una alternativa es pot obrir Maps amb el destí per iniciar la navegació.
-- [ ] Sense ubicació, sense rutes disponibles o si Mobilicat no respon, «Com arribar» obre Google Maps directament amb el destí, i la fitxa continua disponible.
+- [ ] Sense ubicació, sense rutes disponibles o si Mobilicat no respon, «Com arribar» obre l'app de mapes del mòbil directament amb el destí, i la fitxa continua disponible.
 
 | Ref | Tasca | Responsable | Inici | Límit | h |
 |---|---|---|---|---|---|

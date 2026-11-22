@@ -3,6 +3,7 @@ import { Alert, Linking, Platform } from 'react-native';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { DireccioHoritzo, IndexHora } from '@talaia/shared';
+import { useQueryClient } from '@tanstack/react-query';
 
 import { ApiError } from '@/core/api/httpClient';
 import { nightStyle } from '@/features/map/style/nightStyle';
@@ -10,6 +11,8 @@ import { useCurrentPlaceQuery } from '@/features/explore/locationRepository';
 
 import { directionsUrl, twoDigitHours } from './pointModel';
 import {
+  fetchPointRoutes,
+  pointKeys,
   usePointBreakdownQuery,
   usePointDetailQuery,
   usePointRoutesQuery,
@@ -45,10 +48,11 @@ const FACTORS = [
 export function usePointDetailViewModel(pointId: string) {
   const { t, i18n } = useTranslation();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const currentHour = useCurrentHour();
   const query = usePointDetailQuery(pointId);
   const breakdown = usePointBreakdownQuery(pointId);
-  const currentPlace = useCurrentPlaceQuery();
+  const currentPlace = useCurrentPlaceQuery(false);
   const origin = currentPlace.data?.status === 'ready' ? currentPlace.data.place : undefined;
   const [routeDeparture, setRouteDeparture] = useState<string | undefined>();
   const routes = usePointRoutesQuery(pointId, query.data ? origin : undefined, routeDeparture);
@@ -228,19 +232,29 @@ export function usePointDetailViewModel(pointId: string) {
   };
   const openDirections = async () => {
     if (!point || openingDirections) return;
-    if (!origin) {
-      openMaps();
-      return;
-    }
     setOpeningDirections(true);
     try {
-      const result = await routes.refetch();
-      if (result.data?.estat === 'disponible' && result.data.alternatives.length > 0) {
+      const location = (await currentPlace.refetch()).data;
+      if (location?.status !== 'ready') {
+        openMaps();
+        return;
+      }
+      const place = location.place;
+      const result = await queryClient.fetchQuery({
+        queryKey: pointKeys.routes(pointId, place.lat, place.lon, routeDeparture),
+        queryFn: ({ signal }) => fetchPointRoutes(pointId, place, routeDeparture, signal),
+        staleTime: 0,
+        retry: (count, error) => error instanceof ApiError && error.status === 429 && count < 1,
+        retryDelay: 5_000,
+      });
+      if (result.estat === 'disponible' && result.alternatives.length > 0) {
         setRouteRequested(true);
         setRouteOptionsVisible(true);
       } else {
         openMaps();
       }
+    } catch {
+      openMaps();
     } finally {
       setOpeningDirections(false);
     }

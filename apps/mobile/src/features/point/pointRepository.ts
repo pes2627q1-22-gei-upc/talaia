@@ -13,6 +13,19 @@ export const pointKeys = {
     ['punts', 'routes', pointId, lat.toFixed(3), lon.toFixed(3), departure ?? 'now'] as const,
 };
 
+export function fetchPointRoutes(
+  pointId: string,
+  origin: { lat: number; lon: number },
+  departure?: string,
+  signal?: AbortSignal,
+) {
+  return apiGet<RutesPunt>(
+    `/punts/${encodeURIComponent(pointId)}/rutes`,
+    { lat: origin.lat, lon: origin.lon, sortida: departure },
+    { signal },
+  );
+}
+
 export function usePointRoutesQuery(
   pointId: string,
   origin?: { lat: number; lon: number },
@@ -20,12 +33,7 @@ export function usePointRoutesQuery(
 ) {
   return useQuery({
     queryKey: pointKeys.routes(pointId, origin?.lat ?? 0, origin?.lon ?? 0, departure),
-    queryFn: ({ signal }) =>
-      apiGet<RutesPunt>(
-        `/punts/${encodeURIComponent(pointId)}/rutes`,
-        { lat: origin!.lat, lon: origin!.lon, sortida: departure },
-        { signal },
-      ),
+    queryFn: ({ signal }) => fetchPointRoutes(pointId, origin!, departure, signal),
     enabled: false,
     staleTime: departure ? 5 * 60_000 : 0,
     retry: (count, error) => error instanceof ApiError && error.status === 429 && count < 1,

@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Linking, Platform, StyleSheet } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -26,6 +26,20 @@ jest.mock('expo-router', () => ({
   useFocusEffect: (effect: () => void) => jest.requireActual('react').useEffect(effect, [effect]),
 }));
 const get = jest.mocked(apiGet);
+const locationQuery = jest.mocked(useCurrentPlaceQuery);
+const readyPlace = {
+  status: 'ready' as const,
+  place: { name: 'Barcelona', lat: 41.385, lon: 2.17 },
+};
+const deniedPlace = { status: 'denied' as const, canAskAgain: false };
+
+function mockPlace(data: typeof readyPlace | typeof deniedPlace) {
+  const refetch = jest.fn().mockResolvedValue({ data });
+  locationQuery.mockReturnValue({ data, refetch } as unknown as ReturnType<
+    typeof useCurrentPlaceQuery
+  >);
+  return refetch;
+}
 
 async function renderScreen() {
   const QueryWrapper = createQueryWrapper();
@@ -47,18 +61,14 @@ async function renderScreen() {
 afterEach(() => jest.restoreAllMocks());
 beforeEach(async () => {
   get.mockReset();
-  jest.mocked(useCurrentPlaceQuery).mockReturnValue({
-    data: { status: 'denied', canAskAgain: false },
-  } as ReturnType<typeof useCurrentPlaceQuery>);
+  mockPlace(deniedPlace);
   // Per defecte, com l'API: la fitxa o el desglossament segons la ruta.
   get.mockImplementation(respond());
   await i18n.changeLanguage('ca');
 });
 
 it('obre les opcions de Mobilicat des de Com arribar i després el mapa del mòbil', async () => {
-  jest.mocked(useCurrentPlaceQuery).mockReturnValue({
-    data: { status: 'ready', place: { name: 'Barcelona', lat: 41.385, lon: 2.17 } },
-  } as ReturnType<typeof useCurrentPlaceQuery>);
+  const refetchPlace = mockPlace(readyPlace);
   const pointResponse = respond();
   get.mockImplementation((path) =>
     path.endsWith('/rutes')
@@ -113,6 +123,8 @@ it('obre les opcions de Mobilicat des de Com arribar i després el mapa del mòb
   );
   await renderScreen();
   expect(await screen.findByRole('header', { name: point.nom })).toBeOnTheScreen();
+  expect(locationQuery).toHaveBeenCalledWith(false);
+  expect(refetchPlace).not.toHaveBeenCalled();
   expect(screen.getByRole('button', { name: 'Com arribar' })).toBeOnTheScreen();
   expect(get).not.toHaveBeenCalledWith(
     '/punts/montsec/rutes',
@@ -120,7 +132,8 @@ it('obre les opcions de Mobilicat des de Com arribar i després el mapa del mòb
     expect.anything(),
   );
   const open = jest.spyOn(Linking, 'openURL').mockResolvedValue();
-  fireEvent.press(screen.getByRole('button', { name: 'Com arribar' }));
+  await act(async () => fireEvent.press(screen.getByRole('button', { name: 'Com arribar' })));
+  await waitFor(() => expect(refetchPlace).toHaveBeenCalledTimes(1));
   expect(await screen.findByText('A peu → R1')).toBeOnTheScreen();
   expect(screen.getByText('Transport públic')).toBeOnTheScreen();
   expect(screen.getByText('Destacada')).toBeOnTheScreen();
@@ -155,7 +168,7 @@ it('obre les opcions de Mobilicat des de Com arribar i després el mapa del mòb
     expect(screen.queryByRole('header', { name: 'Opcions per arribar-hi' })).toBeNull(),
   );
   expect(screen.getByRole('header', { name: point.nom })).toBeOnTheScreen();
-  fireEvent.press(screen.getByRole('button', { name: 'Com arribar' }));
+  await act(async () => fireEvent.press(screen.getByRole('button', { name: 'Com arribar' })));
   expect(await screen.findByRole('header', { name: 'Opcions per arribar-hi' })).toBeOnTheScreen();
   fireEvent.press(screen.getByRole('button', { name: 'Obre-ho a Maps' }));
   expect(open).toHaveBeenCalledWith(directionsUrl(point.lat, point.lon, Platform.OS));
@@ -163,9 +176,7 @@ it('obre les opcions de Mobilicat des de Com arribar i després el mapa del mòb
 });
 
 it('manté la fitxa i el botó quan Mobilicat no respon', async () => {
-  jest.mocked(useCurrentPlaceQuery).mockReturnValue({
-    data: { status: 'ready', place: { name: 'Barcelona', lat: 41.385, lon: 2.17 } },
-  } as ReturnType<typeof useCurrentPlaceQuery>);
+  mockPlace(readyPlace);
   const pointResponse = respond();
   get.mockImplementation((path) =>
     path.endsWith('/rutes')
@@ -182,7 +193,7 @@ it('manté la fitxa i el botó quan Mobilicat no respon', async () => {
   );
   expect(screen.queryByText(/km · .* min/)).toBeNull();
   const open = jest.spyOn(Linking, 'openURL').mockResolvedValue();
-  fireEvent.press(screen.getByRole('button', { name: 'Com arribar' }));
+  await act(async () => fireEvent.press(screen.getByRole('button', { name: 'Com arribar' })));
   await waitFor(() =>
     expect(open).toHaveBeenCalledWith(directionsUrl(point.lat, point.lon, Platform.OS)),
   );
@@ -191,9 +202,7 @@ it('manté la fitxa i el botó quan Mobilicat no respon', async () => {
 });
 
 it('obre Maps directament quan Mobilicat retorna no disponible', async () => {
-  jest.mocked(useCurrentPlaceQuery).mockReturnValue({
-    data: { status: 'ready', place: { name: 'Barcelona', lat: 41.385, lon: 2.17 } },
-  } as ReturnType<typeof useCurrentPlaceQuery>);
+  mockPlace(readyPlace);
   const pointResponse = respond();
   get.mockImplementation((path) =>
     path.endsWith('/rutes')
@@ -204,7 +213,7 @@ it('obre Maps directament quan Mobilicat retorna no disponible', async () => {
   expect(await screen.findByRole('header', { name: point.nom })).toBeOnTheScreen();
   expect(screen.getByRole('button', { name: 'Com arribar' })).toBeOnTheScreen();
   const open = jest.spyOn(Linking, 'openURL').mockResolvedValue();
-  fireEvent.press(screen.getByRole('button', { name: 'Com arribar' }));
+  await act(async () => fireEvent.press(screen.getByRole('button', { name: 'Com arribar' })));
   await waitFor(() =>
     expect(open).toHaveBeenCalledWith(directionsUrl(point.lat, point.lon, Platform.OS)),
   );
@@ -220,8 +229,10 @@ it('obre Maps sense consultar Mobilicat si no hi ha permís d’ubicació', asyn
     expect.anything(),
   );
   const open = jest.spyOn(Linking, 'openURL').mockResolvedValue();
-  fireEvent.press(screen.getByRole('button', { name: 'Com arribar' }));
-  expect(open).toHaveBeenCalledWith(directionsUrl(point.lat, point.lon, Platform.OS));
+  await act(async () => fireEvent.press(screen.getByRole('button', { name: 'Com arribar' })));
+  await waitFor(() =>
+    expect(open).toHaveBeenCalledWith(directionsUrl(point.lat, point.lon, Platform.OS)),
+  );
   open.mockRestore();
 });
 
