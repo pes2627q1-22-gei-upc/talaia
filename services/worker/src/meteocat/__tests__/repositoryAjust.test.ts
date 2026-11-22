@@ -1,7 +1,7 @@
 import { fakeDb } from '../../testing/fakeDb';
 import { createKyselyXemaRepository } from '../repository';
 
-describe('repositori de la XEMA: el biaix de la humitat (TG-184, ADR-0037)', () => {
+describe('repositori de la XEMA: el biaix de la humitat (TG-184, ADR-0038)', () => {
   it('estacionsAssignades torna les estacions dels punts amb coordenades i el biaix', async () => {
     const calculatEl = new Date('2026-11-19T06:15:00.000Z');
     const { db, queries } = fakeDb([

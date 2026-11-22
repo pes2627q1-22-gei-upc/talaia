@@ -14,9 +14,9 @@ export type PuntPerRecalcul = Pick<PuntObservacio, 'id' | 'lat' | 'lon'> & {
   altitud: number | null;
   /** SQM del mapa de contaminació lumínica (ADR-0020), o `null` si no en té. */
   sqm: number | null;
-  /** Perfil d'horitzó (ADR-0022): 360 alçades aparents, o `null`. Per a la Lluna amagada (ADR-0037). */
+  /** Perfil d'horitzó (ADR-0022): 360 alçades aparents, o `null`. Per a la Lluna amagada (ADR-0038). */
   horitzo?: number[] | null;
-  /** L'estació de la XEMA assignada al punt, amb el seu biaix de la humitat (ADR-0037), si en té. */
+  /** L'estació de la XEMA assignada al punt, amb el seu biaix de la humitat (ADR-0038), si en té. */
   estacio?: EstacioAmbBiaix | null;
 };
 

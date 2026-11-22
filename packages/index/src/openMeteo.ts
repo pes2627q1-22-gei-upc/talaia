@@ -84,7 +84,7 @@ export type OpenMeteoClientOptions = {
    * Dies sencers anteriors a avui (UTC) que també es demanen (`past_days`, de 0 a 92; per defecte,
    * cap). Open-Meteo hi torna les primeres hores de cada passada del model, cosides: les mateixes
    * dades que la seva API de previsions històriques. El worker les fa servir per mesurar el biaix
-   * de la humitat a les estacions de la XEMA (ADR-0037), amb `diesPrevisio: 0`.
+   * de la humitat a les estacions de la XEMA (ADR-0038), amb `diesPrevisio: 0`.
    */
   diesPassats?: number;
   llocsPerPeticio?: number;

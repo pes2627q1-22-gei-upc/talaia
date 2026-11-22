@@ -15,7 +15,7 @@ export type IndexVisibilitat = {
 /**
  * Els factors de l'índex, cadascun de 0 a 1: el desglossament que mostra la fitxa del punt (HU04).
  * `nuvols` i `sol` multipliquen; `foscor` i `lluna` es ponderen (0,6 i 0,4; ADR-0018); a la v2,
- * `humitat` multiplica el resultat (ADR-0037).
+ * `humitat` multiplica el resultat (ADR-0038).
  */
 export type FactorsIndex = {
   /** 1 amb el cel ras; 0 tapat o si plou. */
@@ -26,11 +26,11 @@ export type FactorsIndex = {
   foscor: number;
   /**
    * 1 sense Lluna; baixa com més il·luminada i alta és. A la v2, si el relleu del punt la tapa,
-   * resta la meitat (ADR-0037).
+   * resta la meitat (ADR-0038).
    */
   lluna: number;
   /**
-   * Índex v2 (ADR-0037): 1 fins al 85 % d'humitat relativa i 0,7 al 100 % (calitja i rosada).
+   * Índex v2 (ADR-0038): 1 fins al 85 % d'humitat relativa i 0,7 al 100 % (calitja i rosada).
    * Absent a les files de la v1.
    */
   humitat?: number;
@@ -44,12 +44,12 @@ export type IndexHora = IndexVisibilitat & {
   /** La foscor és provisional: el punt no té SQM del mapa de contaminació lumínica (ADR-0020). */
   foscorEstimada: boolean;
   /**
-   * La humitat s'ha corregit amb el biaix de l'estació de la XEMA més propera (índex v2, ADR-0037):
+   * La humitat s'ha corregit amb el biaix de l'estació de la XEMA més propera (índex v2, ADR-0038):
    * cal citar el Servei Meteorològic de Catalunya. Absent o `false`: la humitat d'Open-Meteo.
    */
   humitatCorregida?: boolean;
   /**
-   * Versió de la fórmula: 1 (ADR-0018) o 2 (ADR-0037). Absent = 1. L'API sempre l'envia; és
+   * Versió de la fórmula: 1 (ADR-0018) o 2 (ADR-0038). Absent = 1. L'API sempre l'envia; és
    * opcional perquè les files i les respostes d'abans de la v2 continuïn sent vàlides.
    */
   versio?: number;

@@ -1,4 +1,4 @@
-# ADR-0037: Índex v2: la Lluna amagada pel relleu i la humitat corregida amb la XEMA
+# ADR-0038: Índex v2: la Lluna amagada pel relleu i la humitat corregida amb la XEMA
 
 **Estat:** Proposada · **Data:** 2026-11-11 · Substitueix en part l'[ADR-0018](0018-formula-index-v1.md) · TG-184, TG-185
 
@@ -64,7 +64,7 @@ Exemple: cel ras i fosc sense Lluna (índex 100 amb la v1). Open-Meteo preveu un
 
 ### Persistència, versió i API
 
-- **Migració** `20261111140000_index_v2_horitzo_humitat.sql`: `index_visibilitat.versio smallint not null default 1` (`check (versio >= 1)`) i `index_visibilitat.humitat_corregida boolean not null default false`; `estacions_xema.biaix_humitat real` (`check` entre −15 i 15), `biaix_mostres smallint` i `biaix_calculat_el timestamptz`. Les files que ja hi ha queden com a v1; el primer recàlcul substitueix totes les hores futures, i les passades s'esborren en 24 h.
+- **Migració** `20261120100000_index_v2_horitzo_humitat.sql`: `index_visibilitat.versio smallint not null default 1` (`check (versio >= 1)`) i `index_visibilitat.humitat_corregida boolean not null default false`; `estacions_xema.biaix_humitat real` (`check` entre −15 i 15), `biaix_mostres smallint` i `biaix_calculat_el timestamptz`. Les files que ja hi ha queden com a v1; el primer recàlcul substitueix totes les hores futures, i les passades s'esborren en 24 h.
 - **`factors`** (jsonb, sense canvi de columna) afegeix `humitat` (0–1). La resta de claus es diuen i s'interpreten igual.
 - **`@talaia/shared`:** `FactorsIndex.humitat?: number`, `IndexHora.versio?: number` (absent = 1) i `IndexHora.humitatCorregida?: boolean`. Són opcionals perquè les files v1, els fixtures dels tests i la memòria cau de l'app continuïn sent vàlids; l'API sempre els envia, perquè la taula té valors per defecte.
 - **API:** canvis només additius als esquemes (`indexSchemas.ts`) i a les lectures d'`index_visibilitat` (`puntsRepository`, `recomanacionsRepository`): els clients d'ara no es trenquen. El GeoJSON de `/punts` no canvia.

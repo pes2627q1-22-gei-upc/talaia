@@ -12,7 +12,7 @@ import { usePointBreakdownQuery, usePointDetailQuery } from './pointRepository';
 import { skyDarknessBand } from './skyDarkness';
 
 /**
- * Els factors de l'índex (ADR-0018, v1; ADR-0037, v2), en l'ordre del mockup 05. La humitat només
+ * Els factors de l'índex (ADR-0018, v1; ADR-0038, v2), en l'ordre del mockup 05. La humitat només
  * hi és a la v2, i el Sol, al final.
  */
 const FACTORS = [

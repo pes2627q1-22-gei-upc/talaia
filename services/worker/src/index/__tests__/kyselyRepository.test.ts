@@ -5,7 +5,7 @@ import { createKyselyIndexRepository } from '../repository';
 
 const HORA = '2026-11-20T22:00:00.000Z';
 
-describe('repositori de l’índex amb Kysely (TG-184, ADR-0037)', () => {
+describe('repositori de l’índex amb Kysely (TG-184, ADR-0038)', () => {
   it('desa la versió i si la humitat és corregida, amb els valors per defecte de la v1', async () => {
     const { db, queries } = fakeDb();
     const v2: IndexHora = {

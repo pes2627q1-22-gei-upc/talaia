@@ -1,5 +1,5 @@
 /**
- * Ajust de la humitat amb la XEMA (TG-184, ADR-0037): el biaix sistemàtic de la humitat d'Open-Meteo
+ * Ajust de la humitat amb la XEMA (TG-184, ADR-0038): el biaix sistemàtic de la humitat d'Open-Meteo
  * a cada estació, mesurat de nit amb les observacions dels últims dies. El que és aquí és pur
  * (sense base de dades ni xarxa), com la fórmula de l'índex; la persistència i la crida a Open-Meteo
  * són a `ajustaHumitatXema`, que rep els ports per paràmetre.
@@ -7,7 +7,7 @@
 import { efemeridesHores, type OpenMeteoClient } from '@talaia/index';
 import type { PrevisioMeteoHora } from '@talaia/shared';
 
-/** Dies de lectures que es miren per mesurar el biaix (ADR-0037). */
+/** Dies de lectures que es miren per mesurar el biaix (ADR-0038). */
 export const DIES_BIAIX = 14;
 /** Parelles de nit mínimes per confiar-hi: unes 4 nits a l'hivern i 6 a l'estiu. */
 export const PARELLES_MINIMES = 48;
@@ -26,7 +26,7 @@ const HORA_MS = 3_600_000;
 const DIA_MS = 24 * HORA_MS;
 const RADI_TERRA_KM = 6371;
 
-/** Una estació amb el seu biaix, tal com el desa `estacions_xema` (ADR-0037). */
+/** Una estació amb el seu biaix, tal com el desa `estacions_xema` (ADR-0038). */
 export type EstacioAmbBiaix = {
   lat: number;
   lon: number;
@@ -155,7 +155,7 @@ const mateixDia = (a: Date, b: Date) =>
   a.toISOString().slice(0, 10) === b.toISOString().slice(0, 10);
 
 /**
- * Calcula el biaix de totes les estacions assignades a un punt, un cop al dia (ADR-0037). Demana a
+ * Calcula el biaix de totes les estacions assignades a un punt, un cop al dia (ADR-0038). Demana a
  * Open-Meteo, a les coordenades de cada estació, els últims `DIES_BIAIX` dies (`past_days`, sense
  * previsió). Si Open-Meteo falla, no s'escriu res i el biaix anterior es manté fins que caduca.
  */

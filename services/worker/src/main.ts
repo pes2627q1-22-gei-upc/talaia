@@ -69,7 +69,7 @@ void executor.executa('arrencada');
 console.log(`[worker] en marxa: recàlcul de l'índex a «${PLANIFICACIO}» (UTC)`);
 
 // Open-Meteo dels dies passats, per mesurar el biaix de la humitat a les estacions (TG-184,
-// ADR-0037): una petició per estació i dia, no una previsió.
+// ADR-0038): una petició per estació i dia, no una previsió.
 const meteoPassat = createOpenMeteoClient({
   baseUrl: env.OPEN_METEO_BASE_URL,
   diesPrevisio: 0,

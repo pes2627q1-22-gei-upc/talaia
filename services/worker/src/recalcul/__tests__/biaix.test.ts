@@ -47,7 +47,7 @@ async function recalcula(punt: PuntPerRecalcul) {
   return indexs.indexsDe(punt.id);
 }
 
-describe('recalcul amb el biaix de la XEMA (TG-184, ADR-0037)', () => {
+describe('recalcul amb el biaix de la XEMA (TG-184, ADR-0038)', () => {
   it('sense estació amb biaix, la humitat és la d’Open-Meteo tal qual', async () => {
     const hores = await recalcula(base);
     expect(hores.length).toBeGreaterThan(0);
