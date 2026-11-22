@@ -168,12 +168,18 @@ export function createKyselyXemaRepository(
       return files.map((f) => ({ data: new Date(f.data).toISOString(), humitat: f.humitat }));
     },
 
-    async desaBiaix(codi, { biaix, mostres, calculatEl }) {
-      await db
-        .updateTable('estacionsXema')
-        .set({ biaixHumitat: biaix, biaixMostres: mostres, biaixCalculatEl: calculatEl })
-        .where('codi', '=', codi)
-        .execute();
+    async desaBiaixos(biaixos, calculatEl) {
+      if (biaixos.length === 0) return;
+      // Una transacció: si una estació falla, cap no queda amb el càlcul d'avui (`ultimCalcul`).
+      await db.transaction().execute(async (trx) => {
+        for (const { codi, biaix, mostres } of biaixos) {
+          await trx
+            .updateTable('estacionsXema')
+            .set({ biaixHumitat: biaix, biaixMostres: mostres, biaixCalculatEl: calculatEl })
+            .where('codi', '=', codi)
+            .execute();
+        }
+      });
     },
 
     async ultimCalcul() {

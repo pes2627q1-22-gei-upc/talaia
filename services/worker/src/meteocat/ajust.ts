@@ -128,36 +128,45 @@ export function biaixAplicable(
   return estacio.biaixHumitat;
 }
 
+/** El biaix calculat d'una estació: `null` si no hi ha prou parelles (`mostres`). */
+export type BiaixEstacio = { codi: string; biaix: number | null; mostres: number };
+
 /** Les estacions que els punts fan servir, i on es desa el biaix (`estacions_xema`). */
 export type AjustHumitatRepository = {
   /** Les estacions assignades a algun punt, amb coordenades i el biaix que tenen ara. */
   estacionsAssignades(): Promise<Array<EstacioAmbBiaix & { codi: string }>>;
   /** Lectures de la humitat d'una estació entre dos instants (inclusius). */
   lecturesHumitat(codi: string, desDe: Date, fins: Date): Promise<LecturaHumitat[]>;
-  /** Desa el biaix d'una estació (`null` si no n'hi ha prou mostres). */
-  desaBiaix(
-    codi: string,
-    biaix: { biaix: number | null; mostres: number; calculatEl: Date },
-  ): Promise<void>;
+  /**
+   * Desa el biaix de totes les estacions alhora, en una transacció: o totes o cap. Si se'n desés
+   * només una part, `ultimCalcul` ja diria «avui» i les altres no es tornarien a calcular fins demà.
+   */
+  desaBiaixos(biaixos: BiaixEstacio[], calculatEl: Date): Promise<void>;
   /** L'instant del darrer biaix calculat, o `null` si encara no n'hi ha cap. */
   ultimCalcul(): Promise<Date | null>;
+  /** L'instant de l'última lectura desada (ISO), o `null` si encara no n'hi ha cap. */
+  ultimaLectura(): Promise<string | null>;
 };
 
 export type ResumAjustHumitat = {
-  /** `false` si ja s'havia calculat avui (no es torna a fer). */
+  /** `false` si ja s'havia calculat avui o si encara no hi ha les lectures d'ahir. */
   calculat: boolean;
   estacions: number;
   /** Estacions amb biaix (les altres tenen menys mostres de les que calen). */
   amb: number;
 };
 
-const mateixDia = (a: Date, b: Date) =>
-  a.toISOString().slice(0, 10) === b.toISOString().slice(0, 10);
+const diaUtc = (d: Date) => d.toISOString().slice(0, 10);
 
 /**
  * Calcula el biaix de totes les estacions assignades a un punt, un cop al dia (ADR-0038). Demana a
  * Open-Meteo, a les coordenades de cada estació, els últims `DIES_BIAIX` dies (`past_days`, sense
- * previsió). Si Open-Meteo falla, no s'escriu res i el biaix anterior es manté fins que caduca.
+ * previsió).
+ *
+ * No es calcula fins que hi ha les lectures d'ahir: si el worker arrenca abans de les 03:00 UTC
+ * encara no s'han baixat, i un biaix calculat llavors ja no es repetiria a les 06:15. Es desa tot
+ * al final i de cop: si Open-Meteo o una lectura fallen, no s'escriu res, el biaix anterior es
+ * manté fins que caduca i l'execució següent ho torna a provar.
  */
 export async function ajustaHumitatXema({
   meteo,
@@ -169,24 +178,31 @@ export async function ajustaHumitatXema({
   repository: AjustHumitatRepository;
   ara?: Date;
 }): Promise<ResumAjustHumitat> {
+  const pendent = { calculat: false, estacions: 0, amb: 0 };
   const ultim = await repository.ultimCalcul();
-  if (ultim && mateixDia(ultim, ara)) return { calculat: false, estacions: 0, amb: 0 };
+  if (ultim && diaUtc(ultim) === diaUtc(ara)) return pendent;
+  const ultimaLectura = await repository.ultimaLectura();
+  const ahir = diaUtc(new Date(ara.getTime() - DIA_MS));
+  if (ultimaLectura === null || diaUtc(new Date(ultimaLectura)) < ahir) return pendent;
 
   const estacions = await repository.estacionsAssignades();
   if (estacions.length === 0) return { calculat: true, estacions: 0, amb: 0 };
 
   const previsions = await meteo.previsio(estacions.map(({ lat, lon }) => ({ lat, lon })));
   const desDe = new Date(ara.getTime() - DIES_BIAIX * DIA_MS - HORA_MS / 2);
-  let amb = 0;
+  const biaixos: BiaixEstacio[] = [];
   for (const [i, estacio] of estacions.entries()) {
     const parelles = parellesHumitat(
       previsions[i] ?? [],
       await repository.lecturesHumitat(estacio.codi, desDe, ara),
       estacio,
     );
-    const biaix = biaixHumitat(parelles);
-    if (biaix !== null) amb += 1;
-    await repository.desaBiaix(estacio.codi, { biaix, mostres: parelles.length, calculatEl: ara });
+    biaixos.push({ codi: estacio.codi, biaix: biaixHumitat(parelles), mostres: parelles.length });
   }
-  return { calculat: true, estacions: estacions.length, amb };
+  await repository.desaBiaixos(biaixos, ara);
+  return {
+    calculat: true,
+    estacions: estacions.length,
+    amb: biaixos.filter((b) => b.biaix !== null).length,
+  };
 }

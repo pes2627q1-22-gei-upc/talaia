@@ -12,5 +12,5 @@ alter table public.index_visibilitat
 -- substitueix cada dia; `biaix_calculat_el` diu fins quan es pot aplicar (7 dies).
 alter table public.estacions_xema
   add column biaix_humitat real check (biaix_humitat between -15 and 15),
-  add column biaix_mostres smallint,
+  add column biaix_mostres smallint check (biaix_mostres >= 0),
   add column biaix_calculat_el timestamptz;

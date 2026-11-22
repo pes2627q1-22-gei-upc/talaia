@@ -57,20 +57,41 @@ describe('repositori de la XEMA: el biaix de la humitat (TG-184, ADR-0038)', () 
     ]);
   });
 
-  it('desaBiaix desa el biaix, les mostres i l’instant del càlcul de l’estació', async () => {
+  it('desaBiaixos desa el biaix, les mostres i l’instant de totes les estacions en una transacció', async () => {
     const calculatEl = new Date('2026-11-20T06:15:00.000Z');
     const { db, queries } = fakeDb();
+    const transaccio = jest.spyOn(db, 'transaction');
 
-    await createKyselyXemaRepository(db).desaBiaix('CC', {
-      biaix: -2.5,
-      mostres: 60,
+    await createKyselyXemaRepository(db).desaBiaixos(
+      [
+        { codi: 'CC', biaix: -2.5, mostres: 60 },
+        { codi: 'UG', biaix: null, mostres: 12 },
+      ],
       calculatEl,
-    });
-
-    expect(queries[0]?.sql).toBe(
-      'update "estacions_xema" set "biaix_humitat" = $1, "biaix_mostres" = $2, "biaix_calculat_el" = $3 where "codi" = $4',
     );
-    expect(queries[0]?.parameters).toEqual([-2.5, 60, calculatEl, 'CC']);
+
+    // O totes o cap: si només se'n desés una, `ultimCalcul` ja diria «avui» (revisió de la #176).
+    expect(transaccio).toHaveBeenCalledTimes(1);
+    expect(queries).toHaveLength(2);
+    for (const query of queries) {
+      expect(query.sql).toBe(
+        'update "estacions_xema" set "biaix_humitat" = $1, "biaix_mostres" = $2, "biaix_calculat_el" = $3 where "codi" = $4',
+      );
+    }
+    expect(queries.map((q) => q.parameters)).toEqual([
+      [-2.5, 60, calculatEl, 'CC'],
+      [null, 12, calculatEl, 'UG'],
+    ]);
+  });
+
+  it('desaBiaixos sense estacions no obre cap transacció', async () => {
+    const { db, queries } = fakeDb();
+    const transaccio = jest.spyOn(db, 'transaction');
+
+    await createKyselyXemaRepository(db).desaBiaixos([], new Date());
+
+    expect(transaccio).not.toHaveBeenCalled();
+    expect(queries).toEqual([]);
   });
 
   it('ultimCalcul torna l’instant del darrer biaix, o null si no n’hi ha cap', async () => {

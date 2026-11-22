@@ -10,6 +10,7 @@ import {
   distanciaKm,
   parellesHumitat,
   type AjustHumitatRepository,
+  type BiaixEstacio,
   type EstacioAmbBiaix,
   type LecturaHumitat,
 } from '../ajust';
@@ -141,19 +142,21 @@ describe('ajustaHumitatXema', () => {
     return { hores, lectures };
   };
 
-  const repositori = (lectures: LecturaHumitat[]) => {
-    const repo: AjustHumitatRepository & {
-      desats: Array<{ codi: string; biaix: number | null; mostres: number }>;
-    } = {
+  const CC = { codi: 'CC', ...ESTACIO, biaixHumitat: null, biaixCalculatEl: null };
+  const UG = { ...CC, codi: 'UG' };
+
+  const repositori = (lectures: LecturaHumitat[], estacions = [CC]) => {
+    const repo: AjustHumitatRepository & { desats: BiaixEstacio[]; calculatEl?: Date } = {
       desats: [],
-      estacionsAssignades: jest.fn(async () => [
-        { codi: 'CC', ...ESTACIO, biaixHumitat: null, biaixCalculatEl: null },
-      ]),
+      estacionsAssignades: jest.fn(async () => estacions),
       lecturesHumitat: jest.fn(async () => lectures),
-      desaBiaix: jest.fn(async (codi, { biaix, mostres }) => {
-        repo.desats.push({ codi, biaix, mostres });
+      desaBiaixos: jest.fn(async (biaixos, calculatEl) => {
+        repo.desats.push(...biaixos);
+        repo.calculatEl = calculatEl;
       }),
       ultimCalcul: jest.fn(async () => null),
+      // Les lectures d'ahir ja hi són: l'última és la de les 23:30.
+      ultimaLectura: jest.fn(async () => '2026-11-19T23:30:00.000Z'),
     };
     return repo;
   };
@@ -172,6 +175,44 @@ describe('ajustaHumitatXema', () => {
     expect(repo.desats).toHaveLength(1);
     expect(repo.desats[0]).toMatchObject({ codi: 'CC', biaix: 4 });
     expect(repo.desats[0]?.mostres).toBeGreaterThanOrEqual(PARELLES_MINIMES);
+    expect(repo.calculatEl).toEqual(ara);
+  });
+
+  it('desa totes les estacions d’un sol cop, també les que no tenen prou parelles', async () => {
+    const { hores, lectures } = setmana();
+    const repo = repositori(lectures, [CC, UG]);
+    // Open-Meteo no torna res per a la segona estació: 0 parelles, biaix `null`.
+    const meteo: OpenMeteoClient = { previsio: jest.fn(async () => [hores, []]) };
+
+    const resum = await ajustaHumitatXema({ meteo, repository: repo, ara });
+
+    expect(resum).toEqual({ calculat: true, estacions: 2, amb: 1 });
+    expect(repo.desaBiaixos).toHaveBeenCalledTimes(1);
+    expect(repo.desats).toEqual([
+      expect.objectContaining({ codi: 'CC', biaix: 4 }),
+      { codi: 'UG', biaix: null, mostres: 0 },
+    ]);
+  });
+
+  it('si una estació falla a mig càlcul no en desa cap, i l’execució següent ho torna a provar', async () => {
+    const { hores, lectures } = setmana();
+    const repo = repositori(lectures, [CC, UG]);
+    repo.lecturesHumitat = jest.fn(async (codi: string) => {
+      if (codi === 'UG') throw new Error('connexió tallada');
+      return lectures;
+    });
+    const meteo: OpenMeteoClient = { previsio: jest.fn(async () => [hores, hores]) };
+
+    await expect(ajustaHumitatXema({ meteo, repository: repo, ara })).rejects.toThrow(
+      'connexió tallada',
+    );
+    // Cap estació queda amb el càlcul d'avui: `ultimCalcul` no canvia.
+    expect(repo.desaBiaixos).not.toHaveBeenCalled();
+
+    repo.lecturesHumitat = jest.fn(async () => lectures);
+    const resum = await ajustaHumitatXema({ meteo, repository: repo, ara });
+    expect(resum).toEqual({ calculat: true, estacions: 2, amb: 2 });
+    expect(repo.desats.map((d) => d.codi)).toEqual(['CC', 'UG']);
   });
 
   it('si Open-Meteo falla, no desa res: el biaix anterior es manté', async () => {
@@ -182,7 +223,7 @@ describe('ajustaHumitatXema', () => {
       }),
     };
     await expect(ajustaHumitatXema({ meteo, repository: repo, ara })).rejects.toThrow('xarxa');
-    expect(repo.desaBiaix).not.toHaveBeenCalled();
+    expect(repo.desaBiaixos).not.toHaveBeenCalled();
   });
 
   it('no es torna a calcular si ja s’ha fet avui', async () => {
@@ -194,5 +235,37 @@ describe('ajustaHumitatXema', () => {
 
     expect(resum.calculat).toBe(false);
     expect(meteo.previsio).not.toHaveBeenCalled();
+  });
+
+  it('abans que arribin les lectures d’ahir no calcula res, i a les 06:15 sí', async () => {
+    const { hores, lectures } = setmana();
+    const repo = repositori(lectures);
+    const meteo: OpenMeteoClient = { previsio: jest.fn(async () => [hores]) };
+    // El worker arrenca a la 01:00 UTC: la XEMA encara no té ahir sencer (`HORES_MARGE_XEMA`).
+    repo.ultimaLectura = jest.fn(async () => '2026-11-18T23:30:00.000Z');
+
+    const dMatinada = await ajustaHumitatXema({
+      meteo,
+      repository: repo,
+      ara: new Date('2026-11-20T01:00:00.000Z'),
+    });
+
+    expect(dMatinada).toEqual({ calculat: false, estacions: 0, amb: 0 });
+    expect(meteo.previsio).not.toHaveBeenCalled();
+    expect(repo.desaBiaixos).not.toHaveBeenCalled();
+
+    // A les 06:15 la ingesta ja ha baixat ahir: ara sí.
+    repo.ultimaLectura = jest.fn(async () => '2026-11-19T23:30:00.000Z');
+    const resum = await ajustaHumitatXema({ meteo, repository: repo, ara });
+    expect(resum).toEqual({ calculat: true, estacions: 1, amb: 1 });
+  });
+
+  it('sense cap lectura desada no calcula res', async () => {
+    const repo = repositori([]);
+    repo.ultimaLectura = jest.fn(async () => null);
+    const meteo: OpenMeteoClient = { previsio: jest.fn(async () => []) };
+
+    expect((await ajustaHumitatXema({ meteo, repository: repo, ara })).calculat).toBe(false);
+    expect(repo.estacionsAssignades).not.toHaveBeenCalled();
   });
 });
