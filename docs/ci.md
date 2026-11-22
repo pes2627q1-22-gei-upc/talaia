@@ -25,7 +25,7 @@ Un workflow més, separat de `ci.yml` (detalls a [desplegament.md](desplegament.
 
 - [deploy-check.yml](../.github/workflows/deploy-check.yml): a les PR que toquen `deploy/`, els `Dockerfile`, `.dockerignore` o `package-lock.json`, valida el compose, construeix les imatges i arrenca el compose amb `.env.example` i un certificat autosignat fins que `/api/v1/health` respon per Nginx.
 
-El deploy de `stable` no és a GitHub Actions: el fa un cron de la VM ([ADR-0021](decisions/0021-deploy-per-pull-des-de-la-vm.md)).
+El deploy de `stable` no és a GitHub Actions: el fa un cron de la VM que desplega quan `stable` canvia, és a dir, a cada release i hotfix ([ADR-0021](decisions/0021-deploy-per-pull-des-de-la-vm.md)).
 
 ## Estat de la integració
 
