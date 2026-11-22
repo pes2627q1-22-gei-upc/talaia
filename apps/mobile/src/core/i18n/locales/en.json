@@ -151,15 +151,35 @@
     "whereToWatch": "Where to watch"
   },
   "profile": {
+    "unsavedTitle": "You have unsaved changes",
+    "unsavedMessage": "Are you sure you want to leave?",
+    "keepEditing": "Keep editing",
+    "discardChanges": "Discard changes",
+    "logoutConfirmationTitle": "Sign out?",
+    "logoutConfirmationMessage": "You'll need to sign in again to access your account.",
     "title": "Profile",
+    "myProfile": "My profile",
+    "back": "Back to profile",
+    "myProfileHint": "View your account details",
+    "name": "Name",
+    "addName": "Add your name",
+    "editName": "Edit name",
+    "save": "Save",
+    "cancel": "Cancel",
+    "nameInvalid": "Enter a name between 1 and 100 characters.",
+    "nameSaveError": "Could not save your name. Please try again.",
+    "loadError": "Could not load your profile.",
     "language": "Language",
+    "closeLanguage": "Close language selection",
     "languages": {
       "ca": "Catalan",
       "es": "Spanish",
       "en": "English"
     },
-    "account": "Account",
-    "plans": "My plans"
+    "plans": "My plans",
+    "plansHint": "View your observation plans",
+    "savedPoints": "Favorite spots",
+    "comingSoon": "Coming soon"
   },
   "apiStatus": {
     "title": "Server status",
