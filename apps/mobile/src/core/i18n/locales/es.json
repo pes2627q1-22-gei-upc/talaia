@@ -179,6 +179,8 @@
     "plans": "Mis planes",
     "plansHint": "Consulta tus planes de observación",
     "savedPoints": "Puntos favoritos",
+    "savedPointsCount_one": "{{count}} lugar guardado para volver",
+    "savedPointsCount_other": "{{count}} lugares guardados para volver",
     "savedPointsHint": "Consulta los puntos que has guardado",
     "savedPointsEmpty": "Todavía no tienes puntos favoritos.",
     "savedPointsError": "No se han podido cargar los puntos favoritos.",

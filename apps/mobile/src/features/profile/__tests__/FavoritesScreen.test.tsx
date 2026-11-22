@@ -4,7 +4,8 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { apiGet } from '@/core/api/httpClient';
 import i18n from '@/core/i18n';
-import { ThemeProvider } from '@/core/theme/theme';
+import { ThemeProvider, type ThemeName } from '@/core/theme/theme';
+import { colorsVermell } from '@/core/theme/tokens';
 import { useAuthViewModel } from '@/features/auth/useAuthViewModel';
 import { createQueryWrapper } from '@/test-utils/queryWrapper';
 
@@ -21,11 +22,11 @@ const get = jest.mocked(apiGet);
 const push = jest.fn();
 const back = jest.fn();
 
-async function show() {
+async function show(theme: ThemeName = 'normal') {
   const QueryWrapper = createQueryWrapper();
   return render(
     <QueryWrapper>
-      <ThemeProvider name="normal">
+      <ThemeProvider name={theme}>
         <SafeAreaProvider
           initialMetrics={{
             frame: { x: 0, y: 0, width: 320, height: 568 },
@@ -55,16 +56,58 @@ it('mostra les files sense tapar el text i obre la fitxa tocada', async () => {
   ]);
   await show();
   expect(screen.getByRole('header', { name: 'Punts favorits' })).toBeOnTheScreen();
+  expect(await screen.findByText('2 llocs desats per tornar-hi')).toBeOnTheScreen();
   const row = await screen.findByRole('button', { name: 'Parc Astronòmic del Montsec, Àger' });
   expect(screen.getByText('Parc Astronòmic del Montsec')).toHaveProp('numberOfLines', 2);
   expect(screen.getByText('Àger')).toHaveProp('numberOfLines', 1);
   expect(screen.getByRole('button', { name: 'Mirador del Pirineu, Sort' })).toBeOnTheScreen();
-  expect(row.props.style[0]).toMatchObject({ flexDirection: 'row', minHeight: expect.any(Number) });
+  const card = screen.getByTestId('favorite-card-montsec');
+  expect(card.props.style).toMatchObject({
+    flexDirection: 'row',
+    alignItems: 'stretch',
+    minHeight: expect.any(Number),
+    borderRadius: expect.any(Number),
+  });
+  expect(row.props.style[0]).toMatchObject({ flexDirection: 'row', alignItems: 'center' });
+  expect(screen.getByText('Àger').parent?.props.style.flexDirection).toBe('row');
+  expect(screen.getByTestId('favorite-chevron-montsec')).toBeOnTheScreen();
+  const heart = screen.getByTestId('favorite-icon-montsec');
+  expect(card.children[0]).toBe(heart);
+  expect(heart.props.style.width).toBeGreaterThanOrEqual(44);
+  expect(heart.props.style.minHeight).toBeGreaterThanOrEqual(44);
+  expect(heart.props.onPress).toBeUndefined();
+  await fireEvent.press(heart);
+  expect(push).not.toHaveBeenCalled();
   await fireEvent.press(row);
   expect(push).toHaveBeenCalledWith({ pathname: '/punt/[id]', params: { id: 'montsec' } });
   await fireEvent.press(screen.getByRole('button', { name: 'Torna al perfil' }));
   expect(back).toHaveBeenCalledTimes(1);
   expect(get).toHaveBeenCalledWith('/favorits', undefined, { signal: expect.any(AbortSignal) });
+});
+
+it('manté les targetes coherents en mode nit sense fer dependre la llista de l’índex horari', async () => {
+  get.mockResolvedValue([
+    {
+      id: 'montsec',
+      nom: 'Montsec',
+      municipi: 'Àger',
+      index: { valor: 82, franja: 'ras', deDia: false },
+    },
+    {
+      id: 'garraf',
+      nom: 'Garraf',
+      municipi: 'Sitges',
+      index: { valor: 0, franja: 'tap', deDia: true },
+    },
+    { id: 'prades', nom: 'Prades', municipi: 'Prades', index: null },
+  ]);
+  await show('vermell');
+  expect(await screen.findByText('3 llocs desats per tornar-hi')).toBeOnTheScreen();
+  expect(screen.queryByText('82')).toBeNull();
+  expect(screen.queryByText('0')).toBeNull();
+  expect(screen.getByTestId('favorite-card-montsec').props.style).toMatchObject({
+    backgroundColor: colorsVermell.card,
+  });
 });
 
 it('mostra un estat buit quan no hi ha favorits', async () => {

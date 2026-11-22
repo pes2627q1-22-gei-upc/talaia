@@ -13,6 +13,10 @@ export function useFavoritesViewModel() {
 
   return {
     title: t('profile.savedPoints'),
+    subtitle:
+      !favorites.isPending && !favorites.isError && favorites.data?.length
+        ? t('profile.savedPointsCount', { count: favorites.data.length })
+        : undefined,
     back: { label: t('profile.back'), onPress: () => router.back() },
     points: favorites.data ?? [],
     loading: user !== null && favorites.isPending,
