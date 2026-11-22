@@ -19,6 +19,9 @@ type Props = Pick<
   | 'hoursLabel'
   | 'timezoneLabel'
   | 'noHours'
+  | 'indexExplanation'
+  | 'hoursTapHint'
+  | 'hourA11yHint'
   | 'hoursLoading'
   | 'hoursError'
   | 'retryLabel'
@@ -44,6 +47,9 @@ export function IndexBreakdown({
   hoursLabel,
   timezoneLabel,
   noHours,
+  indexExplanation,
+  hoursTapHint,
+  hourA11yHint,
   hoursLoading,
   hoursError,
   retryLabel,
@@ -80,6 +86,9 @@ export function IndexBreakdown({
         hoursLabel={hoursLabel}
         timezoneLabel={timezoneLabel}
         noHours={noHours}
+        indexExplanation={indexExplanation}
+        hoursTapHint={hoursTapHint}
+        hourA11yHint={hourA11yHint}
         selectedHourId={selected?.id ?? null}
         onSelect={setSelectedId}
       />

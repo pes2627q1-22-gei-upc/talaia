@@ -27,6 +27,9 @@ async function renderSelected(value: number, level: 'ras' | 'jus' | 'tap') {
       hoursLabel="Aquesta nit"
       timezoneLabel="Hora local"
       noHours="Sense hores"
+      indexExplanation="Com es calcula l'índex"
+      hoursTapHint="Toca una hora"
+      hourA11yHint="Mostra l'índex d'aquesta hora"
       selectedHourId="21"
       onSelect={jest.fn()}
     />,

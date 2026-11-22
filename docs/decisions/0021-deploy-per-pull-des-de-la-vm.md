@@ -26,5 +26,6 @@ Limitar el runner al workflow de deploy demanava un *runner group* de l'organitz
 ## Conseqüències
 
 - GitHub no executa res a la VM. Només hi arriba el que s'ha fusionat a `stable` per PR, amb revisió i CI.
-- Un deploy comença, com a molt, 5 minuts després del merge a `stable`.
+- Un deploy comença, com a molt, 5 minuts després del merge a `stable`. Els 5 minuts són la latència de detecció, no la freqüència dels deploys: `stable` només canvia amb la release del final de cada sprint ([git-workflow.md](../git-workflow.md)) i amb els hotfixos, i entre dos canvis el cron no fa res. No cal, doncs, un deploy manual al final del sprint: el pull periòdic el fa sol, també per als hotfixos i per als reintents.
+- Aquest cron de la VM no és el del worker, que recalcula l'índex de visibilitat cada hora i en desa el resultat a la base de dades ([ADR-0024](0024-planificacio-worker-node-cron.md)).
 - El resultat no surt a GitHub Actions: és a `~/talaia-deploy.log` de la VM. Un deploy que falla es reintenta a cada passada del cron fins que surt bé o arriba un hotfix a `stable`. No hi ha rollback automàtic: si el contenidor nou no passa el healthcheck, ja ha substituït l'anterior, i ho diu el log.
