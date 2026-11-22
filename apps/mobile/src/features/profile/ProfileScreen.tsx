@@ -63,7 +63,7 @@ function MenuRow({ icon, label, hint, onPress, badge, value }: MenuRowProps) {
     <PressableScale
       onPress={onPress}
       accessibilityLabel={value ? `${label}, ${value}` : label}
-      accessibilityHint={hint}
+      accessibilityHint={value ? undefined : hint}
       style={styles.menuRow}
     >
       {content}
@@ -86,7 +86,12 @@ export function ProfileScreen() {
         {vm.auth.isAuthenticated ? (
           <>
             <View style={styles.identity}>
-              <View style={styles.avatar}>
+              <View
+                style={styles.avatar}
+                accessibilityElementsHidden
+                importantForAccessibility="no-hide-descendants"
+                testID="profile-avatar"
+              >
                 {vm.avatarUrl && themeName !== 'vermell' ? (
                   <Image
                     source={{ uri: vm.avatarUrl }}

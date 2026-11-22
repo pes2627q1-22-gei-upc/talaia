@@ -47,7 +47,12 @@ export function MyProfileScreen() {
           ) : (
             <>
               <View style={styles.identity}>
-                <View style={styles.avatar}>
+                <View
+                  style={styles.avatar}
+                  accessibilityElementsHidden
+                  importantForAccessibility="no-hide-descendants"
+                  testID="profile-avatar"
+                >
                   {vm.avatarUrl && themeName !== 'vermell' ? (
                     <Image
                       source={{ uri: vm.avatarUrl }}

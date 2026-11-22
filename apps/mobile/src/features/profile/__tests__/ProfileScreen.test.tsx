@@ -143,12 +143,22 @@ describe('ProfileScreen · sessió (HU35)', () => {
     await renderProfile(auth());
     expect(await screen.findByText('Laia Puig')).toBeOnTheScreen();
     expect(screen.getByText('laia@example.cat')).toBeOnTheScreen();
-    expect(screen.getByText('LP')).toBeOnTheScreen();
+    expect(screen.getByText('LP', { includeHiddenElements: true })).toBeOnTheScreen();
+    expect(screen.getByTestId('profile-avatar', { includeHiddenElements: true })).toHaveProp(
+      'accessibilityElementsHidden',
+      true,
+    );
+    expect(screen.getByTestId('profile-avatar', { includeHiddenElements: true })).toHaveProp(
+      'importantForAccessibility',
+      'no-hide-descendants',
+    );
     expect(screen.getByText('Punts favorits')).toBeOnTheScreen();
     expect(screen.getAllByText('Properament')).toHaveLength(1);
     expect(screen.queryByRole('button', { name: 'Alertes' })).toBeNull();
     expect(get).toHaveBeenCalledWith('/perfil', undefined, { signal: expect.any(AbortSignal) });
-    expect(screen.getByRole('button', { name: 'Idioma, Català' })).toBeOnTheScreen();
+    const language = screen.getByRole('button', { name: 'Idioma, Català' });
+    expect(language).toBeOnTheScreen();
+    expect(language.props.accessibilityHint).toBeUndefined();
   });
 
   it('si falla la càrrega, mostra l’error sense suggerir que falta el nom', async () => {
@@ -161,21 +171,27 @@ describe('ProfileScreen · sessió (HU35)', () => {
   it('amaga la foto en mode nit i mostra les inicials', async () => {
     get.mockResolvedValue({ ...profile, avatarUrl: 'https://example.cat/avatar.jpg' });
     await renderProfile(auth(), false, 'vermell');
-    expect(await screen.findByText('LP')).toBeOnTheScreen();
+    expect(await screen.findByText('LP', { includeHiddenElements: true })).toBeOnTheScreen();
     expect(screen.queryByTestId('profile-avatar-image')).toBeNull();
   });
 
   it('mostra la foto en el tema normal', async () => {
     get.mockResolvedValue({ ...profile, avatarUrl: 'https://example.cat/avatar.jpg' });
     await renderProfile(auth());
-    expect(await screen.findByTestId('profile-avatar-image')).toBeOnTheScreen();
+    expect(
+      await screen.findByTestId('profile-avatar-image', { includeHiddenElements: true }),
+    ).toBeOnTheScreen();
   });
 
   it('mostra les inicials en el detall en mode nit', async () => {
     get.mockResolvedValue({ ...profile, avatarUrl: 'https://example.cat/avatar.jpg' });
     await renderProfile(auth(), true, 'vermell');
-    expect(await screen.findByText('LP')).toBeOnTheScreen();
+    expect(await screen.findByText('LP', { includeHiddenElements: true })).toBeOnTheScreen();
     expect(screen.queryByTestId('profile-avatar-image')).toBeNull();
+    expect(screen.getByTestId('profile-avatar', { includeHiddenElements: true })).toHaveProp(
+      'accessibilityElementsHidden',
+      true,
+    );
   });
 
   it('edita el nom i mostra el valor que ha desat l’API', async () => {
@@ -189,7 +205,7 @@ describe('ProfileScreen · sessió (HU35)', () => {
     await act(async () => fireEvent.press(screen.getByRole('button', { name: 'Desa' })));
     await waitFor(() => expect(patch).toHaveBeenCalledWith('/perfil', { nom: 'Laia Soler' }));
     expect(await screen.findByText('Laia Soler')).toBeOnTheScreen();
-    expect(screen.getByText('LS')).toBeOnTheScreen();
+    expect(screen.getByText('LS', { includeHiddenElements: true })).toBeOnTheScreen();
   });
 
   it('rebutja un nom buit i conserva l’edició si l’API falla', async () => {
