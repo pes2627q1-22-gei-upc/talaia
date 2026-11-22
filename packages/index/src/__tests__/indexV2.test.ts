@@ -69,6 +69,14 @@ describe('perfil d’horitzo (ADR-0038)', () => {
     expect(horitzoA(perfil, 360)).toBe(0);
   });
 
+  it('entre el 359 i el 0 interpola amb el valor del nord, no amb un 0 per defecte', () => {
+    const perfil = pla(0);
+    perfil[359] = 10;
+    perfil[0] = 6;
+    expect(horitzoA(perfil, 359.5)).toBe(8);
+    expect(horitzoA(perfil, 359.75)).toBe(7);
+  });
+
   it('el perfil ha de tenir 360 valors', () => {
     expect(() => horitzoA([1, 2, 3], 0)).toThrow(RangeError);
   });
@@ -82,6 +90,14 @@ describe('perfil d’horitzo (ADR-0038)', () => {
     const perfil = pla(10);
     expect(amagatPelRelleu({ alcada: 5, azimut: 180 }, perfil)).toBe(true);
     expect(amagatPelRelleu({ alcada: 15, azimut: 180 }, perfil)).toBe(false);
+  });
+
+  it('es compara l’alçada aparent, no la geomètrica: la refracció fa treure el cap a l’astre', () => {
+    // A 0,3° geomètrics la refracció en suma uns 0,45: l'astre es veu a 0,75°, per sobre d'un
+    // horitzó de 0,5°. Amb l'alçada geomètrica quedaria amagat.
+    expect(alcadaAparent(0.3)).toBeGreaterThan(0.5);
+    expect(amagatPelRelleu({ alcada: 0.3, azimut: 180 }, pla(0.5))).toBe(false);
+    expect(amagatPelRelleu({ alcada: 0.3, azimut: 180 }, pla(1))).toBe(true);
   });
 });
 
@@ -119,6 +135,17 @@ describe('índex v2 (ADR-0038): la Lluna amagada i la humitat', () => {
       biaixHumitat: 3,
     });
     expect(i).toMatchObject({ valor: 100, humitatCorregida: true });
+  });
+
+  it('sense humitat prevista no hi ha res per corregir, encara que l’estació tingui biaix', () => {
+    const i = calculaIndex({
+      meteo: meteo({ humitat: null }),
+      efemerides: efemerides(-10, 0),
+      sqm: 21.5,
+      biaixHumitat: 3,
+    });
+    expect(i).toMatchObject({ valor: 100, humitatCorregida: false });
+    expect(i.factors.humitat).toBe(1);
   });
 
   it('la Lluna tapada pel relleu compta la meitat de llum; sense perfil, com a la v1', () => {
