@@ -207,6 +207,90 @@ it('només ensenya les hores de nit, i el Sol només quan resta (crepuscle)', as
   ]);
 });
 
+const humidity = (factors: { factors: { key: string }[] } | undefined) =>
+  factors?.factors.find((factor) => factor.key === 'humitat');
+
+it('una hora de la v2 pinta la fila d’humitat, després de la Lluna i abans del Sol (TG-184)', async () => {
+  get.mockImplementation(
+    respond(point, [
+      {
+        ...hour,
+        versio: 2,
+        humitatCorregida: false,
+        factors: { ...hour.factors, sol: 0.5, humitat: 1 },
+      },
+    ]),
+  );
+  const { result } = await renderVm();
+  await waitFor(() => expect(result.current.hours).toHaveLength(1));
+  expect(result.current.hours[0]?.factors.map((factor) => factor.key)).toEqual([
+    'nuvols',
+    'foscor',
+    'lluna',
+    'humitat',
+    'sol',
+  ]);
+  expect(humidity(result.current.hours[0])).toEqual({
+    key: 'humitat',
+    icon: 'drop',
+    label: 'Humitat',
+    hint: 'La humitat no molesta',
+    note: undefined,
+    value: 100,
+    level: 'ras',
+  });
+});
+
+it('amb la humitat corregida cita el Servei Meteorològic de Catalunya sense amagar la pista', async () => {
+  get.mockImplementation(
+    respond(point, [
+      {
+        ...hour,
+        versio: 2,
+        humitatCorregida: true,
+        factors: { ...hour.factors, humitat: 0.86 },
+      },
+    ]),
+  );
+  const { result } = await renderVm();
+  await waitFor(() => expect(result.current.hours).toHaveLength(1));
+  // La cita de l'SMC és una condició d'ús de la XEMA (ADR-0025).
+  expect(humidity(result.current.hours[0])).toMatchObject({
+    hint: 'La humitat enterboleix el cel',
+    note: 'Corregida amb les observacions de la XEMA (Servei Meteorològic de Catalunya)',
+    value: 86,
+  });
+});
+
+it('una hora de la v1, sense el factor, no pinta la fila d’humitat', async () => {
+  get.mockImplementation(respond(point, [hour]));
+  const { result } = await renderVm();
+  await waitFor(() => expect(result.current.hours).toHaveLength(1));
+  expect(humidity(result.current.hours[0])).toBeUndefined();
+  expect(result.current.hours[0]?.factors.map((factor) => factor.key)).toEqual([
+    'nuvols',
+    'foscor',
+    'lluna',
+  ]);
+});
+
+it.each([
+  [1, 100, 'ras', 'La humitat no molesta'],
+  [0.85, 85, 'jus', 'La humitat enterboleix el cel'],
+  [0.84, 84, 'tap', 'La humitat enterboleix el cel'],
+  [0.7, 70, 'tap', 'La humitat enterboleix el cel'],
+])(
+  'el color de la humitat diu quant resta: un factor de %s es pinta %s (%s)',
+  async (factor, value, level, hint) => {
+    get.mockImplementation(
+      respond(point, [{ ...hour, versio: 2, factors: { ...hour.factors, humitat: factor } }]),
+    );
+    const { result } = await renderVm();
+    await waitFor(() => expect(result.current.hours).toHaveLength(1));
+    expect(humidity(result.current.hours[0])).toMatchObject({ value, level, hint });
+  },
+);
+
 it('si el desglossament falla, ho diu i el reintent el torna a demanar', async () => {
   get.mockImplementation(async (path: string) => {
     if (path.endsWith('/index')) throw new Error('offline');

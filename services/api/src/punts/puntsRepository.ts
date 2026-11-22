@@ -122,7 +122,15 @@ export function createPuntsRepository(db: Db): PuntsRepository {
     async indexHores(id, desDe, finsA) {
       const files = await db
         .selectFrom('indexVisibilitat')
-        .select(['hora', 'valor', 'franja', 'factors', 'foscorEstimada'])
+        .select([
+          'hora',
+          'valor',
+          'franja',
+          'factors',
+          'foscorEstimada',
+          'versio',
+          'humitatCorregida',
+        ])
         .where('puntId', '=', id)
         .where('hora', '>=', desDe)
         .where('hora', '<', finsA)
@@ -135,6 +143,8 @@ export function createPuntsRepository(db: Db): PuntsRepository {
         // jsonb sense tipus: l'escriu només el worker, amb `FactorsIndex` (ADR-0018).
         factors: f.factors as IndexHora['factors'],
         foscorEstimada: f.foscorEstimada,
+        versio: f.versio,
+        humitatCorregida: f.humitatCorregida,
       }));
     },
   };
