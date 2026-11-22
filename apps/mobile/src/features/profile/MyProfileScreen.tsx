@@ -3,7 +3,7 @@ import { usePreventRemove } from 'expo-router';
 import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
 
-import { makeStyles, useNightTint, useTheme } from '@/core/theme/theme';
+import { makeStyles, useNightTint } from '@/core/theme/theme';
 import { radii, sizes, spacing } from '@/core/theme/tokens';
 import { AppText } from '@/shared/ui/AppText';
 import { Button } from '@/shared/ui/Button';
@@ -14,6 +14,7 @@ import { Skeleton } from '@/shared/ui/Skeleton';
 import { StateMessage } from '@/shared/ui/StateMessage';
 import { TextField } from '@/shared/ui/TextField';
 
+import { ProfileAvatar } from './ProfileAvatar';
 import { useProfileViewModel } from './useProfileViewModel';
 
 const editIcon = require('@/assets/images/profile/edit.svg');
@@ -24,7 +25,6 @@ const checkIcon = require('@/assets/images/profile/check.svg');
 export function MyProfileScreen() {
   const vm = useProfileViewModel();
   const styles = useStyles();
-  const { name: themeName } = useTheme();
   const tint = useNightTint();
   const checkTint = useNightTint('nit');
   const [pendingRepeat, setPendingRepeat] = useState<(() => void) | null>(null);
@@ -47,25 +47,7 @@ export function MyProfileScreen() {
           ) : (
             <>
               <View style={styles.identity}>
-                <View
-                  style={styles.avatar}
-                  accessibilityElementsHidden
-                  importantForAccessibility="no-hide-descendants"
-                  testID="profile-avatar"
-                >
-                  {vm.avatarUrl && themeName !== 'vermell' ? (
-                    <Image
-                      source={{ uri: vm.avatarUrl }}
-                      style={styles.avatarImage}
-                      accessible={false}
-                      testID="profile-avatar-image"
-                    />
-                  ) : (
-                    <AppText variant="title" color="nit" accessible={false}>
-                      {vm.initials}
-                    </AppText>
-                  )}
-                </View>
+                <ProfileAvatar avatarUrl={vm.avatarUrl} initials={vm.initials} large />
                 {vm.email ? (
                   <AppText variant="body" color="boira">
                     {vm.email}
@@ -186,16 +168,6 @@ const useStyles = makeStyles(({ colors }) => ({
   root: { flex: 1 },
   content: { gap: spacing.lg, paddingBottom: spacing.xl },
   identity: { alignItems: 'center', gap: spacing.sm, paddingVertical: spacing.md },
-  avatar: {
-    width: sizes.button + spacing.lg,
-    height: sizes.button + spacing.lg,
-    borderRadius: radii.pill,
-    backgroundColor: colors.pedra,
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-  },
-  avatarImage: { width: sizes.button + spacing.lg, height: sizes.button + spacing.lg },
   nameRow: {
     flexDirection: 'row',
     alignItems: 'center',

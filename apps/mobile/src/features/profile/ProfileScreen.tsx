@@ -1,7 +1,7 @@
 import { Image } from 'expo-image';
 import { ScrollView, View } from 'react-native';
 
-import { makeStyles, useNightTint, useTheme } from '@/core/theme/theme';
+import { makeStyles, useNightTint } from '@/core/theme/theme';
 import { radii, sizes, spacing } from '@/core/theme/tokens';
 import { ApiStatusCard } from '@/features/apiStatus/ApiStatusCard';
 import { AppText } from '@/shared/ui/AppText';
@@ -12,6 +12,7 @@ import { Skeleton } from '@/shared/ui/Skeleton';
 
 import { LanguageSheet } from './LanguageSheet';
 import { LogoutConfirmationSheet } from './LogoutConfirmationSheet';
+import { ProfileAvatar } from './ProfileAvatar';
 import { useProfileViewModel } from './useProfileViewModel';
 
 const plansIcon = require('@/assets/images/profile/plans.svg');
@@ -78,7 +79,6 @@ function MenuRow({ icon, label, hint, onPress, badge, value }: MenuRowProps) {
 export function ProfileScreen() {
   const vm = useProfileViewModel();
   const styles = useStyles();
-  const { name: themeName } = useTheme();
   const logoutTint = useNightTint('perill');
   return (
     <Screen title={vm.title}>
@@ -86,25 +86,7 @@ export function ProfileScreen() {
         {vm.auth.isAuthenticated ? (
           <>
             <View style={styles.identity}>
-              <View
-                style={styles.avatar}
-                accessibilityElementsHidden
-                importantForAccessibility="no-hide-descendants"
-                testID="profile-avatar"
-              >
-                {vm.avatarUrl && themeName !== 'vermell' ? (
-                  <Image
-                    source={{ uri: vm.avatarUrl }}
-                    style={styles.avatarImage}
-                    accessible={false}
-                    testID="profile-avatar-image"
-                  />
-                ) : (
-                  <AppText variant="title" color="nit" accessible={false}>
-                    {vm.initials}
-                  </AppText>
-                )}
-              </View>
+              <ProfileAvatar avatarUrl={vm.avatarUrl} initials={vm.initials} />
               <View style={styles.identityCopy}>
                 {vm.profileError ? null : vm.profileLoading ? (
                   <Skeleton width="65%" height={sizes.icon} />
@@ -222,16 +204,6 @@ const useStyles = makeStyles(({ colors }) => ({
     gap: spacing.ms,
     minHeight: sizes.button + spacing.md,
   },
-  avatar: {
-    width: sizes.button,
-    height: sizes.button,
-    borderRadius: radii.pill,
-    backgroundColor: colors.pedra,
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-  },
-  avatarImage: { width: sizes.button, height: sizes.button },
   identityCopy: { flex: 1, minWidth: 0, gap: spacing.xxs },
   feedback: { gap: spacing.sm },
   menu: { gap: 0 },
