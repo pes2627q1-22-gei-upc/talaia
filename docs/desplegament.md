@@ -1,6 +1,6 @@
 # Desplegament a la VM (TG-71)
 
-L'API i la web d'administració es despleguen a la VM de la FIB amb Docker Compose. Nginx hi fa d'únic punt d'entrada amb HTTPS de Let's Encrypt. Cada canvi a `stable` (una release o un hotfix) es desplega sol en menys de 5 minuts: un cron de la VM ho comprova i fa el deploy. Decisions: [ADR-0006](decisions/0006-infra-vm-docker.md), [ADR-0019](decisions/0019-allotjament-i-desplegament.md) i [ADR-0021](decisions/0021-deploy-per-pull-des-de-la-vm.md).
+L'API i la web d'administració es despleguen a la VM de la FIB amb Docker Compose. Nginx hi fa d'únic punt d'entrada amb HTTPS de Let's Encrypt. `stable` només canvia quan es tanca un sprint (la release `0.N.0`) o quan arriba un hotfix, i aquest és l'únic moment en què es desplega: un cron de la VM mira cada 5 minuts si `stable` ha canviat i, si no, no fa res. Els 5 minuts són el que triga la VM a adonar-se del canvi, no la freqüència dels deploys. (No és el cron del worker, que recalcula l'índex de visibilitat cada hora: vegeu «El worker».) Decisions: [ADR-0006](decisions/0006-infra-vm-docker.md), [ADR-0019](decisions/0019-allotjament-i-desplegament.md) i [ADR-0021](decisions/0021-deploy-per-pull-des-de-la-vm.md).
 
 ```
 App / Aprop / Mobilicat          Navegador (administradors)
@@ -15,7 +15,7 @@ nattech.fib.upc.edu ──(NAT)──▶ VM :8080
                 │  acme (acme.sh): emet i renova el certificat amb DNS-01 de DuckDNS │
                 └────────────────────────────────────────────────────────────────────┘
                                   ▲ docker compose up --build
-   GitHub ◀── git fetch de stable cada 5 min ── cron (deploy/scripts/desplega.sh)
+   GitHub ◀── git fetch de stable cada 5 min (només desplega si ha canviat) ── cron (deploy/scripts/desplega.sh)
 ```
 
 | Fitxer | Què fa |
@@ -26,7 +26,7 @@ nattech.fib.upc.edu ──(NAT)──▶ VM :8080
 | `deploy/nginx/snippets/seguretat.conf` | Capçaleres de seguretat comunes (HSTS, `nosniff`, `Referrer-Policy`, `X-Frame-Options`) |
 | `deploy/scripts/emet-certificat.sh` | Primera emissió del certificat (un sol cop per VM) |
 | `services/api/Dockerfile`, `services/worker/Dockerfile` | Imatges multi-stage, `node:22-alpine`, usuari sense privilegis |
-| `deploy/scripts/desplega.sh` | Deploy de `stable`: l'executa el cron de la VM cada 5 minuts |
+| `deploy/scripts/desplega.sh` | Deploy de `stable`: el cron de la VM l'executa cada 5 minuts, però només desplega si `stable` ha canviat |
 | `.github/workflows/deploy-check.yml` | A cada PR que toca el desplegament: construeix les imatges i arrenca el compose |
 
 ## Ports
@@ -125,8 +125,10 @@ GitHub no executa res a la VM: la VM només baixa `stable`, i una PR (d'un fork 
 
 ## Com es desplega
 
+En funcionament normal hi ha un deploy per sprint (la release, a la retrospectiva) i un més per cada hotfix: entre dos canvis a `stable` el cron s'executa cada 5 minuts i acaba sense fer res. Triar el pull periòdic en lloc d'un deploy manual al final del sprint dona el mateix resultat sense dependre que algú s'hi recordi, fa que un hotfix arribi sol i que un deploy fallit es reintenti (ADR-0021).
+
 1. Una `release/0.N.0` o un `hotfix/0.N.x` es fusiona a `stable` ([git-workflow.md](git-workflow.md)).
-2. En menys de 5 minuts, el cron de la VM executa `desplega.sh`: `git reset --hard origin/stable`, `docker compose up -d --build --remove-orphans --wait`, un healthcheck amb `curl --resolve <PUBLIC_HOST>:8080:127.0.0.1`, que valida el certificat real contra el Nginx local, i `docker image prune`.
+2. Com a molt 5 minuts després, el cron de la VM (que mira `stable` cada 5 minuts i, mentre no hi ha canvis, no fa res) executa `desplega.sh`: `git reset --hard origin/stable`, `docker compose up -d --build --remove-orphans --wait`, un healthcheck amb `curl --resolve <PUBLIC_HOST>:8080:127.0.0.1`, que valida el certificat real contra el Nginx local, i `docker image prune`.
 3. Cada deploy queda a `~/talaia-deploy.log`. Si falla, el log acaba amb `ERROR (<pas>)`: `git fetch`, `git reset`, `docker compose`, `healthcheck` o `docker image prune`. El cron el torna a provar a cada passada fins que surti bé: una fallada de xarxa o de Docker Hub es resol sola, i un commit trencat deixa un `ERROR` cada 5 minuts fins que arribi el hotfix a `stable`. No hi ha rollback automàtic: si el contenidor nou no passa el healthcheck, ja ha substituït l'anterior. Si l'avís està configurat, arriba un correu (secció següent).
 
 A mà, a la VM, torna a desplegar el commit actual: `FORCE=1 ~/talaia/deploy/scripts/desplega.sh`.

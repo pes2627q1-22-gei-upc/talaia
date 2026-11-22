@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { Alert, Linking } from 'react-native';
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { DireccioHoritzo, IndexHora } from '@talaia/shared';
 
@@ -11,10 +11,11 @@ import { twoDigitHours } from './pointModel';
 import { usePointBreakdownQuery, usePointDetailQuery } from './pointRepository';
 import { skyDarknessBand } from './skyDarkness';
 
-/**
- * Els factors de l'índex (ADR-0018, v1; ADR-0038, v2), en l'ordre del mockup 05. La humitat només
- * hi és a la v2, i el Sol, al final.
- */
+/** «a la 01:00», però «a les 23:00» (com a la fitxa de l'esdeveniment). */
+const oneOClock = (time: string) => (time.startsWith('01:') ? 'oneOClock' : undefined);
+/** Per saber si l'índex de la targeta és el de l'hora en curs. */
+const HOUR_MS = 60 * 60 * 1000;
+
 type Level = 'tap' | 'jus' | 'ras';
 const factorLevel = (value: number): Level => (value < 40 ? 'tap' : value < 70 ? 'jus' : 'ras');
 /**
@@ -23,6 +24,11 @@ const factorLevel = (value: number): Level => (value < 40 ? 'tap' : value < 70 ?
  */
 const humidityLevel = (value: number): Level =>
   value === 100 ? 'ras' : value >= 85 ? 'jus' : 'tap';
+
+/**
+ * Els factors de l'índex (ADR-0018, v1; ADR-0038, v2), en l'ordre del mockup 05. La humitat només
+ * hi és a la v2, i el Sol, al final.
+ */
 const FACTORS = [
   { key: 'nuvols', icon: 'cloud', label: 'clouds' },
   { key: 'foscor', icon: 'sparkle', label: 'darkness' },
@@ -34,6 +40,7 @@ const FACTORS = [
 export function usePointDetailViewModel(pointId: string) {
   const { t, i18n } = useTranslation();
   const router = useRouter();
+  const currentHour = useCurrentHour();
   const query = usePointDetailQuery(pointId);
   const breakdown = usePointBreakdownQuery(pointId);
   const point = query.data;
@@ -114,9 +121,15 @@ export function usePointDetailViewModel(pointId: string) {
         value: Math.round(Math.min(100, Math.max(0, entry.valor))),
         level: entry.franja,
         factors: factorRows(entry),
-        factorsTitle: t('point.factorsAt', {
-          time: twoDigitHours(clockFormatter.format(new Date(entry.hora))),
-        }),
+        // Explica el número de la barra triada (troballa 9 de TG-264).
+        factorsTitle: (() => {
+          const time = twoDigitHours(clockFormatter.format(new Date(entry.hora)));
+          return t('point.factorsAt', {
+            time,
+            value: Math.round(Math.min(100, Math.max(0, entry.valor))),
+            context: oneOClock(time),
+          });
+        })(),
         accessibilityLabel: t('point.hourA11y', {
           time: dateTimeFormatter.format(new Date(entry.hora)),
           value: Math.round(Math.min(100, Math.max(0, entry.valor))),
@@ -157,6 +170,7 @@ export function usePointDetailViewModel(pointId: string) {
             // L'inici i el final en ISO, perquè «Crea un pla» proposi la franja.
             start: hours[first]!.id,
             end: new Date(finalTimestamp + duration).toISOString(),
+            value: best.value,
             from: formatTime(Date.parse(hours[first]!.id)),
             to: formatTime(finalTimestamp + duration),
             hourIds: new Set(hours.slice(first, last + 1).map((hour) => hour.id)),
@@ -175,7 +189,10 @@ export function usePointDetailViewModel(pointId: string) {
       })),
     [hours, bestPeriod, t],
   );
-  const bestWindow = bestPeriod ? { from: bestPeriod.from, to: bestPeriod.to } : undefined;
+  // El valor és el màxim de la franja, no de totes les hores: el text ho diu així (TG-264).
+  const bestWindow = bestPeriod
+    ? { value: bestPeriod.value, from: bestPeriod.from, to: bestPeriod.to }
+    : undefined;
   // Per defecte, la millor hora de la nit (la primera si n'hi ha d'empatades).
   const defaultHourId = hours.reduce<(typeof hours)[number] | undefined>(
     (best, hour) => (!best || hour.value > best.value ? hour : best),
@@ -205,12 +222,14 @@ export function usePointDetailViewModel(pointId: string) {
       : `${horizonDirections.slice(0, -1).join(', ')} ${t('point.listAnd')} ${horizonDirections.at(-1)}`
     : undefined;
   const indexTime = point?.indexActual?.hora;
-  const currentLabel =
-    indexTime && Number.isFinite(Date.parse(indexTime))
-      ? t('point.indexAt', {
-          time: twoDigitHours(dateTimeFormatter.format(new Date(indexTime))),
-        })
-      : t('point.currentIndex');
+  const indexTimestamp = indexTime ? Date.parse(indexTime) : Number.NaN;
+  // «d'ara» només si l'índex és de l'hora en curs. Si un refresc falla, o encara no ha arribat el de
+  // l'hora nova (al minut 5), la fitxa conserva l'índex antic i en diu el dia i l'hora.
+  const currentLabel = !Number.isFinite(indexTimestamp)
+    ? t('point.currentIndex')
+    : Math.floor(indexTimestamp / HOUR_MS) === currentHour
+      ? t('point.indexNow', { time: twoDigitHours(clockFormatter.format(indexTimestamp)) })
+      : t('point.indexAt', { time: twoDigitHours(dateTimeFormatter.format(indexTimestamp)) });
   // De dia, el Sol anul·la l'índex (ADR-0018): no és que estigui tapat, és que no és de nit.
   const daytime = point?.indexActual?.factors.sol === 0;
   return {
@@ -273,6 +292,10 @@ export function usePointDetailViewModel(pointId: string) {
         },
       }),
     hoursLabel: t('point.tonight'),
+    // Què vol dir l'índex i que les hores es poden tocar (troballes 4 i 8 de TG-264).
+    indexExplanation: t('point.indexExplanation'),
+    hoursTapHint: t('point.hoursTapHint'),
+    hourA11yHint: t('point.hourA11yHint'),
     timezoneLabel: t('point.timezone'),
     noHours: t('point.noHours'),
     hours: displayHours,
@@ -290,4 +313,17 @@ export function usePointDetailViewModel(pointId: string) {
       void breakdown.refetch();
     },
   };
+}
+
+/** L'hora en curs (hores des de 1970), que canvia sola en començar cada hora. */
+function useCurrentHour() {
+  const [hour, setHour] = useState(() => Math.floor(Date.now() / HOUR_MS));
+  useEffect(() => {
+    const timer = setTimeout(
+      () => setHour(Math.floor(Date.now() / HOUR_MS)),
+      (hour + 1) * HOUR_MS - Date.now(),
+    );
+    return () => clearTimeout(timer);
+  }, [hour]);
+  return hour;
 }

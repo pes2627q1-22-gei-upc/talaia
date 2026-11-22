@@ -133,4 +133,4 @@ git switch -c hotfix/0.1.1
 3. Retrospectiva: `release/0.N.0` → `stable`, etiqueta `v0.N.0` (és el que es mostra a la review) i tornada a `snapshot`.
 4. Publicació (final del curs): `stable` → `prod`.
 
-El servidor es desplega des de `stable` durant el desenvolupament (TG-71) i des de `prod` per a la versió final.
+El servidor es desplega des de `stable` durant el desenvolupament (TG-71) i des de `prod` per a la versió final. El deploy de `stable` és automàtic: un cron de la VM mira cada 5 minuts si ha canviat ([desplegament.md](desplegament.md), ADR-0021), de manera que a la pràctica es desplega a la retrospectiva de cada sprint i amb cada hotfix.
