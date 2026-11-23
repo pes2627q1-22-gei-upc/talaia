@@ -185,6 +185,7 @@
     "savedPointsEmpty": "Encara no tens cap punt favorit.",
     "savedPointsError": "No s'han pogut carregar els punts favorits.",
     "openSavedPoint": "Obre la fitxa del punt",
+    "removeSavedPoint": "Treu {{name}} dels favorits",
     "retry": "Torna-ho a provar",
     "comingSoon": "Properament"
   },

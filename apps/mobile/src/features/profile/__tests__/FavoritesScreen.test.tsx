@@ -1,8 +1,8 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-import { apiGet } from '@/core/api/httpClient';
+import { apiDelete, apiGet } from '@/core/api/httpClient';
 import i18n from '@/core/i18n';
 import { ThemeProvider, type ThemeName } from '@/core/theme/theme';
 import { colorsVermell } from '@/core/theme/tokens';
@@ -14,11 +14,13 @@ import { FavoritesScreen } from '../FavoritesScreen';
 jest.mock('@/core/api/httpClient', () => ({
   ...jest.requireActual('@/core/api/httpClient'),
   apiGet: jest.fn(),
+  apiDelete: jest.fn(),
 }));
 jest.mock('@/features/auth/useAuthViewModel', () => ({ useAuthViewModel: jest.fn() }));
 jest.mock('expo-router', () => ({ useRouter: jest.fn() }));
 
 const get = jest.mocked(apiGet);
+const del = jest.mocked(apiDelete);
 const push = jest.fn();
 const back = jest.fn();
 
@@ -42,6 +44,7 @@ async function show(theme: ThemeName = 'normal') {
 
 beforeEach(async () => {
   jest.clearAllMocks();
+  del.mockResolvedValue(undefined);
   jest.mocked(useRouter).mockReturnValue({ push, back } as unknown as ReturnType<typeof useRouter>);
   jest
     .mocked(useAuthViewModel)
@@ -73,16 +76,54 @@ it('mostra les files sense tapar el text i obre la fitxa tocada', async () => {
   expect(screen.getByTestId('favorite-chevron-montsec')).toBeOnTheScreen();
   const heart = screen.getByTestId('favorite-icon-montsec');
   expect(card.children[0]).toBe(heart);
-  expect(heart.props.style.width).toBeGreaterThanOrEqual(44);
-  expect(heart.props.style.minHeight).toBeGreaterThanOrEqual(44);
-  expect(heart.props.onPress).toBeUndefined();
-  await fireEvent.press(heart);
-  expect(push).not.toHaveBeenCalled();
+  expect(heart.props.style[0].width).toBeGreaterThanOrEqual(44);
+  expect(heart.props.style[0].minHeight).toBeGreaterThanOrEqual(44);
   await fireEvent.press(row);
   expect(push).toHaveBeenCalledWith({ pathname: '/punt/[id]', params: { id: 'montsec' } });
   await fireEvent.press(screen.getByRole('button', { name: 'Torna al perfil' }));
   expect(back).toHaveBeenCalledTimes(1);
   expect(get).toHaveBeenCalledWith('/favorits', undefined, { signal: expect.any(AbortSignal) });
+});
+
+it('treu el punt des de la llista immediatament i manté la fitxa accessible', async () => {
+  get
+    .mockResolvedValueOnce([
+      { id: 'montsec', nom: 'Montsec', municipi: 'Àger' },
+      { id: 'pirineu', nom: 'Pirineu', municipi: 'Sort' },
+    ])
+    .mockResolvedValue([{ id: 'pirineu', nom: 'Pirineu', municipi: 'Sort' }]);
+  let finish!: () => void;
+  del.mockImplementation(
+    () =>
+      new Promise<void>((resolve) => {
+        finish = resolve;
+      }),
+  );
+  await show();
+  const remove = await screen.findByRole('button', { name: 'Treu Montsec dels favorits' });
+  await fireEvent.press(remove);
+  expect(screen.queryByText('Montsec')).toBeNull();
+  expect(screen.getByText('Pirineu')).toBeOnTheScreen();
+  expect(push).not.toHaveBeenCalled();
+  expect(del).toHaveBeenCalledWith('/favorits/montsec');
+  await act(async () => finish());
+  await waitFor(() => expect(get).toHaveBeenCalledTimes(2));
+  expect(screen.queryByText('Montsec')).toBeNull();
+});
+
+it('restaura el punt i mostra un error si falla l’eliminació', async () => {
+  get
+    .mockResolvedValueOnce([{ id: 'montsec', nom: 'Montsec', municipi: 'Àger' }])
+    .mockResolvedValue([]);
+  del.mockRejectedValueOnce(new Error('offline'));
+  await show();
+  await fireEvent.press(await screen.findByRole('button', { name: 'Treu Montsec dels favorits' }));
+  expect(await screen.findByRole('alert')).toHaveTextContent(
+    'No hem pogut treure el favorit. Torna-ho a provar.',
+  );
+  expect(screen.getByText('Montsec')).toBeOnTheScreen();
+  await fireEvent.press(screen.getByRole('button', { name: 'Treu Montsec dels favorits' }));
+  await waitFor(() => expect(screen.queryByText('Montsec')).toBeNull());
 });
 
 it('manté les targetes coherents en mode nit sense fer dependre la llista de l’índex horari', async () => {

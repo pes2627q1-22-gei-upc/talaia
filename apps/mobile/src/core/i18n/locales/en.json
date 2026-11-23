@@ -185,6 +185,7 @@
     "savedPointsEmpty": "You don't have any favorite spots yet.",
     "savedPointsError": "Couldn't load your favorite spots.",
     "openSavedPoint": "Open the spot details",
+    "removeSavedPoint": "Remove {{name}} from favorites",
     "retry": "Try again",
     "comingSoon": "Coming soon"
   },

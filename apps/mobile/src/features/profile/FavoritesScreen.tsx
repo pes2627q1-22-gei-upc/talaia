@@ -24,6 +24,11 @@ export function FavoritesScreen() {
 
   return (
     <Screen title={vm.title} subtitle={vm.subtitle} back={vm.back}>
+      {vm.removeError ? (
+        <AppText accessibilityRole="alert" color="tap">
+          {vm.removeError}
+        </AppText>
+      ) : null}
       {vm.loading ? (
         <View style={styles.loading} accessibilityLabel={vm.title}>
           <Skeleton height={sizes.calendarEvent} radius="md" />
@@ -40,14 +45,22 @@ export function FavoritesScreen() {
           contentContainerStyle={styles.list}
           renderItem={({ item }) => (
             <View style={styles.row} testID={`favorite-card-${item.id}`}>
-              <View style={styles.heartSlot} testID={`favorite-icon-${item.id}`}>
+              <PressableScale
+                style={styles.heartSlot}
+                testID={`favorite-icon-${item.id}`}
+                accessibilityLabel={vm.removeLabel(item.nom)}
+                accessibilityState={{ disabled: vm.removing }}
+                disabled={vm.removing}
+                onPress={() => vm.removePoint(item.id)}
+                haptic="selection"
+              >
                 <Image
                   source={heartIcon}
                   tintColor={colors.far}
                   style={styles.heartIcon}
                   accessible={false}
                 />
-              </View>
+              </PressableScale>
               <PressableScale
                 accessibilityLabel={`${item.nom}, ${item.municipi}`}
                 accessibilityHint={vm.openHint}
