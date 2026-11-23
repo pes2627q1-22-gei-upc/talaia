@@ -99,6 +99,22 @@ describe('createRutesService', () => {
     expect(getRoutes).toHaveBeenCalledTimes(1);
   });
 
+  it('envia a Mobilicat l’hora de sortida demanada, independentment del límit entre consultes', async () => {
+    const { client, getRoutes } = clientWith();
+    const service = createRutesService(repositoryWith(), client, {
+      now: () => new Date('2026-11-22T10:00:00.000Z'),
+    });
+
+    await service.getRutes(ID, { lat: 41, lon: 2 }, USUARI_A, '2026-11-23T19:30:00+01:00');
+
+    expect(getRoutes).toHaveBeenCalledWith(
+      expect.objectContaining({
+        time: '2026-11-23T18:30:00.000Z',
+        timePreference: 'DEPART_AT',
+      }),
+    );
+  });
+
   it('retorna no_disponible per a un error tipat de Mobilicat', async () => {
     const { client, getRoutes } = clientWith();
     getRoutes.mockRejectedValue(new MobilicatRoutesError('timeout', 'timeout'));

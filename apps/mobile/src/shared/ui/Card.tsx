@@ -11,6 +11,8 @@ type CardProps = PropsWithChildren<{
   onPress?: () => void;
   selected?: boolean;
   accessibilityLabel?: string;
+  accessibilityHint?: string;
+  accessibilityState?: { expanded?: boolean };
   style?: StyleProp<ViewStyle>;
 }>;
 
@@ -19,6 +21,8 @@ export function Card({
   onPress,
   selected = false,
   accessibilityLabel,
+  accessibilityHint,
+  accessibilityState,
   style,
   children,
 }: CardProps) {
@@ -35,7 +39,8 @@ export function Card({
     <PressableScale
       onPress={onPress}
       accessibilityLabel={accessibilityLabel}
-      accessibilityState={{ selected }}
+      accessibilityHint={accessibilityHint}
+      accessibilityState={accessibilityState ?? { selected }}
       style={cardStyle}
     >
       {children}

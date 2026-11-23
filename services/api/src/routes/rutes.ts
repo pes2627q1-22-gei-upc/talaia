@@ -21,10 +21,15 @@ const queryShape = (numero: Numero) =>
         'Longitud de l’origen de l’usuari (WGS84); Talaia l’arrodoneix a tres decimals abans d’enviar-la a Mobilicat',
       example: 2.1734,
     }),
+    sortida: z.iso.datetime({ offset: true }).optional().meta({
+      description:
+        'Hora de sortida desitjada en ISO 8601; si no s’indica, s’utilitza l’instant actual',
+      example: '2026-11-22T18:00:00.000Z',
+    }),
   });
 
 const QueryDoc = queryShape(numeroAmb(z.number));
-const QuerySchema: z.ZodType<{ lat: number; lon: number }> = z.preprocess(
+const QuerySchema: z.ZodType<{ lat: number; lon: number; sortida?: string }> = z.preprocess(
   senseBuits,
   queryShape(numeroAmb(z.coerce.number)),
 );
@@ -71,7 +76,7 @@ registry.registerPath({
   tags: ['Punts'],
   summary: 'Alternatives de ruta des de la ubicació de l’usuari fins a un punt',
   description:
-    'Requereix l’usuari autenticat. Consulta Mobilicat amb sortida a l’instant actual, els cinc modes disponibles i fins a cinc alternatives. `destacada` és la primera alternativa retornada (la que arriba abans amb `DEPART_AT`). `sense_rutes` és una resposta vàlida sense alternatives; `no_disponible` indica que Mobilicat no ha respost o ha retornat un error. La fallada del servei de rutes no afecta la fitxa `GET /punts/{id}`. Mobilicat demana almenys cinc segons entre consultes del mateix dispositiu; Talaia aplica aquest interval per compte i globalment des de la seva instància d’API.',
+    'Requereix l’usuari autenticat. Consulta Mobilicat amb sortida a `sortida` o a l’instant actual, els cinc modes disponibles i fins a cinc alternatives. `destacada` és la primera alternativa retornada (la que arriba abans amb `DEPART_AT`). `sense_rutes` és una resposta vàlida sense alternatives; `no_disponible` indica que Mobilicat no ha respost o ha retornat un error. La fallada del servei de rutes no afecta la fitxa `GET /punts/{id}`. Mobilicat demana almenys cinc segons entre consultes del mateix dispositiu; Talaia aplica aquest interval per compte i globalment des de la seva instància d’API.',
   security: [{ BearerSupabase: [] }],
   request: {
     params: ParamsSchema,
@@ -87,7 +92,7 @@ registry.registerPath({
     },
     ...ERRORS_AUTH,
     400: {
-      description: '`id`, `lat` o `lon` invàlids (`validation_error`)',
+      description: '`id`, `lat`, `lon` o `sortida` invàlids (`validation_error`)',
       content: { 'application/json': { schema: ErrorSchema } },
     },
     404: {
@@ -119,7 +124,7 @@ export function createRutesRouter(
 
   router.get('/:id/rutes', requireUser, async (req, res) => {
     const { id } = ParamsSchema.parse(req.params);
-    const origen = QuerySchema.parse(req.query);
+    const { sortida, ...origen } = QuerySchema.parse(req.query);
     const usuariId = (req as AuthenticatedRequest).user?.id;
     if (!usuariId) {
       throw new ApiError(401, 'unauthorized', 'Falta el token JWT de Supabase');
@@ -131,7 +136,7 @@ export function createRutesRouter(
         "L'API no té DATABASE_URL: no es pot consultar el punt de destinació",
       );
     }
-    const resposta = await service.getRutes(id, origen, usuariId);
+    const resposta = await service.getRutes(id, origen, usuariId, sortida);
     res.set('Cache-Control', 'private, no-store');
     res.json(resposta);
   });

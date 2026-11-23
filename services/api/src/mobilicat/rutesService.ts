@@ -23,6 +23,7 @@ export type RutesService = {
     puntId: string,
     origen: { lat: number; lon: number },
     usuariId: string,
+    sortida?: string,
   ): Promise<RutesPunt>;
 };
 
@@ -88,7 +89,7 @@ export function createRutesService(
   };
 
   return {
-    async getRutes(puntId, origen, usuariId) {
+    async getRutes(puntId, origen, usuariId, sortida) {
       let punt: Awaited<ReturnType<PuntsRepository['findPublished']>>;
       try {
         punt = await repository.findPublished(puntId);
@@ -115,7 +116,7 @@ export function createRutesService(
             lon: arrodoneixCoordenada(origen.lon),
           },
           to: { lat: punt.lat, lon: punt.lon },
-          time: instantConsulta.toISOString(),
+          time: sortida ? new Date(sortida).toISOString() : instantConsulta.toISOString(),
           timePreference: 'DEPART_AT',
           modes: [...MODES_RUTA],
           limit: LIMIT,

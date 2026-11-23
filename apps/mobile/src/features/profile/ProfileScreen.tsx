@@ -121,8 +121,8 @@ export function ProfileScreen() {
               <MenuRow
                 icon={savedIcon}
                 label={vm.savedPointsLabel}
-                badge={vm.comingSoonLabel}
-                hint={vm.comingSoonLabel}
+                hint={vm.savedPointsHint}
+                onPress={vm.openSavedPoints}
               />
               <MenuRow
                 icon={languageIcon}
