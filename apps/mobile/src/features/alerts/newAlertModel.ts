@@ -53,7 +53,28 @@ export function alertChanges(saved: Alerta, form: AlertaNova, travel: number): A
   }
   if (travel !== kmToTravel(saved.distanciaMaxKm)) changes.distanciaMaxKm = form.distanciaMaxKm;
   if (form.indexMinim !== saved.indexMinim) changes.indexMinim = form.indexMinim;
-  if (form.avisaEnArribar !== saved.avisaEnArribar) changes.avisaEnArribar = form.avisaEnArribar;
-  if (form.horaAvis !== saved.horaAvis) changes.horaAvis = form.horaAvis;
+  // Si el tipus canvia, van tots dos camps: així l'alerta desada en queda només amb un.
+  const type = notifyTypeOf(form);
+  if (type !== notifyTypeOf(saved)) {
+    changes.avisaEnArribar = form.avisaEnArribar;
+    changes.horaAvis = form.horaAvis;
+  } else if (type === 'hour' && form.horaAvis !== saved.horaAvis) {
+    changes.horaAvis = form.horaAvis;
+  }
   return changes;
+}
+
+/**
+ * Els dos tipus d'avís (TG-268), exclusius a l'app: a una hora concreta (`horaAvis`) o quan algun
+ * punt arriba a l'índex mínim (`avisaEnArribar`).
+ */
+export const NOTIFY_TYPES = ['hour', 'reach'] as const;
+export type NotifyType = (typeof NOTIFY_TYPES)[number];
+
+/**
+ * El tipus d'una alerta. L'API encara admet totes dues opcions alhora (TG-146): una alerta
+ * d'abans amb totes dues avisa en arribar-hi (ADR-0033), i així es mostra.
+ */
+export function notifyTypeOf(alert: Pick<Alerta, 'avisaEnArribar'>): NotifyType {
+  return alert.avisaEnArribar ? 'reach' : 'hour';
 }

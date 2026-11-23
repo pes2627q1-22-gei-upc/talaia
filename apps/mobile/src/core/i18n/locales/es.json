@@ -454,13 +454,11 @@
       },
       "notify": {
         "title": "Cuándo te avisamos",
-        "onReach": "Cuando se alcance",
-        "atHour": "A una hora",
-        "hourValue": "El mismo día a las {{hour}}",
+        "hourValue": "Avísame a las {{hour}}",
         "change": "Cambiar",
         "hourTitle": "Hora del aviso",
         "done": "Hecho",
-        "required": "Elige al menos una forma de avisarte."
+        "hourNote": "A esa hora miramos la previsión de la noche. Si ningún punto llega al índice mínimo, esa noche no te avisamos."
       }
     },
     "edit": {
@@ -484,7 +482,18 @@
     "retry": "Volver a intentarlo",
     "pushDenied": "Las notificaciones están desactivadas: no te avisaremos en el móvil cuando haya buenas condiciones. Puedes activarlas en los ajustes.",
     "pushUnavailable": "Este dispositivo no puede recibir notificaciones. El resto de la app funciona igual.",
-    "openSettings": "Abrir ajustes"
+    "openSettings": "Abrir ajustes",
+    "notify": {
+      "hour": {
+        "title": "A una hora concreta",
+        "text": "Cada noche a las {{hour}}"
+      },
+      "reach": {
+        "title": "Al llegar al índice",
+        "text": "Cuando el índice llegue a {{index}}"
+      }
+    },
+    "summaryTravel": "A menos de {{travel}}"
   },
   "auth": {
     "signOut": "Cerrar sesión",
