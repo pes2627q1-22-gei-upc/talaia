@@ -27,6 +27,9 @@ import {
   INDEX_BANDS,
   kmToTravel,
   MIN_INDEX,
+  NOTIFY_TYPES,
+  type NotifyType,
+  notifyTypeOf,
   travelToKm,
 } from './newAlertModel';
 
@@ -62,8 +65,8 @@ export function useNewAlertViewModel(saved?: Alerta) {
     saved ? kmToTravel(saved.distanciaMaxKm) : TRAVEL.initial,
   );
   const [minIndex, setMinIndex] = useState<number>(saved?.indexMinim ?? MIN_INDEX.initial);
-  const [notifyOnReach, setNotifyOnReach] = useState(saved?.avisaEnArribar ?? false);
-  const [notifyAtHour, setNotifyAtHour] = useState(saved ? saved.horaAvis !== null : true);
+  // Un sol tipus d'avís (TG-268). Una alerta nova avisa a una hora, com al mockup 11.
+  const [notifyType, setNotifyType] = useState<NotifyType>(saved ? notifyTypeOf(saved) : 'hour');
   const [notifyHour, setNotifyHour] = useState(saved?.horaAvis ?? DEFAULT_NOTIFY_HOUR);
   const [hourOpen, setHourOpen] = useState(false);
   const { origin: current, place } = useOriginField();
@@ -75,7 +78,6 @@ export function useNewAlertViewModel(saved?: Alerta) {
     : { center: { lat: camera.center[1], lon: camera.center[0] }, zoom: camera.zoom };
 
   const originPoint: Coordinates | null = originMode === 'current' ? place : zone;
-  const notifyChosen = notifyOnReach || notifyAtHour;
 
   // Busca el nom de l'origen desat i el posa a la zona si encara és aquell punt.
   const savedLat = saved?.origen.lat;
@@ -101,8 +103,8 @@ export function useNewAlertViewModel(saved?: Alerta) {
         origen: { lat: roundCoord(originPoint.lat), lon: roundCoord(originPoint.lon) },
         distanciaMaxKm: travelToKm(travel),
         indexMinim: minIndex,
-        avisaEnArribar: notifyOnReach,
-        horaAvis: notifyAtHour ? notifyHour : null,
+        avisaEnArribar: notifyType === 'reach',
+        horaAvis: notifyType === 'hour' ? notifyHour : null,
       }
     : null;
   // En editar, només el que ha canviat; sense cap canvi, no hi ha res a desar.
@@ -120,7 +122,7 @@ export function useNewAlertViewModel(saved?: Alerta) {
     },
   });
 
-  const canSave = form !== null && notifyChosen && !unchanged && !save.isPending;
+  const canSave = form !== null && !unchanged && !save.isPending;
   const submit = () => {
     if (!canSave) return;
     save.mutate(saved && changes ? { id: saved.id, changes } : { alert: form });
@@ -260,28 +262,23 @@ export function useNewAlertViewModel(saved?: Alerta) {
       onChange: setMinIndex,
     },
     notifyTitle: t('alerts.new.notify.title'),
-    notifyOptions: [
-      {
-        id: 'reach' as const,
-        label: t('alerts.new.notify.onReach'),
-        selected: notifyOnReach,
-        onPress: () => setNotifyOnReach((on) => !on),
-      },
-      {
-        id: 'hour' as const,
-        label: t('alerts.new.notify.atHour'),
-        selected: notifyAtHour,
-        onPress: () => setNotifyAtHour((on) => !on),
-      },
-    ],
-    notifyHour: notifyAtHour
-      ? {
-          label: t('alerts.new.notify.hourValue', { hour: formatHour(notifyHour) }),
-          hint: t('alerts.new.notify.change'),
-          onPress: () => setHourOpen(true),
-        }
-      : null,
-    notifyHint: notifyChosen ? null : t('alerts.new.notify.required'),
+    // Com un botó de ràdio: se'n tria un, i tornar a prémer el triat no el treu.
+    notifyOptions: NOTIFY_TYPES.map((id) => ({
+      id,
+      label: t(`alerts.notify.${id}.title`),
+      hint: t(`alerts.notify.${id}.text`, { hour: formatHour(notifyHour), index: minIndex }),
+      selected: notifyType === id,
+      onPress: () => setNotifyType(id),
+    })),
+    notifyHour:
+      notifyType === 'hour'
+        ? {
+            label: t('alerts.new.notify.hourValue', { hour: formatHour(notifyHour) }),
+            hint: t('alerts.new.notify.change'),
+            note: t('alerts.new.notify.hourNote'),
+            onPress: () => setHourOpen(true),
+          }
+        : null,
     hourSheet: {
       visible: hourOpen,
       title: t('alerts.new.notify.hourTitle'),

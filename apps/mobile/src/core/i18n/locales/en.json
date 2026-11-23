@@ -510,13 +510,11 @@
       },
       "notify": {
         "title": "When we notify you",
-        "onReach": "When it's reached",
-        "atHour": "At a set time",
-        "hourValue": "Same day at {{hour}}",
+        "hourValue": "Notify me at {{hour}}",
         "change": "Change",
         "hourTitle": "Notification time",
         "done": "Done",
-        "required": "Choose at least one way to be notified."
+        "hourNote": "At that time we check the night's forecast. If no spot reaches the minimum index, we won't notify you that night."
       }
     },
     "edit": {
@@ -540,7 +538,18 @@
     "retry": "Try again",
     "pushDenied": "Notifications are turned off: we won't alert you on your phone when conditions are good. You can turn them on in Settings.",
     "pushUnavailable": "This device can’t receive notifications. The rest of the app works as usual.",
-    "openSettings": "Open Settings"
+    "openSettings": "Open Settings",
+    "notify": {
+      "hour": {
+        "title": "At a set time",
+        "text": "Every night at {{hour}}"
+      },
+      "reach": {
+        "title": "When it reaches the index",
+        "text": "When the index reaches {{index}}"
+      }
+    },
+    "summaryTravel": "Under {{travel}}"
   },
   "auth": {
     "signOut": "Sign out",
