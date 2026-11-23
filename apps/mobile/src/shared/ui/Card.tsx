@@ -1,7 +1,8 @@
 import type { PropsWithChildren } from 'react';
-import { type StyleProp, StyleSheet, View, type ViewStyle } from 'react-native';
+import { type StyleProp, View, type ViewStyle } from 'react-native';
 
-import { colors, radii, spacing } from '@/core/theme/tokens';
+import { makeStyles } from '@/core/theme/theme';
+import { radii, spacing } from '@/core/theme/tokens';
 
 import { PressableScale } from './PressableScale';
 
@@ -10,6 +11,8 @@ type CardProps = PropsWithChildren<{
   onPress?: () => void;
   selected?: boolean;
   accessibilityLabel?: string;
+  accessibilityHint?: string;
+  accessibilityState?: { expanded?: boolean };
   style?: StyleProp<ViewStyle>;
 }>;
 
@@ -18,9 +21,12 @@ export function Card({
   onPress,
   selected = false,
   accessibilityLabel,
+  accessibilityHint,
+  accessibilityState,
   style,
   children,
 }: CardProps) {
+  const styles = useStyles();
   const cardStyle = [styles.card, selected && styles.selected, style];
   if (!onPress) {
     return (
@@ -33,7 +39,8 @@ export function Card({
     <PressableScale
       onPress={onPress}
       accessibilityLabel={accessibilityLabel}
-      accessibilityState={{ selected }}
+      accessibilityHint={accessibilityHint}
+      accessibilityState={accessibilityState ?? { selected }}
       style={cardStyle}
     >
       {children}
@@ -41,7 +48,7 @@ export function Card({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(({ colors }) => ({
   card: {
     padding: spacing.md,
     borderRadius: radii.md,
@@ -50,4 +57,4 @@ const styles = StyleSheet.create({
     backgroundColor: colors.card,
   },
   selected: { backgroundColor: colors.vel, borderColor: colors.vora },
-});
+}));

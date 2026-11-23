@@ -15,7 +15,7 @@ Format: **Context → Decisió → Conseqüències**. Estat: `Acceptada`, `Propo
 | [0007](0007-git-snapshot-stable-prod.md) | Branques snapshot / stable / prod amb PR obligatòria | Substituïda per 0009 |
 | [0008](0008-monorepo.md) | Monorepo amb apps/, services/, packages/shared | Acceptada |
 | [0009](0009-gitflow.md) | Gitflow amb snapshot (develop) / stable (main) / prod, i Conventional Commits 1.0.0 | Acceptada |
-| [0010](0010-eines-app.md) | npm workspaces, Expo Router, TanStack Query, Jest, Node 22 i eines de qualitat (ESLint, Prettier, commitlint) | Acceptada |
+| [0010](0010-eines-app.md) | npm workspaces, Expo Router, TanStack Query, Jest, Node 22 i eines de qualitat (ESLint, Prettier, commitlint) | Acceptada (tests de l'admin: 0034) |
 | [0011](0011-validacio-openapi-zod.md) | Validació amb zod i OpenAPI generat amb zod-to-openapi a l'API | Acceptada |
 | [0012](0012-punts-mapa-geojson.md) | Els punts del mapa se serveixen com un sol GeoJSON en memòria cau (`ETag`), no amb consultes per bbox | Acceptada |
 | [0013](0013-acces-bd-kysely.md) | Accés a la base de dades amb Kysely (`@talaia/db`) sobre migracions SQL de Supabase; RLS activat sense polítiques | Acceptada |
@@ -33,5 +33,16 @@ Format: **Context → Decisió → Conseqüències**. Estat: `Acceptada`, `Propo
 | [0025](0025-observacions-xema.md) | Observacions de la XEMA de Meteocat: les lectures d'ahir de l'estació més propera a cada punt, un cop al dia (unes 190 consultes al mes) | Acceptada |
 | [0026](0026-contracte-esdeveniments-aprop.md) | Contracte del calendari amb Aprop: sis tipus, dies civils de Catalunya, ubicació general i accés amb API key o JWT (P14) | Acceptada |
 | [0027](0027-index-per-objectiu.md) | Índex per objectiu: `100 × núvols × condició × qualitat`, amb un perfil per objectiu (posta, Lluna, pluja d'estels, eclipsi, Via Làctia…); el del cel estrellat és la v1 | Proposada |
+| [0028](0028-notificacions-push.md) | Notificacions push amb Expo Push Service: tokens a `dispositius_push` via l'API, el worker envia després de cada recàlcul (una per alerta i nit), `data: { puntId }` obre la fitxa; development build d'EAS per provar-les a Android | Proposada |
+| [0029](0029-rol-admin-i-bloqueig.md) | Rol d'administrador i bloqueig de comptes a `perfils`, llegits a cada petició autenticada: 403 `account_blocked` i `requireAdmin` | Acceptada |
+| [0030](0030-web-administracio-vite-react.md) | Web d'administració separada amb Vite + React + TypeScript, compilada com a fitxers estàtics per a Nginx (P11) | Acceptada |
+| [0031](0031-visibilitat-ubicacio-al-moment.md) | Índex d'una ubicació qualsevol de Catalunya calculat al moment a l'API (`GET /visibilitat`): previsió per cel·la de 0,01° en memòria cau LRU fins al minut 5 de l'hora següent (i la caducada si Open-Meteo falla), SQM d'un punt del catàleg a 1 km o menys (mesurat només a la mateixa cel·la), límit oficial de l'ICGC amb 1,5 km de marge, i 20 consultes noves per client i 250 en total per hora; el càlcul (Open-Meteo, astronomia i fórmula) es comparteix amb el worker a `@talaia/index` | Proposada |
+| [0034](0034-tests-admin-vitest.md) | Tests de la web d'administració amb Vitest, jsdom i Testing Library, amb Supabase i l'API simulats; cobertura LCOV a SonarCloud (excepció a P7 de l'ADR-0010) | Acceptada |
+| [0032](0032-mode-nit-vermell.md) | Mode nit vermell sobre negre: paleta `vermell` dels tokens amb `ThemeProvider` i `makeStyles`, filtre CSS al contenidor del mapa i brillantor baixa amb `expo-brightness` (HU45) | Proposada |
+| [0033](0033-avaluacio-alertes-worker.md) | Avaluació de les alertes al worker després de cada recàlcul: una sola consulta, una decisió pura (índex ≥ mínim a les hores que queden de la nit, segons quan avisa cada alerta i sense comptes bloquejats; desempat per índex, distància i hora) i com a molt una notificació per alerta i nit a `notificacions_alertes`, que envia la TG-154 | Proposada |
+| [0035](0035-avis-deploy.md) | Avís per correu des del Gmail de l'equip quan el deploy de la VM falla (un per fallada) i quan es recupera, amb `curl` a l'SMTP | Acceptada |
+| [0036](0036-calendari-natiu-plans.md) | Calendari natiu dels plans amb `expo-calendar` 58 i `CalendarNext`; cal una build nativa per provar aquesta funció | Acceptada |
+| [0037](0037-barra-pestanyes-propia.md) | Barra de pestanyes pròpia (`Tabs` d'Expo Router i `TabBar`) en lloc de la nativa, que des d'iOS 26 no es pot posar en vermell en mode nit; substitueix en part l'ADR-0010 (P2) | Proposada |
+| [0038](0038-index-v2-lluna-humitat.md) | Índex v2: la Lluna amagada pel relleu (perfil d'horitzó, ADR-0022) fa la meitat de llum i la humitat corregida amb la XEMA fa pitjor el cel a partir del 85 % (TG-184) | Proposada |
 
 Decisions encara obertes: [pendents.md](pendents.md).

@@ -208,3 +208,62 @@ describe("createContentHashCache: l'hora canvia mentre es llegeix la versió", (
     expect(load.mock.calls.at(-1)).toEqual([1]);
   });
 });
+
+describe('createContentHashCache: invalidate (TG-174)', () => {
+  afterEach(() => jest.restoreAllMocks());
+
+  it('la petició següent torna a carregar, encara que no hagi passat ttlMs', async () => {
+    const load = jest.fn().mockResolvedValueOnce(doc(2)).mockResolvedValueOnce(doc(1));
+    const cache = createContentHashCache(load, { ttlMs: 60_000, now: () => 0 });
+    const abans = await cache.get();
+
+    cache.invalidate();
+    const despres = await cache.get();
+
+    expect(load).toHaveBeenCalledTimes(2);
+    expect(despres.geojson.features).toHaveLength(1);
+    expect(despres.etag).not.toBe(abans.etag);
+    // I després torna a servir de la memòria.
+    expect(await cache.get()).toBe(despres);
+    expect(load).toHaveBeenCalledTimes(2);
+  });
+
+  it("una càrrega començada abans d'invalidar no compta: qui hi estava enganxat rep la nova", async () => {
+    let acaba: (doc: PuntsMapaGeoJson) => void = () => {};
+    const load = jest
+      .fn<Promise<PuntsMapaGeoJson>, [number | undefined]>()
+      // La primera llegeix el catàleg d'abans del canvi i acaba tard.
+      .mockImplementationOnce(() => new Promise((resolve) => (acaba = resolve)))
+      .mockResolvedValueOnce(doc(1));
+    const cache = createContentHashCache(load, { ttlMs: 60_000, now: () => 0 });
+
+    const peticio = cache.get();
+    await new Promise((resolve) => setImmediate(resolve)); // que la primera càrrega hagi començat
+    cache.invalidate();
+    acaba(doc(2));
+
+    expect((await peticio).geojson.features).toHaveLength(1);
+    expect(load).toHaveBeenCalledTimes(2);
+    expect(await cache.get()).toBe(await peticio);
+  });
+
+  it("si la base de dades falla després d'invalidar, serveix l'anterior fins a ttlMs", async () => {
+    jest.spyOn(console, 'error').mockImplementation(() => {});
+    let t = 0;
+    const load = jest
+      .fn()
+      .mockResolvedValueOnce(doc(2))
+      .mockRejectedValueOnce(new Error('caiguda'))
+      .mockResolvedValueOnce(doc(1));
+    const cache = createContentHashCache(load, { ttlMs: 10, now: () => t });
+    const abans = await cache.get();
+
+    cache.invalidate();
+    expect(await cache.get()).toBe(abans);
+    t = 5;
+    expect(await cache.get()).toBe(abans);
+    expect(load).toHaveBeenCalledTimes(2);
+    t = 10;
+    expect((await cache.get()).geojson.features).toHaveLength(1);
+  });
+});

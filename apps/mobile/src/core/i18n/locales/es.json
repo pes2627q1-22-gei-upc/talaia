@@ -19,7 +19,46 @@
     "retry": "Volver a intentar",
     "back": "Atrás",
     "daytime": "Es de día",
-    "daytimeHint": "El índice cuenta a partir del anochecer. Hasta entonces, los puntos salen en gris."
+    "daytimeHint": "El índice cuenta a partir del anochecer. Hasta entonces, los puntos salen en gris.",
+    "origin": "Punto de salida",
+    "nearby": "Muestra los mejores puntos cerca de ti",
+    "pick": {
+      "title": "Toca el mapa para elegir desde dónde sales",
+      "denied": "No tenemos tu ubicación: buscaremos los mejores puntos cerca del lugar que toques.",
+      "error": "No hemos encontrado dónde estás: buscaremos los mejores puntos cerca del lugar que toques.",
+      "allow": "Permitir la ubicación",
+      "settings": "Abrir Ajustes",
+      "close": "Cerrar"
+    },
+    "spot": {
+      "hint": {
+        "title": "Elige un punto en el mapa",
+        "subtitle": "Toca donde quieras para ver su índice"
+      },
+      "title": "Punto elegido en el mapa",
+      "marker": "Punto elegido",
+      "coords": "Lat {{lat}} · Lon {{lon}}",
+      "from": "A {{travel}} de {{place}}",
+      "from_vowel": "A {{travel}} de {{place}}",
+      "fromHere": "A {{travel}} de donde estás",
+      "calculate": "Calcular el índice aquí",
+      "loading": "Calculando el índice…",
+      "at": "Índice de la hora actual ({{time}})",
+      "daytime": "Es de día: el índice cuenta a partir del anochecer.",
+      "estimated": "La oscuridad del cielo es estimada: no hay ningún punto medido cerca.",
+      "outside": {
+        "title": "Este lugar está fuera de Cataluña",
+        "description": "El índice solo se calcula dentro de Cataluña. Toca otro lugar."
+      },
+      "limit": {
+        "title": "Has hecho muchas consultas esta hora",
+        "description": "Vuelve a intentarlo cuando empiece la hora siguiente."
+      },
+      "error": {
+        "title": "No hemos podido calcular el índice",
+        "description": "Vuelve a intentarlo dentro de un rato."
+      }
+    }
   },
   "calendar": {
     "title": "Calendario",
@@ -29,7 +68,11 @@
     "goToday": "Volver a hoy",
     "events": "Fenómenos",
     "allMonth": "Ver todo el mes",
-    "relative": { "today": "Hoy", "tomorrow": "Mañana", "past": "Pasado" },
+    "relative": {
+      "today": "Hoy",
+      "tomorrow": "Mañana",
+      "past": "Pasado"
+    },
     "filterLabel": "Filtrar fenómenos: {{filter}}",
     "filterTitle": "Filtrar fenómenos",
     "closeFilter": "Cerrar filtros",
@@ -69,15 +112,81 @@
       "upcomingMonth": "No hay fenómenos pendientes este mes"
     }
   },
+  "event": {
+    "title": "Evento",
+    "back": "Volver al calendario",
+    "when": "Cuándo",
+    "whatYouWillSee": "Qué verás",
+    "particularity": "Esta vez",
+    "howToWatch": "Cómo observarlo",
+    "source": "Fuente: {{source}}",
+    "night": "noche {{from}} {{to}}",
+    "nightFrom": "del {{date}}",
+    "nightFrom_vowel": "del {{date}}",
+    "nightTo": "al {{date}}",
+    "nightTo_vowel": "al {{date}}",
+    "rangeFrom": "del {{date}}",
+    "rangeFrom_vowel": "del {{date}}",
+    "rangeTo": "al {{date}}",
+    "rangeTo_vowel": "al {{date}}",
+    "onDay": "el {{date}}",
+    "onDay_vowel": "el {{date}}",
+    "fromTime": "de las {{time}}",
+    "fromTime_oneOClock": "de la {{time}}",
+    "toTime": "a las {{time}}",
+    "toTime_oneOClock": "a la {{time}}",
+    "atTime": "a las {{time}}",
+    "atTime_oneOClock": "a la {{time}}",
+    "whenSeason": "Activa {{from}} {{to}}. El máximo es {{peak}}.",
+    "whenSeasonNoPeak": "Activa {{from}} {{to}}.",
+    "whenExact": "El momento exacto es {{at}}.",
+    "whenAllDay": "Todo el día.",
+    "whenWindow": "{{from}} {{to}}, con el máximo {{peak}}.",
+    "whenWindowNoPeak": "{{from}} {{to}}.",
+    "notFoundTitle": "No hemos encontrado este evento",
+    "notFoundMessage": "Puede que ya no esté disponible. Vuelve al calendario y elige otro.",
+    "errorTitle": "No hemos podido cargar el evento",
+    "errorMessage": "Comprueba la conexión y vuelve a intentarlo.",
+    "retry": "Volver a intentar",
+    "whereToWatch": "Dónde verlo"
+  },
   "profile": {
+    "unsavedTitle": "Tienes cambios sin guardar",
+    "unsavedMessage": "¿Seguro que quieres salir?",
+    "keepEditing": "Seguir editando",
+    "discardChanges": "Descartar los cambios",
+    "logoutConfirmationTitle": "¿Quieres cerrar sesión?",
+    "logoutConfirmationMessage": "Tendrás que volver a iniciar sesión para acceder a tu cuenta.",
     "title": "Perfil",
+    "myProfile": "Mi perfil",
+    "back": "Volver al perfil",
+    "myProfileHint": "Consulta los datos de la cuenta",
+    "name": "Nombre",
+    "addName": "Añade tu nombre",
+    "editName": "Editar el nombre",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "nameInvalid": "Escribe un nombre de entre 1 y 100 caracteres.",
+    "nameSaveError": "No se ha podido guardar el nombre. Vuelve a intentarlo.",
+    "loadError": "No se ha podido cargar el perfil.",
     "language": "Idioma",
+    "closeLanguage": "Cerrar la selección de idioma",
     "languages": {
       "ca": "Catalán",
       "es": "Castellano",
       "en": "Inglés"
     },
-    "account": "Cuenta"
+    "plans": "Mis planes",
+    "plansHint": "Consulta tus planes de observación",
+    "savedPoints": "Puntos favoritos",
+    "savedPointsCount_one": "{{count}} lugar guardado para volver",
+    "savedPointsCount_other": "{{count}} lugares guardados para volver",
+    "savedPointsHint": "Consulta los puntos que has guardado",
+    "savedPointsEmpty": "Todavía no tienes puntos favoritos.",
+    "savedPointsError": "No se han podido cargar los puntos favoritos.",
+    "openSavedPoint": "Abre la ficha del punto",
+    "retry": "Volver a intentar",
+    "comingSoon": "Próximamente"
   },
   "apiStatus": {
     "title": "Estado del servidor",
@@ -87,10 +196,11 @@
     "retry": "Reintentar"
   },
   "point": {
+    "back": "Atrás",
     "title": "Punto de observación",
     "currentIndex": "Índice actual de visibilidad",
     "noIndex": "Índice aún no disponible",
-    "bestHour": "Mejor momento de <strong>{{from}}</strong> a <strong>{{to}}</strong>.",
+    "bestHour": "Mejor momento de esta noche: de <strong>{{from}}</strong> a <strong>{{to}}</strong>, con un máximo de <strong>{{value}}</strong>.",
     "altitudeTag": "Altitud: {{value}}",
     "metres": "{{value}} m",
     "unavailable": "Sin datos",
@@ -111,6 +221,7 @@
     "clouds": "Nubes",
     "sun": "Sol",
     "moon": "Luna",
+    "humidity": "Humedad",
     "info": "Información del punto",
     "openHorizon": "Vistas despejadas",
     "openHorizonValue": "Hacia {{directions}}",
@@ -126,11 +237,63 @@
     "description": "Descripción",
     "accessibility": "Accesibilidad",
     "directions": "Cómo llegar",
+    "routeDistance": "{{value}} km",
+    "routeDurationMinutes": "{{minutes}} min",
+    "routeDurationHours": "{{hours}} h",
+    "routeDurationHoursMinutes": "{{hours}} h {{minutes}} min",
+    "routeEarliest": "Destacada",
+    "routeDayOffset_one": "+{{count}} día",
+    "routeDayOffset_other": "+{{count}} días",
+    "routeShowJourney": "Muestra el trayecto",
+    "routeHideJourney": "Oculta el trayecto",
+    "routeTransitMode": {
+      "rail": "Tren",
+      "metro": "Metro",
+      "tram": "Tranvía",
+      "bus": "Autobús",
+      "ferry": "Ferri"
+    },
+    "routeOptionsTitle": "Opciones para llegar",
+    "routeOptionsBack": "Volver al punto",
+    "routeDeparturePickerTitle": "Hora de salida",
+    "routeDeparturePickerBack": "Volver a las opciones de ruta",
+    "routeOptionsIntro": "Ordenado por hora de llegada.",
+    "routeDepartureChoice": "Hora de salida:",
+    "routeDepartureNow": "Ahora",
+    "routeDepartureNowAction": "Salir ahora",
+    "routeDepartureEdit": "Cambiar la hora de salida: {{value}}",
+    "routePreviousMonth": "Mes anterior",
+    "routeNextMonth": "Mes siguiente",
+    "routeHourLabel": "Hora de salida",
+    "routeMinuteLabel": "Minutos de salida",
+    "routeInvalidDeparture": "Elige una fecha y una hora futuras válidas.",
+    "routeDepartureApply": "Mostrar rutas",
+    "routeLoading": "Buscando rutas…",
+    "routeNoResults": "No hay rutas disponibles para esta hora. Puedes abrir el trayecto en Maps.",
+    "routeOptionsSource": "Datos de Mobilicat",
+    "routeDeparture": "Sale a las {{time}}",
+    "routeDeparture_oneOClock": "Sale a la {{time}}",
+    "routeArrivalLabel_oneOClock": "Llega a la",
+    "routeArrivalLabel": "Llega a las",
+    "routeTransfers_one": "{{count}} transbordo",
+    "routeTransfers_other": "{{count}} transbordos",
+    "routeMapsNote": "La aplicación de mapas calculará su propia ruta, que puede ser diferente.",
+    "openMaps": "Ábrelo en Maps",
+    "routeMode": {
+      "walk": "A pie",
+      "bike": "Bicicleta",
+      "bikeShare": "Bicicleta compartida",
+      "car": "Coche",
+      "publicTransport": "Transporte público"
+    },
     "createPlan": "Crea un plan",
+    "addFavorite": "Guardar el lugar como favorito",
+    "removeFavorite": "Quitar el lugar de favoritos",
+    "favoriteLogin": "Inicia sesión para guardar este punto.",
+    "favoriteError": "No hemos podido guardar el favorito. Vuelve a intentarlo.",
+    "favoriteRemoveError": "No hemos podido quitar el favorito. Vuelve a intentarlo.",
     "mapsErrorTitle": "No hemos podido abrir el mapa",
     "mapsErrorMessage": "Vuelve a intentarlo dentro de un momento.",
-    "planSoonTitle": "Planes, próximamente",
-    "planSoonMessage": "La creación de planes aún no está disponible.",
     "timezone": "Hora local de Cataluña · Europe/Madrid",
     "noHours": "Todavía no hay previsión para esta noche.",
     "hourA11y": "{{time}}: índice {{value}} de 100, {{level}}",
@@ -144,7 +307,11 @@
     "mapA11y": "Ubicación de {{name}}",
     "mapCredits": "Créditos del mapa",
     "mapUnavailable": "No se ha podido cargar el mapa.",
+    "indexNow": "Índice actual · {{time}}",
     "indexAt": "Índice del {{time}}",
+    "indexExplanation": "El índice va de 0 a 100: cuanto más alto, mejor se verá el cielo. Tiene en cuenta las nubes, la oscuridad del lugar, la Luna, la humedad y el Sol.",
+    "hoursTapHint": "Toca una hora para ver su desglose.",
+    "hourA11yHint": "Muestra el desglose del índice de esta hora",
     "tonight": "Esta noche",
     "hoursError": "No hemos podido cargar la previsión de esta noche.",
     "factorHints": {
@@ -164,11 +331,17 @@
         "jus": "La Luna aclara el cielo",
         "tap": "La Luna ilumina mucho el cielo"
       },
-      "sol": "Aún queda luz del crepúsculo"
+      "sol": "Aún queda luz del crepúsculo",
+      "humitat": {
+        "none": "La humedad no molesta",
+        "some": "La humedad enturbia el cielo"
+      }
     },
-    "factorsAt": "Factores a las {{time}}",
+    "factorsAt": "Por qué a las {{time}} el índice es {{value}}",
+    "factorsAt_oneOClock": "Por qué a la {{time}} el índice es {{value}}",
     "daytime": "Es de día",
-    "daytimeHint": "El índice cuenta a partir del anochecer."
+    "daytimeHint": "El índice cuenta a partir del anochecer.",
+    "humidityCorrected": "Corregida con las observaciones de la XEMA (Servicio Meteorológico de Cataluña)"
   },
   "index": {
     "level": {
@@ -193,11 +366,6 @@
     "back": "Volver al inicio"
   },
   "explore": {
-    "greeting": {
-      "morning": "Buenos días",
-      "afternoon": "Buenas tardes",
-      "night": "Buenas noches"
-    },
     "title": "¿Qué quieres ver?",
     "goals": {
       "pluja_estels": "Lluvia de estrellas",
@@ -298,12 +466,90 @@
       "max": "4 h"
     },
     "cta": "Encuentra el mejor lugar",
-    "browse": "Ver el mapa"
+    "browse": "Ver todos los puntos en el mapa"
   },
   "alerts": {
     "title": "Alertas",
-    "soonTitle": "Pronto",
-    "soonMessage": "Aquí podrás crear alertas para que te avisemos cuando haya buenas condiciones para lo que quieres ver."
+    "create": "Nueva alerta",
+    "new": {
+      "title": "Nueva alerta",
+      "back": "Atrás",
+      "goalTitle": "Qué quieres ver",
+      "originTitle": "Dónde",
+      "minIndex": {
+        "title": "Índice mínimo",
+        "value": "{{index}}, {{level}}"
+      },
+      "cta": "Crear la alerta",
+      "saving": "Creando la alerta…",
+      "errors": {
+        "limit": "Ya tienes el máximo de alertas. Borra alguna para crear una nueva.",
+        "generic": "No hemos podido crear la alerta. Vuelve a intentarlo."
+      },
+      "originModes": {
+        "current": "Mi ubicación",
+        "zone": "Una zona concreta"
+      },
+      "zone": {
+        "title": "Elige la zona",
+        "hint": "Mueve el mapa hasta que la aguja quede donde quieres.",
+        "map": "Mapa para elegir la zona",
+        "confirm": "Elegir esta zona",
+        "naming": "Buscando el nombre…",
+        "close": "Cerrar",
+        "empty": "Ninguna zona elegida",
+        "pick": "Elígela",
+        "change": "Cambiar",
+        "unnamed": "Zona elegida"
+      },
+      "travel": {
+        "title": "Distancia máxima",
+        "minutes": "{{minutes}} min",
+        "hours": "{{hours}} h",
+        "hoursMinutes": "{{hours}} h {{minutes}} min"
+      },
+      "notify": {
+        "title": "Cuándo te avisamos",
+        "hourValue": "Avísame a las {{hour}}",
+        "change": "Cambiar",
+        "hourTitle": "Hora del aviso",
+        "done": "Hecho",
+        "hourNote": "A esa hora miramos la previsión de la noche. Si ningún punto llega al índice mínimo, esa noche no te avisamos."
+      }
+    },
+    "edit": {
+      "title": "Edita la alerta",
+      "cta": "Guarda los cambios",
+      "saving": "Guardando los cambios…",
+      "errors": {
+        "generic": "No hemos podido guardar los cambios. Vuelve a intentarlo."
+      },
+      "missingTitle": "No hemos encontrado esta alerta",
+      "missingMessage": "Quizá la has borrado. Vuelve a la lista de alertas."
+    },
+    "subtitle": "Te avisamos solo cuando el cielo acompaña.",
+    "summary": "A menos de {{travel}}, índice de {{index}} o más",
+    "toggle": "Alerta de {{name}}",
+    "editHint": "Abre la alerta para editarla",
+    "toggleError": "No hemos podido cambiar la alerta. Vuelve a intentarlo.",
+    "emptyTitle": "Aún no tienes alertas",
+    "emptyMessage": "Crea una y te avisaremos cuando haya buenas condiciones para lo que quieres ver.",
+    "errorTitle": "No hemos podido cargar las alertas",
+    "retry": "Volver a intentarlo",
+    "pushDenied": "Las notificaciones están desactivadas: no te avisaremos en el móvil cuando haya buenas condiciones. Puedes activarlas en los ajustes.",
+    "pushUnavailable": "Este dispositivo no puede recibir notificaciones. El resto de la app funciona igual.",
+    "openSettings": "Abrir ajustes",
+    "notify": {
+      "hour": {
+        "title": "A una hora concreta",
+        "text": "Cada noche a las {{hour}}"
+      },
+      "reach": {
+        "title": "Al llegar al índice",
+        "text": "Cuando el índice llegue a {{index}}"
+      }
+    },
+    "summaryTravel": "A menos de {{travel}}"
   },
   "auth": {
     "signOut": "Cerrar sesión",
@@ -322,6 +568,16 @@
       "invalidLink": "El enlace no es válido o ya se ha usado. Ábrelo en el mismo móvil donde lo pediste, o pide otro.",
       "emailNotAllowed": "Ahora mismo no podemos enviar correos a esta dirección. Prueba a entrar con Google."
     }
+  },
+  "accountBlocked": {
+    "title": "Tu cuenta está bloqueada",
+    "message": "No puedes usar Talaia con esta cuenta. Si crees que es un error, contacta con el equipo de Talaia.",
+    "retry": "Vuelve a comprobarlo",
+    "checking": "Comprobando…",
+    "contact": "Escribe a {{email}}",
+    "contactError": "No se ha podido abrir el correo. Escríbenos a {{email}}.",
+    "contactSubject": "Cuenta de Talaia bloqueada",
+    "contactBody": "Mi cuenta de Talaia es {{account}}."
   },
   "emailLogin": {
     "title": "Entra con el correo",
@@ -355,7 +611,9 @@
       "tomorrow": "mañana por la noche"
     },
     "from": "Desde {{place}}, hasta {{travel}}",
+    "from_vowel": "Desde {{place}}, hasta {{travel}}",
     "fromHere": "Desde donde estás, hasta {{travel}}",
+    "fromPicked": "Desde el punto elegido, hasta {{travel}}",
     "duration": {
       "minutes": "{{minutes}} min",
       "hours": "{{hours}} h",
@@ -367,11 +625,133 @@
     "loading": "Buscando los mejores puntos…",
     "error": "No hemos podido cargar las recomendaciones",
     "empty": "No hay ningún punto a menos de {{travel}}",
+    "empty_vowel": "No hay ningún punto a menos de {{travel}}",
     "emptyHint": "Amplía la distancia o elige otra noche.",
     "noIndex": "Aún sin previsión",
     "bestHour": "Mejor hora: {{hour}}",
     "byCar": "{{travel}} en coche",
     "collapseSheet": "Plegar la lista",
-    "expandSheet": "Desplegar la lista"
+    "expandSheet": "Desplegar la lista",
+    "noEventForecast": "Todavía no hay previsión para este evento. Los puntos se muestran por distancia; consulta el índice cuando se acerque la fecha.",
+    "emptyEventHint": "Vuelve a intentarlo más adelante.",
+    "eventRanking": "Ranking de mejores puntos",
+    "qualityDistanceHint": "Priorizamos los niveles de visibilidad: cielo despejado, justo y cubierto. Dentro de cada nivel, combinamos el índice y la proximidad.",
+    "distance": "{{km}} km en línea recta",
+    "fromUnlimited": "Desde {{place}} · sin límite de distancia",
+    "fromUnlimited_vowel": "Desde {{place}} · sin límite de distancia",
+    "pastWindow": "Esta franja de observación ya ha terminado. Elige otro evento u otra noche.",
+    "fromHereUnlimited": "Desde donde estás · sin límite de distancia",
+    "emptyCatalog": "Todavía no hay puntos disponibles",
+    "hideRanking": "Oculta el ranking",
+    "showRanking": "Muestra el ranking",
+    "nearby": {
+      "label": "Cerca de mí",
+      "title": "Cerca de mí, {{when}}",
+      "best": "Mejores puntos cerca",
+      "here": "Desde donde estás",
+      "picked": "Desde el punto elegido",
+      "place": "Desde {{place}}",
+      "place_vowel": "Desde {{place}}",
+      "emptyHint": "Para ir más lejos, elige la distancia en «¿Qué quieres ver?»."
+    }
+  },
+  "plans": {
+    "new": {
+      "back": "Atrás",
+      "header": "Nuevo plan",
+      "title": "Plan de observación",
+      "point": "Punto de observación",
+      "pointA11y": "Punto de observación: {{name}}, {{municipality}}",
+      "pointUnavailable": "No hemos podido cargar el punto",
+      "day": "Día",
+      "dayValue": "{{weekday}} {{day}} {{month}}",
+      "monthsShort": [
+        "ene.",
+        "feb.",
+        "mar.",
+        "abr.",
+        "may.",
+        "jun.",
+        "jul.",
+        "ago.",
+        "sept.",
+        "oct.",
+        "nov.",
+        "dic."
+      ],
+      "time": "Hora de salida",
+      "hour": "Hora",
+      "minute": "Minutos",
+      "past": "La hora de salida ya ha pasado. Elige una más tarde.",
+      "event": "Fenómeno",
+      "eventValue": "{{type}}: {{name}}",
+      "noEvent": "Ninguno en concreto",
+      "eventSheet": "¿Qué vas a ver?",
+      "noEvents": "No hay ningún fenómeno del calendario alrededor de este día.",
+      "eventsError": "No hemos podido cargar los fenómenos",
+      "retry": "Vuelve a intentarlo",
+      "notes": "Notas",
+      "notesPlaceholder": "Ropa de abrigo, frontal rojo…",
+      "save": "Guarda el plan",
+      "saving": "Guardando…",
+      "dateSheet": "Elige el día",
+      "timeSheet": "Hora de salida",
+      "done": "Hecho",
+      "close": "Cerrar",
+      "errors": {
+        "alreadyExists": "Ya tienes un plan en este punto a esta hora.",
+        "limitReached": "Has llegado al máximo de 20 planes pendientes.",
+        "pointGone": "Este punto ya no está disponible.",
+        "generic": "No hemos podido guardar el plan. Vuelve a intentarlo en un momento."
+      }
+    },
+    "calendar": {
+      "label": "Añádelo a mi calendario",
+      "hint": "Elige un calendario del móvil. Si es de tu cuenta de Google y tiene la sincronización activada, también aparecerá en Google Calendar.",
+      "unavailable": "El calendario no está disponible en este entorno. Puedes guardar el plan igualmente.",
+      "loading": "Cargando los calendarios…",
+      "denied": "No tenemos permiso para acceder al calendario. Concede el permiso o desactiva esta opción para guardar solo el plan.",
+      "loadError": "No hemos podido cargar los calendarios. Inténtalo de nuevo o desactiva esta opción.",
+      "empty": "No hay ningún calendario modificable. Configura un calendario en el móvil y vuelve a intentarlo, o desactiva esta opción.",
+      "settings": "Abre la configuración",
+      "target": "Calendario de destino",
+      "choose": "Elige el calendario",
+      "eventTitle": "Talaia · {{point}}",
+      "eventTitleWithPhenomenon": "{{phenomenon}} · {{point}}",
+      "savedTitle": "Plan guardado",
+      "adding": "El plan ya está guardado en tu cuenta. Lo estamos añadiendo al calendario…",
+      "continue": "Continuar",
+      "syncErrors": {
+        "create": "El plan está guardado, pero no hemos podido añadirlo al calendario. Puedes reintentarlo o continuar con el plan guardado.",
+        "link": "El plan y el evento del calendario están guardados, pero no hemos podido vincularlos. Inténtalo de nuevo para completar el vínculo.",
+        "denied": "El plan está guardado, pero falta el permiso de calendario. Puedes concederlo y reintentarlo, o continuar con el plan guardado."
+      }
+    },
+    "list": {
+      "back": "Volver al perfil",
+      "header": "Mis planes",
+      "title": "Mis planes",
+      "upcoming": "Próximos",
+      "past": "Pasados",
+      "starrySky": "Cielo estrellado",
+      "rowTitle": "{{phenomenon}} en {{place}}",
+      "rowTitle_el": "{{phenomenon}} en el {{place}}",
+      "rowTitle_els": "{{phenomenon}} en els {{place}}",
+      "departure": "Salida a las {{time}}, {{point}}",
+      "departure_single": "Salida a la {{time}}, {{point}}",
+      "retired": "Este punto ya no está disponible.",
+      "a11y": "{{title}}. {{day}} {{month}}. {{subtitle}}",
+      "openHint": "Abre la ficha del punto",
+      "emptyUpcomingTitle": "Aún no tienes ningún plan",
+      "emptyUpcomingMessage": "Busca un buen sitio en Explora y crea un plan desde su ficha.",
+      "emptyPastTitle": "Aún no tienes planes pasados",
+      "emptyPastMessage": "Cuando haya pasado la hora de un plan, lo encontrarás aquí.",
+      "create": "Encuentra un sitio",
+      "errorTitle": "No hemos podido cargar los planes",
+      "retry": "Vuelve a intentarlo"
+    }
+  },
+  "notifications": {
+    "channelName": "Alertas del cielo"
   }
 }

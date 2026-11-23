@@ -1,4 +1,4 @@
-import type { PuntFitxa, PuntsMapaGeoJson } from '@talaia/shared';
+import type { IndexMapa, PuntFitxa, PuntsMapaGeoJson } from '@talaia/shared';
 import { Router } from 'express';
 import { z } from 'zod';
 
@@ -28,8 +28,8 @@ export const BboxSchema = z
 
 const QuerySchema = z.object({ bbox: BboxSchema.optional() });
 
-// Tipat amb el tipus compartit: si l'esquema i @talaia/shared divergeixen, no compila.
-const IndexSchema = z.object({
+/** L'índex de l'hora en curs (`IndexMapa`): el del mapa i el de cada favorit (TG-169). */
+export const IndexMapaSchema: z.ZodType<IndexMapa> = z.object({
   valor: z.number().int().min(0).max(100),
   franja: z.enum(['tap', 'jus', 'ras']),
   deDia: z.boolean().meta({
@@ -53,7 +53,7 @@ const PuntsMapaSchema: z.ZodType<PuntsMapaGeoJson> = z
           id: z.string(),
           nom: z.string(),
           municipi: z.string(),
-          index: IndexSchema.nullable().meta({
+          index: IndexMapaSchema.nullable().meta({
             description:
               "Índex de l'hora en curs (worker horari, TG-99). `null` = encara no s'ha calculat: marcador gris.",
           }),
@@ -69,7 +69,7 @@ registry.registerPath({
   tags: ['Punts'],
   summary: 'Tots els punts publicats, en un sol GeoJSON per al mapa (ADR-0012)',
   description:
-    "Respon amb `ETag` i `Cache-Control` fins a la propera hora. Amb `If-None-Match` igual a l'`ETag`, respon 304 sense cos.",
+    "Els noms segueixen `Accept-Language` (ca, es, en; reserva ca). Respon amb `ETag`, `Vary: Accept-Language` i `Cache-Control` fins a la propera hora. Amb `If-None-Match` igual a l'`ETag` de la mateixa llengua, respon 304 sense cos.",
   request: {
     query: z.object({
       bbox: z.string().optional().meta({
@@ -78,7 +78,10 @@ registry.registerPath({
         example: '0.15,40.5,3.35,42.9',
       }),
     }),
-    headers: z.object({ 'If-None-Match': z.string().optional() }),
+    headers: z.object({
+      'If-None-Match': z.string().optional(),
+      'Accept-Language': z.string().optional().meta({ example: 'en-US,en;q=0.9' }),
+    }),
   },
   responses: {
     200: {
@@ -86,6 +89,7 @@ registry.registerPath({
       headers: z.object({
         ETag: z.string().meta({ description: 'Versió del document' }),
         'Cache-Control': z.string().meta({ example: 'public, max-age=1800' }),
+        Vary: z.string().meta({ example: 'Accept-Language' }),
       }),
       content: { 'application/json': { schema: PuntsMapaSchema } },
     },
@@ -123,6 +127,9 @@ const FitxaQuerySchema = z.object({
     }),
 });
 
+/** Direccions de `horitzo_obert`: les mateixes que admet la restricció de la taula. */
+export const DireccioHoritzoSchema = z.enum(['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW']);
+
 const PuntFitxaSchema: z.ZodType<PuntFitxa> = z
   .object({
     id: z.string(),
@@ -131,7 +138,7 @@ const PuntFitxaSchema: z.ZodType<PuntFitxa> = z
     descripcio: z.string(),
     altitud: z.number().int().nullable().meta({ description: 'Metres sobre el nivell del mar' }),
     horitzoObert: z
-      .array(z.enum(['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW']))
+      .array(DireccioHoritzoSchema)
       .nullable()
       .meta({ description: "Direccions amb l'horitzó obert (aproximat). `null` si no és clar." }),
     accessibilitat: z.string().nullable(),
@@ -158,8 +165,15 @@ registry.registerPath({
   path: '/punts/{id}',
   tags: ['Punts'],
   summary: "Fitxa d'un punt publicat amb l'índex actual i el de les properes hores (HU07)",
-  description: "`Cache-Control` fins a la propera hora: el worker recalcula l'índex cada hora.",
-  request: { params: FitxaParamsSchema, query: FitxaQuerySchema },
+  description:
+    "Nom, descripció i accessibilitat segueixen `Accept-Language` (ca, es, en; reserva ca). `Cache-Control` fins a la propera hora: el worker recalcula l'índex cada hora.",
+  request: {
+    params: FitxaParamsSchema,
+    query: FitxaQuerySchema,
+    headers: z.object({
+      'Accept-Language': z.string().optional().meta({ example: 'es-ES,es;q=0.9' }),
+    }),
+  },
   responses: {
     200: {
       description: 'La fitxa del punt',
@@ -207,8 +221,12 @@ export function createPuntsRouter(service: PuntsService | undefined): Router {
   router.get('/', async (req, res) => {
     const { bbox } = QuerySchema.parse(req.query);
     if (!service) throw databaseUnavailable();
-    const { geojson, etag } = await service.getMapDocument(bbox);
-    res.set({ ETag: etag, 'Cache-Control': `public, max-age=${secondsToNextHour()}` });
+    const { geojson, etag } = await service.getMapDocument(bbox, req.get('Accept-Language'));
+    res.set({
+      ETag: etag,
+      'Cache-Control': `public, max-age=${secondsToNextHour()}`,
+      Vary: 'Accept-Language',
+    });
     if (matchesIfNoneMatch(req.get('If-None-Match'), etag)) {
       res.status(304).end();
       return;
@@ -220,7 +238,8 @@ export function createPuntsRouter(service: PuntsService | undefined): Router {
     const { id } = FitxaParamsSchema.parse(req.params);
     const { hores } = FitxaQuerySchema.parse(req.query);
     if (!service) throw databaseUnavailable();
-    const fitxa = await service.getFitxa(id, hores);
+    const fitxa = await service.getFitxa(id, hores, undefined, req.get('Accept-Language'));
+    res.set('Vary', 'Accept-Language');
     res.set('Cache-Control', `public, max-age=${secondsToNextHour()}`);
     res.json(fitxa);
   });

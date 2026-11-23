@@ -42,6 +42,45 @@ export type ConsultaRecomanacions = {
   limit?: number;
 };
 
+/**
+ * El que accepta `GET /api/v1/recomanacions`: una `ConsultaRecomanacions` on només l'origen és
+ * obligatori («A prop meu», HU02, TG-133). L'API omple la resta: `objectiu` `cel_estrellat`
+ * (l'índex v1 és el mateix per a tots), `tempsMaxim` 60 minuts, `data` la nit que toca (fins a
+ * les 06:00, la que s'acaba; després, la que ve) i, sense `desDe` ni `finsA`, la nit sencera (de les
+ * 12:00 a les 12:00 de l'endemà) des de l'hora en curs. `desDe` i `finsA` van junts.
+ */
+export type ParametresRecomanacions = Pick<ConsultaRecomanacions, 'origen'> &
+  Partial<Omit<ConsultaRecomanacions, 'origen'>> & {
+    /**
+     * «On veure-ho» des de la fitxa d'un fenomen (HU11, TG-140): el `codi` de
+     * `GET /api/v1/esdeveniments/{id}` (el mateix que `PlaNou.esdevenimentId`). La franja i la nit
+     * surten de l'esdeveniment (`RecomanacionsResposta.esdeveniment`), així que no va amb `data`,
+     * `desDe` ni `finsA`. Sense `tempsMaxim`, considera tots els punts publicats;
+     * amb índex, combina qualitat i proximitat: dins del mateix nivell ras/jus/tap,
+     * resta 1 punt per cada 30 km, fins a 10, només per ordenar.
+     */
+    esdevenimentId?: string;
+  };
+
+/**
+ * Avisos de `RecomanacionsResposta`. Una unió de literals perquè l'app en pugui fer un `switch`
+ * exhaustiu; se n'hi poden afegir de nous.
+ *
+ * - `sense_previsio`: cap punt del radi té índex a la finestra de l'esdeveniment (és més enllà de
+ *   la previsió o el worker encara no l'ha calculat): els punts surten per distància.
+ */
+export type AvisRecomanacions = 'sense_previsio';
+
+/** L'esdeveniment d'una consulta amb `esdevenimentId`: el seu horari, en ISO 8601 UTC. */
+export type EsdevenimentRecomanacions = {
+  /** El `codi` de `GET /api/v1/esdeveniments/{id}`. */
+  id: string;
+  inici: string;
+  /** `null` si el fenomen no té un màxim definit. */
+  maxim: string | null;
+  fi: string;
+};
+
 /** Un punt del rànquing de `GET /api/v1/recomanacions`. */
 export type Recomanacio = PuntObservacio & {
   /** Distància en línia recta des de l'origen, en km (1 decimal). */
@@ -58,19 +97,33 @@ export type Recomanacio = PuntObservacio & {
 
 /** `GET /api/v1/recomanacions`: el rànquing de punts per a una consulta (HU01). */
 export type RecomanacionsResposta = {
-  /** Radi en línia recta que s'ha fet servir per a `tempsMaxim`, en km (1 decimal). */
-  radiKm: number;
+  /** La nit que s'ha fet servir (`YYYY-MM-DD`): la de la consulta o, si no n'hi havia, la que toca. */
+  data: string;
+  /** Minuts màxims en cotxe; `null` si la cerca per esdeveniment no limita la distància. */
+  tempsMaxim: number | null;
+  /** Radi en línia recta, en km (1 decimal); `null` sense límit de distància. */
+  radiKm: number | null;
   /**
    * Hores de la franja que entren al rànquing, `[desDe, finsA)` en ISO 8601 UTC. Si la franja ja
    * ha començat, `desDe` és l'hora en curs.
    */
   franja: { desDe: string; finsA: string };
-  /** Quants punts publicats hi ha dins del radi, abans d'aplicar `limit`. */
+  /** Punts candidats abans de `limit`: dins del radi o tot el catàleg si no hi ha límit. */
   total: number;
   /**
    * Els `limit` primers punts publicats dins del radi, de millor a pitjor: per `millorHora`,
-   * després per `mitjana` i després per distància. Els que no tenen índex (més enllà de la
-   * previsió) van al final.
+   * després per `mitjana` i després per distància. Amb esdeveniment, primer el nivell
+   * ras/jus/tap i la puntuació índex − min(10, km/30); després, distància, índex exacte
+   * i mitjana. No es modifica l’índex real. Els que no tenen índex van al final per distància.
    */
   punts: Recomanacio[];
+  /**
+   * Només amb `esdevenimentId`: l'esdeveniment, el seu horari complet. `franja` (i `data`) són la
+   * finestra que se n'ha tret: amb hores conegudes (eclipsis, conjuncions), `[inici, fi]`; amb
+   * precisió de dia (pluges d'estels, fases), la nit del màxim o, si ja ha passat i encara dura, la
+   * nit que toca.
+   */
+  esdeveniment?: EsdevenimentRecomanacions;
+  /** Només amb `esdevenimentId`, i només si cal: vegeu `AvisRecomanacions`. */
+  avis?: AvisRecomanacions;
 };

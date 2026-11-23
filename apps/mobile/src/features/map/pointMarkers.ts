@@ -21,7 +21,16 @@ export type MarkerPalette = {
   ras: string;
   jus: string;
   tap: string;
+  /**
+   * Mode nit: el filtre passa el mapa a vermell, i les franges no es distingirien pel color. Llavors
+   * cadascuna té una forma, com a la llegenda: cel ras, ple; justet, anell; tapat, anell discontinu.
+   */
+  shapes?: boolean;
 };
+
+type PinShape = 'ring' | 'filled' | 'dashed';
+const NIGHT_SHAPES = { ras: 'filled', jus: 'ring', tap: 'dashed', unknown: 'ring' } as const;
+const PIN_BANDS = ['ras', 'jus', 'tap', 'unknown'] as const;
 
 export const EMPTY_MAP_POINTS: MapPoints = { type: 'FeatureCollection', features: [] };
 export const POINTS_SOURCE = 'talaia-points';
@@ -38,6 +47,7 @@ const INDEX_SIZE = 18;
 const CLUSTER_IMAGE = 'talaia-cluster-disc';
 // El pont DOM pot enviar una còpia nova del mateix GeoJSON a cada render natiu.
 const sourceData = new WeakMap<GeoJSONSource, string>();
+const paletteKeys = new WeakMap<Map, string>();
 
 function drawClusterDisc(palette: MarkerPalette, pixelRatio: number): ImageData {
   const canvas = document.createElement('canvas');
@@ -87,7 +97,12 @@ export function markerData(points: MapPoints): FeatureCollection<Point> {
 }
 
 /** Anell, tija i peu del mockup. Es rasteritza segons la densitat de la pantalla. */
-export function drawMarkerPin(color: string, background: string, pixelRatio = 2): ImageData {
+export function drawMarkerPin(
+  color: string,
+  background: string,
+  pixelRatio = 2,
+  shape: PinShape = 'ring',
+): ImageData {
   const canvas = document.createElement('canvas');
   canvas.width = PIN_WIDTH * pixelRatio;
   canvas.height = PIN_HEIGHT * pixelRatio;
@@ -106,9 +121,10 @@ export function drawMarkerPin(color: string, background: string, pixelRatio = 2)
   ctx.fill();
   ctx.beginPath();
   ctx.arc(PIN_CENTER, PIN_CENTER, PIN_RADIUS, 0, Math.PI * 2);
-  ctx.fillStyle = background;
+  ctx.fillStyle = shape === 'filled' ? color : background;
   ctx.fill();
   ctx.lineWidth = 2;
+  if (shape === 'dashed') ctx.setLineDash([4, 3]);
   ctx.stroke();
   return ctx.getImageData(0, 0, canvas.width, canvas.height);
 }
@@ -196,7 +212,8 @@ export function markerLayers(palette: MarkerPalette, cluster = true): LayerSpeci
           'match',
           ['get', 'band'],
           'ras',
-          palette.ras,
+          // El pin ple porta la xifra del color del fons.
+          palette.shapes ? palette.background : palette.ras,
           'jus',
           palette.jus,
           'tap',
@@ -215,7 +232,20 @@ export function markerLayers(palette: MarkerPalette, cluster = true): LayerSpeci
 export function syncMapPoints(map: Map, points: MapPoints, palette: MarkerPalette, cluster = true) {
   const data = markerData(points);
   const serialized = JSON.stringify(data);
-  const source = map.getSource(POINTS_SOURCE) as GeoJSONSource | undefined;
+  let source = map.getSource(POINTS_SOURCE) as GeoJSONSource | undefined;
+  const paletteKey = JSON.stringify(palette);
+  const previousKey = paletteKeys.get(map);
+  if (source && previousKey !== undefined && previousKey !== paletteKey) {
+    // La paleta (el mode nit) canvia les imatges i els colors dels marcadors: es tornen a crear.
+    for (const layer of markerLayers(palette, cluster)) {
+      if (map.getLayer(layer.id)) map.removeLayer(layer.id);
+    }
+    map.removeSource(POINTS_SOURCE);
+    for (const id of [CLUSTER_IMAGE, ...PIN_BANDS.map((band) => `talaia-pin-${band}`)]) {
+      if (map.hasImage(id)) map.removeImage(id);
+    }
+    source = undefined;
+  }
   if (source) {
     if (sourceData.get(source) === serialized) return;
     void source.setData(data);
@@ -226,14 +256,16 @@ export function syncMapPoints(map: Map, points: MapPoints, palette: MarkerPalett
   if (!map.hasImage(CLUSTER_IMAGE)) {
     map.addImage(CLUSTER_IMAGE, drawClusterDisc(palette, pixelRatio), { pixelRatio });
   }
-  for (const band of ['ras', 'jus', 'tap', 'unknown'] as const) {
+  for (const band of PIN_BANDS) {
     const id = `talaia-pin-${band}`;
     if (!map.hasImage(id)) {
-      map.addImage(id, drawMarkerPin(palette[band], palette.background, pixelRatio), {
+      const shape = palette.shapes ? NIGHT_SHAPES[band] : 'ring';
+      map.addImage(id, drawMarkerPin(palette[band], palette.background, pixelRatio, shape), {
         pixelRatio,
       });
     }
   }
+  paletteKeys.set(map, paletteKey);
   map.addSource(POINTS_SOURCE, { type: 'geojson', data, ...(cluster ? CLUSTER_OPTIONS : {}) });
   const createdSource = map.getSource(POINTS_SOURCE) as GeoJSONSource | undefined;
   if (createdSource) sourceData.set(createdSource, serialized);

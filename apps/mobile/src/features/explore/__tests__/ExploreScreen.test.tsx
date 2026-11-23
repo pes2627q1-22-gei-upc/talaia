@@ -1,10 +1,13 @@
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import { act, fireEvent, render, screen, within } from '@testing-library/react-native';
 import { useRouter } from 'expo-router';
 import type { PropsWithChildren } from 'react';
+import { Linking, processColor } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import i18n from '@/core/i18n';
+import { type ThemeName, ThemeProvider } from '@/core/theme/theme';
+import { colors, colorsVermell, motion } from '@/core/theme/tokens';
 import { createQueryWrapper } from '@/test-utils/queryWrapper';
 
 import { addDays, nightOf } from '../exploreModel';
@@ -31,15 +34,17 @@ const METRICS = {
   insets: { top: 59, left: 0, right: 0, bottom: 34 },
 };
 
-function renderScreen() {
+function renderScreen(theme: ThemeName = 'normal') {
   const QueryWrapper = createQueryWrapper();
   function Wrapper({ children }: PropsWithChildren) {
     return (
-      <GestureHandlerRootView>
-        <SafeAreaProvider initialMetrics={METRICS}>
-          <QueryWrapper>{children}</QueryWrapper>
-        </SafeAreaProvider>
-      </GestureHandlerRootView>
+      <ThemeProvider name={theme}>
+        <GestureHandlerRootView>
+          <SafeAreaProvider initialMetrics={METRICS}>
+            <QueryWrapper>{children}</QueryWrapper>
+          </SafeAreaProvider>
+        </GestureHandlerRootView>
+      </ThemeProvider>
     );
   }
   return render(<ExploreScreen />, { wrapper: Wrapper });
@@ -49,8 +54,13 @@ function renderScreen() {
 jest.setTimeout(15_000);
 
 describe('ExploreScreen', () => {
+  afterEach(() => {
+    jest.useRealTimers();
+    jest.restoreAllMocks();
+  });
   beforeEach(async () => {
     push.mockReset();
+    jest.mocked(getCurrentPlace).mockReset();
     jest
       .mocked(getCurrentPlace)
       .mockResolvedValue({ status: 'ready', place: { name: 'Girona', lat: 41.98, lon: 2.82 } });
@@ -69,6 +79,13 @@ describe('ExploreScreen', () => {
     expect(await screen.findByLabelText('Girona, Ubicació actual')).toBeOnTheScreen();
     expect(screen.getByRole('tab', { name: 'Aquesta nit' })).toBeSelected();
     expect(screen.getByText('2 h 30 min en cotxe')).toBeOnTheScreen();
+  });
+
+  it('el títol queda dins de l’àrea segura de dalt (Android)', async () => {
+    await renderScreen();
+    const safeArea = screen.getByTestId('explore-safe-area');
+    expect(safeArea.props.edges).toMatchObject({ top: 'additive', bottom: 'off' });
+    expect(within(safeArea).getByRole('header', { name: 'Què vols veure?' })).toBeOnTheScreen();
   });
 
   it('en triar un fenomen, queda marcat', async () => {
@@ -147,11 +164,143 @@ describe('ExploreScreen', () => {
     );
   });
 
-  it('«Mostra el mapa» obre el mapa sense cercar, també sense ubicació', async () => {
+  it('«Mostra tots els punts al mapa» és un botó visible, amb vora, no un enllaç', async () => {
+    await renderScreen();
+    const browse = screen.getByRole('button', { name: 'Mostra tots els punts al mapa' });
+    expect(browse).toHaveStyle({ backgroundColor: colors.sheet, borderColor: colors.vora });
+    // La icona del mapa hi és i, en el tema normal, es veu amb el seu color.
+    const icon = within(browse).getByTestId('explore-map-icon');
+    expect(icon.props.tintColor).toBeUndefined();
+  });
+
+  it('en mode nit, la icona del mapa es tenyeix com el text del botó', async () => {
+    await renderScreen('vermell');
+    const browse = screen.getByRole('button', { name: 'Mostra tots els punts al mapa' });
+    expect(within(browse).getByText('Mostra tots els punts al mapa')).toHaveStyle({
+      color: colorsVermell.lluna,
+    });
+    const icon = within(browse).getByTestId('explore-map-icon');
+    // expo-image rep el color ja processat (ARGB), com a ThemeProvider.test.tsx.
+    expect(icon.props.tintColor).toBe(processColor(colorsVermell.lluna));
+  });
+
+  it.each([
+    ['es', 'Ver todos los puntos en el mapa'],
+    ['en', 'See all spots on the map'],
+  ])('el botó del mapa està traduït (%s)', async (language, label) => {
+    await i18n.changeLanguage(language);
+    await renderScreen();
+    expect(screen.getByRole('button', { name: label })).toBeOnTheScreen();
+  });
+
+  it('«Mostra tots els punts al mapa» obre el mapa sense cercar, també sense ubicació', async () => {
     jest.mocked(getCurrentPlace).mockResolvedValue({ status: 'denied', canAskAgain: true });
     await renderScreen();
     await screen.findByText('Activa la ubicació');
-    await fireEvent.press(screen.getByRole('button', { name: 'Mostra el mapa' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Mostra tots els punts al mapa' }));
     expect(push).toHaveBeenCalledWith('/recomanacions');
+  });
+
+  it('no deixa cercar mentre localitza, però permet explorar el mapa', async () => {
+    jest.mocked(getCurrentPlace).mockReturnValue(new Promise(() => undefined));
+    await renderScreen();
+    expect(screen.getByLabelText('Buscant on ets…')).toHaveProp('accessibilityState', {
+      busy: true,
+    });
+    const search = screen.getByRole('button', { name: 'Troba el millor lloc' });
+    expect(search).toBeDisabled();
+    await fireEvent.press(search);
+    expect(push).not.toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: 'Mostra tots els punts al mapa' })).toBeEnabled();
+  });
+
+  it.each(['denied', 'error'] as const)(
+    'recupera la ubicació des de la fila en estat %s',
+    async (state) => {
+      const place = jest.mocked(getCurrentPlace);
+      if (state === 'denied') place.mockResolvedValueOnce({ status: 'denied', canAskAgain: true });
+      else place.mockRejectedValueOnce(new Error('GPS'));
+      const label =
+        state === 'denied'
+          ? 'Activa la ubicació, Permet-ho'
+          : 'No hem trobat on ets, Torna-ho a provar';
+      await renderScreen();
+      const retry = await screen.findByRole('button', { name: label });
+      expect(screen.getByRole('button', { name: 'Troba el millor lloc' })).toBeDisabled();
+      await fireEvent.press(retry);
+      expect(await screen.findByLabelText('Girona, Ubicació actual')).toBeOnTheScreen();
+      expect(screen.getByRole('button', { name: 'Troba el millor lloc' })).toBeEnabled();
+      expect(place).toHaveBeenCalledTimes(2);
+    },
+  );
+
+  it('obre la configuració quan no es pot tornar a demanar permís', async () => {
+    const settings = jest.spyOn(Linking, 'openSettings').mockResolvedValue();
+    jest.mocked(getCurrentPlace).mockResolvedValue({ status: 'denied', canAskAgain: false });
+    await renderScreen();
+    await fireEvent.press(
+      await screen.findByRole('button', { name: 'Activa la ubicació, Configuració' }),
+    );
+    expect(settings).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole('button', { name: 'Troba el millor lloc' })).toBeDisabled();
+  });
+
+  it('canvia de nit amb els segments i envia la data triada a la cerca', async () => {
+    await renderScreen();
+    await screen.findByLabelText('Girona, Ubicació actual');
+    await fireEvent.press(screen.getByRole('tab', { name: 'Demà' }));
+    expect(screen.getByRole('tab', { name: 'Demà' })).toBeSelected();
+    await fireEvent.press(screen.getByRole('button', { name: 'Troba el millor lloc' }));
+    expect(push).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        params: expect.objectContaining({ data: addDays(nightOf(new Date()), 1) }),
+      }),
+    );
+    await fireEvent.press(screen.getByRole('tab', { name: 'Aquesta nit' }));
+    expect(screen.getByRole('tab', { name: 'Aquesta nit' })).toBeSelected();
+    await fireEvent.press(screen.getByRole('button', { name: 'Troba el millor lloc' }));
+    expect(push).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        params: expect.objectContaining({ data: nightOf(new Date()) }),
+      }),
+    );
+  });
+
+  it('cancel·la el calendari sense canviar la nit i reobre un dia personalitzat', async () => {
+    jest.useFakeTimers().setSystemTime(new Date('2026-10-15T12:00:00Z'));
+    await renderScreen();
+    await fireEvent.press(screen.getByRole('tab', { name: 'Demà' }));
+    await fireEvent.press(screen.getByRole('tab', { name: 'Tria el dia' }));
+    await fireEvent.press(
+      screen.getByRole('button', { name: 'Tanca', includeHiddenElements: true }),
+    );
+    await act(() => jest.advanceTimersByTime(motion.base + 100));
+    expect(screen.queryByRole('header', { name: 'Tria el dia' })).toBeNull();
+    expect(screen.getByRole('tab', { name: 'Demà' })).toBeSelected();
+    await fireEvent.press(screen.getByRole('tab', { name: 'Tria el dia' }));
+    await fireEvent.press(screen.getByRole('button', { name: "18 d'octubre" }));
+    await act(() => jest.advanceTimersByTime(motion.base + 100));
+    const picked = screen.getByRole('tab', { name: 'dg. 18 oct.' });
+    expect(picked).toBeSelected();
+    await fireEvent.press(picked);
+    expect(screen.getByRole('header', { name: 'Tria el dia' })).toBeOnTheScreen();
+    expect(screen.getByRole('button', { name: "18 d'octubre" })).toBeSelected();
+  });
+
+  it('ajusta l’hora final, tanca amb Fet i conserva la franja en reobrir', async () => {
+    jest.useFakeTimers();
+    await renderScreen();
+    await fireEvent.press(screen.getByRole('button', { name: 'De 22:00 a 06:00, Franja horària' }));
+    await fireEvent(screen.getByRole('adjustable', { name: 'Fins a' }), 'accessibilityAction', {
+      nativeEvent: { actionName: 'increment' },
+    });
+    expect(screen.getByText("9 hores d'observació")).toBeOnTheScreen();
+    await fireEvent.press(screen.getByRole('button', { name: 'Fet' }));
+    await act(() => jest.advanceTimersByTime(motion.base + 100));
+    expect(screen.queryByRole('header', { name: 'Franja horària' })).toBeNull();
+    await fireEvent.press(screen.getByRole('button', { name: 'De 22:00 a 07:00, Franja horària' }));
+    expect(screen.getByRole('adjustable', { name: 'Fins a' })).toHaveAccessibilityValue({
+      text: '07:00',
+    });
   });
 });

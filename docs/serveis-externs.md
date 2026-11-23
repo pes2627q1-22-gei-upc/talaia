@@ -6,7 +6,7 @@ tasca **TG-109** (Victor, límit 14/10) cobreix dues integracions independents:
 | Integració | Rol de Talaia | Estat del contracte |
 |---|---|---|
 | Aprop | Proveïdor d'esdeveniments astronòmics | **Acordat** per correu i confirmat en persona; endpoint implementat a TG-108 |
-| Mobilicat | Consumidor de rutes sostenibles | **Proposta enviada; pendent de resposta**. No bloqueja TG-108 |
+| Mobilicat | Consumidor de rutes sostenibles | **Especificació rebuda per correu; client de Talaia implementat a TG-135.** L'especificació rebuda encara marca `/routes` com a no implementat (`501`). |
 
 ## Oferim a Aprop: esdeveniments astronòmics
 
@@ -37,6 +37,9 @@ en UTC; la conversió a hora local correspon al consumidor.
 Aprop s'autentica amb una API key al header `X-API-Key`, guardada al seu backend i mai a
 l'app mòbil. L'app de Talaia consulta la mateixa ruta amb `Authorization: Bearer <JWT>` de
 Supabase. És una alternativa, no calen les dues credencials alhora.
+Amb JWT, el llistat de l'app pot demanar `Accept-Language: ca|es|en` (també variants com
+`es-ES`); el català és el valor per defecte i la reserva per camp. Amb l'API key d'Aprop, el
+llistat conserva els textos en català independentment de la capçalera.
 
 `tipus` classifica les entrades per famílies estables; no identifica cada fenomen concret. El
 nom diferencia, per exemple, les Perseids de les Gemínids o la lluna plena de la lluna nova:
@@ -97,7 +100,8 @@ Decisions incorporades arran de la resposta d'Aprop:
 - `font` és `IMO` o `NASA` per als calendaris importats; per a fases, conjuncions i
   superllunes calculades és el valor de `metode_calcul` (p. ex. `Astronomy Engine 2.1.19`).
 - Sense credencial o amb una credencial invàlida, la resposta és 401. Un error temporal de
-  la base de dades o del JWKS de Supabase és 503; no es promet cap 429 sense un límit definit.
+  la base de dades o del JWKS de Supabase és 503. El límit general de Nginx pot retornar 429
+  abans que la petició arribi a l'API.
 
 La ubicació forma part del contracte públic, però no del dataset estàtic de TG-106: TG-108
 la llegeix del catàleg de punts oficials. Si el punt de referència no existeix o no és publicat,
@@ -106,79 +110,146 @@ el servei ha de fallar explícitament en lloc de retornar una ubicació inventad
 El contracte amb Aprop es pot integrar i revisar independentment del de Mobilicat: aquest darrer
 continua pendent de confirmació i no s'ha de presentar com a acordat en tancar aquesta PR.
 
+### Publicació del servei (TG-142)
+
+Aprop ha confirmat que carregarà els esdeveniments des del seu backend en arrencar i, després,
+un cop al dia; durant les proves preveu com a màxim una petició per minut. Per això no cal
+habilitar CORS per a Aprop: les peticions no surten d'un navegador.
+
+S'aplica el límit general de Nginx a `/api/v1/`: **20 peticions per segon i per IP**, amb una
+ràfega de 40 peticions; quan se supera, Nginx respon **429**. És un límit compartit amb la resta
+de l'API, no una quota per clau d'equip. La clau d'Aprop es configura com a secret a la VM i
+s'ha de lliurar a l'equip per un canal privat; el valor no es publica al repositori.
+
+El 17/11/2026 es va comprovar la URL pública des d'un client separat de la VM: `GET /health`
+va respondre 200, `GET /esdeveniments` sense credencial va respondre 401 i la mateixa consulta
+amb la clau d'Aprop va respondre 200 amb dades del calendari (interval 01/11–30/11/2026).
+No es va forçar el límit de peticions durant aquesta comprovació.
+
 ## Consumim de Mobilicat: rutes sostenibles
 
-Talaia necessita calcular una ruta entre l'origen de l'usuari i les coordenades d'un punt
-d'observació, tant per a una sortida immediata com per a una hora futura. Per al MVP mostrarem
-la informació de la ruta i permetrem tornar-la a consultar; el seguiment continu i les
-notificacions de canvis queden fora d'aquest primer contracte.
+El 17/11/2026, Mobilicat va enviar l'especificació OpenAPI completa de
+`https://api.mobili.cat`. La seva documentació és a <https://api.mobili.cat/docs>; en l'especificació
+rebuda l'operació `/routes` encara porta `x-not-implemented: true` i pot respondre 501. El client de
+Talaia està implementat, però cal que Mobilicat activi l'endpoint per poder comprovar-ne la
+disponibilitat en viu.
 
-### Dades que Talaia ha proposat enviar
+### Contracte de Mobilicat
 
-- Coordenades d'origen: latitud i longitud.
-- Coordenades de destí: latitud i longitud.
-- Instant de sortida desitjat en ISO 8601, que pot ser futur.
-- Modes sostenibles acceptats, si Mobilicat permet filtrar-los.
+```http
+GET https://api.mobili.cat/routes
+```
 
-### Dades que Talaia ha proposat rebre
+No requereix autenticació. Paràmetres de query:
+
+| Paràmetre | Format i significat |
+|---|---|
+| `from` | Origen `lat,lon`, graus decimals WGS84; latitud primer, sense notació exponencial. |
+| `to` | Destinació `lat,lon`, amb el mateix format. |
+| `time` | Opcional; instant ISO 8601 amb zona horària (`Z` o offset). Per defecte, l'instant actual. El signe `+` s'ha d'enviar codificat com `%2B`. |
+| `timePreference` | `DEPART_AT`: sortir no abans de `time` i arribar tan aviat com sigui possible. `ARRIVE_BY`: arribar no més tard de `time` i sortir tan tard com sigui possible. |
+| `modes` | Llista separada per comes: `WALK`, `BIKE`, `BIKE_SHARE`, `CAR`, `PUBLIC_TRANSPORT`. `BIKE` i `CAR` són alternatives porta a porta; no es combinen amb transport públic. `BIKE_SHARE` depèn de bicicletes i ancoratges disponibles. |
+| `limit` | Nombre màxim d'alternatives totals, d'1 a 5; per defecte 3. Compta també les rutes de cotxe i bici pròpia, i pot tornar-ne menys. |
+
+L'exemple de Mobilicat consulta tres propostes:
+
+```http
+GET /routes?from=41.3851%2C2.1734&to=41.4036%2C2.1744&time=2026-11-12T08%3A30%3A00%2B01%3A00&timePreference=ARRIVE_BY&modes=BIKE,WALK&limit=3
+```
+
+La resposta 200 té `{ "routes": [...] }`, ordenades de millor a pitjor fins a `limit`. Amb
+`DEPART_AT`, és primer la que arriba abans; en cas d'empat, es prioritzen menys transbordaments i
+menys distància a peu. `routes: []` és una resposta normal: no s'ha trobat cap proposta amb els
+modes i l'horari demanats. Cada ruta conté `startTime`, `endTime`, `durationSeconds` (inclou les
+esperes), `distanceMeters` (tots els trams), `walkDistanceMeters`, `transfers` i `stretches` en
+ordre. Els trams poden incloure modes, horaris, geometria, dades de línia i alertes de transport
+públic. Les alertes mantenen l'idioma de l'operador; la fiabilitat i les opcions d'accessibilitat no
+estan implementades. La resposta també pot ser 400 per paràmetres invàlids, 501 si l'operació encara
+no està implementada i 503 si el planificador no respon.
+
+Mobilicat demana almenys **5 segons entre consultes del mateix dispositiu**. El seu servei no ha
+confirmat encara una latència normal; Talaia ha fixat un timeout inicial de **5 segons**. Els tres
+reintents amb backoff exponencial eren opcionals i no es fan: es prioritza retornar de seguida un
+estat parcial si Mobilicat falla.
+
+### Contracte públic de Talaia i integració mòbil (TG-135 / TG-136)
+
+La fitxa i la consulta de ruta són independents. L'app obté primer la ubicació del dispositiu i
+continua carregant `GET /api/v1/punts/{id}`. Per a distància i temps, demana a Talaia:
+
+```http
+GET /api/v1/punts/6f1c2b7e-3a9d-4c58-9e0b-2d7f1a4c8b35/rutes?lat=41.3851&lon=2.1734
+```
+
+Requereix autenticació Talaia. `id` és el UUID d'un punt publicat; `lat` i `lon` són coordenades
+WGS84 de l'origen. Abans d'enviar-les a Mobilicat, l'API les arrodoneix a tres decimals (uns 100 m
+de precisió) per no transmetre la ubicació exacta del dispositiu. Talaia resol la destinació del
+catàleg i fa una sola consulta a Mobilicat amb l'instant actual en UTC o amb `sortida` (paràmetre
+opcional ISO 8601 amb zona horària), `DEPART_AT`, els cinc modes
+i `limit=5`. No repeteix automàticament la consulta. La ubicació forma part de la query i la
+resposta porta `Cache-Control: private, no-store`.
+
+La resposta `RutesPunt` a `@talaia/shared` conserva fins a cinc alternatives en l'ordre de
+Mobilicat. Cada alternativa conté `sortida`, `arribada`, `duradaSegons`, `distanciaMetres`,
+`transbordaments` i `trams` amb `sequence`, `mode` i, quan hi són, `transitMode`, `lineShortName`,
+`lineLongName` i `agencyName`. No s'hi exposen geometries, coordenades dels trams, alertes ni una
+fiabilitat que el proveïdor encara no calcula.
 
 ```json
 {
-  "data": [
+  "estat": "disponible",
+  "destacada": {
+    "sortida": "2026-11-18T10:00:00.000Z",
+    "arribada": "2026-11-18T10:27:00.000Z",
+    "duradaSegons": 1620,
+    "distanciaMetres": 9400,
+    "transbordaments": 1,
+    "trams": [
+      { "sequence": 0, "mode": "WALK" },
+      { "sequence": 1, "mode": "PUBLIC_TRANSPORT", "transitMode": "RAIL", "lineShortName": "R1", "agencyName": "Rodalies" }
+    ]
+  },
+  "alternatives": [
     {
-      "id": "ruta-123",
-      "sortida": "2026-10-17T18:05:00Z",
-      "arribada": "2026-10-17T19:42:00Z",
-      "durada_minuts": 97,
-      "distancia_metres": 68400,
-      "fiabilitat_percentatge": 86,
+      "sortida": "2026-11-18T10:00:00.000Z",
+      "arribada": "2026-11-18T10:27:00.000Z",
+      "duradaSegons": 1620,
+      "distanciaMetres": 9400,
+      "transbordaments": 1,
       "trams": [
-        {
-          "ordre": 1,
-          "mode": "a_peu",
-          "origen": { "nom": "Origen", "latitud": 41.387, "longitud": 2.17 },
-          "desti": { "nom": "Barcelona Sants", "latitud": 41.379, "longitud": 2.14 },
-          "inici": "2026-10-17T18:05:00Z",
-          "fi": "2026-10-17T18:20:00Z",
-          "durada_minuts": 15
-        },
-        {
-          "ordre": 2,
-          "mode": "tren",
-          "linia": "R2 Nord",
-          "origen": { "nom": "Barcelona Sants", "latitud": 41.379, "longitud": 2.14 },
-          "desti": { "nom": "Sant Celoni", "latitud": 41.69, "longitud": 2.489 },
-          "inici": "2026-10-17T18:27:00Z",
-          "fi": "2026-10-17T19:18:00Z",
-          "durada_minuts": 51,
-          "espera_minuts": 7
-        }
-      ],
-      "incidencies": []
+        { "sequence": 0, "mode": "WALK" },
+        { "sequence": 1, "mode": "PUBLIC_TRANSPORT", "transitMode": "RAIL", "lineShortName": "R1", "agencyName": "Rodalies" }
+      ]
     }
   ]
 }
 ```
 
-Per cada alternativa necessitem la durada i distància totals, l'hora de sortida i arribada, el
-percentatge de fiabilitat i una seqüència ordenada de trams. Cada tram ha d'identificar el mode,
-els llocs d'inici i final amb coordenades, els instants d'inici i final, i la línia o servei quan
-sigui transport públic. Les esperes, transbordaments i incidències han de quedar explícits perquè
-Talaia no recalculi ni contradigui l'itinerari de Mobilicat.
+`destacada` repeteix la primera alternativa. Amb `DEPART_AT`, és la que arriba abans, no
+necessàriament la de menor durada; la UI pot mostrar-ne la distància i el temps i permetre consultar
+les altres alternatives. Si un mode no apareix a la llista, no s'ha d'afirmar que no existeix cap
+ruta d'aquell mode.
 
-### Punts pendents de confirmació de Mobilicat
+| `estat` | Comportament de la resposta | Comportament esperat de l'app |
+|---|---|---|
+| `disponible` | `destacada` i `alternatives` amb fins a cinc rutes | Mostrar els totals de `destacada`; permetre veure les alternatives rebudes. |
+| `sense_rutes` | `destacada: null`, `alternatives: []` | Indicar que no s'han trobat propostes per a aquesta consulta; conservar la fitxa. |
+| `no_disponible` | `destacada: null`, `alternatives: []`; HTTP 200 | Indicar que distància i temps no estan disponibles; conservar la fitxa. |
 
-- URL base, path i mètode HTTP definitius.
-- Noms exactes dels camps i format final de la petició i la resposta.
-- Mecanisme d'autenticació i gestió de credencials.
-- Modes de transport i valors enumerats.
-- Significat i càlcul del percentatge de fiabilitat.
-- Freqüència d'actualització de retards i incidències.
-- Errors, límits de peticions, timeout i disponibilitat del servei.
-- Possibilitat de recalcular una ruta conservant el mateix identificador.
+JWT absent o invàlid dona 401 `unauthorized`; un compte bloquejat dona 403 `account_blocked`; un
+`id` o unes coordenades invàlides donen 400 `validation_error`; un punt que ja no sigui públic
+respon 404 `punt_not_found`, una consulta massa aviat dona 429 `too_many_requests` amb
+`Retry-After`, i una fallada d'autenticació o de base de dades respon 503 `service_unavailable` o
+`database_unavailable`. L'error extern, el timeout, el 501, el 503 o una resposta malformada de
+Mobilicat es transformen en `estat: no_disponible`: no han de fer desaparèixer la fitxa del punt.
 
-Fins que Mobilicat confirmi el contracte, aquesta secció és una **proposta**, no una dependència
-implementable. Quan responguin, s'actualitzaran els noms i exemples sense inventar-ne cap.
-
-La futura integració quedarà darrere d'una interfície `RouteProvider` a l'API de Talaia. Això
-permetrà simular el proveïdor durant el desenvolupament i substituir-lo sense afectar l'app.
+Mobilicat demana almenys **5 segons entre consultes del mateix dispositiu**. Com que les peticions
+surten de l'API de Talaia, l'API aplica l'interval tant per compte com globalment des de la seva
+instància; aquesta és la interpretació conservadora si Mobilicat identifica el client pel servidor
+que origina les peticions. La consulta rebutjada abans d'arribar al proveïdor respon 429
+`too_many_requests` amb `Retry-After`; no es presenta com una fallada de Mobilicat i la fitxa continua
+independent. El límit global actual permet fins a 12 consultes per minut compartides entre usuaris.
+El comptador és en memòria i pressuposa una sola instància d'API, com al desplegament actual. Si
+s'afegeixen rèpliques, caldrà fer-lo compartit. TG-136 també ha d'evitar duplicats mentre una
+consulta és en curs i respectar `Retry-After`. El botó «Com arribar» continua obrint el deep link
+del mapa instal·lat al mòbil.

@@ -1,5 +1,6 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { Directions, Gesture, GestureHandlerRootView, State } from 'react-native-gesture-handler';
+import { fireGestureHandler } from 'react-native-gesture-handler/jest-utils';
 
 import { MonthCalendar } from '../MonthCalendar';
 
@@ -26,6 +27,40 @@ function renderCalendar(onChange = jest.fn(), firstDay: 0 | 1 = 1) {
 }
 
 describe('MonthCalendar', () => {
+  it('canvia de mes lliscant en les dues direccions i respecta els límits', async () => {
+    const fling = jest.spyOn(Gesture, 'Fling');
+    try {
+      await renderCalendar();
+      const swipe = async (direction: number) => {
+        const gesture = fling.mock.results
+          .filter(
+            (result) => result.type === 'return' && result.value.config.direction === direction,
+          )
+          .at(-1)?.value;
+        expect(gesture).toBeDefined();
+        await act(() =>
+          fireGestureHandler(gesture, [
+            { state: State.BEGAN },
+            { state: State.ACTIVE },
+            { state: State.END },
+          ]),
+        );
+      };
+      await swipe(Directions.LEFT);
+      expect(screen.getByRole('header', { name: 'nov 2026' })).toBeOnTheScreen();
+      await swipe(Directions.LEFT);
+      await swipe(Directions.LEFT);
+      expect(screen.getByRole('header', { name: 'des 2026' })).toBeOnTheScreen();
+      await swipe(Directions.RIGHT);
+      expect(screen.getByRole('header', { name: 'nov 2026' })).toBeOnTheScreen();
+      await swipe(Directions.RIGHT);
+      await swipe(Directions.RIGHT);
+      expect(screen.getByRole('header', { name: 'oct 2026' })).toBeOnTheScreen();
+    } finally {
+      fling.mockRestore();
+    }
+  });
+
   it('mostra el mes del dia triat, amb la setmana que comença en dilluns', async () => {
     await renderCalendar();
     expect(screen.getByRole('header', { name: 'oct 2026' })).toBeOnTheScreen();

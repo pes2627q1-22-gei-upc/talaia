@@ -25,9 +25,13 @@ export function createExecutor(
         return enCurs;
       }
       enCurs = recalcula(aturada.signal)
-        .then(({ punts, hores, iniciadaEl, acabadaEl }) => {
+        .then(({ punts, hores, iniciadaEl, acabadaEl, notificacions }) => {
           const segons = (acabadaEl.getTime() - iniciadaEl.getTime()) / 1000;
-          console.log(`[worker] ${motiu}: índex de ${punts} punts (${hores} hores) en ${segons} s`);
+          const alertes =
+            notificacions === undefined ? '' : `; notificacions d'alertes noves: ${notificacions}`;
+          console.log(
+            `[worker] ${motiu}: índex de ${punts} punts (${hores} hores) en ${segons} s${alertes}`,
+          );
         })
         .catch((error: unknown) => {
           // L'error ja és a `execucions_worker`; es torna a provar a l'hora següent.

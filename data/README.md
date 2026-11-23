@@ -9,6 +9,8 @@ seeds de punts i fenòmens). Els fitxers grans no es versionen.
   rasteritzat a GeoTIFF, i l'`sqm` de cada punt (TG-97).
 - [Perfil d'horitzó](#perfil-dhoritzó-tg-116): el relleu que tapa el cel de cada punt, amb el model
   d'elevacions de 5 m de l'ICGC (TG-116).
+- [Contorn de Catalunya](#contorn-de-catalunya-tg-130): el límit oficial de l'ICGC, simplificat, que
+  fa servir `GET /visibilitat` per saber si un lloc és dins de Catalunya (TG-130).
 
 `data` és un workspace (`@talaia/data`): `npm install` a l'arrel n'instal·la l'única dependència
 (`geotiff`), i `npm test -w data` executa els seus tests (`node --test`, sense Jest).
@@ -21,7 +23,7 @@ Cada `Feature` és un `Point` amb aquestes propietats:
 
 | Propietat | Tipus | Notes |
 |---|---|---|
-| `slug` | text | Únic i estable (`kebab-case`). El seed fa *upsert* per `slug`. |
+| `slug` | text | Únic i estable (`kebab-case`). El seed insereix per `slug` només si encara no existeix. |
 | `nom`, `municipi`, `descripcio` | text | En català. |
 | `altitud` | enter o `null` | Metres. S'omple amb `fill-altitudes.ts`. |
 | `sqm` | nombre (2 decimals) o `null` | Brillantor del cel al zenit en mag/arcsec² segons el mapa de la Generalitat; com més alt, més fosc. `null` = fora del mapa. S'omple amb `fill-sqm.ts`. |
@@ -31,6 +33,10 @@ Cada `Feature` és un `Point` amb aquestes propietats:
 | `horitzo` | 360 nombres (1 decimal) o `null` | Alçada aparent de l'horitzó en graus per a cada grau d'azimut (posició 0 = N, 90 = E), segons el model d'elevacions de l'ICGC. S'omple amb `fill-horitzo.ts`. |
 
 Les coordenades venen del [geocodificador de l'ICGC](https://eines.icgc.cat/geocodificador) (consulta del 12/10/2026). Tots els punts són `origen = 'OFICIAL'` (sense creador) i `estat = 'PUBLICAT'`. L'índex **no** és aquí: el calcula el worker.
+
+Des de la web d'administració (TG-174) es poden crear, editar i retirar punts directament a la base de dades, sense passar per aquest fitxer. El seed fa `on conflict (slug) do nothing`: només insereix slugs que encara no existeixen i deixa intactes tots els camps d'una fila existent, inclosos l'estat, les metadades i la ubicació. Per tant, tornar a executar `db push --include-seed` no sobreescriu canvis fets des de l'administració. Corregir el GeoJSON tampoc actualitza les files d'una base que ja existeix; aquesta correcció s'ha d'aplicar explícitament des de la web o amb una migració.
+
+`db reset` esborra la base de dades i la torna a crear a partir de migracions i seeds. Abans d'un reset que hagi de conservar canvis fets des de l'administració, fes-ne una còpia. Per incloure punts oficials nous o metadades editades al nou catàleg inicial, incorpora'ls al GeoJSON i regenera el seed abans del reset; preserva i restaura també les dades relacionades que no són al catàleg. No facis servir `db reset` com a actualització ordinària.
 
 ### Flux
 
@@ -59,7 +65,7 @@ La font és el **Mapa de brillantor del cel nocturn de Catalunya 2024** (General
 | `scripts/fill-sqm.ts` | Omple l'`sqm` de tots els punts del GeoJSON a partir del GeoTIFF (2 decimals; cel·la més propera fins a 2 km si cal, i ho diu) |
 | `scripts/mapa-foscor.test.ts` | Tests amb cel·les reals de la font: `npm test -w data` |
 
-El GeoTIFF es pot comprovar amb GDAL si es té instal·lat (`gdalinfo -stats data/raw/mapa-sqm-2024.tif`; `gdallocationinfo -wgs84 … 0.7112 42.0294` dona el mateix que `sqmA`). Quan la Generalitat actualitzi el mapa: `build-mapa-foscor.ts` → `fill-sqm.ts` → `build-seed-punts.ts`, i els canvis d'`sqm` queden al diff del GeoJSON.
+El GeoTIFF es pot comprovar amb GDAL si es té instal·lat (`gdalinfo -stats data/raw/mapa-sqm-2024.tif`; `gdallocationinfo -wgs84 … 0.7112 42.0294` dona el mateix que `sqmA`). Quan la Generalitat actualitzi el mapa: `build-mapa-foscor.ts` → `fill-sqm.ts` → `build-seed-punts.ts`, i els canvis d'`sqm` queden al diff del GeoJSON. Com que el seed només insereix els slugs que encara no existeixen, generar dades noves no actualitza els punts d'una base existent. Per propagar-hi canvis calculats (`sqm`, `horitzo` o `horitzo_obert`), cal afegir i revisar una migració amb un `UPDATE` explícit per als slugs i camps afectats.
 
 ## Perfil d'horitzó (TG-116)
 
@@ -80,3 +86,30 @@ Terra i la refracció terrestre (k = 0,13): és l'alçada **aparent**.
 **El model només cobreix Catalunya.** Fora (el mar, l'Aragó, França, Andorra) compta el nivell del
 mar: sobre el mar és exacte i sobre terra és un mínim. El script diu quins azimuts de cada punt
 surten de Catalunya per terra, i també on `horitzo_obert` diu obert però el relleu tapa més de 3°.
+
+## Contorn de Catalunya (TG-130)
+
+Decisió i context: [ADR-0031](../docs/decisions/0031-visibilitat-ubicacio-al-moment.md).
+
+La font és la capa de **províncies a escala 1:50.000** de les Divisions administratives de l'ICGC
+(CC BY 4.0), pel seu WFS (`divisions_administratives_provincies_50000`, en GeoJSON i WGS84). Les
+quatre províncies comparteixen exactament els vèrtexs de les fronteres internes: la unió és el
+conjunt de segments que només surten en una, encadenats en anells. En surt el contorn de Catalunya
+amb la costa, l'enclavament de Llívia i els illots; Andorra en queda fora. Es simplifica amb
+Douglas-Peucker a **200 m**, es deixen fora els illots de menys de 0,02 km² i les dàrsenes de port
+(forats de menys d'1 km²), i s'escriu com a MultiPolygon a
+`services/api/src/visibilitat/contornCatalunya.ts` (uns 1.300 vèrtexs, 30 KB), que **sí que es
+versiona**. L'API hi afegeix un marge d'1,5 km (més que la simplificació): cap lloc de Catalunya no
+queda fora.
+
+| Fitxer | Què fa |
+|---|---|
+| `scripts/contorn-catalunya.ts` | Mòdul: descàrrega del WFS, unió de les províncies, simplificació, àrea, forats i escriptura del mòdul de l'API |
+| `scripts/build-contorn-catalunya.ts` | Descarrega les províncies (`data/raw/provincies-icgc-50000.json`, ~3 MB, no versionat) i escriu el mòdul. Amb un fitxer com a argument, no descarrega res |
+| `scripts/contorn-catalunya.test.ts` | Tests amb províncies sintètiques (veïnes, un enclavament, un exclavament, un illot): `npm test -w data` |
+
+```bash
+node data/scripts/build-contorn-catalunya.ts    # descarrega i regenera el mòdul de l'API
+```
+
+Quan l'ICGC actualitzi els límits, es torna a executar i el canvi queda al diff del mòdul.

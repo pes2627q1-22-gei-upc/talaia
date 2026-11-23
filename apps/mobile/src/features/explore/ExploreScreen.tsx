@@ -1,10 +1,12 @@
 import type { ObjectiuObservacio } from '@talaia/shared';
 import { Image } from 'expo-image';
 import type { PropsWithChildren } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { colors, motion, sizes, spacing } from '@/core/theme/tokens';
+import { makeStyles, useNightTint } from '@/core/theme/theme';
+import { motion, sizes, spacing } from '@/core/theme/tokens';
 import { AppText } from '@/shared/ui/AppText';
 import { Button } from '@/shared/ui/Button';
 import { SegmentedControl } from '@/shared/ui/SegmentedControl';
@@ -29,6 +31,7 @@ const GOAL_ICONS: Record<ObjectiuObservacio, number> = {
 const locationIcon = require('@/assets/images/explora/ubicacio.svg');
 const clockIcon = require('@/assets/images/explora/rellotge.svg');
 const searchIcon = require('@/assets/images/explora/cerca.svg');
+const mapIcon = require('@/assets/images/explora/mapa.svg');
 
 /** Entrada en cascada, com `Screen`: fosa i 6 pt, com a molt 6 blocs. */
 function Enter({ index, children }: PropsWithChildren<{ index: number }>) {
@@ -46,130 +49,157 @@ function Enter({ index, children }: PropsWithChildren<{ index: number }>) {
 
 /** «Què vols veure?» (HU01, mockup 02): l'inici de la pestanya Explora. */
 export function ExploreScreen() {
+  const nightTintOnPrimary = useNightTint('nit');
+  const nightTint = useNightTint();
+  const styles = useStyles();
   const vm = useExploreViewModel();
   const [firstRow, secondRow] = [vm.goals.slice(0, 3), vm.goals.slice(3)];
 
   return (
     <View style={styles.root}>
-      <ScrollView
-        contentInsetAdjustmentBehavior="automatic"
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
-      >
-        <Enter index={0}>
-          <AppText variant="body" color="boira">
-            {vm.greeting}
-          </AppText>
-          <AppText variant="display" accessibilityRole="header" style={styles.title}>
-            {vm.title}
-          </AppText>
-        </Enter>
+      {/*
+        `contentInsetAdjustmentBehavior` només aparta el contingut de la barra d'estat a iOS: a
+        Android la salutació quedava sota l'hora. L'àrea segura de dalt hi val a les dues
+        plataformes. La de baix ja la deixa la barra de pestanyes, que queda a sota (ADR-0037).
+      */}
+      <SafeAreaView edges={['top']} style={styles.safeArea} testID="explore-safe-area">
+        <ScrollView
+          contentInsetAdjustmentBehavior="automatic"
+          contentContainerStyle={styles.content}
+          showsVerticalScrollIndicator={false}
+        >
+          <Enter index={0}>
+            <AppText variant="display" accessibilityRole="header">
+              {vm.title}
+            </AppText>
+          </Enter>
 
-        <Enter index={1}>
-          <View style={styles.goals}>
-            {[firstRow, secondRow].map((row, index) => (
-              <View key={index} style={styles.goalRow}>
-                {row.map((goal) => (
-                  <GoalCard
-                    key={goal.id}
-                    label={goal.label}
-                    icon={GOAL_ICONS[goal.id]}
-                    selected={goal.selected}
-                    onPress={goal.onPress}
-                    badge={goal.badge}
-                    disabled={goal.disabled}
-                  />
-                ))}
-              </View>
-            ))}
-            <GoalCard
-              label={vm.constellations.label}
-              hint={vm.constellations.hint}
-              badge={vm.constellations.badge}
-              icon={GOAL_ICONS.constellacions}
-              selected={vm.constellations.selected}
-              disabled={vm.constellations.disabled}
-              onPress={vm.constellations.onPress}
-            />
-          </View>
-        </Enter>
+          <Enter index={1}>
+            <View style={styles.goals}>
+              {[firstRow, secondRow].map((row, index) => (
+                <View key={index} style={styles.goalRow}>
+                  {row.map((goal) => (
+                    <GoalCard
+                      key={goal.id}
+                      label={goal.label}
+                      icon={GOAL_ICONS[goal.id]}
+                      selected={goal.selected}
+                      onPress={goal.onPress}
+                      badge={goal.badge}
+                      disabled={goal.disabled}
+                    />
+                  ))}
+                </View>
+              ))}
+              <GoalCard
+                label={vm.constellations.label}
+                hint={vm.constellations.hint}
+                badge={vm.constellations.badge}
+                icon={GOAL_ICONS.constellacions}
+                selected={vm.constellations.selected}
+                disabled={vm.constellations.disabled}
+                onPress={vm.constellations.onPress}
+              />
+            </View>
+          </Enter>
 
-        <Enter index={2}>
-          <AppText variant="link" color="boira" style={styles.sectionTitle}>
-            {vm.originTitle}
-          </AppText>
-          <FieldRow
-            icon={locationIcon}
-            label={vm.origin.label}
-            hint={vm.origin.hint}
-            loading={vm.origin.state === 'loading'}
-            onPress={vm.origin.onPress}
-          />
-        </Enter>
-
-        <Enter index={3}>
-          <AppText variant="link" color="boira" style={styles.sectionTitle}>
-            {vm.whenTitle}
-          </AppText>
-          <SegmentedControl
-            options={vm.days.options}
-            selectedIndex={vm.days.selectedIndex}
-            onChange={vm.days.onChange}
-            onReselect={vm.days.onReselect}
-          />
-          <View style={styles.gap}>
+          <Enter index={2}>
+            <AppText variant="link" color="boira" style={styles.sectionTitle}>
+              {vm.originTitle}
+            </AppText>
             <FieldRow
-              icon={clockIcon}
-              label={vm.range.label}
-              hint={vm.range.hint}
-              onPress={vm.range.onPress}
+              icon={locationIcon}
+              label={vm.origin.label}
+              hint={vm.origin.hint}
+              loading={vm.origin.state === 'loading'}
+              onPress={vm.origin.onPress}
             />
-          </View>
-        </Enter>
+          </Enter>
 
-        <Enter index={4}>
-          <View style={[styles.travelHeader, styles.sectionTitle]}>
-            <AppText variant="link" color="boira">
-              {vm.travel.title}
+          <Enter index={3}>
+            <AppText variant="link" color="boira" style={styles.sectionTitle}>
+              {vm.whenTitle}
             </AppText>
-            <AppText variant="label">{vm.travel.label}</AppText>
-          </View>
-          <Slider
-            value={vm.travel.value}
-            min={vm.travel.min}
-            max={vm.travel.max}
-            step={vm.travel.step}
-            onChange={vm.travel.onChange}
-            accessibilityLabel={vm.travel.title}
-            accessibilityValueText={vm.travel.label}
-          />
-          <View style={styles.limits}>
-            <AppText variant="caption" color="boira">
-              {vm.travel.minLabel}
-            </AppText>
-            <AppText variant="caption" color="boira">
-              {vm.travel.maxLabel}
-            </AppText>
-          </View>
-        </Enter>
+            <SegmentedControl
+              options={vm.days.options}
+              selectedIndex={vm.days.selectedIndex}
+              onChange={vm.days.onChange}
+              onReselect={vm.days.onReselect}
+            />
+            <View style={styles.gap}>
+              <FieldRow
+                icon={clockIcon}
+                label={vm.range.label}
+                hint={vm.range.hint}
+                onPress={vm.range.onPress}
+              />
+            </View>
+          </Enter>
 
-        <Enter index={5}>
-          <Button
-            label={vm.cta.label}
-            onPress={vm.cta.onPress}
-            disabled={vm.cta.disabled}
-            haptic
-            icon={<Image source={searchIcon} style={styles.ctaIcon} accessible={false} />}
-            style={styles.cta}
-          />
-          <Button
-            label={vm.browse.label}
-            onPress={vm.browse.onPress}
-            variant="text"
-            style={styles.browse}
-          />
-        </Enter>
-      </ScrollView>
+          <Enter index={4}>
+            <View style={[styles.travelHeader, styles.sectionTitle]}>
+              <AppText variant="link" color="boira">
+                {vm.travel.title}
+              </AppText>
+              <AppText variant="label">{vm.travel.label}</AppText>
+            </View>
+            <Slider
+              value={vm.travel.value}
+              min={vm.travel.min}
+              max={vm.travel.max}
+              step={vm.travel.step}
+              onChange={vm.travel.onChange}
+              accessibilityLabel={vm.travel.title}
+              accessibilityValueText={vm.travel.label}
+            />
+            <View style={styles.limits}>
+              <AppText variant="caption" color="boira">
+                {vm.travel.minLabel}
+              </AppText>
+              <AppText variant="caption" color="boira">
+                {vm.travel.maxLabel}
+              </AppText>
+            </View>
+          </Enter>
+
+          <Enter index={5}>
+            <Button
+              label={vm.cta.label}
+              onPress={vm.cta.onPress}
+              disabled={vm.cta.disabled}
+              haptic
+              icon={
+                <Image
+                  tintColor={nightTintOnPrimary}
+                  source={searchIcon}
+                  style={styles.ctaIcon}
+                  accessible={false}
+                />
+              }
+              style={styles.cta}
+            />
+            {/*
+              TG-265: als tests de guerrilla, l'enllaç de text passava desapercebut. Un botó
+              secundari amb icona, a tota l'amplada, el fa visible sense competir amb la cerca.
+            */}
+            <Button
+              label={vm.browse.label}
+              onPress={vm.browse.onPress}
+              variant="secondary"
+              icon={
+                <Image
+                  tintColor={nightTint}
+                  source={mapIcon}
+                  testID="explore-map-icon"
+                  style={styles.ctaIcon}
+                  accessible={false}
+                />
+              }
+              style={styles.browse}
+            />
+          </Enter>
+        </ScrollView>
+      </SafeAreaView>
 
       <CalendarSheet {...vm.calendar} />
       <TimeRangeSheet {...vm.rangeSheet} />
@@ -177,10 +207,10 @@ export function ExploreScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(({ colors }) => ({
   root: { flex: 1, backgroundColor: colors.nit },
+  safeArea: { flex: 1 },
   content: { paddingHorizontal: spacing.ml, paddingTop: spacing.sm, paddingBottom: spacing.xl },
-  title: { marginTop: spacing.sm },
   goals: { marginTop: spacing.ms, gap: spacing.sm },
   goalRow: { flexDirection: 'row', gap: spacing.sm },
   sectionTitle: { marginTop: spacing.sm, marginBottom: spacing.sm },
@@ -189,6 +219,5 @@ const styles = StyleSheet.create({
   limits: { flexDirection: 'row', justifyContent: 'space-between' },
   ctaIcon: { width: sizes.icon, height: sizes.icon },
   cta: { marginTop: spacing.ms },
-  // Centrat sota el botó principal, amb aire abans de la barra de pestanyes.
-  browse: { alignSelf: 'center', marginTop: spacing.sm },
-});
+  browse: { marginTop: spacing.sm },
+}));

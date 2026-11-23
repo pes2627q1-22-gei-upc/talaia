@@ -13,8 +13,11 @@
     "@tanstack/react-query": "^5.104.1",
     "expo": "~58.0.19",
     "expo-apple-authentication": "~58.0.2",
+    "expo-brightness": "~58.0.3",
+    "expo-calendar": "~58.0.8",
     "expo-constants": "~58.0.13",
     "expo-crypto": "~58.0.7",
+    "expo-dev-client": "~58.0.18",
     "expo-device": "~58.0.5",
     "expo-font": "~58.0.10",
     "expo-glass-effect": "~58.0.5",
@@ -24,6 +27,7 @@
     "expo-linking": "~58.0.14",
     "expo-localization": "~58.0.5",
     "expo-location": "~58.0.19",
+    "expo-notifications": "~58.1.8",
     "expo-router": "~58.0.26",
     "expo-secure-store": "~58.0.2",
     "expo-splash-screen": "~58.0.11",
@@ -71,6 +75,7 @@
       {
         "displayName": "app",
         "preset": "jest-expo",
+        "globalSetup": "<rootDir>/jest.timezone.js",
         "testEnvironment": "@shopify/react-native-skia/jestEnv.js",
         "transform": {
           "[/\\\\]NightMap\\.tsx$": [
@@ -111,7 +116,8 @@
           "/node_modules/",
           "/src/features/map/__tests__/NightMap\\.test\\.tsx",
           "/src/features/map/__tests__/pointMarkers\\.images\\.test\\.ts",
-          "/src/features/point/__tests__/PointLocationMap\\.test\\.tsx"
+          "/src/features/point/__tests__/PointLocationMap\\.test\\.tsx",
+          "/src/features/alerts/__tests__/ZonePickerMap\\.test\\.tsx"
         ]
       },
       {
@@ -120,7 +126,8 @@
         "testMatch": [
           "<rootDir>/src/features/map/__tests__/NightMap.test.tsx",
           "<rootDir>/src/features/map/__tests__/pointMarkers.images.test.ts",
-          "<rootDir>/src/features/point/__tests__/PointLocationMap.test.tsx"
+          "<rootDir>/src/features/point/__tests__/PointLocationMap.test.tsx",
+          "<rootDir>/src/features/alerts/__tests__/ZonePickerMap.test.tsx"
         ],
         "transformIgnorePatterns": [
           "/node_modules/(?!(.pnpm|react-native|@react-native|@react-native-community|expo|@expo|@expo-google-fonts|react-navigation|@react-navigation|@sentry/react-native|native-base|standard-navigation|@shopify/react-native-skia))",

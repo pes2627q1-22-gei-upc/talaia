@@ -1,9 +1,11 @@
 import { Image } from 'expo-image';
 import { useMemo } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import Animated, { FadeInDown, FadeOutDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { colors, radii, sizes, spacing } from '@/core/theme/tokens';
+import { makeStyles, themes, useTheme } from '@/core/theme/theme';
+import { motion, radii, sizes, spacing } from '@/core/theme/tokens';
 import { AppText } from '@/shared/ui/AppText';
 import { PressableScale } from '@/shared/ui/PressableScale';
 
@@ -11,9 +13,8 @@ import { IndexLegend, RecommendationsSummary } from '../recommendations/Recommen
 import { RecommendationsSheet } from '../recommendations/RecommendationsSheet';
 
 import NightMap from './NightMap';
+import { SpotCard } from './SpotCard';
 import { useMapViewModel } from './useMapViewModel';
-
-const chrome = { background: colors.nit, text: colors.boira, link: colors.lluna };
 
 /**
  * Marges de l'enquadrament (mockup 03): la capçalera i la llegenda a dalt, i el full a baix (obert
@@ -24,21 +25,33 @@ const FIT_BOTTOM = 390;
 const FIT_BOTTOM_COLLAPSED = 170;
 const FIT_SIDE = 44;
 
+// Les capes del canvas van amb la paleta normal: en mode nit, el filtre les passa a vermell (ADR-0032).
+const { colors: normal } = themes.normal;
 const markerPalette = {
-  background: colors.nit,
-  clusterBackground: colors.crep,
-  clusterBorder: colors.vora,
-  text: colors.lluna,
-  unknown: colors.boira,
-  ras: colors.ras,
-  jus: colors.jus,
-  tap: colors.tap,
+  background: normal.nit,
+  clusterBackground: normal.crep,
+  clusterBorder: normal.vora,
+  text: normal.lluna,
+  unknown: normal.boira,
+  ras: normal.ras,
+  jus: normal.jus,
+  tap: normal.tap,
 };
 
+/** En mode nit, cada franja amb una forma, en el color més clar: el filtre la passa al vermell més viu. */
+const nightMarkerPalette = {
+  ...markerPalette,
+  ras: normal.lluna,
+  jus: normal.lluna,
+  tap: normal.lluna,
+  shapes: true,
+};
+
+// Les icones porten el traç negre: el color el posa `tintColor`, perquè canvia amb el tema.
 const retryIcon = {
   uri: `data:image/svg+xml;utf8,${encodeURIComponent(`
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-      fill="none" stroke="${colors.far}" stroke-width="1.8"
+      fill="none" stroke="#000" stroke-width="1.8"
       stroke-linecap="round" stroke-linejoin="round">
       <path d="M11 19.7A7.7 7.7 0 1 1 18.7 12V14.7"/>
       <path d="M16.6 12.6L18.7 14.7L20.8 12.6"/>
@@ -49,12 +62,50 @@ const retryIcon = {
 const backIcon = {
   uri: `data:image/svg+xml;utf8,${encodeURIComponent(`
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-      fill="none" stroke="${colors.lluna}" stroke-width="2"
+      fill="none" stroke="#000" stroke-width="2"
       stroke-linecap="round" stroke-linejoin="round">
       <path d="M14.5 6L8.5 12L14.5 18"/>
     </svg>
   `)}`,
 };
+
+/** La fletxa de navegació de «Des d'on surts» (mockup 02), del color de la ubicació (`ubicacio`). */
+const nearbyIcon = {
+  uri: `data:image/svg+xml;utf8,${encodeURIComponent(`
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 22 22"
+      fill="none" stroke="#000" stroke-width="1.83"
+      stroke-linecap="round" stroke-linejoin="round">
+      <path d="M2.75 10.08L19.25 2.75L11.92 19.25L10.08 11.92L2.75 10.08Z"/>
+    </svg>
+  `)}`,
+};
+
+/** L'agulla de «Toca el mapa» (mockup 03): el punt de sortida que es tria. */
+const pinIcon = {
+  uri: `data:image/svg+xml;utf8,${encodeURIComponent(`
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+      fill="none" stroke="#000" stroke-width="1.8"
+      stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11Z"/>
+      <circle cx="12" cy="10" r="2.3"/>
+    </svg>
+  `)}`,
+};
+
+const closeIcon = {
+  uri: `data:image/svg+xml;utf8,${encodeURIComponent(`
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+      fill="none" stroke="#000" stroke-width="1.8" stroke-linecap="round">
+      <path d="M7 7L17 17M17 7L7 17"/>
+    </svg>
+  `)}`,
+};
+
+/** Entra pujant 6 pt i fos, com els blocs de «Què vols veure?»; surt avall, més de pressa. */
+const enterUp = FadeInDown.duration(motion.base)
+  .easing(motion.enter)
+  .withInitialValues({ opacity: 0, transform: [{ translateY: 6 }] });
+const exitDown = FadeOutDown.duration(motion.fast).easing(motion.exit);
 
 /**
  * Mapa nocturn amb relleu 3D i punts d'observació segons el seu índex. Amb una cerca de «Què vols
@@ -62,6 +113,15 @@ const backIcon = {
  */
 export function MapScreen() {
   const vm = useMapViewModel();
+  const styles = useStyles();
+  const { name, colors: theme } = useTheme();
+  const night = name === 'vermell';
+  // Els controls i els marcadors HTML queden fora del filtre del mode nit: van amb el tema.
+  const chrome = useMemo(
+    () => ({ background: theme.nit, text: theme.boira, link: theme.lluna }),
+    [theme],
+  );
+  const origin = vm.origin && { ...vm.origin, color: theme.far };
   const insets = useSafeAreaInsets();
   const canRetry = vm.notice?.kind === 'error' || vm.notice?.kind === 'empty';
   const recommendations = vm.recommendations;
@@ -88,6 +148,7 @@ export function MapScreen() {
   return (
     <View style={styles.container}>
       <NightMap
+        night={night}
         mapStyle={vm.mapStyle}
         camera={vm.camera}
         chrome={chrome}
@@ -96,12 +157,14 @@ export function MapScreen() {
         userHeading={vm.userHeading}
         locationActive={vm.locationActive}
         userLocationLabel={vm.userLocationLabel}
-        userLocationColor={colors.ubicacio}
+        userLocationColor={theme.ubicacio}
         points={vm.points}
-        markerPalette={markerPalette}
+        markerPalette={night ? nightMarkerPalette : markerPalette}
         onPointPress={vm.openPoint}
         cluster={!recommendations}
         fit={fit}
+        onMapPress={vm.onMapPress}
+        origin={origin}
         dom={{
           // Transparent: un WKWebView opac pinta blanc fins que la pàgina fa el primer dibuix.
           // Mentrestant es veu el fons nit del contenidor.
@@ -120,72 +183,185 @@ export function MapScreen() {
             accessibilityLabel={vm.back.label}
             style={styles.back}
           >
-            <Image source={backIcon} style={styles.backIcon} accessible={false} />
+            <Image
+              source={backIcon}
+              tintColor={theme.lluna}
+              style={styles.backIcon}
+              accessible={false}
+            />
           </PressableScale>
           {recommendations && <RecommendationsSummary header={recommendations.header} />}
-        </View>
-        {recommendations && <IndexLegend items={recommendations.header.legend} />}
-      </View>
-      {recommendations && <RecommendationsSheet sheet={recommendations.sheet} />}
-      {vm.notice && (
-        <View
-          style={[styles.notice, { top: insets.top + sizes.button + spacing.sm }]}
-          accessibilityLiveRegion="polite"
-          accessibilityState={{ busy: vm.notice.kind === 'loading' }}
-        >
-          {canRetry ? (
-            <View style={styles.retryContainer}>
-              <View style={styles.noticeText}>
-                <AppText variant="label">{vm.notice.title}</AppText>
-                {vm.notice.description && (
-                  <AppText variant="small" color="boira">
-                    {vm.notice.description}
-                  </AppText>
-                )}
-              </View>
-
-              <PressableScale
-                onPress={vm.retry}
-                accessibilityLabel={vm.retryLabel}
-                accessibilityRole="button"
-                style={styles.retryActionRow}
-                hitSlop={spacing.ms}
-              >
-                <AppText variant="label" style={styles.retryText}>
-                  {vm.retryLabel}
-                </AppText>
-                <Image source={retryIcon} style={styles.retryIcon} accessible={false} />
-              </PressableScale>
-            </View>
-          ) : (
-            <View style={styles.noticeRow}>
-              {vm.notice.kind === 'loading' && (
-                <ActivityIndicator
-                  testID="map-loading-indicator"
-                  size="small"
-                  color={colors.far}
-                  accessibilityElementsHidden
-                  importantForAccessibility="no"
-                />
-              )}
-              <View style={styles.noticeText}>
-                <AppText variant="label">{vm.notice.title}</AppText>
-                {vm.notice.description && (
-                  <AppText variant="small" color="boira">
-                    {vm.notice.description}
-                  </AppText>
-                )}
-              </View>
-            </View>
+          {vm.hint && (
+            <RecommendationsSummary header={{ ...vm.hint, eventDate: null, legend: [] }} />
           )}
         </View>
+        {recommendations && <IndexLegend items={recommendations.header.legend} />}
+        {vm.notice && (
+          <View
+            style={styles.notice}
+            accessibilityLiveRegion="polite"
+            accessibilityState={{ busy: vm.notice.kind === 'loading' }}
+          >
+            {canRetry ? (
+              <View style={styles.retryContainer}>
+                <View style={styles.noticeText}>
+                  <AppText variant="label">{vm.notice.title}</AppText>
+                  {vm.notice.description && (
+                    <AppText variant="small" color="boira">
+                      {vm.notice.description}
+                    </AppText>
+                  )}
+                </View>
+
+                <PressableScale
+                  onPress={vm.retry}
+                  accessibilityLabel={vm.retryLabel}
+                  accessibilityRole="button"
+                  style={styles.retryActionRow}
+                  hitSlop={spacing.ms}
+                >
+                  <AppText variant="label" style={styles.retryText}>
+                    {vm.retryLabel}
+                  </AppText>
+                  <Image
+                    source={retryIcon}
+                    tintColor={theme.far}
+                    style={styles.retryIcon}
+                    accessible={false}
+                  />
+                </PressableScale>
+              </View>
+            ) : (
+              <View style={styles.noticeRow}>
+                {vm.notice.kind === 'loading' && (
+                  <ActivityIndicator
+                    testID="map-loading-indicator"
+                    size="small"
+                    color={theme.far}
+                    accessibilityElementsHidden
+                    importantForAccessibility="no"
+                  />
+                )}
+                <View style={styles.noticeText}>
+                  <AppText variant="label">{vm.notice.title}</AppText>
+                  {vm.notice.description && (
+                    <AppText variant="small" color="boira">
+                      {vm.notice.description}
+                    </AppText>
+                  )}
+                </View>
+              </View>
+            )}
+          </View>
+        )}
+      </View>
+      {recommendations && (
+        // La barra de pestanyes queda sota la pantalla (ADR-0037): el full no ha de deixar-ne marge.
+        <View testID="ranking-safe-area" pointerEvents="box-none" style={StyleSheet.absoluteFill}>
+          <View style={styles.rankingViewport} pointerEvents="box-none">
+            <RecommendationsSheet sheet={recommendations.sheet} />
+          </View>
+        </View>
+      )}
+      {vm.nearby && (
+        <Animated.View
+          entering={enterUp}
+          exiting={exitDown}
+          style={[styles.nearbyDock, { bottom: spacing.md }]}
+          pointerEvents="box-none"
+        >
+          <PressableScale
+            haptic
+            onPress={vm.nearby.onPress}
+            accessibilityLabel={vm.nearby.label}
+            accessibilityHint={vm.nearby.hint}
+            accessibilityState={{ busy: vm.nearby.loading }}
+            style={styles.nearby}
+          >
+            {vm.nearby.loading ? (
+              <ActivityIndicator
+                testID="nearby-loading"
+                size="small"
+                color={theme.ubicacio}
+                style={styles.nearbyIcon}
+              />
+            ) : (
+              <Image
+                source={nearbyIcon}
+                tintColor={theme.ubicacio}
+                style={styles.nearbyIcon}
+                accessible={false}
+              />
+            )}
+            <AppText variant="label">{vm.nearby.label}</AppText>
+          </PressableScale>
+        </Animated.View>
+      )}
+      {vm.spot && (
+        <Animated.View
+          entering={enterUp}
+          exiting={exitDown}
+          style={[styles.spot, { bottom: spacing.md }]}
+        >
+          <SpotCard card={vm.spot} />
+        </Animated.View>
+      )}
+      {vm.picker && (
+        <Animated.View
+          entering={enterUp}
+          exiting={exitDown}
+          style={[styles.picker, { bottom: spacing.md }]}
+          accessibilityLiveRegion="polite"
+        >
+          <View style={styles.pickerRow}>
+            <View style={styles.pickerBadge}>
+              <Image
+                source={pinIcon}
+                tintColor={theme.far}
+                style={styles.pickerIcon}
+                accessible={false}
+              />
+            </View>
+            <View style={styles.noticeText}>
+              <AppText variant="label" accessibilityRole="header">
+                {vm.picker.title}
+              </AppText>
+              <AppText variant="small" color="boira">
+                {vm.picker.description}
+              </AppText>
+              <PressableScale
+                onPress={vm.picker.action.onPress}
+                hitSlop={spacing.ms}
+                style={styles.pickerAction}
+              >
+                <AppText variant="link" color="far">
+                  {vm.picker.action.label}
+                </AppText>
+              </PressableScale>
+            </View>
+            <PressableScale
+              onPress={vm.picker.onClose}
+              accessibilityLabel={vm.picker.closeLabel}
+              hitSlop={spacing.ms}
+              style={styles.pickerClose}
+            >
+              <Image
+                source={closeIcon}
+                tintColor={theme.boira}
+                style={styles.closeIcon}
+                accessible={false}
+              />
+            </PressableScale>
+          </View>
+        </Animated.View>
       )}
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.nit },
+const useStyles = makeStyles(({ colors }) => ({
+  container: { flex: 1, backgroundColor: colors.nit, overflow: 'hidden' },
+  rankingViewport: { flex: 1, overflow: 'hidden' },
   top: { position: 'absolute', left: spacing.md, right: spacing.md, gap: spacing.ms },
   topRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   back: {
@@ -215,10 +391,62 @@ const styles = StyleSheet.create({
     color: colors.far,
   },
   retryIcon: { width: sizes.icon, height: sizes.icon },
-  notice: {
+  // El botó flota sobre el mapa, centrat a baix, on arriba el polze.
+  nearbyDock: { position: 'absolute', left: 0, right: 0, alignItems: 'center' },
+  nearby: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    minHeight: sizes.touch + spacing.xs,
+    paddingLeft: spacing.md,
+    paddingRight: spacing.ml,
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: colors.vora,
+    backgroundColor: colors.sheet,
+    shadowColor: colors.nit,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.6,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  nearbyIcon: { width: sizes.icon, height: sizes.icon },
+  picker: {
     position: 'absolute',
     left: spacing.md,
     right: spacing.md,
+    padding: spacing.md,
+    borderRadius: radii.lg,
+    borderWidth: 1,
+    borderColor: colors.vora,
+    backgroundColor: colors.sheet,
+    shadowColor: colors.nit,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.6,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  spot: { position: 'absolute', left: spacing.md, right: spacing.md },
+  pickerRow: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.ms },
+  pickerBadge: {
+    width: sizes.chip,
+    height: sizes.chip,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: radii.pill,
+    backgroundColor: colors.vel,
+  },
+  pickerIcon: { width: sizes.iconSmall + spacing.xs, height: sizes.iconSmall + spacing.xs },
+  pickerAction: { alignSelf: 'flex-start', marginTop: spacing.xs },
+  pickerClose: {
+    width: sizes.iconSmall + spacing.sm,
+    height: sizes.iconSmall + spacing.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  closeIcon: { width: sizes.iconSmall, height: sizes.iconSmall },
+  // Dins de la columna de dalt: queda sota la capçalera, sigui quina sigui la seva alçada.
+  notice: {
     padding: spacing.md,
     gap: spacing.sm,
     borderRadius: radii.md,
@@ -226,4 +454,4 @@ const styles = StyleSheet.create({
     borderColor: colors.vora,
     backgroundColor: colors.sheet,
   },
-});
+}));

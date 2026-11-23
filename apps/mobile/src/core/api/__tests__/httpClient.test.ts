@@ -1,6 +1,9 @@
+import i18n from '@/core/i18n';
+
 import { getAccessToken } from '@/core/auth/accessToken';
 
-import { ApiError, apiGet, apiPost, buildUrl, REQUEST_TIMEOUT_MS } from '../httpClient';
+import { accountBlocked } from '../accountBlocked';
+import { ApiError, apiGet, apiPatch, apiPost, buildUrl, REQUEST_TIMEOUT_MS } from '../httpClient';
 
 jest.mock('@/core/auth/accessToken', () => ({ getAccessToken: jest.fn() }));
 
@@ -33,6 +36,31 @@ describe('apiGet', () => {
     await expect(apiGet<{ data: number[] }>('/punts')).resolves.toEqual({ data: [1] });
   });
 
+  it('envia l’idioma actual a GET i POST, també després de canviar-lo', async () => {
+    const request = jest.fn().mockImplementation(() => Promise.resolve(new Response('{}')));
+    globalThis.fetch = request;
+    for (const language of ['ca', 'es', 'en']) {
+      await i18n.changeLanguage(language);
+      await apiGet('/punts');
+      await apiPost('/perfil');
+    }
+    expect(
+      request.mock.calls.map((call) =>
+        new Headers((call[1] as RequestInit).headers).get('Accept-Language'),
+      ),
+    ).toEqual(['ca', 'ca', 'es', 'es', 'en', 'en']);
+    await i18n.changeLanguage('ca');
+  });
+
+  it('conserva una preferència explícita del repositori', async () => {
+    const request = jest.fn().mockResolvedValue(new Response('{}'));
+    globalThis.fetch = request;
+    await apiGet('/esdeveniments/one', undefined, { headers: { 'Accept-Language': 'en' } });
+    expect(
+      new Headers((request.mock.calls[0]![1] as RequestInit).headers).get('Accept-Language'),
+    ).toBe('en');
+  });
+
   it('converteix { error: { code, message } } en un ApiError', async () => {
     globalThis.fetch = jest.fn().mockResolvedValue(
       new Response(JSON.stringify({ error: { code: 'not_found', message: 'No existeix' } }), {
@@ -40,6 +68,32 @@ describe('apiGet', () => {
       }),
     );
     await expect(apiGet('/punts/x')).rejects.toEqual(new ApiError(404, 'not_found', 'No existeix'));
+  });
+
+  it('un 403 account_blocked marca el compte com a bloquejat; un altre 403, no', async () => {
+    accountBlocked.clear();
+    const forbidden = (code: string) =>
+      new Response(JSON.stringify({ error: { code, message: 'No' } }), { status: 403 });
+    globalThis.fetch = jest.fn().mockResolvedValue(forbidden('forbidden'));
+    await expect(apiGet('/admin/usuaris')).rejects.toEqual(new ApiError(403, 'forbidden', 'No'));
+    expect(accountBlocked.get()).toBe(false);
+    jest.mocked(getAccessToken).mockResolvedValue('token');
+    globalThis.fetch = jest.fn().mockResolvedValue(forbidden('account_blocked'));
+    await expect(apiPost('/perfil')).rejects.toEqual(new ApiError(403, 'account_blocked', 'No'));
+    expect(accountBlocked.get()).toBe(true);
+    accountBlocked.clear();
+  });
+
+  it('una resposta account_blocked d’una sessió que ja ha sortit no bloqueja la següent', async () => {
+    accountBlocked.clear();
+    jest.mocked(getAccessToken).mockResolvedValueOnce('old').mockResolvedValue(null);
+    globalThis.fetch = jest.fn().mockResolvedValue(
+      new Response(JSON.stringify({ error: { code: 'account_blocked', message: 'No' } }), {
+        status: 403,
+      }),
+    );
+    await expect(apiGet('/perfil')).rejects.toBeInstanceOf(ApiError);
+    expect(accountBlocked.get()).toBe(false);
   });
 
   it('envia el JWT actual i conserva Headers i la cancel·lació', async () => {
@@ -125,6 +179,17 @@ describe('apiGet', () => {
     expect(init.method).toBe('POST');
     expect(init.body).toBe('{}');
     expect(new Headers(init.headers).get('Authorization')).toBe('Bearer jwt');
+    expect(new Headers(init.headers).get('Content-Type')).toBe('application/json');
+  });
+
+  it('envia els canvis parcials amb PATCH i cos JSON', async () => {
+    const request = jest.fn().mockResolvedValue(new Response('{"activa":false}', { status: 200 }));
+    globalThis.fetch = request;
+    await expect(apiPatch('/alertes/a1', { activa: false })).resolves.toEqual({ activa: false });
+    const [url, init] = request.mock.calls[0]! as [string, RequestInit];
+    expect(url).toMatch(/\/alertes\/a1$/);
+    expect(init.method).toBe('PATCH');
+    expect(init.body).toBe('{"activa":false}');
     expect(new Headers(init.headers).get('Content-Type')).toBe('application/json');
   });
 });

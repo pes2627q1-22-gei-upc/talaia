@@ -22,6 +22,8 @@ services:
       # Valida els JWT de /perfil. Sense, l'API faria servir el Supabase local (127.0.0.1:54321).
       SUPABASE_URL: ${SUPABASE_URL:?Falta SUPABASE_URL (https://<ref>.supabase.co)}
       APROP_API_KEY: ${APROP_API_KEY:-}
+      # Previsió de GET /visibilitat (TG-130). Buida: la URL pública d'Open-Meteo.
+      OPEN_METEO_BASE_URL: ${OPEN_METEO_BASE_URL:-}
     volumes:
       # Certificat arrel de Supabase per validar la connexió a la BD (sslmode=verify-full,
       # docs/desplegament.md). Sense SUPABASE_CA_CERT, s'hi munta un fitxer buit.
@@ -43,6 +45,9 @@ services:
       DATABASE_URL: ${DATABASE_URL:-}
       OPEN_METEO_BASE_URL: ${OPEN_METEO_BASE_URL:-}
       METEOCAT_API_KEY: ${METEOCAT_API_KEY:-}
+      EXPO_ACCESS_TOKEN: ${EXPO_ACCESS_TOKEN:-}
+      # Només la VM envia les push (TG-154); un worker local no, si no ho diu.
+      ENVIA_PUSH: ${ENVIA_PUSH:-true}
     volumes:
       - ${SUPABASE_CA_CERT:-/dev/null}:/run/talaia/supabase-ca.crt:ro
 
@@ -74,8 +79,15 @@ services:
       interval: 5s
       retries: 12
 
+  # Nginx amb la web d'administració compilada a dins (TG-176): /admin/.
   nginx:
-    image: nginx:1.28-alpine
+    build:
+      context: ..
+      dockerfile: deploy/nginx/Dockerfile
+      args:
+        # Valors públics, que van al JavaScript del navegador. Mai la clau service_role.
+        VITE_SUPABASE_URL: ${SUPABASE_URL:?Falta SUPABASE_URL (https://<ref>.supabase.co)}
+        VITE_SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:?Falta SUPABASE_ANON_KEY (la clau pública de Supabase)}
     restart: unless-stopped
     mem_limit: 128m
     security_opt: ['no-new-privileges:true']
@@ -87,12 +99,15 @@ services:
     environment:
       PUBLIC_HOST: ${PUBLIC_HOST:?Falta PUBLIC_HOST}
       PUBLIC_PORT: ${PUBLIC_PORT:?Falta PUBLIC_PORT}
+      # connect-src de la CSP de /admin/.
+      SUPABASE_URL: ${SUPABASE_URL:?Falta SUPABASE_URL (https://<ref>.supabase.co)}
     ports:
       # La VM redirigeix nattech.fib.upc.edu:40000+XXX·10 al 8080. Els altres ports (8081–8089)
       # no es publiquen fins que es facin servir.
       - '8080:8080'
     volumes:
       - ./nginx/templates:/etc/nginx/templates:ro
+      - ./nginx/snippets:/etc/nginx/snippets:ro
       - ./nginx/entrypoint.d/40-recarrega-certificat.sh:/docker-entrypoint.d/40-recarrega-certificat.sh:ro
       - certs:/etc/nginx/certs:ro
     healthcheck:

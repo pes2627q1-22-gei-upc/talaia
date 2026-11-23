@@ -2,7 +2,7 @@
 
 **Objectiu:** Tancar el MVP (ubicació triada al mapa, com arribar, fitxa del fenomen) i tenir a punt per a la demo del 23/11 els aspectes transversals: alertes amb notificacions push, plans sincronitzats amb el calendari, canvi d'idioma, web d'administració amb gestió de punts i bloqueig de comptes, i el servei d'esdeveniments per a Aprop; i els metodològics: desplegament automàtic, cobertura, RNF mesurables i gestió de bugs a Taiga.
 
-**Compromís:** 132 story points en 25 històries (24 d'usuari + la tècnica [TEC]) · 61 tasques · 132 h estimades. Sprint master: **Martina**.
+**Compromís:** 137 story points en 25 històries (24 d'usuari + la tècnica [TEC]) · 64 tasques · 139 h estimades (inclouen la TG-257, que no penja de cap història). Sprint master: **Hugo** (intercanviat amb la Martina, que porta el Sprint 3).
 
 **Criteri d'estimació:** 1 story point = 1 hora. Els story points d'una història són la suma de les hores estimades de les seves tasques.
 
@@ -45,14 +45,16 @@ Les tasques del Sprint 1 que no es tanquin el 28/10 s'hi afegeixen a la planning
 *Com a usuari, vull veure la distància i el temps fins al punt i obrir la navegació al mapa del mòbil, de manera que hi pugui arribar fàcilment.*
 
 **Criteris d'acceptació**
-- [ ] La fitxa del punt mostra la distància i el temps des de la ubicació de l'usuari, obtinguts del servei de Mobilicat.
-- [ ] «Com arribar» obre el mapa del mòbil (Apple Maps o Google Maps) amb el destí.
-- [ ] Si el servei de Mobilicat no respon, la fitxa es mostra igualment, sense distància ni temps.
+- [ ] En prémer «Com arribar» des de la fitxa del punt, es mostren les alternatives de Mobilicat des de la ubicació de l'usuari, amb la distància, la durada i l'hora d'arribada de cada ruta. Aquesta informació es consulta al full de rutes.
+- [ ] Es poden desplegar les rutes amb més d'un tram per consultar-ne el detall.
+- [ ] Es pot triar una data i hora de sortida futura i consultar les alternatives per a aquella sortida, o tornar a «Sortir ara».
+- [ ] Des d'una alternativa es pot obrir Maps amb el destí per iniciar la navegació.
+- [ ] Sense ubicació, sense rutes disponibles o si Mobilicat no respon, «Com arribar» obre l'app de mapes del mòbil directament amb el destí, i la fitxa continua disponible.
 
 | Ref | Tasca | Responsable | Inici | Límit | h |
 |---|---|---|---|---|---|
 | TG-135 | Client del servei de rutes de Mobilicat a l'API (distància i temps), amb resposta parcial si no respon | Victor | 10/11 | 13/11 | 3 |
-| TG-136 | Distància, temps i botó «Com arribar» a la fitxa del punt, amb deep link al mapa del mòbil | Vinyet | 16/11 | 18/11 | 2 |
+| TG-136 | Botó «Com arribar» a la fitxa: alternatives de Mobilicat amb distància, temps i trams, selector de sortida i accés a Maps | Vinyet | 16/11 | 18/11 | 2 |
 | TG-137 | Tests del client de rutes (contracte i caiguda del servei) | Victor | 13/11 | 17/11 | 1 |
 
 ## HU10 · Consultar l'explicació i l'horari d'un fenomen · [TG-30](https://tree.taiga.io/project/mohamed-dari-pes_22_c_talaia/us/30)
@@ -107,7 +109,7 @@ Les tasques del Sprint 1 que no es tanquin el 28/10 s'hi afegeixen a la planning
 | Ref | Tasca | Responsable | Inici | Límit | h |
 |---|---|---|---|---|---|
 | TG-145 | Model de dades d'alertes i endpoints POST/GET /api/v1/alertes (només les de l'usuari) | Mohamed | 09/11 | 11/11 | 3 |
-| TG-146 | Pantalla «Nova alerta» (mockup 11): fenomen, distància i índex mínim | Joan | 11/11 | 16/11 | 3 |
+| TG-146 | Pantalla «Nova alerta» (mockup 11): fenomen, distància i índex mínim | Martina | 11/11 | 16/11 | 3 |
 
 ## HU19 · Activar o desactivar una alerta · [TG-40](https://tree.taiga.io/project/mohamed-dari-pes_22_c_talaia/us/40)
 Èpica E05 · Alertes personalitzades · **4 SP**  
@@ -333,7 +335,7 @@ Les tasques del Sprint 1 que no es tanquin el 28/10 s'hi afegeixen a la planning
 | TG-179 | Avís a l'app quan el compte està bloquejat | Martina | 17/11 | 18/11 | 1 |
 
 ## [TEC] Qualitat, desplegament i índex v2 (Sprint 2) · [TG-117](https://tree.taiga.io/project/mohamed-dari-pes_22_c_talaia/us/117)
-Història tècnica (sense èpica de producte) · **15 SP**  
+Història tècnica (sense èpica de producte) · **20 SP**  
 Història tècnica del Sprint 2: aspectes metodològics (desplegament automàtic, cobertura, RNF mesurables, gestió de bugs), índex v2 i feedback d'usuaris reals.
 
 | Ref | Tasca | Responsable | Inici | Límit | h |
@@ -345,16 +347,30 @@ Història tècnica del Sprint 2: aspectes metodològics (desplegament automàtic
 | TG-184 | Índex v2: perfil d'horitzó i ajust amb les observacions de Meteocat | Hugo | 19/11 | 24/11 | 4 |
 | TG-185 | Tests de l'índex v2 | Hugo | 24/11 | 26/11 | 1 |
 | TG-186 | Sessió de feedback amb usuaris reals (aficionats a l'astronomia) amb l'app del Sprint 2 | Victor | 23/11 | 26/11 | 2 |
+| TG-259 | Preparar els tests de guerrilla: formulari amb les funcionalitats a provar i recollida de respostes | Vinyet | — | — | 2 |
+| TG-260 | Tests de presentació de les pantalles existents: botons, textos i desplegables sense superposicions | *per assignar* | — | — | 3 |
+
+Totes les tasques de frontend porten a Taiga el criteri que les pantalles noves inclouen aquests tests de presentació.
+El procediment és a [Proves de presentació de la UI](testing-ui.md): qui crea o
+modifica una pantalla inclou els tests rellevants i la comprovació visual a la
+mateixa tasca i PR. La TG-260 revisa les pantalles existents i completa les proves
+que faltin, sense duplicar les que ja hi ha.
+
+## Tasques sense història
+
+| Ref | Tasca | Responsable | Inici | Límit | h |
+|---|---|---|---|---|---|
+| TG-257 | Arreglar la interfície d'Android: les icones no es carreguen bé | Martina | 09/11 | 11/11 | 2 |
 
 ## [GES] Gestió i cerimònies del Sprint 2 · [TG-118](https://tree.taiga.io/project/mohamed-dari-pes_22_c_talaia/us/118)
 Fora del sprint backlog (sense story points, no compta al burndown). Les hores es registren a la PRT.
 
 | Ref | Tasca | Responsable | Inici | Límit | h |
 |---|---|---|---|---|---|
-| TG-187 | Sprint Planning (09/11) i lliurament de planning_2.pdf | Martina | 09/11 | 09/11 | 2 |
-| TG-188 | Daily scrums a classe i seguiment del taulell | Martina | 09/11 | 25/11 | 2 |
-| TG-189 | Release 0.2.0 (snapshot → stable) i desplegament per a la demo | Martina | 20/11 | 20/11 | 1 |
-| TG-190 | Retrospective Meeting (25/11) i lliurament de report_2.pdf | Martina | 25/11 | 27/11 | 2 |
+| TG-187 | Sprint Planning (09/11) i lliurament de planning_2.pdf | Hugo | 09/11 | 09/11 | 2 |
+| TG-188 | Daily scrums a classe i seguiment del taulell | Hugo | 09/11 | 25/11 | 2 |
+| TG-189 | Release 0.2.0 (snapshot → stable) i desplegament per a la demo | Hugo | 20/11 | 20/11 | 1 |
+| TG-190 | Retrospective Meeting (25/11) i lliurament de report_2.pdf | Hugo | 25/11 | 27/11 | 2 |
 | TG-191 | Preparar i assajar la demo d'aspectes metodològics i transversals (23/11) | Vinyet | 19/11 | 23/11 | 3 |
 | TG-192 | Actualitzar la PRT i els gràfics de burndown i velocitat | Victor | 25/11 | 27/11 | 1 |
 | TG-193 | Actualitzar la memòria (requisits, metodologia i descripció tècnica) | Hugo | 24/11 | 27/11 | 2 |
@@ -363,13 +379,14 @@ Fora del sprint backlog (sense story points, no compta al burndown). Les hores e
 
 ## Repartiment d'hores
 
-Backlog del sprint i gestió [GES], per persona. L'acumulat inclou el Sprint 1 i serveix per equilibrar la càrrega del curs. Joan porta, a petició seva, més pantalles de disseny i les tasques del mode nit i de la vista AR.
+Backlog del sprint i gestió [GES], per persona. L'acumulat inclou el Sprint 1 i serveix per equilibrar la càrrega del curs. Joan porta, a petició seva, més pantalles de disseny i les tasques del mode nit i de la vista AR. A la planning del 09/11 es va reequilibrar: qui va fer més hores al Sprint 1 segons la PRT (Joan i Vinyet) en porta menys al Sprint 2, i la Martina i el Hugo s'intercanvien el rol de sprint master.
 
 | Persona | Sprint 2 | Acumulat |
 |---|---|---|
-| Joan | 25 | 71 |
-| Vinyet | 21 | 47 |
-| Martina | 27 | 42 |
+| Joan | 22 | 68 |
+| Vinyet | 23 | 49 |
+| Martina | 25 | 40 |
 | Mohamed | 25 | 48 |
-| Hugo | 25 | 39 |
+| Hugo | 32 | 46 |
 | Victor | 26 | 42 |
+| *Per assignar* (TG-260) | 3 | — |

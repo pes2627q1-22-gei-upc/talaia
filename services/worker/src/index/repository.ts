@@ -41,6 +41,8 @@ export function createKyselyIndexRepository(db: Kysely<DB>): IndexRepository {
             franja: h.franja,
             factors: h.factors,
             foscorEstimada: h.foscorEstimada,
+            versio: h.versio ?? 1,
+            humitatCorregida: h.humitatCorregida ?? false,
           })),
         )
         .onConflict((oc) =>
@@ -49,6 +51,8 @@ export function createKyselyIndexRepository(db: Kysely<DB>): IndexRepository {
             franja: eb.ref('excluded.franja'),
             factors: eb.ref('excluded.factors'),
             foscorEstimada: eb.ref('excluded.foscorEstimada'),
+            versio: eb.ref('excluded.versio'),
+            humitatCorregida: eb.ref('excluded.humitatCorregida'),
             calculatEl: new Date(),
           })),
         )
@@ -57,7 +61,15 @@ export function createKyselyIndexRepository(db: Kysely<DB>): IndexRepository {
     async indexsDe(puntId) {
       const files = await db
         .selectFrom('indexVisibilitat')
-        .select(['hora', 'valor', 'franja', 'factors', 'foscorEstimada'])
+        .select([
+          'hora',
+          'valor',
+          'franja',
+          'factors',
+          'foscorEstimada',
+          'versio',
+          'humitatCorregida',
+        ])
         .where('puntId', '=', puntId)
         .orderBy('hora')
         .execute();
@@ -67,6 +79,8 @@ export function createKyselyIndexRepository(db: Kysely<DB>): IndexRepository {
         franja: f.franja,
         factors: f.factors as IndexHora['factors'],
         foscorEstimada: f.foscorEstimada,
+        versio: f.versio,
+        humitatCorregida: f.humitatCorregida,
       }));
     },
   };

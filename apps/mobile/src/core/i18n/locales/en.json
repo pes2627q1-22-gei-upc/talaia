@@ -19,7 +19,46 @@
     "retry": "Try again",
     "back": "Back",
     "daytime": "It's daytime",
-    "daytimeHint": "The index counts from dusk onwards. Until then, points show in grey."
+    "daytimeHint": "The index counts from dusk onwards. Until then, points show in grey.",
+    "origin": "Starting point",
+    "nearby": "Show the best spots near you",
+    "pick": {
+      "title": "Tap the map to choose where you start from",
+      "denied": "We don't have your location: we'll find the best spots near the place you tap.",
+      "error": "We couldn't find where you are: we'll find the best spots near the place you tap.",
+      "allow": "Allow location",
+      "settings": "Open Settings",
+      "close": "Close"
+    },
+    "spot": {
+      "hint": {
+        "title": "Pick a spot on the map",
+        "subtitle": "Tap anywhere to see its index"
+      },
+      "title": "Spot picked on the map",
+      "marker": "Picked spot",
+      "coords": "Lat {{lat}} · Lon {{lon}}",
+      "from": "{{travel}} from {{place}}",
+      "from_vowel": "{{travel}} from {{place}}",
+      "fromHere": "{{travel}} from where you are",
+      "calculate": "Calculate the index here",
+      "loading": "Calculating the index…",
+      "at": "Index for the current hour ({{time}})",
+      "daytime": "It's daytime: the index counts from dusk onwards.",
+      "estimated": "Sky darkness is estimated: there's no measured spot nearby.",
+      "outside": {
+        "title": "This place is outside Catalonia",
+        "description": "The index is only calculated within Catalonia. Tap somewhere else."
+      },
+      "limit": {
+        "title": "You've made a lot of requests this hour",
+        "description": "Try again when the next hour starts."
+      },
+      "error": {
+        "title": "We couldn't calculate the index",
+        "description": "Try again in a little while."
+      }
+    }
   },
   "calendar": {
     "title": "Calendar",
@@ -29,7 +68,11 @@
     "goToday": "Back to today",
     "events": "Events",
     "allMonth": "View whole month",
-    "relative": { "today": "Today", "tomorrow": "Tomorrow", "past": "Past" },
+    "relative": {
+      "today": "Today",
+      "tomorrow": "Tomorrow",
+      "past": "Past"
+    },
     "filterLabel": "Filter events: {{filter}}",
     "filterTitle": "Filter events",
     "closeFilter": "Close filters",
@@ -69,15 +112,81 @@
       "upcomingMonth": "No upcoming events this month"
     }
   },
+  "event": {
+    "title": "Event",
+    "back": "Back to calendar",
+    "when": "When",
+    "whatYouWillSee": "What you'll see",
+    "particularity": "This time",
+    "howToWatch": "How to watch it",
+    "source": "Source: {{source}}",
+    "night": "night of {{from}} {{to}}",
+    "nightFrom": "{{date}}",
+    "nightFrom_vowel": "{{date}}",
+    "nightTo": "to {{date}}",
+    "nightTo_vowel": "to {{date}}",
+    "rangeFrom": "from {{date}}",
+    "rangeFrom_vowel": "from {{date}}",
+    "rangeTo": "to {{date}}",
+    "rangeTo_vowel": "to {{date}}",
+    "onDay": "on {{date}}",
+    "onDay_vowel": "on {{date}}",
+    "fromTime": "from {{time}}",
+    "fromTime_oneOClock": "from {{time}}",
+    "toTime": "to {{time}}",
+    "toTime_oneOClock": "to {{time}}",
+    "atTime": "at {{time}}",
+    "atTime_oneOClock": "at {{time}}",
+    "whenSeason": "Active {{from}} {{to}}. It peaks {{peak}}.",
+    "whenSeasonNoPeak": "Active {{from}} {{to}}.",
+    "whenExact": "Exact time: {{time}}.",
+    "whenAllDay": "All day.",
+    "whenWindow": "{{from}} {{to}}, peaking {{peak}}.",
+    "whenWindowNoPeak": "{{from}} {{to}}.",
+    "notFoundTitle": "Event not found",
+    "notFoundMessage": "It may no longer be available. Go back to the calendar and choose another one.",
+    "errorTitle": "Could not load this event",
+    "errorMessage": "Check your connection and try again.",
+    "retry": "Try again",
+    "whereToWatch": "Where to watch"
+  },
   "profile": {
+    "unsavedTitle": "You have unsaved changes",
+    "unsavedMessage": "Are you sure you want to leave?",
+    "keepEditing": "Keep editing",
+    "discardChanges": "Discard changes",
+    "logoutConfirmationTitle": "Sign out?",
+    "logoutConfirmationMessage": "You'll need to sign in again to access your account.",
     "title": "Profile",
+    "myProfile": "My profile",
+    "back": "Back to profile",
+    "myProfileHint": "View your account details",
+    "name": "Name",
+    "addName": "Add your name",
+    "editName": "Edit name",
+    "save": "Save",
+    "cancel": "Cancel",
+    "nameInvalid": "Enter a name between 1 and 100 characters.",
+    "nameSaveError": "Could not save your name. Please try again.",
+    "loadError": "Could not load your profile.",
     "language": "Language",
+    "closeLanguage": "Close language selection",
     "languages": {
       "ca": "Catalan",
       "es": "Spanish",
       "en": "English"
     },
-    "account": "Account"
+    "plans": "My plans",
+    "plansHint": "View your observation plans",
+    "savedPoints": "Favorite spots",
+    "savedPointsCount_one": "{{count}} saved spot to revisit",
+    "savedPointsCount_other": "{{count}} saved spots to revisit",
+    "savedPointsHint": "View the spots you've saved",
+    "savedPointsEmpty": "You don't have any favorite spots yet.",
+    "savedPointsError": "Couldn't load your favorite spots.",
+    "openSavedPoint": "Open the spot details",
+    "retry": "Try again",
+    "comingSoon": "Coming soon"
   },
   "apiStatus": {
     "title": "Server status",
@@ -87,10 +196,11 @@
     "retry": "Try again"
   },
   "point": {
+    "back": "Back",
     "title": "Observation spot",
     "currentIndex": "Current visibility index",
     "noIndex": "Index not available yet",
-    "bestHour": "Best time from <strong>{{from}}</strong> to <strong>{{to}}</strong>.",
+    "bestHour": "Tonight's best time: from <strong>{{from}}</strong> to <strong>{{to}}</strong>, peaking at <strong>{{value}}</strong>.",
     "altitudeTag": "Altitude: {{value}}",
     "metres": "{{value}} m",
     "unavailable": "No data",
@@ -111,6 +221,7 @@
     "clouds": "Clouds",
     "sun": "Sun",
     "moon": "Moon",
+    "humidity": "Humidity",
     "info": "About this spot",
     "openHorizon": "Open views",
     "openHorizonValue": "Toward {{directions}}",
@@ -126,11 +237,63 @@
     "description": "Description",
     "accessibility": "Accessibility",
     "directions": "Get directions",
+    "routeDistance": "{{value}} km",
+    "routeDurationMinutes": "{{minutes}} min",
+    "routeDurationHours": "{{hours}} h",
+    "routeDurationHoursMinutes": "{{hours}} h {{minutes}} min",
+    "routeEarliest": "Featured",
+    "routeDayOffset_one": "+{{count}} day",
+    "routeDayOffset_other": "+{{count}} days",
+    "routeShowJourney": "Show journey",
+    "routeHideJourney": "Hide journey",
+    "routeTransitMode": {
+      "rail": "Train",
+      "metro": "Metro",
+      "tram": "Tram",
+      "bus": "Bus",
+      "ferry": "Ferry"
+    },
+    "routeOptionsTitle": "Ways to get there",
+    "routeOptionsBack": "Back to spot",
+    "routeDeparturePickerTitle": "Departure time",
+    "routeDeparturePickerBack": "Back to route options",
+    "routeOptionsIntro": "Sorted by arrival time.",
+    "routeDepartureChoice": "Departure time:",
+    "routeDepartureNow": "Now",
+    "routeDepartureNowAction": "Leave now",
+    "routeDepartureEdit": "Change departure time: {{value}}",
+    "routePreviousMonth": "Previous month",
+    "routeNextMonth": "Next month",
+    "routeHourLabel": "Departure hour",
+    "routeMinuteLabel": "Departure minutes",
+    "routeInvalidDeparture": "Choose a valid future date and time.",
+    "routeDepartureApply": "Show routes",
+    "routeLoading": "Searching for routes…",
+    "routeNoResults": "No routes are available for this time. You can open directions in Maps.",
+    "routeOptionsSource": "Data from Mobilicat",
+    "routeDeparture": "Departs at {{time}}",
+    "routeDeparture_oneOClock": "Departs at {{time}}",
+    "routeArrivalLabel_oneOClock": "Arrives at",
+    "routeArrivalLabel": "Arrives at",
+    "routeTransfers_one": "{{count}} transfer",
+    "routeTransfers_other": "{{count}} transfers",
+    "routeMapsNote": "Your maps app will calculate its own route, which may be different.",
+    "openMaps": "Open in Maps",
+    "routeMode": {
+      "walk": "Walk",
+      "bike": "Bike",
+      "bikeShare": "Bike share",
+      "car": "Car",
+      "publicTransport": "Public transport"
+    },
     "createPlan": "Create a plan",
+    "addFavorite": "Save this spot as a favorite",
+    "removeFavorite": "Remove this spot from favorites",
+    "favoriteLogin": "Sign in to save this spot.",
+    "favoriteError": "We couldn't save this favorite. Try again.",
+    "favoriteRemoveError": "We couldn't remove this favorite. Try again.",
     "mapsErrorTitle": "Could not open maps",
     "mapsErrorMessage": "Please try again in a moment.",
-    "planSoonTitle": "Plans coming soon",
-    "planSoonMessage": "Plan creation is not available yet.",
     "timezone": "Local time in Catalonia · Europe/Madrid",
     "noHours": "There's no forecast for tonight yet.",
     "hourA11y": "{{time}}: index {{value}} out of 100, {{level}}",
@@ -144,7 +307,11 @@
     "mapA11y": "Location of {{name}}",
     "mapCredits": "Map credits",
     "mapUnavailable": "Could not load the map.",
+    "indexNow": "Index now · {{time}}",
     "indexAt": "Index for {{time}}",
+    "indexExplanation": "The index goes from 0 to 100: the higher it is, the better you'll see the sky. It takes into account clouds, the darkness of the place, the Moon, humidity and the Sun.",
+    "hoursTapHint": "Tap an hour to see its breakdown.",
+    "hourA11yHint": "Shows the index breakdown for this hour",
     "tonight": "Tonight",
     "hoursError": "We couldn't load tonight's forecast.",
     "factorHints": {
@@ -164,11 +331,17 @@
         "jus": "The Moon brightens the sky",
         "tap": "The Moon lights up the sky a lot"
       },
-      "sol": "There's still twilight"
+      "sol": "There's still twilight",
+      "humitat": {
+        "none": "Humidity isn't a problem",
+        "some": "Humidity washes out the sky"
+      }
     },
-    "factorsAt": "Factors at {{time}}",
+    "factorsAt": "Why the index is {{value}} at {{time}}",
+    "factorsAt_oneOClock": "Why the index is {{value}} at {{time}}",
     "daytime": "It's daytime",
-    "daytimeHint": "The index counts from dusk onwards."
+    "daytimeHint": "The index counts from dusk onwards.",
+    "humidityCorrected": "Corrected with XEMA observations (Meteorological Service of Catalonia)"
   },
   "index": {
     "level": {
@@ -193,11 +366,6 @@
     "back": "Back to start"
   },
   "explore": {
-    "greeting": {
-      "morning": "Good morning",
-      "afternoon": "Good afternoon",
-      "night": "Good evening"
-    },
     "title": "What do you want to see?",
     "goals": {
       "pluja_estels": "Meteor shower",
@@ -298,12 +466,90 @@
       "max": "4 h"
     },
     "cta": "Find the best spot",
-    "browse": "See the map"
+    "browse": "See all spots on the map"
   },
   "alerts": {
     "title": "Alerts",
-    "soonTitle": "Coming soon",
-    "soonMessage": "Here you'll be able to create alerts so we can tell you when conditions are good for what you want to see."
+    "create": "New alert",
+    "new": {
+      "title": "New alert",
+      "back": "Back",
+      "goalTitle": "What do you want to see",
+      "originTitle": "Where",
+      "minIndex": {
+        "title": "Minimum index",
+        "value": "{{index}}, {{level}}"
+      },
+      "cta": "Create alert",
+      "saving": "Creating alert…",
+      "errors": {
+        "limit": "You already have the maximum number of alerts. Delete one to create a new one.",
+        "generic": "We couldn't create the alert. Please try again."
+      },
+      "originModes": {
+        "current": "My location",
+        "zone": "A specific area"
+      },
+      "zone": {
+        "title": "Choose the area",
+        "hint": "Move the map until the pin is where you want it.",
+        "map": "Map to choose the area",
+        "confirm": "Choose this area",
+        "naming": "Looking up the name…",
+        "close": "Close",
+        "empty": "No area chosen",
+        "pick": "Choose",
+        "change": "Change",
+        "unnamed": "Chosen area"
+      },
+      "travel": {
+        "title": "Maximum distance",
+        "minutes": "{{minutes}} min",
+        "hours": "{{hours}} h",
+        "hoursMinutes": "{{hours}} h {{minutes}} min"
+      },
+      "notify": {
+        "title": "When we notify you",
+        "hourValue": "Notify me at {{hour}}",
+        "change": "Change",
+        "hourTitle": "Notification time",
+        "done": "Done",
+        "hourNote": "At that time we check the night's forecast. If no spot reaches the minimum index, we won't notify you that night."
+      }
+    },
+    "edit": {
+      "title": "Edit alert",
+      "cta": "Save changes",
+      "saving": "Saving changes…",
+      "errors": {
+        "generic": "We couldn't save the changes. Try again."
+      },
+      "missingTitle": "We couldn't find this alert",
+      "missingMessage": "You may have deleted it. Go back to your alerts."
+    },
+    "subtitle": "We only notify you when the sky plays along.",
+    "summary": "Within {{travel}}, index {{index}} or higher",
+    "toggle": "{{name}} alert",
+    "editHint": "Opens the alert to edit it",
+    "toggleError": "We couldn't change the alert. Please try again.",
+    "emptyTitle": "No alerts yet",
+    "emptyMessage": "Create one and we'll let you know when conditions are good for what you want to see.",
+    "errorTitle": "We couldn't load your alerts",
+    "retry": "Try again",
+    "pushDenied": "Notifications are turned off: we won't alert you on your phone when conditions are good. You can turn them on in Settings.",
+    "pushUnavailable": "This device can’t receive notifications. The rest of the app works as usual.",
+    "openSettings": "Open Settings",
+    "notify": {
+      "hour": {
+        "title": "At a set time",
+        "text": "Every night at {{hour}}"
+      },
+      "reach": {
+        "title": "When it reaches the index",
+        "text": "When the index reaches {{index}}"
+      }
+    },
+    "summaryTravel": "Under {{travel}}"
   },
   "auth": {
     "signOut": "Sign out",
@@ -322,6 +568,16 @@
       "invalidLink": "This link isn't valid or has already been used. Open it on the same phone you requested it from, or ask for a new one.",
       "emailNotAllowed": "We can't send emails to this address right now. Try signing in with Google."
     }
+  },
+  "accountBlocked": {
+    "title": "Your account is blocked",
+    "message": "You can't use Talaia with this account. If you think this is a mistake, contact the Talaia team.",
+    "retry": "Check again",
+    "checking": "Checking…",
+    "contact": "Email {{email}}",
+    "contactError": "Couldn't open your email app. Write to us at {{email}}.",
+    "contactSubject": "Blocked Talaia account",
+    "contactBody": "My Talaia account is {{account}}."
   },
   "emailLogin": {
     "title": "Sign in with email",
@@ -355,7 +611,9 @@
       "tomorrow": "tomorrow night"
     },
     "from": "From {{place}}, up to {{travel}}",
+    "from_vowel": "From {{place}}, up to {{travel}}",
     "fromHere": "From where you are, up to {{travel}}",
+    "fromPicked": "From the chosen spot, up to {{travel}}",
     "duration": {
       "minutes": "{{minutes}} min",
       "hours": "{{hours}} h",
@@ -367,11 +625,133 @@
     "loading": "Finding the best spots…",
     "error": "We couldn't load the recommendations",
     "empty": "No spots within {{travel}}",
+    "empty_vowel": "No spots within {{travel}}",
     "emptyHint": "Try a longer distance or another night.",
     "noIndex": "No forecast yet",
     "bestHour": "Best time: {{hour}}",
     "byCar": "{{travel}} by car",
     "collapseSheet": "Collapse the list",
-    "expandSheet": "Expand the list"
+    "expandSheet": "Expand the list",
+    "noEventForecast": "There is no forecast for this event yet. Spots are shown by distance; check the index closer to the date.",
+    "emptyEventHint": "Try again later.",
+    "eventRanking": "Best spots ranking",
+    "qualityDistanceHint": "We prioritise visibility levels: clear, fair and overcast. Within each level, we combine the index and proximity.",
+    "distance": "{{km}} km in a straight line",
+    "fromUnlimited": "From {{place}} · no distance limit",
+    "fromUnlimited_vowel": "From {{place}} · no distance limit",
+    "pastWindow": "This observation window has ended. Choose another event or another night.",
+    "fromHereUnlimited": "From your location · no distance limit",
+    "emptyCatalog": "No spots available yet",
+    "hideRanking": "Hide ranking",
+    "showRanking": "Show ranking",
+    "nearby": {
+      "label": "Near me",
+      "title": "Near me, {{when}}",
+      "best": "Best spots nearby",
+      "here": "From where you are",
+      "picked": "From the chosen spot",
+      "place": "From {{place}}",
+      "place_vowel": "From {{place}}",
+      "emptyHint": "To go further, choose the distance in “What do you want to see?”."
+    }
+  },
+  "plans": {
+    "new": {
+      "back": "Back",
+      "header": "New plan",
+      "title": "Stargazing plan",
+      "point": "Viewpoint",
+      "pointA11y": "Viewpoint: {{name}}, {{municipality}}",
+      "pointUnavailable": "We couldn't load the viewpoint",
+      "day": "Day",
+      "dayValue": "{{weekday}} {{day}} {{month}}",
+      "monthsShort": [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul",
+        "Aug",
+        "Sep",
+        "Oct",
+        "Nov",
+        "Dec"
+      ],
+      "time": "Departure time",
+      "hour": "Hour",
+      "minute": "Minutes",
+      "past": "That departure time has already passed. Pick a later one.",
+      "event": "Sky event",
+      "eventValue": "{{type}}: {{name}}",
+      "noEvent": "Nothing in particular",
+      "eventSheet": "What are you going to see?",
+      "noEvents": "There are no calendar events around this day.",
+      "eventsError": "We couldn't load the sky events",
+      "retry": "Try again",
+      "notes": "Notes",
+      "notesPlaceholder": "Warm clothes, red headlamp…",
+      "save": "Save plan",
+      "saving": "Saving…",
+      "dateSheet": "Pick a day",
+      "timeSheet": "Departure time",
+      "done": "Done",
+      "close": "Close",
+      "errors": {
+        "alreadyExists": "You already have a plan at this viewpoint at this time.",
+        "limitReached": "You've reached the limit of 20 upcoming plans.",
+        "pointGone": "This viewpoint is no longer available.",
+        "generic": "We couldn't save the plan. Try again in a moment."
+      }
+    },
+    "calendar": {
+      "label": "Add it to my calendar",
+      "hint": "Choose a calendar on your phone. If it belongs to your Google account and syncing is enabled, it will also appear in Google Calendar.",
+      "unavailable": "Calendar access is unavailable in this environment. You can still save the plan.",
+      "loading": "Loading calendars…",
+      "denied": "Calendar permission is needed. Grant permission or turn this option off to save just the plan.",
+      "loadError": "We couldn’t load your calendars. Try again or turn this option off.",
+      "empty": "There are no writable calendars. Set up a calendar on your phone and try again, or turn this option off.",
+      "settings": "Open settings",
+      "target": "Destination calendar",
+      "choose": "Choose a calendar",
+      "eventTitle": "Talaia · {{point}}",
+      "eventTitleWithPhenomenon": "{{phenomenon}} · {{point}}",
+      "savedTitle": "Plan saved",
+      "adding": "Your plan is saved to your account. We’re adding it to your calendar…",
+      "continue": "Continue",
+      "syncErrors": {
+        "create": "Your plan is saved, but we couldn’t add it to your calendar. Retry or continue with your saved plan.",
+        "link": "Your plan and calendar event are saved, but we couldn’t link them. Retry to complete the link.",
+        "denied": "Your plan is saved, but calendar permission is missing. Grant permission and retry, or continue with your saved plan."
+      }
+    },
+    "list": {
+      "back": "Back to profile",
+      "header": "My plans",
+      "title": "My plans",
+      "upcoming": "Upcoming",
+      "past": "Past",
+      "starrySky": "Starry sky",
+      "rowTitle": "{{phenomenon}} in {{place}}",
+      "rowTitle_el": "{{phenomenon}} in el {{place}}",
+      "rowTitle_els": "{{phenomenon}} in els {{place}}",
+      "departure": "Leaving at {{time}}, {{point}}",
+      "departure_single": "Leaving at {{time}}, {{point}}",
+      "retired": "This spot is no longer available.",
+      "a11y": "{{title}}. {{month}} {{day}}. {{subtitle}}",
+      "openHint": "Opens the spot's page",
+      "emptyUpcomingTitle": "You don't have any plans yet",
+      "emptyUpcomingMessage": "Find a good spot in Explore and create a plan from its page.",
+      "emptyPastTitle": "No past plans yet",
+      "emptyPastMessage": "Once a plan's time has passed, you'll find it here.",
+      "create": "Find a spot",
+      "errorTitle": "We couldn't load your plans",
+      "retry": "Try again"
+    }
+  },
+  "notifications": {
+    "channelName": "Sky alerts"
   }
 }

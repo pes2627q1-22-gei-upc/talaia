@@ -12,7 +12,8 @@
       "usesAppleSignIn": true,
       "infoPlist": {
         "CFBundleAllowMixedLocalizations": true,
-        "CFBundleLocalizations": ["ca", "es", "en"]
+        "CFBundleLocalizations": ["ca", "es", "en"],
+        "UIViewControllerBasedStatusBarAppearance": true
       }
     },
     "locales": {
@@ -56,7 +57,20 @@
       "expo-font",
       "expo-image",
       "expo-status-bar",
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "expo-notifications",
+        {
+          "color": "#0E1433"
+        }
+      ],
+      [
+        "expo-calendar",
+        {
+          "calendarPermission": "Talaia accedeix als teus calendaris per deixar-te triar on afegir els plans d’observació.",
+          "remindersPermission": false
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

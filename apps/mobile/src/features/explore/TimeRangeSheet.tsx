@@ -1,6 +1,7 @@
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 
-import { colors, radii } from '@/core/theme/tokens';
+import { makeStyles } from '@/core/theme/theme';
+import { radii } from '@/core/theme/tokens';
 import { AppText } from '@/shared/ui/AppText';
 import { Button } from '@/shared/ui/Button';
 import { Sheet } from '@/shared/ui/Sheet';
@@ -27,6 +28,7 @@ export function TimeRangeSheet({
   doneLabel,
   onClose,
 }: TimeRangeSheetProps) {
+  const styles = useStyles();
   return (
     <Sheet visible={visible} onClose={onClose} title={title} closeLabel={doneLabel}>
       <View style={styles.row}>
@@ -68,7 +70,7 @@ export function TimeRangeSheet({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(({ colors }) => ({
   row: { flexDirection: 'row' },
   labelCell: { flex: 1, flexDirection: 'row' },
   arrowSpace: { width: ARROW },
@@ -85,4 +87,4 @@ const styles = StyleSheet.create({
     backgroundColor: colors.crep,
   },
   duration: { textAlign: 'center' },
-});
+}));

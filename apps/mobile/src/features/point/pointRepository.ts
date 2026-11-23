@@ -1,14 +1,45 @@
-import type { DesglossamentIndex, PuntFitxa } from '@talaia/shared';
+import type { DesglossamentIndex, PuntFitxa, RutesPunt } from '@talaia/shared';
 import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 
-import { apiGet } from '@/core/api/httpClient';
+import { ApiError, apiGet } from '@/core/api/httpClient';
 
 import type { PointDetailModel } from './pointModel';
 
 export const pointKeys = {
-  detail: (pointId: string) => ['punts', 'detail', pointId] as const,
+  detail: (pointId: string, language: string) => ['punts', 'detail', pointId, language] as const,
   breakdown: (pointId: string) => ['punts', 'breakdown', pointId] as const,
+  routes: (pointId: string, lat: number, lon: number, departure?: string) =>
+    ['punts', 'routes', pointId, lat.toFixed(3), lon.toFixed(3), departure ?? 'now'] as const,
 };
+
+export function fetchPointRoutes(
+  pointId: string,
+  origin: { lat: number; lon: number },
+  departure?: string,
+  signal?: AbortSignal,
+) {
+  return apiGet<RutesPunt>(
+    `/punts/${encodeURIComponent(pointId)}/rutes`,
+    { lat: origin.lat, lon: origin.lon, sortida: departure },
+    { signal },
+  );
+}
+
+export function usePointRoutesQuery(
+  pointId: string,
+  origin?: { lat: number; lon: number },
+  departure?: string,
+) {
+  return useQuery({
+    queryKey: pointKeys.routes(pointId, origin?.lat ?? 0, origin?.lon ?? 0, departure),
+    queryFn: ({ signal }) => fetchPointRoutes(pointId, origin!, departure, signal),
+    enabled: false,
+    staleTime: departure ? 5 * 60_000 : 0,
+    retry: (count, error) => error instanceof ApiError && error.status === 429 && count < 1,
+    retryDelay: 5_000,
+  });
+}
 
 /** El worker publica l'índex cada hora al minut 5; deixem 30 s de marge. */
 export function millisecondsUntilNextPointRefresh(now = Date.now()) {
@@ -42,8 +73,9 @@ export async function fetchPointDetail(
 }
 
 export function usePointDetailQuery(pointId: string) {
+  const { i18n } = useTranslation();
   return useQuery({
-    queryKey: pointKeys.detail(pointId),
+    queryKey: pointKeys.detail(pointId, i18n.resolvedLanguage ?? 'ca'),
     queryFn: ({ signal }) => fetchPointDetail(pointId, signal),
     enabled: pointId.trim().length > 0,
     staleTime: 60_000,

@@ -9,7 +9,9 @@
 | [sprint-1.md](sprint-1.md) · [sprint-2.md](sprint-2.md) · [sprint-3.md](sprint-3.md) | Per sprint: objectiu, històries, criteris d'acceptació, tasques amb dates, responsables i hores |
 | [backlog.md](backlog.md) | Les 46 històries per èpica amb story points, i els RNF |
 | [git-workflow.md](git-workflow.md) | Branques, commits, PR, final de sprint |
+| [gestio-bugs.md](gestio-bugs.md) | Criteri de bug, issues de Taiga, severitat i triatge |
 | [ci.md](ci.md) | Checks de CI i activació de SonarCloud |
+| [rnf.md](rnf.md) | Mesura dels requisits no funcionals (mapa, p95 de l'API, qualitat, accessibilitat) i com repetir-la |
 | [design-system.md](design-system.md) | Colors, tipografia, components, mapa |
 | [serveis-externs.md](serveis-externs.md) | Contractes amb Aprop (oferim) i Mobilicat (consumim) |
 | [equip.md](equip.md) | Qui és qui |

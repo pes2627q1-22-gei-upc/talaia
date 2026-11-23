@@ -1,29 +1,32 @@
 # Desplegament a la VM (TG-71)
 
-L'API es desplega a la VM de la FIB amb Docker Compose. Nginx hi fa d'únic punt d'entrada amb HTTPS de Let's Encrypt. Cada canvi a `stable` (una release o un hotfix) es desplega sol en menys de 5 minuts: un cron de la VM ho comprova i fa el deploy. Decisions: [ADR-0006](decisions/0006-infra-vm-docker.md), [ADR-0019](decisions/0019-allotjament-i-desplegament.md) i [ADR-0021](decisions/0021-deploy-per-pull-des-de-la-vm.md).
+L'API i la web d'administració es despleguen a la VM de la FIB amb Docker Compose. Nginx hi fa d'únic punt d'entrada amb HTTPS de Let's Encrypt. `stable` només canvia quan es tanca un sprint (la release `0.N.0`) o quan arriba un hotfix, i aquest és l'únic moment en què es desplega: un cron de la VM mira cada 5 minuts si `stable` ha canviat i, si no, no fa res. Els 5 minuts són el que triga la VM a adonar-se del canvi, no la freqüència dels deploys. (No és el cron del worker, que recalcula l'índex de visibilitat cada hora: vegeu «El worker».) Decisions: [ADR-0006](decisions/0006-infra-vm-docker.md), [ADR-0019](decisions/0019-allotjament-i-desplegament.md) i [ADR-0021](decisions/0021-deploy-per-pull-des-de-la-vm.md).
 
 ```
-App / Aprop / Mobilicat
-        │ https://<PUBLIC_HOST>:<40000+XXX·10>/api/v1
+App / Aprop / Mobilicat          Navegador (administradors)
+        │ …/api/v1                         │ …/admin/
+        │ https://<PUBLIC_HOST>:<40000+XXX·10>
         ▼
 nattech.fib.upc.edu ──(NAT)──▶ VM :8080
                                   │
                 ┌─────────────── Docker Compose (deploy/compose.yaml) ──────────────┐
-                │  nginx :8080 (TLS) ──▶ api :3000           worker (node-cron)      │
+                │  nginx :8080 (TLS, /admin/ estàtica) ──▶ api :3000   worker        │
                 │       ▲ certs (volum)                                              │
                 │  acme (acme.sh): emet i renova el certificat amb DNS-01 de DuckDNS │
                 └────────────────────────────────────────────────────────────────────┘
                                   ▲ docker compose up --build
-   GitHub ◀── git fetch de stable cada 5 min ── cron (deploy/scripts/desplega.sh)
+   GitHub ◀── git fetch de stable cada 5 min (només desplega si ha canviat) ── cron (deploy/scripts/desplega.sh)
 ```
 
 | Fitxer | Què fa |
 |---|---|
 | `deploy/compose.yaml` | Serveis `api`, `worker`, `acme` i `nginx` |
-| `deploy/nginx/templates/default.conf.template` | HTTPS al 8080, `/api/v1/` cap a l'API, capçaleres de seguretat |
+| `deploy/nginx/templates/default.conf.template` | HTTPS al 8080, `/api/v1/` cap a l'API, `/admin/` (web d'administració), capçaleres de seguretat |
+| `deploy/nginx/Dockerfile` | Imatge de Nginx amb la web d'administració compilada a dins |
+| `deploy/nginx/snippets/seguretat.conf` | Capçaleres de seguretat comunes (HSTS, `nosniff`, `Referrer-Policy`, `X-Frame-Options`) |
 | `deploy/scripts/emet-certificat.sh` | Primera emissió del certificat (un sol cop per VM) |
 | `services/api/Dockerfile`, `services/worker/Dockerfile` | Imatges multi-stage, `node:22-alpine`, usuari sense privilegis |
-| `deploy/scripts/desplega.sh` | Deploy de `stable`: l'executa el cron de la VM cada 5 minuts |
+| `deploy/scripts/desplega.sh` | Deploy de `stable`: el cron de la VM l'executa cada 5 minuts, però només desplega si `stable` ha canviat |
 | `.github/workflows/deploy-check.yml` | A cada PR que toca el desplegament: construeix les imatges i arrenca el compose |
 
 ## Ports
@@ -75,7 +78,7 @@ sudo mkdir -p /opt/talaia && sudo chown "$USER": /opt/talaia && sudo chmod 700 /
 (umask 077 && cp ~/talaia/.env.example /opt/talaia/.env)
 ```
 
-Omple com a mínim `PUBLIC_HOST`, `PUBLIC_PORT` (`40000+XXX·10`), `ACME_EMAIL`, `DUCKDNS_TOKEN`, `DATABASE_URL`, `SUPABASE_URL` (`https://<ref>.supabase.co`, la mateixa de l'app; sense, el compose no arrenca) i `API_PUBLIC_URL`. Perquè el worker desi les observacions de les estacions XEMA, també `METEOCAT_API_KEY`. Per activar l'accés d'Aprop al calendari, configura també `APROP_API_KEY` amb una clau aleatòria de 32 caràcters o més; sense aquesta variable, les peticions amb API key responen 503. Els valors reals són al gestor de contrasenyes de l'equip (P20), mai al repo ni al xat.
+Omple com a mínim `PUBLIC_HOST`, `PUBLIC_PORT` (`40000+XXX·10`), `ACME_EMAIL`, `DUCKDNS_TOKEN`, `DATABASE_URL`, `SUPABASE_URL` (`https://<ref>.supabase.co`, la mateixa de l'app), `SUPABASE_ANON_KEY` (la clau pública del mateix projecte, per a la web d'administració) i `API_PUBLIC_URL`. Sense `SUPABASE_URL` o sense `SUPABASE_ANON_KEY`, el compose no arrenca. Perquè el worker desi les observacions de les estacions XEMA, també `METEOCAT_API_KEY`. Si el projecte d'Expo té activada la seguretat reforçada de push, el worker necessita `EXPO_ACCESS_TOKEN` per enviar les notificacions de les alertes (TG-154). El worker de la VM envia les push perquè el compose posa `ENVIA_PUSH=true` per defecte; amb `ENVIA_PUSH=false` al `.env` es deixen d'enviar. Per activar l'accés d'Aprop al calendari, configura també `APROP_API_KEY` amb una clau aleatòria de 32 caràcters o més; sense aquesta variable, les peticions amb API key responen 503. Perquè arribi un correu quan un deploy falla, les quatre `ALERT_*` (secció «Avís per correu»). Els valors reals són al gestor de contrasenyes de l'equip (P20), mai al repo ni al xat.
 
 Compte: Docker Compose llegeix un comentari al final d'una línia buida (`VAR=   # …`) com si fos el valor. Posa els comentaris a la línia de sobre.
 
@@ -122,11 +125,46 @@ GitHub no executa res a la VM: la VM només baixa `stable`, i una PR (d'un fork 
 
 ## Com es desplega
 
+En funcionament normal hi ha un deploy per sprint (la release, a la retrospectiva) i un més per cada hotfix: entre dos canvis a `stable` el cron s'executa cada 5 minuts i acaba sense fer res. Triar el pull periòdic en lloc d'un deploy manual al final del sprint dona el mateix resultat sense dependre que algú s'hi recordi, fa que un hotfix arribi sol i que un deploy fallit es reintenti (ADR-0021).
+
 1. Una `release/0.N.0` o un `hotfix/0.N.x` es fusiona a `stable` ([git-workflow.md](git-workflow.md)).
-2. En menys de 5 minuts, el cron de la VM executa `desplega.sh`: `git reset --hard origin/stable`, `docker compose up -d --build --remove-orphans --wait`, un healthcheck amb `curl --resolve <PUBLIC_HOST>:8080:127.0.0.1`, que valida el certificat real contra el Nginx local, i `docker image prune`.
-3. Cada deploy queda a `~/talaia-deploy.log`. Si falla, el log acaba amb `ERROR` i el cron el torna a provar a cada passada fins que surti bé: una fallada de xarxa o de Docker Hub es resol sola, i un commit trencat deixa un `ERROR` cada 5 minuts fins que arribi el hotfix a `stable`. No hi ha rollback automàtic: si el contenidor nou no passa el healthcheck, ja ha substituït l'anterior.
+2. Com a molt 5 minuts després, el cron de la VM (que mira `stable` cada 5 minuts i, mentre no hi ha canvis, no fa res) executa `desplega.sh`: `git reset --hard origin/stable`, `docker compose up -d --build --remove-orphans --wait`, un healthcheck amb `curl --resolve <PUBLIC_HOST>:8080:127.0.0.1`, que valida el certificat real contra el Nginx local, i `docker image prune`.
+3. Cada deploy queda a `~/talaia-deploy.log`. Si falla, el log acaba amb `ERROR (<pas>)`: `git fetch`, `git reset`, `docker compose`, `healthcheck` o `docker image prune`. El cron el torna a provar a cada passada fins que surti bé: una fallada de xarxa o de Docker Hub es resol sola, i un commit trencat deixa un `ERROR` cada 5 minuts fins que arribi el hotfix a `stable`. No hi ha rollback automàtic: si el contenidor nou no passa el healthcheck, ja ha substituït l'anterior. Si l'avís està configurat, arriba un correu (secció següent).
 
 A mà, a la VM, torna a desplegar el commit actual: `FORCE=1 ~/talaia/deploy/scripts/desplega.sh`.
+
+### Avís per correu
+
+Quan un deploy falla, `desplega.sh` crida `deploy/scripts/avisa.sh`, que envia un correu des del Gmail de l'equip ([ADR-0035](decisions/0035-avis-deploy.md)):
+
+- **Un sol correu per fallada.** El commit pel qual ja s'ha avisat queda a `.git/talaia-avisat`. Els reintents del cron no tornen a avisar fins que falla un altre commit. Si el que falla és el `git fetch`, la clau és `git-fetch`: un correu i prou mentre GitHub no respongui.
+- **Un correu de recuperació** quan torna a anar bé, ja sigui amb un deploy que acaba bé o amb un fetch que torna a anar sense res de nou. Llavors s'esborra `.git/talaia-avisat`. Si hi ha un deploy pendent (`.git/talaia-pendent`: un `FORCE=1` que ha fallat, o `stable` que torna a l'últim commit bo), «sense canvis» no compta com a recuperació: el cron torna a desplegar, i el correu només arriba quan el healthcheck passa. `talaia-pendent` s'escriu a cada deploy fallat, surti o no el correu, i s'esborra quan el deploy acaba bé.
+- **Què hi porta:** el pas que ha fallat, el commit, l'hora, la màquina i les últimes 30 línies de `~/talaia-deploy.log` (un altre log amb `DEPLOY_LOG=…`). Mai el fitxer d'entorn.
+- **Si el correu no surt** (xarxa, contrasenya revocada), queda `AVÍS: no s'ha pogut enviar el correu` al log i el deploy no se'n ressent. L'estat no es desa, i a la passada següent es torna a provar.
+- **Sense les quatre variables, no fa res.** Van a `/opt/talaia/.env`: `ALERT_SMTP_URL=smtp://smtp.gmail.com:587`, `ALERT_FROM` (el compte de l'equip, P20), `ALERT_TO` (adreces separades per comes) i `ALERT_SMTP_PASSWORD`. La contrasenya és una contrasenya d'aplicació del compte, **diferent de la de Supabase**, perquè es pugui revocar per separat. Els valors, al gestor de contrasenyes. La contrasenya no surt a la línia d'ordres (`ps`): curl la llegeix d'un fitxer temporal de permisos 0600.
+
+`deploy-check.yml` prova `avisa.sh` a cada PR que toca `deploy/` (`deploy/tests/prova-avis.sh`, contra un Mailpit amb STARTTLS), i també `desplega.sh` sencer amb el trap, sobre un clon de prova amb Docker i el healthcheck simulats. En local: `sh deploy/tests/prova-avis.sh` (Docker, openssl, jq i git).
+
+Per provar-ho a la VM sense trencar el deploy, envia un avís de fallada de prova amb una clau que no s'hagi fet servir mai. Llavors arriba el correu i n'envies el de recuperació:
+
+```bash
+echo "Prova de l'avís de deploy" > /tmp/cos
+sh ~/talaia/deploy/scripts/avisa.sh fallada /opt/talaia/.env /tmp/avisat prova "Prova d'avís" /tmp/cos
+sh ~/talaia/deploy/scripts/avisa.sh recuperat /opt/talaia/.env /tmp/avisat "Prova de recuperació" /tmp/cos
+```
+
+## Web d'administració
+
+La web d'administració (`apps/admin`, [ADR-0030](decisions/0030-web-administracio-vite-react.md)) se serveix a **`https://<PUBLIC_HOST>:<PUBLIC_PORT>/admin/`**, al mateix origen que l'API, perquè crida `/api/v1/admin/…` amb rutes relatives. No hi ha cap procés més: `deploy/nginx/Dockerfile` la compila amb `node:22-alpine` dins del build de la imatge de Nginx, i la VM no necessita Node. Cada deploy (`up --build`) la torna a compilar.
+
+- **Variables.** El build rep `VITE_SUPABASE_URL` de `SUPABASE_URL` i `VITE_SUPABASE_ANON_KEY` de `SUPABASE_ANON_KEY`, tots dos de `/opt/talaia/.env`. Van al JavaScript del navegador: **només la clau pública** (Supabase → Project Settings → API → `anon`), mai la `service_role`. Si en falta alguna, el compose no arrenca.
+- **Rutes.** Una recàrrega directa d'una ruta interna (`/admin/punts/…`) serveix l'`index.html`. Un recurs de `/admin/assets/` que no existeix és un 404. `/admin` redirigeix a `/admin/`, i `/` continua responent el 404 en JSON.
+- **Cache.** L'`index.html` va amb `no-cache`: després d'un deploy, n'hi ha prou amb recarregar. Els recursos de `/admin/assets/` porten un hash al nom i es guarden un any (`immutable`).
+- **CSP.** Només hi ha scripts propis, i `connect-src` admet el mateix origen (l'API) i `SUPABASE_URL`, que Nginx rep com a variable d'entorn. El login amb Google és una navegació de pàgina sencera i la CSP no el limita.
+- **Login amb Google.** `https://<PUBLIC_HOST>:<PUBLIC_PORT>/admin/` ha de ser a les URL de redirecció permeses del projecte del núvol (Supabase → Authentication → URL Configuration). Com que no porta cap IP, `npm run supabase:correu` no la treu.
+- **Primer administrador.** El rol es posa amb SQL a `perfils.rol` ([ADR-0029](decisions/0029-rol-admin-i-bloqueig.md)): la persona entra primer a l'app mòbil, que en crea el perfil (`POST /perfil`; la web no en crea cap). Després, des de l'editor SQL de Supabase: `update public.perfils set rol = 'admin' where email = '<correu>';`.
+
+`deploy-check.yml` comprova a cada PR que toca l'admin o `deploy/` l'`index.html`, el fallback, el 404 d'un recurs que no existeix, la redirecció de `/admin`, la cache i la CSP.
 
 ## El worker
 
@@ -150,6 +188,12 @@ tc restart nginx
 En local, el mateix compose arrenca amb `.env.example` i un certificat autosignat (és el que fa `deploy-check.yml`):
 
 ```bash
+export SUPABASE_URL=https://ci.supabase.co SUPABASE_ANON_KEY=prova   # obligatòries, buides a .env.example
 docker compose -f deploy/compose.yaml --env-file .env.example up -d --build --wait
 curl -k --resolve talaia.duckdns.org:8080:127.0.0.1 https://talaia.duckdns.org:8080/api/v1/health
+curl -k --resolve talaia.duckdns.org:8080:127.0.0.1 https://talaia.duckdns.org:8080/admin/
 ```
+
+## Última prova de muntar-la de zero
+
+*Pendent (TG-180).* Quan es faci, apunta-hi la data, on (una segona VM, una VM local o un altre projecte de Compose a la mateixa VM), quant ha trigat seguint la guia literalment, i què s'ha corregit.

@@ -6,16 +6,16 @@ import {
 } from '@expo-google-fonts/atkinson-hyperlegible-next';
 import { BigShouldersDisplay_800ExtraBold } from '@expo-google-fonts/big-shoulders-display';
 import { useFonts } from 'expo-font';
-import { DarkTheme, Stack, ThemeProvider } from 'expo-router';
+import { DarkTheme, Stack, ThemeProvider as NavigationThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { LogBox } from 'react-native';
 
 import { AppProviders } from '@/core/providers/AppProviders';
-import { stackOptions } from '@/core/navigation/transitions';
-import { colors } from '@/core/theme/tokens';
+import { rootStackOptions, statusBarPerScreen } from '@/core/navigation/transitions';
+import { useTheme } from '@/core/theme/theme';
 import { EmailLoginCloseButton } from '@/features/auth/EmailLoginCloseButton';
 
 void SplashScreen.preventAutoHideAsync();
@@ -26,35 +26,14 @@ void SplashScreen.preventAutoHideAsync();
 // Native no segueix les promeses. Treure-ho quan Expo la capturi a `webview-wrapper.tsx`.
 LogBox.ignoreLogs(["Unable to find the 'DomWebView' view"]);
 
-const navigationTheme = {
-  ...DarkTheme,
-  colors: {
-    ...DarkTheme.colors,
-    background: colors.nit,
-    card: colors.card,
-    text: colors.lluna,
-    border: colors.linia,
-    primary: colors.far,
-  },
-};
-
 function RootStack() {
   const { t } = useTranslation();
+  const { name, colors } = useTheme();
   return (
-    <Stack screenOptions={stackOptions}>
+    <Stack screenOptions={rootStackOptions(name === 'vermell')}>
       {/* Des de la benvinguda, l'app entra amb una fosa (la benvinguda ja ha fet la seva sortida). */}
       <Stack.Screen name="(tabs)" options={{ animation: 'fade' }} />
-      <Stack.Screen
-        name="punt/[id]"
-        options={{
-          // El mapa de la fitxa arriba fins a dalt i el botó enrere hi sura a sobre (mockup 05).
-          headerShown: true,
-          headerTransparent: true,
-          title: '',
-          headerTintColor: colors.lluna,
-          headerBackButtonDisplayMode: 'minimal',
-        }}
-      />
+      {/* `punt/[id]`, `pla/nou`, `plans` i `el-meu-perfil` porten el seu botó enrere (ADR-0032). */}
       <Stack.Screen
         name="benvinguda"
         options={{ presentation: 'fullScreenModal', animation: 'fade' }}
@@ -71,6 +50,31 @@ function RootStack() {
         }}
       />
     </Stack>
+  );
+}
+
+function ThemedApp() {
+  const { name, colors } = useTheme();
+  const navigationTheme = useMemo(
+    () => ({
+      ...DarkTheme,
+      colors: {
+        ...DarkTheme.colors,
+        background: colors.nit,
+        card: colors.card,
+        text: colors.lluna,
+        border: colors.linia,
+        primary: colors.far,
+      },
+    }),
+    [colors],
+  );
+  return (
+    <NavigationThemeProvider value={navigationTheme}>
+      {/* A iOS fora d'Expo Go la barra va per pantalla (`rootStackOptions`). */}
+      {!statusBarPerScreen() && <StatusBar style="light" hidden={name === 'vermell'} />}
+      <RootStack />
+    </NavigationThemeProvider>
   );
 }
 
@@ -94,10 +98,7 @@ export default function RootLayout() {
 
   return (
     <AppProviders>
-      <ThemeProvider value={navigationTheme}>
-        <StatusBar style="light" />
-        <RootStack />
-      </ThemeProvider>
+      <ThemedApp />
     </AppProviders>
   );
 }

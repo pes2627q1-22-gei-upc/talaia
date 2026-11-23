@@ -44,7 +44,7 @@ Refs: TG-<ref>
 - **Àmbit** (opcional, recomanat): `mobile`, `admin`, `api`, `worker`, `shared`, `data`, `infra`, `deps`.
 - **Descripció:** en català, en imperatiu o present, començant en minúscula, sense punt final, ≤ 72 caràcters amb el prefix.
 - **Canvi incompatible:** `!` després del tipus/àmbit i/o un peu `BREAKING CHANGE: …` (→ versió *major*).
-- **Peu `Refs: TG-<ref>` obligatori** a cada commit (l'assignatura exigeix lligar-los a Taiga i la integració Taiga ↔ GitHub reconeix `TG-<ref>`). Diverses tasques: `Refs: TG-88, TG-91`.
+- **Peu `Refs: TG-<ref>` obligatori** a cada commit (l'assignatura exigeix lligar-los a Taiga). Diverses tasques: `Refs: TG-88, TG-91`. L'estat de la tasca no es canvia des dels commits, sinó a mà a Taiga: vegeu «Integració Taiga ↔ GitHub».
 
 Exemples:
 
@@ -67,6 +67,25 @@ BREAKING CHANGE: els clients han de llegir error.code en lloc de message.
 Refs: TG-68
 ```
 
+### Integració Taiga ↔ GitHub
+
+El webhook de Taiga només **enllaça** cada commit amb la seva tasca: llegeix els commits que arriben a GitHub (només els *push*: no mira ni el títol ni la descripció de les PR) i, si el missatge porta `TG-<ref>`, hi deixa el comentari «mentioned in commit» amb l'enllaç al commit. Per això serveix el peu `Refs: TG-<ref>`, que commitlint exigeix a cada commit.
+
+L'**estat de la tasca es canvia a mà a Taiga**, no des dels commits:
+
+1. **«In progress»** en començar-la.
+2. **«Ready for test»** en obrir la PR.
+3. **Tancada** en fusionar-la, amb les **Hores reals** (el merge commit de GitHub només porta el títol de la PR).
+
+No escriguis `TG-<ref> #<estat>` als commits: Taiga encara l'aplicaria.
+
+**Per què sense etiquetes d'estat.** Taiga aplica les etiquetes de tots els commits de cada *push* sense mirar l'estat actual de la tasca ni l'edat del commit, i la integració només té URL i *secret*: no es pot demanar que ignori els commits ja vistos. En fusionar `snapshot` en una branca i fer-hi *push*, els commits antics entren al *payload* i les seves etiquetes desfan els canvis manuals. El 15/11/2026, la TG-138 (tancada a mà a les 17:08) es va reobrir a les 21:24 amb el *push* de `feature/TG-179-avis-compte-bloquejat`, que repetia `97800b1` (`#in-progress`) i `1fb24d6` (`#ready-for-test`); la TG-181 es va reobrir 4 cops per `30212bd`, i la TG-260 (tancada a les 10:19 del 16/11) es va reobrir a les 10:24 amb `5e33d80`.
+
+Configuració, un cop (cal ser administrador del projecte de Taiga i del repositori):
+
+1. Taiga → Admin → Integracions → GitHub: copiar la *payload URL* i la *secret key* (o deixar la que genera).
+2. GitHub → Settings → Webhooks → Add webhook: la *payload URL* de Taiga, *content type* `application/json`, la mateixa *secret* i només l'esdeveniment **push** («Just the push event»): amb els d'*issues*, Taiga crearia una issue per cada issue de GitHub, també les del parte de la daily.
+
 ### Validació automàtica (husky)
 
 `npm install` activa els hooks de Git (`.husky/`):
@@ -80,7 +99,10 @@ Per comprovar un missatge sense fer el commit: `printf 'feat: x\n\nRefs: TG-1' |
 
 - Títol en format Conventional Commits (és el missatge del merge). Descripció amb la plantilla (`.github/pull_request_template.md`): tasca de Taiga, què canvia, com provar-ho, captures si és UI.
 - Mínim 1 revisió aprovada d'una altra persona. Qui obre la PR no l'aprova.
-- Abans de demanar revisió: actualitzar la branca amb `snapshot` i passar `npm run lint`, `npm run typecheck` i `npm test` en local.
+- Abans de demanar revisió: actualitzar la branca amb `snapshot` i passar `npm run lint`, `npm run typecheck` i `npm test` en local. Després d'una aprovació no es fusiona `snapshot` a la branca: cada push la descarta.
+- **Solapament:** abans d'obrir o fusionar una PR, `gh pr list` i mira si toca fitxers que ja toquen altres PR obertes. Els més calents són els JSON d'i18n (`apps/mobile/src/core/i18n/locales/`), `CLAUDE.md`, `docs/testing-ui-inventari.md` i `apps/mobile/src/app/_layout.tsx`. Si sí, avisa qui porta l'altra PR i acordeu l'ordre de fusió.
+- **Fusió ràpida:** una PR aprovada i verda es fusiona el mateix dia. Si xoca amb una altra ja fusionada, qui la porta resol el conflicte i demana la re-aprovació a qui l'havia aprovat.
+- **«Changes requested»:** respon als comentaris, puja el canvi i torna a demanar la revisió (*Re-request review*). GitHub només treu el bloqueig quan el mateix revisor aprova o descarta la seva revisió. Qui ha demanat els canvis la revisa en 24 h.
 - En fusionar: tancar la tasca a Taiga i anotar les **Hores reals**. GitHub esborra la branca de suport.
 
 ## Receptes
@@ -111,4 +133,4 @@ git switch -c hotfix/0.1.1
 3. Retrospectiva: `release/0.N.0` → `stable`, etiqueta `v0.N.0` (és el que es mostra a la review) i tornada a `snapshot`.
 4. Publicació (final del curs): `stable` → `prod`.
 
-El servidor es desplega des de `stable` durant el desenvolupament (TG-71) i des de `prod` per a la versió final.
+El servidor es desplega des de `stable` durant el desenvolupament (TG-71) i des de `prod` per a la versió final. El deploy de `stable` és automàtic: un cron de la VM mira cada 5 minuts si ha canviat ([desplegament.md](desplegament.md), ADR-0021), de manera que a la pràctica es desplega a la retrospectiva de cada sprint i amb cada hotfix.

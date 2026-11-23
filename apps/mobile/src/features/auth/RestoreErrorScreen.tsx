@@ -1,14 +1,15 @@
-import { StyleSheet } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { colors, motion } from '@/core/theme/tokens';
+import { makeStyles } from '@/core/theme/theme';
+import { motion } from '@/core/theme/tokens';
 import { StateMessage } from '@/shared/ui/StateMessage';
 
 import { useAuthViewModel } from './useAuthViewModel';
 
 /** La sessió hi és però no s'ha pogut recuperar (p. ex. sense cobertura): es torna a provar. */
 export function RestoreErrorScreen() {
+  const styles = useStyles();
   const vm = useAuthViewModel();
   return (
     <SafeAreaView style={styles.root}>
@@ -22,6 +23,6 @@ export function RestoreErrorScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(({ colors }) => ({
   root: { flex: 1, justifyContent: 'center', backgroundColor: colors.nit },
-});
+}));

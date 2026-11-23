@@ -8,7 +8,9 @@ on:
       - 'deploy/**'
       - 'services/*/Dockerfile'
       - 'services/worker/**'
+      - 'apps/admin/**'
       - 'packages/db/**'
+      - 'packages/index/**'
       - '.dockerignore'
       - 'package-lock.json'
       - '.github/workflows/deploy*.yml'
@@ -28,6 +30,8 @@ jobs:
       COMPOSE: docker compose -f deploy/compose.yaml --env-file .env.example
       # Obligatòria al compose; a la CI no s'hi valida cap JWT.
       SUPABASE_URL: https://ci.supabase.co
+      # Obligatòria per compilar l'admin (TG-176). És la clau pública: aquí, un valor de prova.
+      SUPABASE_ANON_KEY: clau-publica-de-prova
 
     steps:
       - name: Checkout
@@ -35,8 +39,8 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Sintaxi de l'script de deploy
-        run: sh -n deploy/scripts/desplega.sh
+      - name: Scripts de deploy (shellcheck)
+        run: shellcheck deploy/scripts/*.sh deploy/tests/*.sh
 
       - name: Valida el compose
         run: $COMPOSE config -q
@@ -53,6 +57,21 @@ jobs:
           $COMPOSE up -d --wait
           curl -fsS -k --resolve talaia.duckdns.org:8080:127.0.0.1 https://talaia.duckdns.org:8080/api/v1/health
 
+      # La web d'administració (TG-176): l'index.html, el fallback d'una ruta interna (una
+      # recàrrega directa), un recurs que no existeix és un 404 i /admin redirigeix sense el port intern.
+      - name: Comprova /admin/ per Nginx
+        run: |
+          URL=https://talaia.duckdns.org:8080
+          CURL="curl -sS -k --resolve talaia.duckdns.org:8080:127.0.0.1"
+          $CURL -f "$URL/admin/" | grep -q '<div id="root">'
+          $CURL -f "$URL/admin/punts/qualsevol" | grep -q '<div id="root">'
+          asset=$($CURL -f "$URL/admin/" | grep -o '/admin/assets/[^"]*\.js' | head -n 1)
+          test -n "$asset"
+          $CURL -fI "$URL$asset" | grep -qi 'cache-control: public, max-age=31536000, immutable'
+          test "$($CURL -o /dev/null -w '%{http_code}' "$URL/admin/assets/no-existeix.js")" = 404
+          test "$($CURL -o /dev/null -w '%{redirect_url}' "$URL/admin")" = "$URL/admin/"
+          $CURL -fI "$URL/admin/" | grep -qi '^content-security-policy:.*connect-src .self. https://ci.supabase.co'
+
       - name: El worker es manté en marxa
         run: |
           sleep 15
@@ -65,3 +84,18 @@ jobs:
       - name: Logs
         if: failure()
         run: $COMPOSE logs
+
+  # L'avís de deploy fallat (TG-180, ADR-0035) contra un Mailpit amb STARTTLS i autenticació: un sol
+  # correu per fallada, el de recuperació, res sense configurar i cap error si el servidor no respon.
+  # També desplega.sh sencer amb el trap (Docker i healthcheck simulats).
+  avis:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Prova d'avisa.sh
+        run: sh deploy/tests/prova-avis.sh

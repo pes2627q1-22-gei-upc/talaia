@@ -5,10 +5,13 @@ import type { StyleSpecification } from 'maplibre-gl';
 import { useEffect, useRef, useState } from 'react';
 
 import '@/core/map/maplibreWorker';
+import { NIGHT_MAP_CSS, NIGHT_MAP_TINT } from '@/core/theme/nightMap';
 import { ATTRIBUTION } from '@/features/map/style/nightStyle';
 
 type Props = {
   mapStyle: StyleSpecification;
+  /** Mode nit (ADR-0032): el mapa passa a vermell amb un filtre. */
+  night?: boolean;
   coordinates: { lat: number; lon: number };
   palette: {
     background: string;
@@ -59,6 +62,7 @@ export default function PointLocationMapContent({
   attributionLabel,
   unavailableLabel,
   orbit,
+  night = false,
 }: Props) {
   const container = useRef<HTMLDivElement>(null);
   const failure = useRef<HTMLDivElement>(null);
@@ -234,8 +238,10 @@ export default function PointLocationMapContent({
         @media (prefers-reduced-motion: reduce) {
           .talaia-point-marker::before { animation: none; }
         }
+        ${night ? NIGHT_MAP_CSS : ''}
       `}</style>
       <div ref={container} style={{ position: 'absolute', inset: 0 }} />
+      {night && <div aria-hidden style={{ position: 'absolute', ...NIGHT_MAP_TINT }} />}
       {
         <div
           ref={failure}

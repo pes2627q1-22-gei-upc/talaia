@@ -1,8 +1,9 @@
 import { Image } from 'expo-image';
 import { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 
-import { colors, sizes, spacing, typography } from '@/core/theme/tokens';
+import { makeStyles, useNightTint, useTheme } from '@/core/theme/theme';
+import { sizes, spacing, typography } from '@/core/theme/tokens';
 import { AppText } from '@/shared/ui/AppText';
 import { Button } from '@/shared/ui/Button';
 import { Skeleton } from '@/shared/ui/Skeleton';
@@ -18,6 +19,9 @@ type Props = Pick<
   | 'hoursLabel'
   | 'timezoneLabel'
   | 'noHours'
+  | 'indexExplanation'
+  | 'hoursTapHint'
+  | 'hourA11yHint'
   | 'hoursLoading'
   | 'hoursError'
   | 'retryLabel'
@@ -27,6 +31,7 @@ type Factor = ViewModel['hours'][number]['factors'][number];
 
 const factorIcons = {
   cloud: require('@/assets/images/point/cloud.svg'),
+  drop: require('@/assets/images/point/drop.svg'),
   sun: require('@/assets/images/point/sun.svg'),
   sparkle: require('@/assets/images/point/sparkle.svg'),
   moon: require('@/assets/images/point/moon.svg'),
@@ -43,11 +48,15 @@ export function IndexBreakdown({
   hoursLabel,
   timezoneLabel,
   noHours,
+  indexExplanation,
+  hoursTapHint,
+  hourA11yHint,
   hoursLoading,
   hoursError,
   retryLabel,
   retry,
 }: Props) {
+  const styles = useStyles();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   // Si l'hora triada desapareix en refrescar l'índex, es torna a la millor.
   const selected =
@@ -78,6 +87,9 @@ export function IndexBreakdown({
         hoursLabel={hoursLabel}
         timezoneLabel={timezoneLabel}
         noHours={noHours}
+        indexExplanation={indexExplanation}
+        hoursTapHint={hoursTapHint}
+        hourA11yHint={hourA11yHint}
         selectedHourId={selected?.id ?? null}
         onSelect={setSelectedId}
       />
@@ -96,9 +108,17 @@ export function IndexBreakdown({
 }
 
 function FactorRow({ factor }: { factor: Factor }) {
+  const nightTint = useNightTint();
+  const styles = useStyles();
+  const { colors } = useTheme();
   return (
     <View style={styles.factorRow}>
-      <Image source={factorIcons[factor.icon]} style={styles.factorIcon} accessible={false} />
+      <Image
+        tintColor={nightTint}
+        source={factorIcons[factor.icon]}
+        style={styles.factorIcon}
+        accessible={false}
+      />
       <View style={styles.factorContent}>
         <View style={styles.factorHeading}>
           <View style={styles.factorCopy}>
@@ -106,6 +126,11 @@ function FactorRow({ factor }: { factor: Factor }) {
             <AppText variant="small" color="boira">
               {factor.hint}
             </AppText>
+            {factor.note ? (
+              <AppText variant="small" color="boira">
+                {factor.note}
+              </AppText>
+            ) : null}
           </View>
           <AppText variant="heading" color={factor.level}>
             {factor.value}
@@ -113,7 +138,7 @@ function FactorRow({ factor }: { factor: Factor }) {
         </View>
         <View
           accessibilityRole="progressbar"
-          accessibilityLabel={`${factor.label}. ${factor.hint}`}
+          accessibilityLabel={[factor.label, factor.hint, factor.note].filter(Boolean).join('. ')}
           accessibilityValue={{ min: 0, max: 100, now: factor.value }}
           style={styles.factorTrack}
         >
@@ -129,7 +154,7 @@ function FactorRow({ factor }: { factor: Factor }) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(({ colors }) => ({
   section: { gap: spacing.lg },
   factors: { gap: spacing.md },
   factorRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
@@ -144,4 +169,4 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   factorProgress: { height: '100%', borderRadius: spacing.xs },
-});
+}));

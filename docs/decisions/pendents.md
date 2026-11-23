@@ -6,15 +6,15 @@ Llegenda: **Recomanació** = la proposta inicial del sprint master; no és defin
 
 ## Tècniques (Sprint 1, scaffolds)
 
-P1, P2, P3, P7 i P8 ja estan decidides: [ADR-0010](0010-eines-app.md). P4: [ADR-0011](0011-validacio-openapi-zod.md). P5: [ADR-0013](0013-acces-bd-kysely.md). P6: [ADR-0023](0023-validacio-jwt-jwks.md). P9: [ADR-0024](0024-planificacio-worker-node-cron.md). P10: [ADR-0020](0020-foscor-sqm-geotiff.md). P14: [ADR-0026](0026-contracte-esdeveniments-aprop.md). P22: [ADR-0014](0014-identificador-app-expo-go.md).
-
-| # | Decisió | Opcions | Recomanació | Quan / qui |
-|---|---|---|---|---|
-| P11 | Web d'administració | Vite + React · Next.js | **Vite + React** (estàtica, servida per Nginx) | Sprint 2 |
+P1, P2, P3, P7 i P8 ja estan decidides: [ADR-0010](0010-eines-app.md). P4: [ADR-0011](0011-validacio-openapi-zod.md). P5: [ADR-0013](0013-acces-bd-kysely.md). P6: [ADR-0023](0023-validacio-jwt-jwks.md). P9: [ADR-0024](0024-planificacio-worker-node-cron.md). P10: [ADR-0020](0020-foscor-sqm-geotiff.md). P11: [ADR-0030](0030-web-administracio-vite-react.md). P14: [ADR-0026](0026-contracte-esdeveniments-aprop.md). P22: [ADR-0014](0014-identificador-app-expo-go.md).
 
 ## Producte i índex
 
 P12: [ADR-0018](0018-formula-index-v1.md). P13: [ADR-0017](0017-cataleg-inicial-punts.md). P15 (Sign in with Apple): [ADR-0016](0016-sign-in-with-apple-ios.md).
+
+| # | Decisió | Notes |
+|---|---|---|
+| P23 | Plans d'un punt esborrat | `plans.punt_id` té `on delete cascade` (TG-156): retirar un punt és una baixa lògica i el pla es conserva (`punt.publicat: false`), però si un punt s'esborra de debò, els seus plans desapareixen i l'esdeveniment del calendari del mòbil (`calendari_event_id`, TG-158) queda orfe. Cal decidir si s'avisa l'usuari, si l'app l'esborra del calendari en sincronitzar, o si s'impedeix esborrar punts amb plans. |
 
 ## Infraestructura i organització
 

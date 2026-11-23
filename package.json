@@ -7,14 +7,17 @@
   },
   "workspaces": [
     "apps/mobile",
+    "apps/admin",
     "services/api",
     "services/worker",
     "packages/shared",
     "packages/db",
+    "packages/index",
     "data"
   ],
   "scripts": {
     "mobile": "npm run start --workspace apps/mobile",
+    "admin": "npm run dev --workspace apps/admin",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
     "lint": "eslint .",
@@ -25,7 +28,11 @@
     "db:types": "kysely-codegen --url postgresql://postgres:postgres@127.0.0.1:54322/postgres",
     "db:types:verify": "kysely-codegen --verify",
     "supabase:correu": "node --env-file-if-exists=.env.supabase supabase/scripts/configura-correu.mjs",
-    "test:supabase": "node --test \"supabase/scripts/**/*.test.mjs\""
+    "test:supabase": "node --test \"supabase/scripts/**/*.test.mjs\"",
+    "test:sm": "node --test \"scripts/sm/**/*.test.mjs\"",
+    "test:rnf": "node --test \"scripts/rnf/**/*.test.mjs\"",
+    "rnf:api": "node scripts/rnf/carrega-api.mjs",
+    "sm:parte": "node scripts/sm/parte-daily.mjs --copia"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.2.3",

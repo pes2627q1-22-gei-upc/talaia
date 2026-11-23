@@ -40,7 +40,7 @@ export async function restoreLanguage(): Promise<void> {
   if (isSupportedLanguage(saved) && saved !== i18n.language) await changeLanguage(saved);
 }
 
-void i18n
+export const languageReady = i18n
   .use(initReactI18next)
   .init({
     resources,

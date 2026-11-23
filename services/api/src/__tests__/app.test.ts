@@ -37,6 +37,9 @@ describe('JWT auth i perfil en el primer accés', () => {
     email: 'maria@example.com',
     nom,
     avatarUrl: null,
+    rol: 'usuari' as const,
+    bloquejat: false,
+    dataBloqueig: null,
     dataCreacio: new Date('2026-10-14T12:00:00.000Z'),
     dataActualitzacio: new Date('2026-10-14T12:00:00.000Z'),
   });
@@ -53,6 +56,9 @@ describe('JWT auth i perfil en el primer accés', () => {
           nom: user.email?.split('@')[0] ?? null,
           avatarUrl:
             typeof user.userMetadata?.avatar_url === 'string' ? user.userMetadata.avatar_url : null,
+          rol: 'usuari' as const,
+          bloquejat: false,
+          dataBloqueig: null,
           dataCreacio: new Date('2026-10-14T12:00:00.000Z'),
           dataActualitzacio: new Date('2026-10-14T12:00:00.000Z'),
         },
@@ -64,6 +70,11 @@ describe('JWT auth i perfil en el primer accés', () => {
     updateProfile: jest.fn(async (authUserId: string, { nom }: { nom: string }) =>
       profileExists ? storedProfile(authUserId, nom) : null,
     ),
+    // El bloqueig i el rol es proven a `admin.test.ts`.
+    getAccountStatus: jest.fn(async () => null),
+    listProfiles: jest.fn(async () => []),
+    setBlocked: jest.fn(async () => null),
+    deleteAccount: jest.fn(async () => undefined),
   };
 
   let privateKey: CryptoKey;
@@ -86,6 +97,7 @@ describe('JWT auth i perfil en el primer accés', () => {
     profileStore.ensureProfile.mockClear();
     profileStore.getProfile.mockClear();
     profileStore.updateProfile.mockClear();
+    profileStore.deleteAccount.mockClear();
   });
 
   type TokenOptions = {
@@ -184,6 +196,7 @@ describe('JWT auth i perfil en el primer accés', () => {
       expect(res.headers['cache-control']).toBe('no-store');
       expect(res.body).toEqual({
         id: 'profile-1',
+        rol: 'usuari',
         authUserId: 'user-123',
         email: 'maria@example.com',
         nom: 'maria',
@@ -231,6 +244,32 @@ describe('JWT auth i perfil en el primer accés', () => {
       for (const res of responses) expect(res.status).toBe(401);
       expect(profileStore.getProfile).not.toHaveBeenCalled();
       expect(profileStore.updateProfile).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('DELETE /perfil (HU38)', () => {
+    it("esborra el compte de l'usuari del JWT i respon 204 sense cos", async () => {
+      const res = await request(jwtApp)
+        .delete('/api/v1/perfil')
+        .set('Authorization', `Bearer ${await signToken()}`);
+      expect(res.status).toBe(204);
+      expect(res.text).toBe('');
+      expect(profileStore.deleteAccount).toHaveBeenCalledWith('user-123');
+    });
+
+    it('sense JWT respon 401 i no esborra res', async () => {
+      const res = await request(jwtApp).delete('/api/v1/perfil');
+      expect(res.status).toBe(401);
+      expect(profileStore.deleteAccount).not.toHaveBeenCalled();
+    });
+
+    it('si la base de dades falla, respon 500 amb el format uniforme', async () => {
+      profileStore.deleteAccount.mockRejectedValueOnce(new Error('connexió perduda'));
+      const res = await request(jwtApp)
+        .delete('/api/v1/perfil')
+        .set('Authorization', `Bearer ${await signToken()}`);
+      expect(res.status).toBe(500);
+      expect(res.body.error.code).toBe('internal_error');
     });
   });
 
@@ -367,8 +406,11 @@ describe('OpenAPI', () => {
     expect(res.body.openapi).toBe('3.0.3');
     expect(res.body.paths).toHaveProperty('/health');
     expect(res.body.paths).toHaveProperty('/esdeveniments');
+    expect(res.body.paths).toHaveProperty('/esdeveniments/{id}');
     expect(res.body.components.schemas).toHaveProperty('Error');
     expect(res.body.components.schemas).toHaveProperty('Esdeveniment');
+    expect(res.body.components.schemas).toHaveProperty('EsdevenimentDetall');
+    expect(res.body.components.schemas).toHaveProperty('PrecisioTemporal');
     expect(res.body.components.securitySchemes).toHaveProperty('ApiKeyAprop');
     expect(res.body.components.securitySchemes).toHaveProperty('BearerSupabase');
 
@@ -387,12 +429,24 @@ describe('OpenAPI', () => {
       res.body.paths['/esdeveniments'].get.parameters.map(
         (parameter: { name: string }) => parameter.name,
       ),
-    ).toEqual(['des_de', 'fins_a', 'tipus']);
+    ).toEqual(['des_de', 'fins_a', 'tipus', 'Accept-Language']);
     expect(res.body.paths['/esdeveniments'].get.operationId).toBe('listEsdeveniments');
     expect(res.body.paths['/esdeveniments'].get.security).toEqual([
       { ApiKeyAprop: [] },
       { BearerSupabase: [] },
     ]);
+
+    const detail = res.body.paths['/esdeveniments/{id}'].get;
+    expect(detail.operationId).toBe('getEsdeveniment');
+    expect(detail.security).toEqual([{ ApiKeyAprop: [] }, { BearerSupabase: [] }]);
+    expect(detail.parameters.map((parameter: { name: string }) => parameter.name)).toEqual([
+      'id',
+      'Accept-Language',
+    ]);
+    expect(detail.responses).toHaveProperty('404');
+    expect(detail.responses['200'].content['application/json'].schema).toMatchObject({
+      $ref: '#/components/schemas/EsdevenimentDetall',
+    });
   });
 
   it('serveix la UI a /api/v1/docs/', async () => {

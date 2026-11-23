@@ -97,6 +97,39 @@ describe('planificaXema', () => {
     expect(client.estacionsOperatives).toHaveBeenCalledTimes(1);
   });
 
+  it('després de les lectures calcula el biaix de la humitat i en deixa el resum al log', async () => {
+    const { programa, tasques } = programaFals();
+    const client = clientFals();
+    const repository = createInMemoryXemaRepository({ estacions: ['CC'] });
+    const ara = new Date('2026-11-20T06:15:00.000Z');
+    const ajustaHumitat = jest.fn(async (_ara: Date) => {
+      // El biaix es calcula amb les lectures d'ahir: la ingesta ja ha d'haver acabat.
+      expect(client.lectures).toHaveBeenCalled();
+      return { calculat: true, estacions: 3, amb: 2 };
+    });
+    planificaXema({
+      xema: { client, repository, hiHaEstacions: async () => true, ajustaHumitat },
+      programa,
+      ara: () => ara,
+    });
+    await flush();
+
+    // En arrencar…
+    expect(ajustaHumitat).toHaveBeenCalledTimes(1);
+    expect(ajustaHumitat).toHaveBeenCalledWith(ara);
+    expect(console.log).toHaveBeenCalledWith(
+      '[worker] xema: biaix de la humitat de 2 de 3 estacions',
+    );
+
+    // …i a cada tasca de lectures (si ja s'ha fet avui, l'ajust mateix no fa res).
+    ajustaHumitat.mockResolvedValueOnce({ calculat: false, estacions: 0, amb: 0 });
+    jest.mocked(console.log).mockClear();
+    tasques.get(PLANIFICACIO_LECTURES)?.();
+    await flush();
+    expect(ajustaHumitat).toHaveBeenCalledTimes(2);
+    expect(console.log).not.toHaveBeenCalledWith(expect.stringContaining('biaix de la humitat'));
+  });
+
   it('mostra al log els errors del resum de la ingesta', async () => {
     const { programa, tasques } = programaFals();
     const client = clientFals(async (variable) => {

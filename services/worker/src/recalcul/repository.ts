@@ -1,5 +1,5 @@
 import { lat, lon, type DB } from '@talaia/db';
-import type { Kysely } from 'kysely';
+import { sql, type Kysely } from 'kysely';
 
 import { createKyselyIndexRepository } from '../index/repository';
 import type { RecalculDeps } from './recalcul';
@@ -13,18 +13,45 @@ export function createKyselyRecalculRepositories(
       async listPublicats() {
         const files = await db
           .selectFrom('puntsObservacio')
+          .leftJoin('estacionsXema as e', 'e.codi', 'puntsObservacio.estacioXema')
           .select((eb) => [
-            'id',
-            'altitud',
-            'sqm',
-            lon(eb.ref('ubicacio')).as('lon'),
-            lat(eb.ref('ubicacio')).as('lat'),
+            'puntsObservacio.id',
+            'puntsObservacio.altitud',
+            'puntsObservacio.sqm',
+            'puntsObservacio.horitzo',
+            'e.codi as estacioCodi',
+            'e.altitud as estacioAltitud',
+            'e.biaixHumitat',
+            'e.biaixCalculatEl',
+            lon(eb.ref('puntsObservacio.ubicacio')).as('lon'),
+            lat(eb.ref('puntsObservacio.ubicacio')).as('lat'),
+            // Amb el `leftJoin` la ubicació pot ser `null`: els helpers no ho tipen, però `estacioCodi`
+            // ja diu si n'hi ha.
+            lon(sql<string>`e.ubicacio`).as('estacioLon'),
+            lat(sql<string>`e.ubicacio`).as('estacioLat'),
           ])
-          .where('estat', '=', 'PUBLICAT')
-          .orderBy('slug')
+          .where('puntsObservacio.estat', '=', 'PUBLICAT')
+          .orderBy('puntsObservacio.slug')
           .execute();
-        // `numeric` arriba com a cadena: el client de Postgres no el converteix per no perdre precisió.
-        return files.map((f) => ({ ...f, sqm: f.sqm === null ? null : Number(f.sqm) }));
+        return files.map((f) => ({
+          id: f.id,
+          lat: f.lat,
+          lon: f.lon,
+          altitud: f.altitud,
+          // `numeric` arriba com a cadena: el client de Postgres no el converteix per no perdre precisió.
+          sqm: f.sqm === null ? null : Number(f.sqm),
+          horitzo: f.horitzo,
+          estacio:
+            f.estacioCodi === null
+              ? null
+              : {
+                  lat: f.estacioLat,
+                  lon: f.estacioLon,
+                  altitud: f.estacioAltitud,
+                  biaixHumitat: f.biaixHumitat,
+                  biaixCalculatEl: f.biaixCalculatEl ? new Date(f.biaixCalculatEl) : null,
+                },
+        }));
       },
     },
     indexs: {
@@ -34,10 +61,19 @@ export function createKyselyRecalculRepositories(
       },
     },
     execucions: {
-      async registra({ iniciadaEl, acabadaEl, estat, punts, hores, error }) {
+      async registra(e) {
         await db
           .insertInto('execucionsWorker')
-          .values({ iniciadaEl, acabadaEl, estat, punts, hores, error: error ?? null })
+          .values({
+            iniciadaEl: e.iniciadaEl,
+            acabadaEl: e.acabadaEl,
+            estat: e.estat,
+            punts: e.punts,
+            hores: e.hores,
+            error: e.error ?? null,
+            notificacions: e.notificacions ?? null,
+            errorAlertes: e.errorAlertes ?? null,
+          })
           .execute();
       },
     },

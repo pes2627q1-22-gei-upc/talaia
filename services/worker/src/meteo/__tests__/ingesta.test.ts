@@ -1,7 +1,7 @@
+import type { Coordenades, OpenMeteoClient } from '@talaia/index';
 import type { PrevisioMeteoHora } from '@talaia/shared';
 
 import { ingestaPrevisioMeteo } from '../ingesta';
-import type { Coordenades, OpenMeteoClient } from '../openMeteo';
 import { createInMemoryPrevisioMeteoRepository } from '../repository';
 
 const ARA = new Date('2026-10-12T20:05:00.000Z');

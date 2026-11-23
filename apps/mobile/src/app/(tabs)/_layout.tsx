@@ -1,66 +1,34 @@
 import { Redirect } from 'expo-router';
-import { NativeTabs } from 'expo-router/native-tabs';
+import { Tabs } from 'expo-router/js-tabs';
 import { useTranslation } from 'react-i18next';
-import { Platform } from 'react-native';
 
-import { colors } from '@/core/theme/tokens';
+import { TabBar } from '@/core/navigation/TabBar';
+import { AccountBlockedScreen } from '@/features/auth/AccountBlockedScreen';
 import { RestoreErrorScreen } from '@/features/auth/RestoreErrorScreen';
 import { useSessionGate } from '@/features/auth/useSessionGate';
+import { useOpenNotifiedPoint } from '@/features/notifications/useOpenNotifiedPoint';
 
-// Icones provisionals: SF Symbols a iOS i les del template a Android/web.
-// La barra pròpia del mockup (icones de Talaia) queda per a una tasca a part.
-const mapIcon = require('@/assets/images/tabIcons/home.png');
-const calendarIcon = require('@/assets/images/tabIcons/explore.png');
+// Barra pròpia (`TabBar`, ADR-0037): la nativa d'iOS 26 no es pot posar en vermell en mode nit.
+const renderTabBar = (props: Parameters<typeof TabBar>[0]) => <TabBar {...props} />;
 
 export default function TabsLayout() {
   const { t } = useTranslation();
-  const ios = Platform.OS === 'ios';
   const gate = useSessionGate();
+  // En tocar una notificació d'una alerta, la fitxa del punt: només amb sessió (TG-154).
+  useOpenNotifiedPoint(gate === 'signedIn');
 
   // Sense sessió no s'entra a l'app: la benvinguda és la porta (HU35). Mentre es restaura, res.
   if (gate === 'restoring') return null;
   if (gate === 'restoreFailed') return <RestoreErrorScreen />;
+  if (gate === 'blocked') return <AccountBlockedScreen />;
   if (gate === 'signedOut') return <Redirect href="/benvinguda" />;
 
   return (
-    <NativeTabs
-      backgroundColor={colors.card}
-      indicatorColor={colors.crep}
-      tintColor={colors.far}
-      labelStyle={{ default: { color: colors.boira }, selected: { color: colors.far } }}
-    >
-      <NativeTabs.Trigger name="(explora)">
-        <NativeTabs.Trigger.Label>{t('tabs.explore')}</NativeTabs.Trigger.Label>
-        {ios ? (
-          <NativeTabs.Trigger.Icon sf="safari" />
-        ) : (
-          <NativeTabs.Trigger.Icon src={mapIcon} renderingMode="template" />
-        )}
-      </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="calendari">
-        <NativeTabs.Trigger.Label>{t('tabs.calendar')}</NativeTabs.Trigger.Label>
-        {ios ? (
-          <NativeTabs.Trigger.Icon sf="calendar" />
-        ) : (
-          <NativeTabs.Trigger.Icon src={calendarIcon} renderingMode="template" />
-        )}
-      </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="alertes">
-        <NativeTabs.Trigger.Label>{t('tabs.alerts')}</NativeTabs.Trigger.Label>
-        {ios ? (
-          <NativeTabs.Trigger.Icon sf="bell" />
-        ) : (
-          <NativeTabs.Trigger.Icon src={calendarIcon} renderingMode="template" />
-        )}
-      </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="perfil">
-        <NativeTabs.Trigger.Label>{t('tabs.profile')}</NativeTabs.Trigger.Label>
-        {ios ? (
-          <NativeTabs.Trigger.Icon sf="person.crop.circle" />
-        ) : (
-          <NativeTabs.Trigger.Icon src={mapIcon} renderingMode="template" />
-        )}
-      </NativeTabs.Trigger>
-    </NativeTabs>
+    <Tabs tabBar={renderTabBar} screenOptions={{ headerShown: false }}>
+      <Tabs.Screen name="(explora)" options={{ title: t('tabs.explore') }} />
+      <Tabs.Screen name="calendari" options={{ title: t('tabs.calendar') }} />
+      <Tabs.Screen name="(alertes)" options={{ title: t('tabs.alerts') }} />
+      <Tabs.Screen name="perfil" options={{ title: t('tabs.profile') }} />
+    </Tabs>
   );
 }

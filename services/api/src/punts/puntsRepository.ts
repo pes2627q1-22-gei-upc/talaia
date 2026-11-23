@@ -11,10 +11,10 @@ import type {
 type Db = ReturnType<typeof createDb>;
 
 /** Les dades d'un punt que surten de `punts_observacio` (la fitxa sense l'índex). */
-export type PuntDetall = Omit<PuntFitxa, 'index'>;
+export type PuntDetall = Omit<PuntFitxa, 'index'> & { textos?: unknown };
 
 /** Un punt del mapa amb l'índex de l'hora en curs (`null` si el worker encara no l'ha calculat). */
-export type PuntMapa = PuntObservacio & { index: IndexMapa | null };
+export type PuntMapa = PuntObservacio & { index: IndexMapa | null; textos?: unknown };
 
 /** Accés als punts d'observació (ADR-0013): les consultes només s'escriuen aquí. */
 export type PuntsRepository = {
@@ -31,6 +31,28 @@ export type PuntsRepository = {
   indexHores(id: string, desDe: Date, finsA: Date): Promise<IndexHora[]>;
 };
 
+/**
+ * L'índex del mapa a partir de les columnes d'`index_visibilitat` d'un `left join` amb l'hora en
+ * curs: `null` si el worker encara no l'ha calculat. També el fan servir els favorits (TG-169).
+ */
+export function indexMapa({
+  valor,
+  franja,
+  factors,
+}: {
+  valor: number | null;
+  franja: string | null;
+  factors: unknown;
+}): IndexMapa | null {
+  if (valor === null || franja === null) return null;
+  return {
+    valor,
+    // La taula ja limita `franja` a 'tap', 'jus' i 'ras' amb un check.
+    franja: franja as FranjaIndex,
+    deDia: (factors as IndexHora['factors'] | null)?.sol === 0,
+  };
+}
+
 export function createPuntsRepository(db: Db): PuntsRepository {
   return {
     async listPublished(hora) {
@@ -42,6 +64,7 @@ export function createPuntsRepository(db: Db): PuntsRepository {
         .select((eb) => [
           'p.id',
           'p.nom',
+          'p.textos',
           'p.municipi',
           lon(eb.ref('p.ubicacio')).as('lon'),
           lat(eb.ref('p.ubicacio')).as('lat'),
@@ -54,15 +77,7 @@ export function createPuntsRepository(db: Db): PuntsRepository {
         .execute();
       return files.map(({ valor, franja, factors, ...punt }) => ({
         ...punt,
-        index:
-          valor === null || franja === null
-            ? null
-            : {
-                valor,
-                // La taula ja limita `franja` a 'tap', 'jus' i 'ras' amb un check.
-                franja: franja as FranjaIndex,
-                deDia: (factors as IndexHora['factors'] | null)?.sol === 0,
-              },
+        index: indexMapa({ valor, franja, factors }),
       }));
     },
     async indexVersion() {
@@ -81,6 +96,7 @@ export function createPuntsRepository(db: Db): PuntsRepository {
         .select((eb) => [
           'id',
           'nom',
+          'textos',
           'municipi',
           'descripcio',
           'altitud',
@@ -106,7 +122,15 @@ export function createPuntsRepository(db: Db): PuntsRepository {
     async indexHores(id, desDe, finsA) {
       const files = await db
         .selectFrom('indexVisibilitat')
-        .select(['hora', 'valor', 'franja', 'factors', 'foscorEstimada'])
+        .select([
+          'hora',
+          'valor',
+          'franja',
+          'factors',
+          'foscorEstimada',
+          'versio',
+          'humitatCorregida',
+        ])
         .where('puntId', '=', id)
         .where('hora', '>=', desDe)
         .where('hora', '<', finsA)
@@ -119,6 +143,8 @@ export function createPuntsRepository(db: Db): PuntsRepository {
         // jsonb sense tipus: l'escriu només el worker, amb `FactorsIndex` (ADR-0018).
         factors: f.factors as IndexHora['factors'],
         foscorEstimada: f.foscorEstimada,
+        versio: f.versio,
+        humitatCorregida: f.humitatCorregida,
       }));
     },
   };

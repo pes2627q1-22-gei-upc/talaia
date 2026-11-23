@@ -1,27 +1,71 @@
-import { Alert, Linking } from 'react-native';
-import { useMemo } from 'react';
+import { useRouter } from 'expo-router';
+import { Alert, Linking, Platform } from 'react-native';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { DireccioHoritzo, IndexHora } from '@talaia/shared';
+import { useQueryClient } from '@tanstack/react-query';
 
 import { ApiError } from '@/core/api/httpClient';
 import { nightStyle } from '@/features/map/style/nightStyle';
+import { useCurrentPlaceQuery } from '@/features/explore/locationRepository';
 
-import { twoDigitHours } from './pointModel';
-import { usePointBreakdownQuery, usePointDetailQuery } from './pointRepository';
+import { directionsUrl, twoDigitHours } from './pointModel';
+import {
+  fetchPointRoutes,
+  pointKeys,
+  usePointBreakdownQuery,
+  usePointDetailQuery,
+  usePointRoutesQuery,
+} from './pointRepository';
 import { skyDarknessBand } from './skyDarkness';
 
-/** Els factors de l'índex v1 (ADR-0018), en l'ordre del mockup 05. El Sol, al final. */
+/** «a la 01:00», però «a les 23:00» (com a la fitxa de l'esdeveniment). */
+const oneOClock = (time: string) => (time.startsWith('01:') ? 'oneOClock' : undefined);
+/** Per saber si l'índex de la targeta és el de l'hora en curs. */
+const HOUR_MS = 60 * 60 * 1000;
+
+type Level = 'tap' | 'jus' | 'ras';
+const factorLevel = (value: number): Level => (value < 40 ? 'tap' : value < 70 ? 'jus' : 'ras');
+/**
+ * La humitat va de 70 a 100 (el factor no baixa de 0,7): amb les franges dels altres factors
+ * sortiria sempre en verd, fins i tot quan treu un 30 % a l'índex. Té les seves: 100 no resta res.
+ */
+const humidityLevel = (value: number): Level =>
+  value === 100 ? 'ras' : value >= 85 ? 'jus' : 'tap';
+
+/**
+ * Els factors de l'índex (ADR-0018, v1; ADR-0038, v2), en l'ordre del mockup 05. La humitat només
+ * hi és a la v2, i el Sol, al final.
+ */
 const FACTORS = [
   { key: 'nuvols', icon: 'cloud', label: 'clouds' },
   { key: 'foscor', icon: 'sparkle', label: 'darkness' },
   { key: 'lluna', icon: 'moon', label: 'moon' },
+  { key: 'humitat', icon: 'drop', label: 'humidity' },
   { key: 'sol', icon: 'sun', label: 'sun' },
 ] as const;
 
 export function usePointDetailViewModel(pointId: string) {
   const { t, i18n } = useTranslation();
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const currentHour = useCurrentHour();
   const query = usePointDetailQuery(pointId);
   const breakdown = usePointBreakdownQuery(pointId);
+  const currentPlace = useCurrentPlaceQuery(false);
+  const origin = currentPlace.data?.status === 'ready' ? currentPlace.data.place : undefined;
+  const [routeDeparture, setRouteDeparture] = useState<string | undefined>();
+  const routes = usePointRoutesQuery(pointId, query.data ? origin : undefined, routeDeparture);
+  const [routeOptionsVisible, setRouteOptionsVisible] = useState(false);
+  const [openingDirections, setOpeningDirections] = useState(false);
+  const [routeRequested, setRouteRequested] = useState(false);
+  const previousDeparture = useRef(routeDeparture);
+  useEffect(() => {
+    if (previousDeparture.current !== routeDeparture) {
+      previousDeparture.current = routeDeparture;
+      if (routeRequested && routeOptionsVisible) void routes.refetch();
+    }
+  }, [routeDeparture, routeOptionsVisible, routeRequested, routes]);
   const point = query.data;
   const invalidId = !pointId.trim();
   const notFound =
@@ -69,7 +113,7 @@ export function usePointDetailViewModel(pointId: string) {
         const value = Math.round(Math.min(1, Math.max(0, raw)) * 100);
         // El Sol només s'explica quan resta: al crepuscle.
         if (key === 'sol' && value === 100) return [];
-        const level: 'tap' | 'jus' | 'ras' = value < 40 ? 'tap' : value < 70 ? 'jus' : 'ras';
+        const level = key === 'humitat' ? humidityLevel(value) : factorLevel(value);
         const hint =
           key === 'foscor' && entry.foscorEstimada
             ? t('point.darknessEstimated')
@@ -77,8 +121,18 @@ export function usePointDetailViewModel(pointId: string) {
               ? t('point.factorHints.sol')
               : key === 'lluna' && value === 100
                 ? t('point.factorHints.lluna.none')
-                : t(`point.factorHints.${key}.${level}`);
-        return [{ key, icon, label: t(`point.${label}`), hint, value, level }];
+                : key === 'humitat'
+                  ? t(
+                      value === 100
+                        ? 'point.factorHints.humitat.none'
+                        : 'point.factorHints.humitat.some',
+                    )
+                  : t(`point.factorHints.${key}.${level}`);
+        // La cita de l'SMC és una condició d'ús de la XEMA (ADR-0025): va a part de la pista, que
+        // continua dient si la humitat resta o no.
+        const note =
+          key === 'humitat' && entry.humitatCorregida ? t('point.humidityCorrected') : undefined;
+        return [{ key, icon, label: t(`point.${label}`), hint, note, value, level }];
       });
     return [...(breakdown.data?.hores ?? [])]
       .filter((entry) => Number.isFinite(Date.parse(entry.hora)) && entry.factors?.sol > 0)
@@ -90,9 +144,15 @@ export function usePointDetailViewModel(pointId: string) {
         value: Math.round(Math.min(100, Math.max(0, entry.valor))),
         level: entry.franja,
         factors: factorRows(entry),
-        factorsTitle: t('point.factorsAt', {
-          time: twoDigitHours(clockFormatter.format(new Date(entry.hora))),
-        }),
+        // Explica el número de la barra triada (troballa 9 de TG-264).
+        factorsTitle: (() => {
+          const time = twoDigitHours(clockFormatter.format(new Date(entry.hora)));
+          return t('point.factorsAt', {
+            time,
+            value: Math.round(Math.min(100, Math.max(0, entry.valor))),
+            context: oneOClock(time),
+          });
+        })(),
         accessibilityLabel: t('point.hourA11y', {
           time: dateTimeFormatter.format(new Date(entry.hora)),
           value: Math.round(Math.min(100, Math.max(0, entry.valor))),
@@ -130,6 +190,10 @@ export function usePointDetailViewModel(pointId: string) {
           const formatTime = (timestamp: number) =>
             twoDigitHours(clockFormatter.format(new Date(timestamp)));
           return {
+            // L'inici i el final en ISO, perquè «Crea un pla» proposi la franja.
+            start: hours[first]!.id,
+            end: new Date(finalTimestamp + duration).toISOString(),
+            value: best.value,
             from: formatTime(Date.parse(hours[first]!.id)),
             to: formatTime(finalTimestamp + duration),
             hourIds: new Set(hours.slice(first, last + 1).map((hour) => hour.id)),
@@ -148,13 +212,56 @@ export function usePointDetailViewModel(pointId: string) {
       })),
     [hours, bestPeriod, t],
   );
-  const bestWindow = bestPeriod ? { from: bestPeriod.from, to: bestPeriod.to } : undefined;
+  // El valor és el màxim de la franja, no de totes les hores: el text ho diu així (TG-264).
+  const bestWindow = bestPeriod
+    ? { value: bestPeriod.value, from: bestPeriod.from, to: bestPeriod.to }
+    : undefined;
   // Per defecte, la millor hora de la nit (la primera si n'hi ha d'empatades).
   const defaultHourId = hours.reduce<(typeof hours)[number] | undefined>(
     (best, hour) => (!best || hour.value > best.value ? hour : best),
     undefined,
   )?.id;
   const number = new Intl.NumberFormat(locale, { maximumFractionDigits: 0 });
+  const routeAlternatives = routes.data?.estat === 'disponible' ? routes.data.alternatives : [];
+  const openMaps = () => {
+    if (!point) return;
+    if (routeOptionsVisible) setRouteOptionsVisible(false);
+    void Linking.openURL(directionsUrl(point.lat, point.lon, Platform.OS)).catch(() =>
+      Alert.alert(t('point.mapsErrorTitle'), t('point.mapsErrorMessage')),
+    );
+  };
+  const openDirections = async () => {
+    if (!point || openingDirections) return;
+    setOpeningDirections(true);
+    try {
+      const location = (await currentPlace.refetch()).data;
+      if (location?.status !== 'ready') {
+        openMaps();
+        return;
+      }
+      const place = location.place;
+      const result = await queryClient.fetchQuery({
+        queryKey: pointKeys.routes(pointId, place.lat, place.lon, routeDeparture),
+        queryFn: ({ signal }) => fetchPointRoutes(pointId, place, routeDeparture, signal),
+        staleTime: 0,
+        retry: (count, error) => error instanceof ApiError && error.status === 429 && count < 1,
+        retryDelay: 5_000,
+      });
+      if (result.estat === 'disponible' && result.alternatives.length > 0) {
+        setRouteRequested(true);
+        setRouteOptionsVisible(true);
+      } else {
+        openMaps();
+      }
+    } catch {
+      openMaps();
+    } finally {
+      setOpeningDirections(false);
+    }
+  };
+  const changeRouteDeparture = (departure?: string) => {
+    setRouteDeparture(departure);
+  };
   const altitude =
     point?.altitud == null
       ? t('point.unavailable')
@@ -178,12 +285,14 @@ export function usePointDetailViewModel(pointId: string) {
       : `${horizonDirections.slice(0, -1).join(', ')} ${t('point.listAnd')} ${horizonDirections.at(-1)}`
     : undefined;
   const indexTime = point?.indexActual?.hora;
-  const currentLabel =
-    indexTime && Number.isFinite(Date.parse(indexTime))
-      ? t('point.indexAt', {
-          time: twoDigitHours(dateTimeFormatter.format(new Date(indexTime))),
-        })
-      : t('point.currentIndex');
+  const indexTimestamp = indexTime ? Date.parse(indexTime) : Number.NaN;
+  // «d'ara» només si l'índex és de l'hora en curs. Si un refresc falla, o encara no ha arribat el de
+  // l'hora nova (al minut 5), la fitxa conserva l'índex antic i en diu el dia i l'hora.
+  const currentLabel = !Number.isFinite(indexTimestamp)
+    ? t('point.currentIndex')
+    : Math.floor(indexTimestamp / HOUR_MS) === currentHour
+      ? t('point.indexNow', { time: twoDigitHours(clockFormatter.format(indexTimestamp)) })
+      : t('point.indexAt', { time: twoDigitHours(dateTimeFormatter.format(indexTimestamp)) });
   // De dia, el Sol anul·la l'índex (ADR-0018): no és que estigui tapat, és que no és de nit.
   const daytime = point?.indexActual?.factors.sol === 0;
   return {
@@ -193,6 +302,7 @@ export function usePointDetailViewModel(pointId: string) {
     coordinates: point ? { lat: point.lat, lon: point.lon } : undefined,
     mapLabel: t('point.mapA11y', { name: point?.nom }),
     mapCreditsLabel: t('point.mapCredits'),
+    backLabel: t('point.back'),
     mapStyle: nightStyle,
     mapUnavailable: t('point.mapUnavailable'),
     daytime,
@@ -207,6 +317,15 @@ export function usePointDetailViewModel(pointId: string) {
     bestWindow,
     altitude,
     altitudeTag: t('point.altitudeTag', { value: altitude }),
+    routeAlternatives,
+    routeDeparture,
+    setRouteDeparture: changeRouteDeparture,
+    routesLoading: routes.isFetching,
+    routesError: routes.isError,
+    routeOptionsVisible,
+    closeRouteOptions: () => setRouteOptionsVisible(false),
+    openingDirections,
+    openMaps,
     skyDarkness:
       point?.sqm == null || !Number.isFinite(point.sqm)
         ? undefined
@@ -228,15 +347,21 @@ export function usePointDetailViewModel(pointId: string) {
     accessibility: point?.accessibilitat?.trim(),
     directionsLabel: t('point.directions'),
     createPlanLabel: t('point.createPlan'),
-    openDirections: () => {
-      if (!point) return;
-      const destination = `${point.lat},${point.lon}`;
-      void Linking.openURL(
-        `https://www.google.com/maps/dir/?api=1&destination=${destination}`,
-      ).catch(() => Alert.alert(t('point.mapsErrorTitle'), t('point.mapsErrorMessage')));
-    },
-    createPlan: () => Alert.alert(t('point.planSoonTitle'), t('point.planSoonMessage')),
+    openDirections,
+    // El pla surt amb la millor franja de la nit com a hora de sortida, si n'hi ha (TG-157).
+    createPlan: () =>
+      router.push({
+        pathname: '/pla/nou',
+        params: {
+          puntId: pointId,
+          ...(bestPeriod ? { inici: bestPeriod.start, fi: bestPeriod.end } : {}),
+        },
+      }),
     hoursLabel: t('point.tonight'),
+    // Què vol dir l'índex i que les hores es poden tocar (troballes 4 i 8 de TG-264).
+    indexExplanation: t('point.indexExplanation'),
+    hoursTapHint: t('point.hoursTapHint'),
+    hourA11yHint: t('point.hourA11yHint'),
     timezoneLabel: t('point.timezone'),
     noHours: t('point.noHours'),
     hours: displayHours,
@@ -254,4 +379,17 @@ export function usePointDetailViewModel(pointId: string) {
       void breakdown.refetch();
     },
   };
+}
+
+/** L'hora en curs (hores des de 1970), que canvia sola en començar cada hora. */
+function useCurrentHour() {
+  const [hour, setHour] = useState(() => Math.floor(Date.now() / HOUR_MS));
+  useEffect(() => {
+    const timer = setTimeout(
+      () => setHour(Math.floor(Date.now() / HOUR_MS)),
+      (hour + 1) * HOUR_MS - Date.now(),
+    );
+    return () => clearTimeout(timer);
+  }, [hour]);
+  return hour;
 }

@@ -14,6 +14,7 @@ compose() {
 }
 
 # Les variables (PUBLIC_HOST, ACME_EMAIL, DuckDNS_Token) ja són dins del contenidor.
+# shellcheck disable=SC2016 # les variables s'expandeixen dins del contenidor
 compose exec acme sh -euc '
   [ -n "$DuckDNS_Token" ] || { echo "Falta DUCKDNS_TOKEN al fitxer d entorn" >&2; exit 1; }
   [ -n "$ACME_EMAIL" ] || { echo "Falta ACME_EMAIL al fitxer d entorn" >&2; exit 1; }

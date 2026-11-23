@@ -20,6 +20,7 @@ export const colors = {
   ras: '#5FD4C4',
   jus: '#E3C58F',
   tap: '#E0708A',
+  perill: '#FF7474',
   pedra: '#D9C4A0',
   fenomenEstels: '#DDD0B8',
   fenomenLluna: '#AEBDEB',
@@ -46,6 +47,15 @@ export const gradients = {
     colors: [colors.nit, 'transparent'],
     locations: [0.55, 1],
   },
+  /** Cel de la fitxa d'un esdeveniment (mockup 09) i l'horitzó fosc que el tanca per sota. */
+  eventSky: {
+    colors: ['#1C2560', '#0B1030'],
+    locations: [0, 1],
+  },
+  eventHorizon: {
+    colors: ['#06091A00', '#06091A'],
+    locations: [0, 0.72],
+  },
 } as const;
 
 /** Colors amb transparència del marcador i de l'atribució del mapa DOM. */
@@ -54,6 +64,56 @@ export const pointMapColors = {
   markerPulse: '#5FD4C4B8',
   markerGlow: '#5FD4C4B3',
   markerHalo: '#5FD4C42E',
+} as const;
+
+/**
+ * Mode nit (ADR-0032): vermell sobre negre, perquè el blau i el verd trenquen l'adaptació de l'ull a
+ * la foscor. Només el canal vermell i text ≥ 4,5:1 sobre totes les superfícies, comprovat a
+ * `__tests__/palettes.test.ts` i `__tests__/contrast.test.ts`. Les pantalles no llegeixen aquestes
+ * constants: fan servir `useTheme()` i `makeStyles()` (`theme.tsx`).
+ */
+export const colorsVermell = {
+  nit: '#000000',
+  card: '#0F0000',
+  sheet: '#120000',
+  vel: '#170000',
+  crep: '#1C0000',
+  linia: '#2E0000',
+  vora: '#5A0000',
+  lluna: '#FF0000',
+  boira: '#F20000',
+  far: '#FF0000',
+  ubicacio: '#FF0000',
+  ras: '#FF0000',
+  jus: '#F80000',
+  tap: '#F20000',
+  perill: '#FF0000',
+  pedra: '#F20000',
+  fenomenEstels: '#F20000',
+  fenomenLluna: '#F20000',
+  fenomenSol: '#F20000',
+  fenomenConjuncio: '#F20000',
+} as const satisfies Record<ColorToken, string>;
+
+export const gradientsVermell = {
+  cel: { colors: ['#000000', '#0A0000', '#170000'], locations: gradients.cel.locations },
+  pointMapFade: {
+    colors: ['transparent', 'transparent', '#00000033', colorsVermell.nit],
+    locations: gradients.pointMapFade.locations,
+  },
+  statusScrim: {
+    colors: [colorsVermell.nit, 'transparent'],
+    locations: gradients.statusScrim.locations,
+  },
+  eventSky: { colors: ['#1C0000', '#000000'], locations: gradients.eventSky.locations },
+  eventHorizon: { colors: ['#00000000', '#000000'], locations: gradients.eventHorizon.locations },
+} as const;
+
+export const pointMapColorsVermell = {
+  shadow: '#00000047',
+  markerPulse: '#FF0000B8',
+  markerGlow: '#FF0000B3',
+  markerHalo: '#FF00002E',
 } as const;
 
 export const spacing = {
@@ -108,6 +168,10 @@ export const sizes = {
   calendarEvent: 82,
   calendarDateWidth: 46,
   calendarDateHeight: 54,
+  /** Fitxa de l'esdeveniment (mockup 09): targeta del cel, el seu horitzó i l'anell del radiant. */
+  eventSky: 106,
+  eventHorizon: 28,
+  eventRadiant: 34,
 } as const;
 
 /** Noms amb què `_layout.tsx` registra les fonts (`useFonts`). Cada pes és una família. */

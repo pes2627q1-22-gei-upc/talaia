@@ -1,18 +1,23 @@
 import type { Perfil, PerfilCanvis } from '@talaia/shared';
-import { Router, type NextFunction, type Request, type Response } from 'express';
+import {
+  Router,
+  type NextFunction,
+  type Request,
+  type RequestHandler,
+  type Response,
+} from 'express';
 import { z } from 'zod';
 
-import type { JwksSource } from '../middleware/auth';
-import { requireAuth, type AuthenticatedRequest } from '../middleware/auth';
+import type { AuthenticatedRequest } from '../middleware/auth';
 import { ApiError } from '../middleware/errors';
 import { registry } from '../openapi';
 import { NOM_MAXIM, type ProfileRecord, type ProfileStore } from '../services/profileService';
 
 export type AuthRouterOptions = {
-  supabaseUrl?: string;
+  /** `requireAuth` amb `accountStatus`: JWT vàlid i compte no bloquejat (`routes/index.ts`). */
+  requireUser: RequestHandler;
   /** Sense `DATABASE_URL`, `createApp` hi passa un store que respon 503. */
   profileStore: ProfileStore;
-  jwks?: JwksSource;
 };
 
 /** El nom, igual al `POST` i al `PATCH`: sense els espais dels extrems, d'1 a `NOM_MAXIM`. */
@@ -29,6 +34,7 @@ const ProfileEnsureBodySchema = z
 const PerfilSchema: z.ZodType<Perfil> = z
   .object({
     id: z.string(),
+    rol: z.enum(['usuari', 'admin']),
     authUserId: z.string(),
     email: z.string().nullable(),
     nom: z.string().nullable(),
@@ -48,12 +54,16 @@ const PerfilCanvisSchema: z.ZodType<PerfilCanvis> = z
   .meta({ id: 'PerfilCanvis' });
 
 const ErrorSchema = z.object({ error: z.object({ code: z.string(), message: z.string() }) });
-const errorResponse = (description: string) => ({
+export const errorResponse = (description: string) => ({
   description,
   content: { 'application/json': { schema: ErrorSchema } },
 });
-const ERRORS_AUTH = {
+/** Les respostes d'error de qualsevol ruta amb `requireUser`. */
+export const ERRORS_AUTH = {
   401: errorResponse('JWT no vàlid o absent'),
+  403: errorResponse(
+    '`account_blocked`: el compte està bloquejat (HU41). L’app hi mostra l’avís a partir del codi',
+  ),
   503: errorResponse('No es pot validar el JWT de Supabase o no hi ha base de dades'),
 };
 
@@ -112,9 +122,27 @@ registry.registerPath({
   },
 });
 
-function toPerfil(profile: ProfileRecord): Perfil {
+registry.registerPath({
+  method: 'delete',
+  path: '/perfil',
+  tags: ['Auth'],
+  summary: 'Elimina el compte de l’usuari autenticat i totes les seves dades (HU38, RGPD)',
+  description:
+    'Esborra l’usuari de Supabase Auth i, en cascada, el perfil i tot el que en penja (alertes, ' +
+    'dispositius push…). Les sessions i els refresh tokens deixen de servir; el JWT que ja té ' +
+    'l’app és vàlid fins que caduca, així que l’app ha de tancar la sessió en rebre el 204. ' +
+    'Si el compte ja no hi era, també respon 204.',
+  security: [{ BearerSupabase: [] }],
+  responses: {
+    204: { description: 'Compte eliminat' },
+    ...ERRORS_AUTH,
+  },
+});
+
+export function toPerfil(profile: ProfileRecord): Perfil {
   return {
     id: profile.id,
+    rol: profile.rol,
     authUserId: profile.authUserId,
     email: profile.email,
     nom: profile.nom,
@@ -124,7 +152,8 @@ function toPerfil(profile: ProfileRecord): Perfil {
   };
 }
 
-const profileNotFound = () =>
+/** L'usuari del JWT encara no té perfil. També el fan servir les altres rutes d'usuari (favorits). */
+export const profileNotFound = () =>
   new ApiError(404, 'profile_not_found', "L'usuari encara no té perfil (cal POST /perfil)");
 
 /** `requireAuth` ja ha respost 401 si no hi ha usuari: aquí sempre hi és. */
@@ -134,9 +163,8 @@ function currentUser(req: Request) {
   return user;
 }
 
-export function createAuthRouter({ supabaseUrl, profileStore, jwks }: AuthRouterOptions): Router {
+export function createAuthRouter({ requireUser, profileStore }: AuthRouterOptions): Router {
   const router = Router();
-  const requireCurrentUser = requireAuth({ supabaseUrl, jwks });
 
   const handleProfileEnsure = async (req: Request, res: Response, next: NextFunction) => {
     const authReq = req as AuthenticatedRequest;
@@ -183,9 +211,21 @@ export function createAuthRouter({ supabaseUrl, profileStore, jwks }: AuthRouter
     }
   };
 
-  router.post('/perfil', requireCurrentUser, handleProfileEnsure);
-  router.get('/perfil', requireCurrentUser, handleProfileGet);
-  router.patch('/perfil', requireCurrentUser, handleProfilePatch);
+  const handleProfileDelete = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      await profileStore.deleteAccount(currentUser(req).id);
+      res.status(204).end();
+      return undefined;
+    } catch (error) {
+      return next(error);
+    }
+  };
+
+  router.post('/perfil', requireUser, handleProfileEnsure);
+  router.get('/perfil', requireUser, handleProfileGet);
+  router.patch('/perfil', requireUser, handleProfilePatch);
+  // Un compte bloquejat rep 403 (`requireUser`): no es pot esborrar per tornar-se a registrar.
+  router.delete('/perfil', requireUser, handleProfileDelete);
 
   return router;
 }

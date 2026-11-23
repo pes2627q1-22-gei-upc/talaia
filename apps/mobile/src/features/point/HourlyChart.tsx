@@ -1,7 +1,8 @@
 import { memo } from 'react';
-import { FlatList, StyleSheet, View } from 'react-native';
+import { FlatList, View } from 'react-native';
 
-import { colors, sizes, spacing, typography } from '@/core/theme/tokens';
+import { makeStyles, useTheme } from '@/core/theme/theme';
+import { sizes, spacing, typography } from '@/core/theme/tokens';
 import { AppText } from '@/shared/ui/AppText';
 import { PressableScale } from '@/shared/ui/PressableScale';
 
@@ -9,24 +10,42 @@ import type { usePointDetailViewModel } from './usePointDetailViewModel';
 
 type Props = Pick<
   ReturnType<typeof usePointDetailViewModel>,
-  'hours' | 'hoursLabel' | 'timezoneLabel' | 'noHours'
+  | 'hours'
+  | 'hoursLabel'
+  | 'timezoneLabel'
+  | 'noHours'
+  | 'indexExplanation'
+  | 'hoursTapHint'
+  | 'hourA11yHint'
 > & {
   /** L'hora triada la porta `IndexBreakdown`, que en pinta els factors. */
   selectedHourId: string | null;
   onSelect: (hourId: string) => void;
 };
 
+/**
+ * La xifra de l'hora triada va dins de la barra, en `nit`, quan la barra en fa com a mínim la meitat
+ * (32 pt, i la línia en fa 30); si no, a sobre de la barra, del color de la franja. Mai a mig camí: hi
+ * quedava del mateix color que la barra i només es llegia per l'ombra.
+ */
+const INSIDE_FROM = 50;
+
 export const HourlyChart = memo(function HourlyChart({
   hours,
   hoursLabel,
   timezoneLabel,
   noHours,
+  indexExplanation,
+  hoursTapHint,
+  hourA11yHint,
   selectedHourId,
   onSelect,
 }: Props) {
   const hasBestWindow = hours.some((hour) => hour.isBest);
   // S'obre amb l'hora triada a la vista (la millor de la nit pot ser a la matinada, fora de la
   // pantalla), amb un parell de columnes abans perquè es vegi d'on ve.
+  const styles = useStyles();
+  const { colors } = useTheme();
   const initialScrollIndex = Math.max(0, hours.findIndex((hour) => hour.id === selectedHourId) - 2);
 
   return (
@@ -37,6 +56,16 @@ export const HourlyChart = memo(function HourlyChart({
       <AppText variant="caption" color="boira">
         {timezoneLabel}
       </AppText>
+      {hours.length ? (
+        <>
+          <AppText variant="small" color="boira">
+            {indexExplanation}
+          </AppText>
+          <AppText variant="small" color="boira">
+            {hoursTapHint}
+          </AppText>
+        </>
+      ) : null}
       {hours.length ? (
         <FlatList
           horizontal
@@ -55,6 +84,7 @@ export const HourlyChart = memo(function HourlyChart({
           renderItem={({ item }) => (
             <PressableScale
               accessibilityLabel={item.accessibilityLabel}
+              accessibilityHint={hourA11yHint}
               accessibilityState={{ selected: item.id === selectedHourId }}
               haptic
               onPress={() => onSelect(item.id)}
@@ -84,14 +114,20 @@ export const HourlyChart = memo(function HourlyChart({
                       pointerEvents="none"
                       style={[styles.barSilhouette, { borderColor: colors[item.level] }]}
                     />
-                    <View pointerEvents="none" style={styles.barIndex}>
+                    <View
+                      testID="selected-hour-index"
+                      pointerEvents="none"
+                      style={[
+                        styles.barIndex,
+                        item.value >= INSIDE_FROM
+                          ? { top: `${100 - item.value}%` }
+                          : { bottom: `${item.value}%` },
+                      ]}
+                    >
                       <AppText
                         variant="heading"
-                        color={item.value >= 75 ? 'nit' : item.level}
-                        style={[
-                          styles.barIndexValue,
-                          item.value < 75 && styles.barIndexValueShadow,
-                        ]}
+                        color={item.value >= INSIDE_FROM ? 'nit' : item.level}
+                        style={styles.barIndexValue}
                       >
                         {item.value}
                       </AppText>
@@ -114,7 +150,7 @@ export const HourlyChart = memo(function HourlyChart({
   );
 });
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(({ colors }) => ({
   section: { gap: spacing.sm },
   chartList: { marginTop: -spacing.xs },
   chart: { gap: spacing.xs, paddingTop: spacing.xs, paddingBottom: spacing.sm },
@@ -136,20 +172,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: spacing.xs,
   },
-  barIndex: {
-    position: 'absolute',
-    top: 0,
-    bottom: 0,
-    left: 0,
-    right: 0,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  barIndex: { position: 'absolute', left: 0, right: 0, alignItems: 'center' },
   barIndexValue: typography.hourlyIndex,
-  barIndexValueShadow: {
-    textShadowColor: colors.nit,
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
-  },
   bar: { width: '100%', borderTopLeftRadius: spacing.xs, borderTopRightRadius: spacing.xs },
-});
+}));

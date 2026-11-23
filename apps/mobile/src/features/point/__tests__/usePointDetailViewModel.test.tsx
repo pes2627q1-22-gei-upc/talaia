@@ -9,7 +9,7 @@ import {
   fetchPointDetail,
   millisecondsUntilNextPointRefresh,
 } from '../pointRepository';
-import { twoDigitHours } from '../pointModel';
+import { directionsUrl, twoDigitHours } from '../pointModel';
 import { skyDarknessBand } from '../skyDarkness';
 import { usePointDetailViewModel } from '../usePointDetailViewModel';
 import { asPointResponse, hour, point, respond } from '../__fixtures__/point';
@@ -62,7 +62,15 @@ it('ordena hores, respecta les franges del backend i converteix a l’hora de Ca
   expect(result.current.hours.map((h) => h.level)).toEqual(['ras', 'tap', 'ras']);
   expect(result.current.hours.map((h) => h.isBest)).toEqual([false, false, true]);
   expect(result.current.hours[2]?.accessibilityLabel).toContain('Dins del millor moment');
-  expect(result.current.bestWindow?.to).toBe('02:00');
+  // El número destacat i la franja de la millor hora (troballa 9 de TG-264).
+  expect(result.current.bestWindow).toEqual({
+    value: 94,
+    from: '01:00',
+    to: '02:00',
+  });
+  // «a la 01:00», però «a les 23:00».
+  expect(result.current.hours[2]?.factorsTitle).toBe("Per què a la 01:00 l'índex és 94");
+  expect(result.current.hours[0]?.factorsTitle).toBe("Per què a les 23:00 l'índex és 87");
   // Per defecte, la millor hora de la nit, amb els factors de l'API ×100 (el Sol, ple, no surt).
   expect(result.current.defaultHourId).toBe('2026-10-18T23:00:00Z');
   expect(
@@ -165,6 +173,13 @@ it('les hores sempre surten amb dues xifres (Hermes treu el zero)', () => {
   expect(twoDigitHours('22 oct., 16:00')).toBe('22 oct., 16:00');
 });
 
+it('obre la navegació al mapa propi del mòbil amb el destí', () => {
+  expect(directionsUrl(42.05, 0.73, 'ios')).toBe('http://maps.apple.com/?daddr=42.05,0.73');
+  expect(directionsUrl(42.05, 0.73, 'android')).toBe(
+    'https://www.google.com/maps/dir/?api=1&destination=42.05,0.73',
+  );
+});
+
 it('només ensenya les hores de nit, i el Sol només quan resta (crepuscle)', async () => {
   get.mockImplementation(
     respond(point, [
@@ -198,6 +213,90 @@ it('només ensenya les hores de nit, i el Sol només quan resta (crepuscle)', as
     ['sol', 50, 'Encara queda llum del crepuscle'],
   ]);
 });
+
+const humidity = (factors: { factors: { key: string }[] } | undefined) =>
+  factors?.factors.find((factor) => factor.key === 'humitat');
+
+it('una hora de la v2 pinta la fila d’humitat, després de la Lluna i abans del Sol (TG-184)', async () => {
+  get.mockImplementation(
+    respond(point, [
+      {
+        ...hour,
+        versio: 2,
+        humitatCorregida: false,
+        factors: { ...hour.factors, sol: 0.5, humitat: 1 },
+      },
+    ]),
+  );
+  const { result } = await renderVm();
+  await waitFor(() => expect(result.current.hours).toHaveLength(1));
+  expect(result.current.hours[0]?.factors.map((factor) => factor.key)).toEqual([
+    'nuvols',
+    'foscor',
+    'lluna',
+    'humitat',
+    'sol',
+  ]);
+  expect(humidity(result.current.hours[0])).toEqual({
+    key: 'humitat',
+    icon: 'drop',
+    label: 'Humitat',
+    hint: 'La humitat no molesta',
+    note: undefined,
+    value: 100,
+    level: 'ras',
+  });
+});
+
+it('amb la humitat corregida cita el Servei Meteorològic de Catalunya sense amagar la pista', async () => {
+  get.mockImplementation(
+    respond(point, [
+      {
+        ...hour,
+        versio: 2,
+        humitatCorregida: true,
+        factors: { ...hour.factors, humitat: 0.86 },
+      },
+    ]),
+  );
+  const { result } = await renderVm();
+  await waitFor(() => expect(result.current.hours).toHaveLength(1));
+  // La cita de l'SMC és una condició d'ús de la XEMA (ADR-0025).
+  expect(humidity(result.current.hours[0])).toMatchObject({
+    hint: 'La humitat enterboleix el cel',
+    note: 'Corregida amb les observacions de la XEMA (Servei Meteorològic de Catalunya)',
+    value: 86,
+  });
+});
+
+it('una hora de la v1, sense el factor, no pinta la fila d’humitat', async () => {
+  get.mockImplementation(respond(point, [hour]));
+  const { result } = await renderVm();
+  await waitFor(() => expect(result.current.hours).toHaveLength(1));
+  expect(humidity(result.current.hours[0])).toBeUndefined();
+  expect(result.current.hours[0]?.factors.map((factor) => factor.key)).toEqual([
+    'nuvols',
+    'foscor',
+    'lluna',
+  ]);
+});
+
+it.each([
+  [1, 100, 'ras', 'La humitat no molesta'],
+  [0.85, 85, 'jus', 'La humitat enterboleix el cel'],
+  [0.84, 84, 'tap', 'La humitat enterboleix el cel'],
+  [0.7, 70, 'tap', 'La humitat enterboleix el cel'],
+])(
+  'el color de la humitat diu quant resta: un factor de %s es pinta %s (%s)',
+  async (factor, value, level, hint) => {
+    get.mockImplementation(
+      respond(point, [{ ...hour, versio: 2, factors: { ...hour.factors, humitat: factor } }]),
+    );
+    const { result } = await renderVm();
+    await waitFor(() => expect(result.current.hours).toHaveLength(1));
+    expect(humidity(result.current.hours[0])).toMatchObject({ value, level, hint });
+  },
+);
 
 it('si el desglossament falla, ho diu i el reintent el torna a demanar', async () => {
   get.mockImplementation(async (path: string) => {
@@ -292,35 +391,75 @@ it('tradueix els estats buits en anglès', async () => {
   await waitFor(() => expect(result.current.status).toBe('ok'));
   expect(result.current.altitude).toBe('No data');
   expect(result.current.hoursLabel).toBe('Tonight');
+  expect(result.current.hoursTapHint).toBe('Tap an hour to see its breakdown.');
+  expect(result.current.hourA11yHint).toBe('Shows the index breakdown for this hour');
+  expect(result.current.indexExplanation).toMatch(/^The index goes from 0 to 100/);
 });
 
-it('refresca l’índex quan la fitxa queda oberta i n’indica la data', async () => {
+it('refresca l’índex quan la fitxa queda oberta i diu «d’ara» només si és de l’hora en curs', async () => {
   jest.useFakeTimers();
   try {
-    jest.setSystemTime(new Date('2026-10-20T08:00:00Z'));
+    // 22:30 a Catalunya; l'índex actual de la fitxa és de les 22:00.
+    jest.setSystemTime(new Date('2026-10-18T20:30:00Z'));
     get.mockResolvedValue(asPointResponse());
     const { result, unmount } = await renderVm();
     await waitFor(() => expect(result.current.status).toBe('ok'));
-    expect(result.current.currentLabel).toContain('22:00');
+    expect(result.current.currentLabel).toBe("Índex d'ara · 22:00");
     get.mockResolvedValue(
       asPointResponse({
         ...point,
-        indexActual: { ...hour, valor: 92, hora: '2026-10-18T22:00:00Z' },
+        indexActual: { ...hour, valor: 92, hora: '2026-10-18T21:00:00Z' },
       }),
     );
+    // Refresc de les 23:05:30.
     await act(async () => {
-      await jest.advanceTimersByTimeAsync(5 * 60_000 + 29_000);
-    });
-    expect(get).toHaveBeenCalledTimes(2);
-    await act(async () => {
-      await jest.advanceTimersByTimeAsync(1_000);
+      await jest.advanceTimersByTimeAsync(35 * 60_000 + 30_000);
     });
     await waitFor(() => expect(result.current.currentIndex?.valor).toBe(92));
-    expect(result.current.currentLabel).toContain('00:00');
+    expect(result.current.currentLabel).toBe("Índex d'ara · 23:00");
+    // El refresc de les 00:05:30 falla: es conserva l'índex de les 23:00, que ja no és «d'ara».
+    get.mockRejectedValue(new Error('offline'));
+    await act(async () => {
+      await jest.advanceTimersByTimeAsync(60 * 60_000);
+    });
+    await waitFor(() => expect(result.current.staleMessage).toBeDefined());
+    expect(result.current.currentIndex?.valor).toBe(92);
+    expect(result.current.currentLabel).toMatch(/^Índex del 18 .*23:00$/);
     await unmount();
   } finally {
     jest.useRealTimers();
   }
+});
+
+it('en canviar d’hora, l’índex de l’hora anterior deixa de ser «d’ara» abans del refresc', async () => {
+  jest.useFakeTimers();
+  try {
+    // 23:58 a Catalunya, amb l'índex de les 23:00.
+    jest.setSystemTime(new Date('2026-10-18T21:58:00Z'));
+    get.mockResolvedValue(
+      asPointResponse({ ...point, indexActual: { ...hour, hora: '2026-10-18T21:00:00Z' } }),
+    );
+    const { result, unmount } = await renderVm();
+    await waitFor(() => expect(result.current.status).toBe('ok'));
+    expect(result.current.currentLabel).toBe("Índex d'ara · 23:00");
+    const calls = get.mock.calls.length;
+    // 00:01: el refresc no toca fins a les 00:05:30.
+    await act(async () => {
+      await jest.advanceTimersByTimeAsync(3 * 60_000);
+    });
+    expect(get).toHaveBeenCalledTimes(calls);
+    expect(result.current.currentLabel).toMatch(/^Índex del 18 .*23:00$/);
+    await unmount();
+  } finally {
+    jest.useRealTimers();
+  }
+});
+
+it('sense hora a l’índex, en diu només que és l’actual', async () => {
+  get.mockImplementation(respond({ ...point, indexActual: { ...hour, hora: 'no és una hora' } }));
+  const { result } = await renderVm();
+  await waitFor(() => expect(result.current.status).toBe('ok'));
+  expect(result.current.currentLabel).toBe('Índex actual de visibilitat');
 });
 
 it('calcula el següent refresc després del minut 5 UTC', () => {

@@ -1,7 +1,8 @@
 import type { ReactNode } from 'react';
-import { type StyleProp, StyleSheet, type ViewStyle } from 'react-native';
+import { type StyleProp, type ViewStyle } from 'react-native';
 
-import { type ColorToken, colors, radii, sizes, spacing } from '@/core/theme/tokens';
+import { makeStyles } from '@/core/theme/theme';
+import { type ColorToken, radii, sizes, spacing } from '@/core/theme/tokens';
 
 import { AppText } from './AppText';
 import { PressableScale } from './PressableScale';
@@ -36,6 +37,7 @@ export function Button({
   haptic,
   style,
 }: ButtonProps) {
+  const styles = useStyles();
   const isText = variant === 'text';
   return (
     <PressableScale
@@ -54,7 +56,7 @@ export function Button({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(({ colors }) => ({
   base: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -70,4 +72,4 @@ const styles = StyleSheet.create({
   text: { minHeight: 0, paddingHorizontal: 0, alignSelf: 'flex-start' },
   // ponytail: opacitat fixa; si el Figma dibuixa un estat desactivat, passa als tokens.
   disabled: { opacity: 0.4 },
-});
+}));

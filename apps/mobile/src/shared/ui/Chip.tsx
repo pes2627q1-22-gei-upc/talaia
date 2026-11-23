@@ -1,6 +1,5 @@
-import { StyleSheet } from 'react-native';
-
-import { colors, radii, sizes, spacing } from '@/core/theme/tokens';
+import { makeStyles } from '@/core/theme/theme';
+import { radii, sizes, spacing } from '@/core/theme/tokens';
 
 import { AppText } from './AppText';
 import { PressableScale } from './PressableScale';
@@ -16,6 +15,7 @@ const hitSlop = (sizes.touch - sizes.chip) / 2;
 
 /** Xip de filtre (fenomen, tipus, idioma). */
 export function Chip({ label, selected, onPress }: ChipProps) {
+  const styles = useStyles();
   return (
     <PressableScale
       onPress={onPress}
@@ -31,7 +31,7 @@ export function Chip({ label, selected, onPress }: ChipProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(({ colors }) => ({
   chip: {
     height: sizes.chip,
     justifyContent: 'center',
@@ -42,4 +42,4 @@ const styles = StyleSheet.create({
     backgroundColor: colors.card,
   },
   selected: { backgroundColor: colors.far, borderColor: colors.far },
-});
+}));
