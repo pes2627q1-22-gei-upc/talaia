@@ -11,18 +11,16 @@ import { FieldRow } from '@/features/explore/FieldRow';
 import { GoalCard } from '@/features/explore/GoalCard';
 import { AppText } from '@/shared/ui/AppText';
 import { Button } from '@/shared/ui/Button';
-import { Chip } from '@/shared/ui/Chip';
 import { PressableScale } from '@/shared/ui/PressableScale';
 import { SegmentedControl } from '@/shared/ui/SegmentedControl';
 import { Slider } from '@/shared/ui/Slider';
 
-import { GOAL_ICONS } from './goalIcons';
+import { GOAL_ICONS, NOTIFY_ICONS } from './goalIcons';
 import { NotifyHourSheet } from './NotifyHourSheet';
 import { useNewAlertViewModel } from './useNewAlertViewModel';
 import { ZoneSheet } from './ZoneSheet';
 
 const locationIcon = require('@/assets/images/explora/ubicacio.svg');
-const clockIcon = require('@/assets/images/explora/rellotge.svg');
 // Un fitxer, com les icones d'Explora: una `data:` URI amb l'SVG no es pintava a Android.
 const backIcon = require('@/assets/images/alerts/enrere.svg');
 
@@ -178,11 +176,14 @@ export function NewAlertScreen({ alert }: { alert?: Alerta } = {}) {
             <AppText variant="link" color="boira" style={styles.sectionTitle}>
               {vm.notifyTitle}
             </AppText>
-            <View style={styles.chips}>
+            {/* Els dos tipus d'avís (TG-268): targetes amples amb la seva icona, se'n tria una. */}
+            <View style={styles.goals}>
               {vm.notifyOptions.map((option) => (
-                <Chip
+                <GoalCard
                   key={option.id}
                   label={option.label}
+                  hint={option.hint}
+                  icon={NOTIFY_ICONS[option.id]}
                   selected={option.selected}
                   onPress={option.onPress}
                 />
@@ -191,17 +192,15 @@ export function NewAlertScreen({ alert }: { alert?: Alerta } = {}) {
             {vm.notifyHour ? (
               <Animated.View entering={FadeIn.duration(motion.fast)} style={styles.gap}>
                 <FieldRow
-                  icon={clockIcon}
+                  icon={NOTIFY_ICONS.hour}
                   label={vm.notifyHour.label}
                   hint={vm.notifyHour.hint}
                   onPress={vm.notifyHour.onPress}
                 />
+                <AppText variant="caption" color="boira" style={styles.gap}>
+                  {vm.notifyHour.note}
+                </AppText>
               </Animated.View>
-            ) : null}
-            {vm.notifyHint ? (
-              <AppText variant="caption" color="boira" style={styles.gap}>
-                {vm.notifyHint}
-              </AppText>
             ) : null}
           </Enter>
 
@@ -252,7 +251,6 @@ const useStyles = makeStyles(({ colors }) => ({
   goals: { gap: spacing.sm },
   goalRow: { flexDirection: 'row', gap: spacing.sm },
   gap: { marginTop: spacing.sm },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   sliderHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',

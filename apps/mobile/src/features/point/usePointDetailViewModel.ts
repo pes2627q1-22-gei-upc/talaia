@@ -1,14 +1,22 @@
 import { useRouter } from 'expo-router';
-import { Alert, Linking } from 'react-native';
-import { useEffect, useMemo, useState } from 'react';
+import { Alert, Linking, Platform } from 'react-native';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { DireccioHoritzo, IndexHora } from '@talaia/shared';
+import { useQueryClient } from '@tanstack/react-query';
 
 import { ApiError } from '@/core/api/httpClient';
 import { nightStyle } from '@/features/map/style/nightStyle';
+import { useCurrentPlaceQuery } from '@/features/explore/locationRepository';
 
-import { twoDigitHours } from './pointModel';
-import { usePointBreakdownQuery, usePointDetailQuery } from './pointRepository';
+import { directionsUrl, twoDigitHours } from './pointModel';
+import {
+  fetchPointRoutes,
+  pointKeys,
+  usePointBreakdownQuery,
+  usePointDetailQuery,
+  usePointRoutesQuery,
+} from './pointRepository';
 import { skyDarknessBand } from './skyDarkness';
 
 /** «a la 01:00», però «a les 23:00» (com a la fitxa de l'esdeveniment). */
@@ -40,9 +48,24 @@ const FACTORS = [
 export function usePointDetailViewModel(pointId: string) {
   const { t, i18n } = useTranslation();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const currentHour = useCurrentHour();
   const query = usePointDetailQuery(pointId);
   const breakdown = usePointBreakdownQuery(pointId);
+  const currentPlace = useCurrentPlaceQuery(false);
+  const origin = currentPlace.data?.status === 'ready' ? currentPlace.data.place : undefined;
+  const [routeDeparture, setRouteDeparture] = useState<string | undefined>();
+  const routes = usePointRoutesQuery(pointId, query.data ? origin : undefined, routeDeparture);
+  const [routeOptionsVisible, setRouteOptionsVisible] = useState(false);
+  const [openingDirections, setOpeningDirections] = useState(false);
+  const [routeRequested, setRouteRequested] = useState(false);
+  const previousDeparture = useRef(routeDeparture);
+  useEffect(() => {
+    if (previousDeparture.current !== routeDeparture) {
+      previousDeparture.current = routeDeparture;
+      if (routeRequested && routeOptionsVisible) void routes.refetch();
+    }
+  }, [routeDeparture, routeOptionsVisible, routeRequested, routes]);
   const point = query.data;
   const invalidId = !pointId.trim();
   const notFound =
@@ -199,6 +222,46 @@ export function usePointDetailViewModel(pointId: string) {
     undefined,
   )?.id;
   const number = new Intl.NumberFormat(locale, { maximumFractionDigits: 0 });
+  const routeAlternatives = routes.data?.estat === 'disponible' ? routes.data.alternatives : [];
+  const openMaps = () => {
+    if (!point) return;
+    if (routeOptionsVisible) setRouteOptionsVisible(false);
+    void Linking.openURL(directionsUrl(point.lat, point.lon, Platform.OS)).catch(() =>
+      Alert.alert(t('point.mapsErrorTitle'), t('point.mapsErrorMessage')),
+    );
+  };
+  const openDirections = async () => {
+    if (!point || openingDirections) return;
+    setOpeningDirections(true);
+    try {
+      const location = (await currentPlace.refetch()).data;
+      if (location?.status !== 'ready') {
+        openMaps();
+        return;
+      }
+      const place = location.place;
+      const result = await queryClient.fetchQuery({
+        queryKey: pointKeys.routes(pointId, place.lat, place.lon, routeDeparture),
+        queryFn: ({ signal }) => fetchPointRoutes(pointId, place, routeDeparture, signal),
+        staleTime: 0,
+        retry: (count, error) => error instanceof ApiError && error.status === 429 && count < 1,
+        retryDelay: 5_000,
+      });
+      if (result.estat === 'disponible' && result.alternatives.length > 0) {
+        setRouteRequested(true);
+        setRouteOptionsVisible(true);
+      } else {
+        openMaps();
+      }
+    } catch {
+      openMaps();
+    } finally {
+      setOpeningDirections(false);
+    }
+  };
+  const changeRouteDeparture = (departure?: string) => {
+    setRouteDeparture(departure);
+  };
   const altitude =
     point?.altitud == null
       ? t('point.unavailable')
@@ -254,6 +317,15 @@ export function usePointDetailViewModel(pointId: string) {
     bestWindow,
     altitude,
     altitudeTag: t('point.altitudeTag', { value: altitude }),
+    routeAlternatives,
+    routeDeparture,
+    setRouteDeparture: changeRouteDeparture,
+    routesLoading: routes.isFetching,
+    routesError: routes.isError,
+    routeOptionsVisible,
+    closeRouteOptions: () => setRouteOptionsVisible(false),
+    openingDirections,
+    openMaps,
     skyDarkness:
       point?.sqm == null || !Number.isFinite(point.sqm)
         ? undefined
@@ -275,13 +347,7 @@ export function usePointDetailViewModel(pointId: string) {
     accessibility: point?.accessibilitat?.trim(),
     directionsLabel: t('point.directions'),
     createPlanLabel: t('point.createPlan'),
-    openDirections: () => {
-      if (!point) return;
-      const destination = `${point.lat},${point.lon}`;
-      void Linking.openURL(
-        `https://www.google.com/maps/dir/?api=1&destination=${destination}`,
-      ).catch(() => Alert.alert(t('point.mapsErrorTitle'), t('point.mapsErrorMessage')));
-    },
+    openDirections,
     // El pla surt amb la millor franja de la nit com a hora de sortida, si n'hi ha (TG-157).
     createPlan: () =>
       router.push({

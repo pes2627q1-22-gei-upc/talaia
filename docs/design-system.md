@@ -18,6 +18,7 @@ Font de veritat visual: els mockups de **Figma** (16 pantalles). Aquest document
 | `far` | `#FFB547` | Accent principal (CTA, destacats) |
 | `ras` | `#5FD4C4` | Índex bo / cel ras |
 | `tap` | `#E0708A` | Índex dolent / cel tapat, errors |
+| `perill` | `#FF7474` | Accions destructives, com tancar la sessió o descartar canvis |
 | `jus` | `#E3C58F` | Índex regular |
 | `pedra` | `#D9C4A0` | Accent càlid secundari |
 | `fenomenEstels` | `#DDD0B8` | Calendari: pluges d'estels |
@@ -39,7 +40,7 @@ Quan s'observa, l'app passa a vermell sobre negre: el blau i el verd trenquen l'
 
 | Token | `vermell` | | Token | `vermell` |
 |---|---|---|---|---|
-| `nit` | `#000000` | | `lluna` · `far` · `ubicacio` · `ras` | `#FF0000` |
+| `nit` | `#000000` | | `lluna` · `far` · `ubicacio` · `ras` · `perill` | `#FF0000` |
 | `card` | `#0F0000` | | `boira` | `#F20000` |
 | `sheet` | `#120000` | | `jus` | `#F80000` |
 | `vel` | `#170000` | | `tap` · `pedra` · `fenomen*` | `#F20000` |

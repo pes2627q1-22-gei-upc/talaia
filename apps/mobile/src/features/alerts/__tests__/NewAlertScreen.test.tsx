@@ -91,7 +91,11 @@ describe('NewAlertScreen', () => {
     expect(screen.getByText('2 h 30 min')).toBeOnTheScreen();
     expect(screen.getByRole('adjustable', { name: 'Índex mínim' })).toBeOnTheScreen();
     expect(screen.getByText("Quan t'avisem")).toBeOnTheScreen();
-    expect(screen.getByLabelText('El mateix dia a les 18:00, Canvia')).toBeOnTheScreen();
+    expect(
+      screen.getByRole('button', { name: 'A una hora concreta. Cada nit a les 18:00' }),
+    ).toBeSelected();
+    expect(screen.getByLabelText("Avisa'm a les 18:00, Canvia")).toBeOnTheScreen();
+    expect(screen.getByText(/aquella nit no t'avisem/)).toBeOnTheScreen();
     expect(screen.getByRole('button', { name: "Crea l'alerta" })).toBeEnabled();
   });
 
@@ -154,23 +158,20 @@ describe('NewAlertScreen', () => {
     );
     expect(screen.getByText('2 h 45 min')).toBeOnTheScreen();
 
-    await fireEvent.press(screen.getByRole('button', { name: "Quan s'hi arribi" }));
-    expect(screen.getByRole('button', { name: "Quan s'hi arribi" })).toBeSelected();
-    await fireEvent.press(screen.getByRole('button', { name: 'A una hora' }));
-    expect(screen.queryByLabelText('El mateix dia a les 18:00, Canvia')).toBeNull();
-  });
-
-  it('sense cap avís triat, ho diu i el botó està desactivat', async () => {
-    await renderScreen();
-    await ready();
-    await fireEvent.press(screen.getByRole('button', { name: 'A una hora' }));
-    expect(screen.getByText("Tria com a mínim una manera d'avisar-te.")).toBeOnTheScreen();
-    expect(screen.getByRole('button', { name: "Crea l'alerta" })).toBeDisabled();
+    // Els dos tipus d'avís s'exclouen: triar-ne un desmarca l'altre i amaga l'hora.
+    const reach = "En arribar a l'índex. Quan l'índex arribi a 75";
+    await fireEvent.press(screen.getByRole('button', { name: reach }));
+    expect(screen.getByRole('button', { name: reach })).toBeSelected();
+    expect(
+      screen.getByRole('button', { name: 'A una hora concreta. Cada nit a les 18:00' }),
+    ).not.toBeSelected();
+    expect(screen.queryByLabelText("Avisa'm a les 18:00, Canvia")).toBeNull();
+    expect(screen.queryByText(/aquella nit no t'avisem/)).toBeNull();
   });
 
   it('l’hora de l’avís s’obre en un full amb una roda', async () => {
     await renderScreen();
-    await fireEvent.press(screen.getByLabelText('El mateix dia a les 18:00, Canvia'));
+    await fireEvent.press(screen.getByLabelText("Avisa'm a les 18:00, Canvia"));
     expect(await screen.findByText("Hora de l'avís")).toBeOnTheScreen();
     expect(screen.getByTestId('wheel-notify-hour')).toBeOnTheScreen();
     expect(screen.getByRole('button', { name: 'Fet' })).toBeOnTheScreen();
@@ -259,13 +260,13 @@ describe('NewAlertScreen', () => {
   describe('selectors', () => {
     it('la roda de l’hora canvia l’hora i «Fet» torna al formulari amb la nova', async () => {
       await renderScreen();
-      await fireEvent.press(screen.getByLabelText('El mateix dia a les 18:00, Canvia'));
+      await fireEvent.press(screen.getByLabelText("Avisa'm a les 18:00, Canvia"));
       const wheel = await screen.findByRole('adjustable', { name: "Hora de l'avís" });
       await fireEvent(wheel, 'accessibilityAction', increment);
       await fireEvent(wheel, 'accessibilityAction', increment);
       expect(wheel).toHaveAccessibilityValue({ text: '20:00' });
       await fireEvent.press(screen.getByRole('button', { name: 'Fet' }));
-      expect(await screen.findByLabelText('El mateix dia a les 20:00, Canvia')).toBeOnTheScreen();
+      expect(await screen.findByLabelText("Avisa'm a les 20:00, Canvia")).toBeOnTheScreen();
     });
 
     it('si es tanca el mapa sense triar, no hi ha zona: no es pot crear i la fila el torna a obrir', async () => {

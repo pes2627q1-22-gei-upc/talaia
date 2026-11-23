@@ -3,7 +3,7 @@ import { FlatList, View } from 'react-native';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 
 import { makeStyles, useTheme } from '@/core/theme/theme';
-import { motion, radii, spacing } from '@/core/theme/tokens';
+import { motion, radii, sizes, spacing } from '@/core/theme/tokens';
 import { AppText } from '@/shared/ui/AppText';
 import { Button } from '@/shared/ui/Button';
 import { Card } from '@/shared/ui/Card';
@@ -13,7 +13,7 @@ import { Skeleton } from '@/shared/ui/Skeleton';
 import { StateMessage } from '@/shared/ui/StateMessage';
 import { Toggle } from '@/shared/ui/Toggle';
 
-import { GOAL_ICONS } from './goalIcons';
+import { GOAL_ICONS, NOTIFY_ICONS } from './goalIcons';
 import { useAlertsViewModel } from './useAlertsViewModel';
 
 type AlertItem = ReturnType<typeof useAlertsViewModel>['items'][number];
@@ -60,6 +60,19 @@ function AlertRow({ item, index }: { item: AlertItem; index: number }) {
           </View>
           <View style={[styles.text, !item.active && styles.off]} testID={`alert-text-${item.id}`}>
             <AppText variant="label">{item.name}</AppText>
+            {/* El tipus d'avís, amb la seva icona: es distingeix d'un cop d'ull (TG-268). */}
+            <View style={styles.notify} testID={`alert-notify-${item.id}`}>
+              <Image
+                source={NOTIFY_ICONS[item.notify.type]}
+                tintColor={colors.far}
+                style={styles.notifyIcon}
+                accessible={false}
+                testID={`alert-notify-icon-${item.id}`}
+              />
+              <AppText variant="small" color="far" style={styles.shrink}>
+                {item.notify.text}
+              </AppText>
+            </View>
             <AppText variant="small" color="boira">
               {item.summary}
             </AppText>
@@ -158,6 +171,9 @@ const useStyles = makeStyles(({ colors }) => ({
   // tapa mai.
   edit: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   text: { flex: 1, gap: spacing.xxs },
+  notify: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
+  notifyIcon: { width: sizes.iconSmall, height: sizes.iconSmall },
+  shrink: { flexShrink: 1 },
   off: { opacity: 0.5 },
   create: { marginTop: spacing.sm },
   notice: { gap: spacing.sm },

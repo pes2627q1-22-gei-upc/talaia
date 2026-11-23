@@ -20,6 +20,7 @@ export const colors = {
   ras: '#5FD4C4',
   jus: '#E3C58F',
   tap: '#E0708A',
+  perill: '#FF7474',
   pedra: '#D9C4A0',
   fenomenEstels: '#DDD0B8',
   fenomenLluna: '#AEBDEB',
@@ -67,9 +68,9 @@ export const pointMapColors = {
 
 /**
  * Mode nit (ADR-0032): vermell sobre negre, perquè el blau i el verd trenquen l'adaptació de l'ull a
- * la foscor. Només el canal vermell, text ≥ 4,5:1 i accents ≥ 3:1 sobre totes les superfícies: ho
- * comprova `__tests__/palettes.test.ts`. Les pantalles no llegeixen aquestes constants: fan servir
- * `useTheme()` i `makeStyles()` (`theme.tsx`).
+ * la foscor. Només el canal vermell i text ≥ 4,5:1 sobre totes les superfícies, comprovat a
+ * `__tests__/palettes.test.ts` i `__tests__/contrast.test.ts`. Les pantalles no llegeixen aquestes
+ * constants: fan servir `useTheme()` i `makeStyles()` (`theme.tsx`).
  */
 export const colorsVermell = {
   nit: '#000000',
@@ -86,6 +87,7 @@ export const colorsVermell = {
   ras: '#FF0000',
   jus: '#F80000',
   tap: '#F20000',
+  perill: '#FF0000',
   pedra: '#F20000',
   fenomenEstels: '#F20000',
   fenomenLluna: '#F20000',
