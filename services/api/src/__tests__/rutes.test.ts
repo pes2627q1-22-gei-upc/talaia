@@ -63,7 +63,7 @@ describe('GET /api/v1/punts/{id}/rutes', () => {
     expect(response.status).toBe(200);
     expect(response.body).toEqual(RESPOSTA);
     expect(response.headers['cache-control']).toBe('private, no-store');
-    expect(getRutes).toHaveBeenCalledWith(ID, { lat: 41.3851, lon: 2.1734 }, USUARI_ID);
+    expect(getRutes).toHaveBeenCalledWith(ID, { lat: 41.3851, lon: 2.1734 }, USUARI_ID, undefined);
   });
 
   it('respon 401 sense autenticació', async () => {
@@ -76,6 +76,19 @@ describe('GET /api/v1/punts/{id}/rutes', () => {
     expect(getRutes).not.toHaveBeenCalled();
   });
 
+  it('passa l’hora de sortida triada al servei', async () => {
+    const { app, getRutes } = appWithRutes();
+    const sortida = '2026-11-23T18:30:00.000Z';
+    const response = await getAsUser(app, `/api/v1/punts/${ID}/rutes`).query({
+      lat: '41.3851',
+      lon: '2.1734',
+      sortida,
+    });
+
+    expect(response.status).toBe(200);
+    expect(getRutes).toHaveBeenCalledWith(ID, { lat: 41.3851, lon: 2.1734 }, USUARI_ID, sortida);
+  });
+
   it.each([
     ['id invàlid', '/api/v1/punts/no-es-un-uuid/rutes?lat=41&lon=2'],
     ['lat absent', `/api/v1/punts/${ID}/rutes?lon=2`],
@@ -83,6 +96,7 @@ describe('GET /api/v1/punts/{id}/rutes', () => {
     ['lat fora de rang', `/api/v1/punts/${ID}/rutes?lat=91&lon=2`],
     ['lon no numèrica', `/api/v1/punts/${ID}/rutes?lat=41&lon=est`],
     ['lon fora de rang', `/api/v1/punts/${ID}/rutes?lat=41&lon=181`],
+    ['sortida invàlida', `/api/v1/punts/${ID}/rutes?lat=41&lon=2&sortida=dema`],
   ])('respon 400 validation_error amb %s', async (_case, path) => {
     const { app, getRutes } = appWithRutes();
 

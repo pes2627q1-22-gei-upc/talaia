@@ -20,6 +20,7 @@ import { StateMessage } from '@/shared/ui/StateMessage';
 import { IndexBreakdown } from './IndexBreakdown';
 import { FavoriteButton } from './FavoriteButton';
 import PointLocationMap from './PointLocationMap';
+import { RouteOptionsModal } from './RouteOptionsModal';
 import { usePointDetailViewModel } from './usePointDetailViewModel';
 
 const appear = FadeIn.duration(motion.base).reduceMotion(ReduceMotion.System);
@@ -35,7 +36,7 @@ const directionsIcon = require('@/assets/images/point/directions.svg');
 const sunIcon = require('@/assets/images/point/sun.svg');
 const planIcon = require('@/assets/images/point/plan.svg');
 
-/** TG-93 / mockup 05, amb el desglossament d'aquesta nit (TG-105). Rutes i plans, altres històries. */
+/** TG-93 / mockup 05, amb el desglossament d'aquesta nit (TG-105) i la ruta (TG-136). */
 export function PointDetailScreen({ pointId }: { pointId: string }) {
   const nightTint = useNightTint();
   const nightTintOnPrimary = useNightTint('nit');
@@ -273,6 +274,7 @@ export function PointDetailScreen({ pointId }: { pointId: string }) {
               />
             }
             onPress={vm.openDirections}
+            disabled={vm.openingDirections}
             style={styles.actionButton}
           />
           <Button
@@ -292,6 +294,16 @@ export function PointDetailScreen({ pointId }: { pointId: string }) {
           />
         </View>
       ) : null}
+      <RouteOptionsModal
+        visible={vm.routeOptionsVisible}
+        alternatives={vm.routeAlternatives}
+        departure={vm.routeDeparture}
+        onDepartureChange={vm.setRouteDeparture}
+        loading={vm.routesLoading}
+        error={vm.routesError}
+        onClose={vm.closeRouteOptions}
+        onOpenMaps={vm.openMaps}
+      />
       {/* Sura sobre el mapa de la fitxa (mockup 05), també mentre carrega o si falla. */}
       <BackButton label={vm.backLabel} style={[styles.back, { top: insets.top + spacing.sm }]} />
     </SafeAreaView>
