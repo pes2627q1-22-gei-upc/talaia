@@ -179,6 +179,13 @@
     "plans": "My plans",
     "plansHint": "View your observation plans",
     "savedPoints": "Favorite spots",
+    "savedPointsCount_one": "{{count}} saved spot to revisit",
+    "savedPointsCount_other": "{{count}} saved spots to revisit",
+    "savedPointsHint": "View the spots you've saved",
+    "savedPointsEmpty": "You don't have any favorite spots yet.",
+    "savedPointsError": "Couldn't load your favorite spots.",
+    "openSavedPoint": "Open the spot details",
+    "retry": "Try again",
     "comingSoon": "Coming soon"
   },
   "apiStatus": {
