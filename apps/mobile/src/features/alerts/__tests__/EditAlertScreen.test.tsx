@@ -101,8 +101,10 @@ describe('EditAlertScreen', () => {
     expect(await screen.findByText('Berga')).toBeOnTheScreen();
     expect(screen.getByText('2 h 30 min')).toBeOnTheScreen();
     expect(screen.getByText('60, justet')).toBeOnTheScreen();
-    expect(screen.getByRole('button', { name: 'A una hora' })).toBeSelected();
-    expect(screen.getByText('El mateix dia a les 21:00')).toBeOnTheScreen();
+    expect(
+      screen.getByRole('button', { name: 'A una hora concreta. Cada nit a les 21:00' }),
+    ).toBeSelected();
+    expect(screen.getByText("Avisa'm a les 21:00")).toBeOnTheScreen();
     expect(screen.getByRole('button', { name: 'Desa els canvis' })).toBeDisabled();
   });
 
@@ -123,7 +125,7 @@ describe('EditAlertScreen', () => {
   it('el full de l’hora s’obre amb l’hora desada', async () => {
     mockedList.mockResolvedValue([SAVED]);
     await renderScreen();
-    await fireEvent.press(await screen.findByText('El mateix dia a les 21:00'));
+    await fireEvent.press(await screen.findByText("Avisa'm a les 21:00"));
     expect(await screen.findByText("Hora de l'avís")).toBeOnTheScreen();
     expect(screen.getByRole('button', { name: 'Fet' })).toBeOnTheScreen();
   });

@@ -1,6 +1,6 @@
 import type { Alerta, AlertaNova } from '@talaia/shared';
 
-import { alertChanges, bandOf, kmToTravel, travelToKm } from '../newAlertModel';
+import { alertChanges, bandOf, kmToTravel, notifyTypeOf, travelToKm } from '../newAlertModel';
 
 describe('newAlertModel', () => {
   it('les franges de l’índex: 0–39 tapat, 40–69 justet, 70–100 cel ras', () => {
@@ -75,6 +75,21 @@ describe('newAlertModel', () => {
       expect(alertChanges(saved, { ...form, distanciaMaxKm: 185 }, 240)).toEqual({
         distanciaMaxKm: 185,
       });
+    });
+
+    it('si el tipus d’avís és el mateix, només hi va l’hora quan canvia', () => {
+      expect(alertChanges(saved, { ...form, horaAvis: 21 }, travel)).toEqual({ horaAvis: 21 });
+      // Passar a «a una hora» deixa l'alerta només amb un tipus.
+      const reach = { ...saved, avisaEnArribar: true, horaAvis: null };
+      expect(alertChanges(reach, form, travel)).toEqual({ avisaEnArribar: false, horaAvis: 18 });
+    });
+
+    it('una alerta d’abans amb tots dos avisos és «en arribar» i no canvia si no es toca', () => {
+      const both = { ...saved, avisaEnArribar: true, horaAvis: 21 };
+      expect(notifyTypeOf(both)).toBe('reach');
+      expect(alertChanges(both, { ...form, avisaEnArribar: true, horaAvis: null }, travel)).toEqual(
+        {},
+      );
     });
   });
 });

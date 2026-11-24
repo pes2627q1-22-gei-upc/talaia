@@ -4,11 +4,11 @@ import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Linking } from 'react-native';
 
-import { travelParts } from '@/features/explore/exploreModel';
+import { formatHour, travelParts } from '@/features/explore/exploreModel';
 import { usePushPermission } from '@/features/notifications/PushRegistrationProvider';
 
 import { ALERTS_KEY, alertsRepository, useAlertsQuery } from './alertsRepository';
-import { kmToTravel } from './newAlertModel';
+import { kmToTravel, notifyTypeOf } from './newAlertModel';
 
 export type PushNotice = {
   message: string;
@@ -80,14 +80,25 @@ export function useAlertsViewModel() {
     state,
     items: (alerts.data ?? []).map((alert) => {
       const name = t(`explore.goals.${alert.objectiu}`);
+      const notifyType = notifyTypeOf(alert);
+      const travel = travelLabel(alert.distanciaMaxKm);
       return {
         id: alert.id,
         goal: alert.objectiu,
         name,
-        summary: t('alerts.summary', {
-          travel: travelLabel(alert.distanciaMaxKm),
-          index: alert.indexMinim,
-        }),
+        // El tipus d'avís, amb la seva icona: «Cada nit a les 21:00» o «Quan l'índex arribi a 70».
+        notify: {
+          type: notifyType,
+          text: t(`alerts.notify.${notifyType}.text`, {
+            hour: formatHour(alert.horaAvis ?? 0),
+            index: alert.indexMinim,
+          }),
+        },
+        // En arribar-hi, l'índex ja surt a l'avís.
+        summary:
+          notifyType === 'reach'
+            ? t('alerts.summaryTravel', { travel })
+            : t('alerts.summary', { travel, index: alert.indexMinim }),
         active: alert.activa,
         toggleLabel: t('alerts.toggle', { name }),
         editHint: t('alerts.editHint'),

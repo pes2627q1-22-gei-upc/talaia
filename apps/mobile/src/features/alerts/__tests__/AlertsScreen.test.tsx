@@ -12,6 +12,7 @@ import { createQueryWrapper } from '@/test-utils/queryWrapper';
 
 import { alertsRepository } from '../alertsRepository';
 import { AlertsScreen } from '../AlertsScreen';
+import { NOTIFY_ICONS } from '../goalIcons';
 
 jest.mock('expo-router', () => ({ useRouter: jest.fn() }));
 jest.mock('@/features/notifications/PushRegistrationProvider', () => ({
@@ -93,12 +94,27 @@ describe('AlertsScreen', () => {
   it('llista les alertes amb el resum i l’interruptor, i el botó per crear-ne', async () => {
     mockedList.mockResolvedValue([
       alert({}),
-      alert({ id: 'a2', objectiu: 'via_lactia', distanciaMaxKm: 35, activa: false }),
+      alert({
+        id: 'a2',
+        objectiu: 'via_lactia',
+        distanciaMaxKm: 35,
+        avisaEnArribar: true,
+        horaAvis: null,
+        activa: false,
+      }),
     ]);
     await renderScreen();
     expect(await screen.findByText("Pluja d'estels")).toBeOnTheScreen();
     expect(screen.getByText("T'avisem només quan el cel acompanya.")).toBeOnTheScreen();
     expect(screen.getByText('A menys de 2 h 30 min, índex de 70 o més')).toBeOnTheScreen();
+    // Cada tipus d'avís amb la seva icona i el seu text (TG-268).
+    const hour = screen.getByTestId('alert-notify-a1');
+    expect(within(hour).getByText('Cada nit a les 18:00')).toBeOnTheScreen();
+    expect(screen.getByTestId('alert-notify-icon-a1').props.source).toEqual([NOTIFY_ICONS.hour]);
+    const reach = screen.getByTestId('alert-notify-a2');
+    expect(within(reach).getByText("Quan l'índex arribi a 70")).toBeOnTheScreen();
+    expect(screen.getByTestId('alert-notify-icon-a2').props.source).toEqual([NOTIFY_ICONS.reach]);
+    expect(screen.getByText('A menys de 45 min')).toBeOnTheScreen();
     expect(screen.getByRole('switch', { name: "Alerta de Pluja d'estels" })).toBeChecked();
     expect(screen.getByRole('switch', { name: 'Alerta de Via Làctia' })).not.toBeChecked();
     expect(screen.getByRole('button', { name: 'Nova alerta' })).toBeOnTheScreen();

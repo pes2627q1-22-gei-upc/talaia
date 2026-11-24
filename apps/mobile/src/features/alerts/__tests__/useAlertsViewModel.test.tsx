@@ -74,6 +74,8 @@ describe('useAlertsViewModel', () => {
         objectiu: 'via_lactia',
         distanciaMaxKm: 35,
         indexMinim: 80,
+        avisaEnArribar: true,
+        horaAvis: null,
         activa: false,
       }),
     ]);
@@ -86,10 +88,17 @@ describe('useAlertsViewModel', () => {
       {
         name: "Pluja d'estels",
         summary: 'A menys de 2 h 30 min, índex de 70 o més',
+        notify: { type: 'hour', text: 'Cada nit a les 18:00' },
         active: true,
         toggleLabel: "Alerta de Pluja d'estels",
       },
-      { name: 'Via Làctia', summary: 'A menys de 45 min, índex de 80 o més', active: false },
+      // En arribar-hi, l'índex ja és a l'avís i no es repeteix al resum.
+      {
+        name: 'Via Làctia',
+        summary: 'A menys de 45 min',
+        notify: { type: 'reach', text: "Quan l'índex arribi a 80" },
+        active: false,
+      },
     ]);
   });
 

@@ -511,13 +511,11 @@
       },
       "notify": {
         "title": "Quan t'avisem",
-        "onReach": "Quan s'hi arribi",
-        "atHour": "A una hora",
-        "hourValue": "El mateix dia a les {{hour}}",
+        "hourValue": "Avisa'm a les {{hour}}",
         "change": "Canvia",
         "hourTitle": "Hora de l'avís",
         "done": "Fet",
-        "required": "Tria com a mínim una manera d'avisar-te."
+        "hourNote": "A aquesta hora mirem la previsió de la nit. Si cap punt no arriba a l'índex mínim, aquella nit no t'avisem."
       }
     },
     "edit": {
@@ -541,7 +539,18 @@
     "retry": "Torna-ho a provar",
     "pushDenied": "Les notificacions estan desactivades: no t'avisarem al mòbil quan hi hagi bones condicions. Pots activar-les a la configuració.",
     "pushUnavailable": "Aquest dispositiu no pot rebre notificacions. La resta de l'app funciona igual.",
-    "openSettings": "Obre la configuració"
+    "openSettings": "Obre la configuració",
+    "notify": {
+      "hour": {
+        "title": "A una hora concreta",
+        "text": "Cada nit a les {{hour}}"
+      },
+      "reach": {
+        "title": "En arribar a l'índex",
+        "text": "Quan l'índex arribi a {{index}}"
+      }
+    },
+    "summaryTravel": "A menys de {{travel}}"
   },
   "auth": {
     "signOut": "Tanca la sessió",

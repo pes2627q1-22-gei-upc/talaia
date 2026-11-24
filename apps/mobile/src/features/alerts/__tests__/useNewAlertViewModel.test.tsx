@@ -73,11 +73,12 @@ describe('useNewAlertViewModel', () => {
     expect(vm.origin.state).toBe('loading');
     expect(vm.travel.label).toBe('2 h 30 min');
     expect(vm.minIndex).toMatchObject({ label: '75, cel ras', color: 'ras' });
-    expect(vm.notifyOptions.map((option) => [option.label, option.selected])).toEqual([
-      ["Quan s'hi arribi", false],
-      ['A una hora', true],
+    expect(vm.notifyOptions.map((option) => [option.label, option.hint, option.selected])).toEqual([
+      ['A una hora concreta', 'Cada nit a les 18:00', true],
+      ["En arribar a l'índex", "Quan l'índex arribi a 75", false],
     ]);
-    expect(vm.notifyHour?.label).toBe('El mateix dia a les 18:00');
+    expect(vm.notifyHour?.label).toBe("Avisa'm a les 18:00");
+    expect(vm.notifyHour?.note).toMatch(/aquella nit no t'avisem/);
     expect(vm.cta).toMatchObject({ label: "Crea l'alerta", disabled: true });
     expect(vm.error).toBeNull();
   });
@@ -105,8 +106,8 @@ describe('useNewAlertViewModel', () => {
     await act(() => result.current.goals.find((goal) => goal.id === 'via_lactia')?.onPress());
     await act(() => result.current.travel.onChange(240));
     await act(() => result.current.minIndex.onChange(85));
-    await act(() => result.current.notifyOptions[0]?.onPress());
     await act(() => result.current.hourSheet.onChange(21));
+    expect(result.current.notifyOptions[0]?.hint).toBe('Cada nit a les 21:00');
     await act(() => result.current.cta.onPress());
 
     await waitFor(() => expect(back).toHaveBeenCalledTimes(1));
@@ -116,22 +117,24 @@ describe('useNewAlertViewModel', () => {
       // 4 h a 60 km/h amb el desviament ×1,3 de les recomanacions.
       distanciaMaxKm: 185,
       indexMinim: 85,
-      avisaEnArribar: true,
+      avisaEnArribar: false,
       horaAvis: 21,
     });
   });
 
-  it('només en arribar a l’índex: sense hora, i sense cap avís no es pot crear', async () => {
+  it('en arribar a l’índex: un sol tipus, sense hora, i l’avís diu l’índex triat', async () => {
     mockedCreate.mockResolvedValue({} as never);
     const { result } = await readyViewModel();
 
     await act(() => result.current.notifyOptions[1]?.onPress());
+    expect(result.current.notifyOptions.map((option) => option.selected)).toEqual([false, true]);
     expect(result.current.notifyHour).toBeNull();
-    expect(result.current.notifyHint).toBe("Tria com a mínim una manera d'avisar-te.");
-    expect(result.current.cta.disabled).toBe(true);
+    // Tornar a prémer el triat no el treu: sempre n'hi ha un.
+    await act(() => result.current.notifyOptions[1]?.onPress());
+    expect(result.current.notifyOptions.map((option) => option.selected)).toEqual([false, true]);
+    await act(() => result.current.minIndex.onChange(90));
+    expect(result.current.notifyOptions[1]?.hint).toBe("Quan l'índex arribi a 90");
 
-    await act(() => result.current.notifyOptions[0]?.onPress());
-    expect(result.current.notifyHint).toBeNull();
     await act(() => result.current.cta.onPress());
     await waitFor(() => expect(mockedCreate).toHaveBeenCalledTimes(1));
     expect(mockedCreate.mock.calls[0]?.[0]).toMatchObject({
@@ -294,7 +297,7 @@ describe('useNewAlertViewModel', () => {
       expect(vm.zoneSheet.center).toEqual({ lat: 42.1, lon: 1.845 });
       expect(vm.travel.label).toBe('2 h 30 min');
       expect(vm.minIndex.label).toBe('60, justet');
-      expect(vm.notifyOptions.map((option) => option.selected)).toEqual([true, false]);
+      expect(vm.notifyOptions.map((option) => option.selected)).toEqual([false, true]);
       expect(vm.notifyHour).toBeNull();
       // Sense cap canvi no hi ha res a desar.
       expect(vm.cta).toMatchObject({ label: 'Desa els canvis', disabled: true });
@@ -322,7 +325,7 @@ describe('useNewAlertViewModel', () => {
       const { result } = await editViewModel();
 
       await act(() => result.current.originModes.onChange(0));
-      await act(() => result.current.notifyOptions[1]?.onPress());
+      await act(() => result.current.notifyOptions[0]?.onPress());
       await act(() => result.current.travel.onChange(240));
       await act(() => result.current.cta.onPress());
 
@@ -330,8 +333,26 @@ describe('useNewAlertViewModel', () => {
       expect(mockedUpdate).toHaveBeenCalledWith('a1', {
         origen: { lat: 41.387, lon: 2.169 },
         distanciaMaxKm: 185,
+        avisaEnArribar: false,
         horaAvis: 18,
       });
+    });
+
+    it('una alerta d’abans amb tots dos avisos surt com «en arribar» i no es toca si no es canvia', async () => {
+      mockedUpdate.mockResolvedValue({} as never);
+      mockedPlace.mockResolvedValue(BARCELONA);
+      mockedName.mockResolvedValue('Berga');
+      const { result } = await renderHook(
+        () => useNewAlertViewModel({ ...SAVED, avisaEnArribar: true, horaAvis: 21 }),
+        { wrapper: createQueryWrapper() },
+      );
+      await waitFor(() => expect(result.current.origin.label).toBe('Berga'));
+      expect(result.current.notifyOptions.map((option) => option.selected)).toEqual([false, true]);
+      expect(result.current.cta.disabled).toBe(true);
+
+      await act(() => result.current.minIndex.onChange(80));
+      await act(() => result.current.cta.onPress());
+      await waitFor(() => expect(mockedUpdate).toHaveBeenCalledWith('a1', { indexMinim: 80 }));
     });
 
     it('tornar al valor desat deixa el botó desactivat', async () => {
