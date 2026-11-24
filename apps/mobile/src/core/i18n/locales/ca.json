@@ -186,7 +186,9 @@
     "savedPointsError": "No s'han pogut carregar els punts favorits.",
     "openSavedPoint": "Obre la fitxa del punt",
     "retry": "Torna-ho a provar",
-    "comingSoon": "Properament"
+    "comingSoon": "Properament",
+    "nightModeLabel": "Mode nit",
+    "nightModeHint": "Vermell sobre negre. S'activa sol al punt d'un pla, a la seva hora."
   },
   "apiStatus": {
     "title": "Estat del servidor",
@@ -753,5 +755,9 @@
   },
   "notifications": {
     "channelName": "Alertes del cel"
+  },
+  "nightMode": {
+    "notice": "Mode nit activat: ets a prop de {{point}}.",
+    "turnOff": "Desactiva"
   }
 }

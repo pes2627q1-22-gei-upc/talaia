@@ -22,6 +22,10 @@ jest.mock('@/core/api/httpClient', () => ({
 // La targeta de l'estat de l'API té la seva pròpia prova i necessita TanStack Query.
 jest.mock('@/features/apiStatus/ApiStatusCard', () => ({ ApiStatusCard: () => null }));
 jest.mock('expo-router', () => ({ useRouter: jest.fn(), usePreventRemove: jest.fn() }));
+const mockSetNightMode = jest.fn();
+jest.mock('@/features/nightMode/NightModeProvider', () => ({
+  useNightMode: () => ({ on: false, setOn: mockSetNightMode }),
+}));
 
 const push = jest.fn();
 const back = jest.fn();
@@ -277,6 +281,21 @@ describe('ProfileScreen · sessió (HU35)', () => {
     await act(async () => (guard?.[1] as (event: { repeat: () => void }) => void)({ repeat }));
     await fireEvent.press(screen.getByRole('button', { name: 'Descarta els canvis' }));
     expect(repeat).toHaveBeenCalledTimes(1);
+  });
+
+  it('l’interruptor «Mode nit» hi és amb sessió i sense, i canvia el mode (HU45)', async () => {
+    await renderProfile(auth({ user: null, isAuthenticated: false }));
+    const toggle = screen.getByRole('switch', { name: 'Mode nit' });
+    expect(toggle).not.toBeChecked();
+    await fireEvent.press(toggle);
+    expect(mockSetNightMode).toHaveBeenCalledWith(true);
+    await screen.unmount();
+
+    await renderProfile(auth());
+    expect(screen.getByRole('switch', { name: 'Mode nit' })).toBeOnTheScreen();
+    expect(
+      screen.getByText("Vermell sobre negre. S'activa sol al punt d'un pla, a la seva hora."),
+    ).toBeOnTheScreen();
   });
 
   it('sense sessió no hi ha res a tancar', async () => {

@@ -43,6 +43,7 @@ src/
     providers/          AppProviders (SafeArea, React Query, i18n)
     theme/tokens.ts     Tokens del design system (colors, espaiats, radis, mides)
     theme/theme.tsx     Tema actual (normal o vermell): ThemeProvider, useTheme, makeStyles
+  features/nightMode/   Qui decideix el tema: interruptor i activació automàtica a prop d'un pla (TG-240)
   shared/ui/            Components de presentació reutilitzables
   test-utils/           Ajudes per als tests (createQueryWrapper)
 ```

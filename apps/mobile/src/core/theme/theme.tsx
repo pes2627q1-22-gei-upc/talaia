@@ -41,7 +41,7 @@ const ThemeContext = createContext<Theme>(themes.normal);
 
 /**
  * Dona el tema a tot l'arbre, també a les pantalles i als `Modal` que es presenten en una finestra
- * nativa. Qui decideix `name` és la TG-240 (activació automàtica i interruptor).
+ * nativa. Qui decideix `name` és `NightModeProvider` (TG-240: activació automàtica i interruptor).
  */
 export function ThemeProvider({
   name = 'normal',
