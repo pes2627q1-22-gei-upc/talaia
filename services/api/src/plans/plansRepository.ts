@@ -61,6 +61,8 @@ export type PlansRepository = {
   findById(perfilId: string, id: string): Promise<PlaAmbTextos | undefined>;
   /** Només actualitza el vincle al calendari d’un pla propi; false si no existeix. */
   setCalendarEvent(perfilId: string, id: string, eventId: string): Promise<boolean>;
+  /** Esborra un pla propi (TG-162); false si no existeix o és d'un altre usuari. */
+  delete(perfilId: string, id: string): Promise<boolean>;
 };
 
 export function createPlansRepository(db: Db): PlansRepository {
@@ -183,6 +185,16 @@ export function createPlansRepository(db: Db): PlansRepository {
         .returning('id')
         .executeTakeFirst();
       return updated !== undefined;
+    },
+
+    async delete(perfilId, id) {
+      const esborrat = await db
+        .deleteFrom('plans')
+        .where('perfilId', '=', perfilId)
+        .where('id', '=', id)
+        .returning('id')
+        .executeTakeFirst();
+      return esborrat !== undefined;
     },
   };
 }

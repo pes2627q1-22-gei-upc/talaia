@@ -19,6 +19,11 @@ export type PlansService = {
   get(perfilId: string, id: string, acceptLanguage?: string): Promise<Pla>;
   /** Desa el vincle al calendari del mòbil; 404 si el pla no és del perfil. */
   setCalendarEvent(perfilId: string, id: string, eventId: string): Promise<void>;
+  /**
+   * Esborra el pla (TG-162); 404 si no és del perfil. L'esdeveniment del calendari del mòbil
+   * l'esborra l'app: l'id només val al dispositiu que l'ha creat.
+   */
+  delete(perfilId: string, id: string): Promise<void>;
 };
 
 export type PlansServiceOptions = {
@@ -101,6 +106,13 @@ export function createPlansService(
         repository.setCalendarEvent(perfilId, id, eventId),
       );
       if (!updated) throw new ApiError(404, 'plan_not_found', 'No tens cap pla amb aquest id');
+    },
+
+    async delete(perfilId, id) {
+      const esborrat = await fromDatabase(`no s'ha pogut esborrar el pla ${id}`, () =>
+        repository.delete(perfilId, id),
+      );
+      if (!esborrat) throw new ApiError(404, 'plan_not_found', 'No tens cap pla amb aquest id');
     },
   };
 }

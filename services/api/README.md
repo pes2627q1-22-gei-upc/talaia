@@ -21,7 +21,7 @@ npm run api                   # = npm run dev -w services/api, amb recàrrega
 - Alertes: `GET` i `POST /api/v1/alertes` i `PATCH` i `DELETE /api/v1/alertes/{id}` (cal el JWT de Supabase)
 - Tokens de push: `PUT /api/v1/perfil/dispositius` i `DELETE /api/v1/perfil/dispositius/{token}` (JWT)
 - Favorits: `GET` i `POST /api/v1/favorits` i `DELETE /api/v1/favorits/{puntId}` (cal el JWT de Supabase)
-- Plans: `POST` i `GET /api/v1/plans` (`?quan=futurs|passats`) i `GET /api/v1/plans/{id}` (cal el JWT de Supabase)
+- Plans: `POST` i `GET /api/v1/plans` (`?quan=futurs|passats`), i `GET` i `DELETE /api/v1/plans/{id}` (cal el JWT de Supabase)
 - Recomanacions: `http://localhost:3000/api/v1/recomanacions?objectiu=cel_estrellat&lat=41.39&lon=2.17&data=<YYYY-MM-DD>&desDe=22&finsA=6&tempsMaxim=150`; «a prop meu»: `…/recomanacions?lat=41.39&lon=2.17`; «on veure-ho»: `…/recomanacions?lat=41.39&lon=2.17&esdevenimentId=leonids-2026`
 - Visibilitat d'una ubicació qualsevol: `http://localhost:3000/api/v1/visibilitat?lat=41.95&lon=1.52` (no cal `DATABASE_URL`; amb `&hora=<ISO 8601>`, una altra hora)
 - Documentació (Swagger UI): <http://localhost:3000/api/v1/docs>
@@ -373,6 +373,7 @@ Els plans d'observació de l'usuari autenticat (tipus `Pla`, `PlaNou`, `QuanPlan
 - `GET /plans`: tots els plans per data (`[]` si no en té cap). Amb `?quan=futurs`, els que encara no s'han acabat, del més proper al més llunyà. Un pla s'acaba a `dataHoraFi` o, si no en té, al final de la nit que conté l'inici (les 12:00 locals de l'endemà de la nit, com `nightWindow(defaultNight(inici)).to`; `fiEfectiu` a `plansRepository.ts`): un pla «aquesta nit a les 21:00» continua sent futur mentre s'observa. Amb `?quan=passats`, la resta, del més recent al més antic.
 - `GET /plans/{id}`: el pla. Si és d'un altre usuari, respon 404 igual que si no existís, per no revelar-ne l'existència.
 - `PUT /plans/{id}/calendari` (TG-158): desa el vincle amb l’esdeveniment creat al calendari del mòbil. Cos estricte `{ "calendariEventId": "…" }`, text no buit de fins a 255 caràcters, retallat als extrems. Respon 204 i és idempotent; un pla inexistent o aliè és un 404 `plan_not_found`. L’UPDATE filtra pel perfil del JWT i l’id del pla, sense canviar-ne el punt, dates, fenomen ni notes. L’app desa primer el pla i només després crea l’esdeveniment i envia aquest vincle. No cal cap migració: la columna ja existeix.
+- `DELETE /plans/{id}` (TG-162): esborra el pla i respon 204. Un pla inexistent o aliè és un 404 `plan_not_found`, igual que al `GET`; el `DELETE` filtra pel perfil del JWT. També es pot esborrar el d'un punt retirat. L'esdeveniment del calendari del mòbil no el toca: l'esborra l'app, perquè `calendariEventId` només val al mòbil que el va crear, i abans comprova que l'inici, el final i el municipi coincideixin amb els del pla.
 
 ```json
 {

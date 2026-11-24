@@ -13,7 +13,7 @@ import { createPlansService } from '../plans/plansService';
 import type { ProfileStore } from '../services/profileService';
 
 /**
- * `POST` i `GET /api/v1/plans` i `GET /api/v1/plans/{id}` (HU12, TG-156) amb JWT locals, perfils en
+ * `POST` i `GET /api/v1/plans`, i `GET` i `DELETE /api/v1/plans/{id}` (HU12, TG-156; HU15, TG-162) amb JWT locals, perfils en
  * memòria i un repositori en memòria que, com la base de dades, filtra pel perfil. L'SQL del
  * repositori (el `where perfil_id`) es prova a `plansRepository.test.ts`.
  */
@@ -113,6 +113,12 @@ function memoryRepository() {
       const fila = files.find((f) => f.perfilId === perfilId && f.pla.id === id);
       if (!fila) return false;
       fila.pla.calendariEventId = eventId;
+      return true;
+    }),
+    delete: jest.fn(async (perfilId: string, id: string) => {
+      const index = files.findIndex((f) => f.perfilId === perfilId && f.pla.id === id);
+      if (index === -1) return false;
+      files.splice(index, 1);
       return true;
     }),
   };
@@ -516,6 +522,58 @@ describe('GET /api/v1/plans/{id}', () => {
   });
 });
 
+const esborra = async (com: string, id: string) =>
+  request(app)
+    .delete(`/api/v1/plans/${id}`)
+    .set('Authorization', `Bearer ${await tokenFor(com)}`);
+
+describe('DELETE /api/v1/plans/{id}', () => {
+  it('esborra el pla (204) i ja no surt ni a la llista ni al GET', async () => {
+    const { body: pla } = await crea(MARIA.auth, NOU);
+    const res = await esborra(MARIA.auth, pla.id);
+    expect(res.status).toBe(204);
+    expect(res.headers['cache-control']).toBe('no-store');
+    expect(repo.delete).toHaveBeenCalledWith(MARIA.perfil, pla.id);
+    expect((await llista(MARIA.auth)).body).toEqual([]);
+    expect((await llegeix(MARIA.auth, pla.id)).status).toBe(404);
+  });
+
+  it('el pla d’un altre usuari respon 404 plan_not_found, igual que un que no existeix, i no s’esborra', async () => {
+    const { body: pla } = await crea(MARIA.auth, NOU);
+    const dePere = await esborra(PERE.auth, pla.id);
+    const noExisteix = await esborra(PERE.auth, NO_EXISTEIX);
+    expect(dePere.status).toBe(404);
+    expect(dePere.body).toEqual(noExisteix.body);
+    expect(dePere.body.error.code).toBe('plan_not_found');
+    expect((await llegeix(MARIA.auth, pla.id)).status).toBe(200);
+  });
+
+  it('esborrar-lo dues vegades: la segona respon 404', async () => {
+    const { body: pla } = await crea(MARIA.auth, NOU);
+    expect((await esborra(MARIA.auth, pla.id)).status).toBe(204);
+    expect((await esborra(MARIA.auth, pla.id)).status).toBe(404);
+  });
+
+  it('el pla d’un punt retirat també es pot esborrar', async () => {
+    const { body: pla } = await crea(MARIA.auth, NOU);
+    retirats.add(MONTSEC);
+    expect((await esborra(MARIA.auth, pla.id)).status).toBe(204);
+  });
+
+  it('respon 400 validation_error si l’id no és un UUID', async () => {
+    const res = await esborra(MARIA.auth, 'el-meu-pla');
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe('validation_error');
+    expect(repo.delete).not.toHaveBeenCalled();
+  });
+
+  it("respon 404 profile_not_found si l'usuari no té perfil", async () => {
+    const res = await esborra(SENSE_PERFIL, NO_EXISTEIX);
+    expect(res.status).toBe(404);
+    expect(res.body.error.code).toBe('profile_not_found');
+  });
+});
+
 describe('/api/v1/plans sense un usuari vàlid', () => {
   const ambToken = (test: request.Test, token?: string) =>
     token ? test.set('Authorization', `Bearer ${token}`) : test;
@@ -532,6 +590,10 @@ describe('/api/v1/plans sense un usuari vàlid', () => {
     [
       'GET {id}',
       (token?: string) => ambToken(request(app).get(`/api/v1/plans/${NO_EXISTEIX}`), token),
+    ],
+    [
+      'DELETE {id}',
+      (token?: string) => ambToken(request(app).delete(`/api/v1/plans/${NO_EXISTEIX}`), token),
     ],
   ] as const;
 
@@ -557,6 +619,7 @@ describe('/api/v1/plans sense un usuari vàlid', () => {
       expect(repo.list).not.toHaveBeenCalled();
       expect(repo.findById).not.toHaveBeenCalled();
       expect(repo.setCalendarEvent).not.toHaveBeenCalled();
+      expect(repo.delete).not.toHaveBeenCalled();
     },
   );
 });
@@ -566,6 +629,7 @@ describe('/api/v1/plans sense DATABASE_URL', () => {
     ['post', '/api/v1/plans'],
     ['get', '/api/v1/plans'],
     ['get', `/api/v1/plans/${NO_EXISTEIX}`],
+    ['delete', `/api/v1/plans/${NO_EXISTEIX}`],
   ] as const)('amb un JWT vàlid, %s %s respon 503 database_unavailable', async (method, path) => {
     const res = await request(createApp({ supabaseUrl, jwks, profileStore }))
       [method](path)
@@ -577,13 +641,13 @@ describe('/api/v1/plans sense DATABASE_URL', () => {
 });
 
 describe('/plans a l’OpenAPI', () => {
-  it('documenta POST, GET i GET {id} amb els esquemes Pla i PlaNou', async () => {
+  it('documenta POST, GET, GET {id} i DELETE {id} amb els esquemes Pla i PlaNou', async () => {
     const res = await request(createApp()).get('/api/v1/openapi.json');
     const { post, get } = res.body.paths['/plans'];
-    const { get: getId } = res.body.paths['/plans/{id}'];
+    const { get: getId, delete: deleteId } = res.body.paths['/plans/{id}'];
     const { put: putCalendar } = res.body.paths['/plans/{id}/calendari'];
 
-    for (const operacio of [post, get, getId, putCalendar]) {
+    for (const operacio of [post, get, getId, deleteId, putCalendar]) {
       expect(operacio.tags).toEqual(['Plans']);
       expect(operacio.security).toEqual([{ BearerSupabase: [] }]);
       expect(operacio.responses['403'].description).toContain('account_blocked');
@@ -606,5 +670,14 @@ describe('/plans a l’OpenAPI', () => {
     expect(res.body.components.schemas).toHaveProperty('PlaNou');
     expect(res.body.components.schemas).toHaveProperty('CalendariPla');
     expect(putCalendar.responses['204']).toBeDefined();
+    expect(Object.keys(deleteId.responses).sort()).toEqual([
+      '204',
+      '400',
+      '401',
+      '403',
+      '404',
+      '503',
+    ]);
+    expect(deleteId.responses['404'].description).toContain('plan_not_found');
   });
 });

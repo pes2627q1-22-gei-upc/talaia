@@ -230,6 +230,25 @@ registry.registerPath({
   },
 });
 
+registry.registerPath({
+  method: 'delete',
+  path: '/plans/{id}',
+  tags: ['Plans'],
+  security: [{ BearerSupabase: [] }],
+  summary: 'Esborra un pla de l’usuari autenticat (HU15, TG-162)',
+  description:
+    'Un pla d’un altre usuari respon igual que un que no existeix. No toca el calendari del mòbil: l’esdeveniment (`calendariEventId`) l’esborra l’app.',
+  request: { params: PlaParamsSchema },
+  responses: {
+    204: { description: 'Pla esborrat' },
+    400: errorResponse('`validation_error`: l’`id` no és un UUID'),
+    404: errorResponse(
+      `\`plan_not_found\`: l’usuari no té cap pla amb aquest \`id\`; ${NO_PROFILE}`,
+    ),
+    ...ERRORS_AUTH,
+  },
+});
+
 /** `/api/v1/plans` (HU12, TG-156): els plans d'observació de l'usuari autenticat. */
 export function createPlansRouter({ requireUser, service }: PlansRouterOptions): Router {
   const router = Router();
@@ -266,6 +285,14 @@ export function createPlansRouter({ requireUser, service }: PlansRouterOptions):
     const perfilId = currentPerfilId(req);
     if (!service) throw databaseUnavailable();
     await service.setCalendarEvent(perfilId, id, calendariEventId);
+    res.set(NO_CACHE).status(204).end();
+  });
+
+  router.delete('/:id', async (req, res) => {
+    const { id } = PlaParamsSchema.parse(req.params);
+    const perfilId = currentPerfilId(req);
+    if (!service) throw databaseUnavailable();
+    await service.delete(perfilId, id);
     res.set(NO_CACHE).status(204).end();
   });
 

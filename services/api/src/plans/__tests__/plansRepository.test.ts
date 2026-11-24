@@ -137,6 +137,22 @@ describe('plansRepository.setCalendarEvent', () => {
   });
 });
 
+describe('plansRepository.delete', () => {
+  it('esborra només el pla propi, filtrant per perfil i id a l’SQL', async () => {
+    const { db, queries } = fakeDb([{ id: PLA }]);
+    await expect(createPlansRepository(db).delete(PERFIL, PLA)).resolves.toBe(true);
+    expect(queries[0]?.sql).toBe(
+      'delete from "plans" where "perfil_id" = $1 and "id" = $2 returning "id"',
+    );
+    expect(queries[0]?.parameters).toEqual([PERFIL, PLA]);
+  });
+
+  it('false si el pla no existeix o no és del perfil', async () => {
+    const { db } = fakeDb([]);
+    await expect(createPlansRepository(db).delete(PERFIL, PLA)).resolves.toBe(false);
+  });
+});
+
 describe('plansRepository.create', () => {
   const NOU = {
     puntId: MONTSEC,
