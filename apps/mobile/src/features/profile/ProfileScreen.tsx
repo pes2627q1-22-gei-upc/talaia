@@ -6,12 +6,12 @@ import { radii, sizes, spacing } from '@/core/theme/tokens';
 import { ApiStatusCard } from '@/features/apiStatus/ApiStatusCard';
 import { AppText } from '@/shared/ui/AppText';
 import { Button } from '@/shared/ui/Button';
+import { ConfirmationSheet } from '@/shared/ui/ConfirmationSheet';
 import { PressableScale } from '@/shared/ui/PressableScale';
 import { Screen } from '@/shared/ui/Screen';
 import { Skeleton } from '@/shared/ui/Skeleton';
 
 import { LanguageSheet } from './LanguageSheet';
-import { LogoutConfirmationSheet } from './LogoutConfirmationSheet';
 import { ProfileAvatar } from './ProfileAvatar';
 import { useProfileViewModel } from './useProfileViewModel';
 
@@ -182,7 +182,7 @@ export function ProfileScreen() {
         languages={vm.languages}
         selectLanguage={vm.selectLanguage}
       />
-      <LogoutConfirmationSheet
+      <ConfirmationSheet
         visible={vm.logoutConfirmationOpen}
         title={vm.logoutConfirmationTitle}
         message={vm.logoutConfirmationMessage}

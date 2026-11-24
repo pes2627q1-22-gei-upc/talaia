@@ -11,6 +11,7 @@ import { FieldRow } from '@/features/explore/FieldRow';
 import { GoalCard } from '@/features/explore/GoalCard';
 import { AppText } from '@/shared/ui/AppText';
 import { Button } from '@/shared/ui/Button';
+import { ConfirmationSheet } from '@/shared/ui/ConfirmationSheet';
 import { PressableScale } from '@/shared/ui/PressableScale';
 import { SegmentedControl } from '@/shared/ui/SegmentedControl';
 import { Slider } from '@/shared/ui/Slider';
@@ -219,12 +220,23 @@ export function NewAlertScreen({ alert }: { alert?: Alerta } = {}) {
               haptic
               style={styles.cta}
             />
+            {/* Només en editar (HU20): demana confirmació abans d'eliminar. */}
+            {vm.remove ? (
+              <Button
+                variant="danger"
+                label={vm.remove.label}
+                onPress={vm.remove.onPress}
+                disabled={vm.remove.disabled}
+                style={styles.remove}
+              />
+            ) : null}
           </Enter>
         </ScrollView>
       </SafeAreaView>
 
       <ZoneSheet {...vm.zoneSheet} />
       <NotifyHourSheet {...vm.hourSheet} />
+      <ConfirmationSheet {...vm.deleteSheet} />
     </View>
   );
 }
@@ -260,4 +272,5 @@ const useStyles = makeStyles(({ colors }) => ({
   limits: { flexDirection: 'row', justifyContent: 'space-between' },
   error: { marginTop: spacing.ml },
   cta: { marginTop: spacing.ml },
+  remove: { marginTop: spacing.ml, alignSelf: 'center' },
 }));

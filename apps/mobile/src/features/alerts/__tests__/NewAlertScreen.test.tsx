@@ -112,6 +112,8 @@ describe('NewAlertScreen', () => {
     const scroll = screen.getByTestId('new-alert-scroll');
     expect(scroll.props.contentInsetAdjustmentBehavior).toBe('automatic');
     expect(within(scroll).getByRole('button', { name: "Crea l'alerta" })).toBeOnTheScreen();
+    // Una alerta nova encara no es pot eliminar (HU20 és d'«Edita l'alerta»).
+    expect(screen.queryByRole('button', { name: "Elimina l'alerta" })).toBeNull();
   });
 
   it('els rètols llargs es poden partir en lloc de tapar el valor o sortir de la pantalla', async () => {

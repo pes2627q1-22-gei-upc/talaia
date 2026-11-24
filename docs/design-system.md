@@ -89,7 +89,7 @@ A `apps/mobile/src/shared/ui/`. Cap pantalla torna a definir un botó, una targe
 |---|---|
 | `AppText` | Text amb una variant tipogràfica i un color de token |
 | `PressableScale` | Base de tot el que es pot prémer: s'enfonsa a 0,96 i torna amb un spring; `haptic` (`true` o `'selection'`) |
-| `Button` | `primary` (`far`, una per pantalla) · `secondary` (`sheet` + `vora`) · `light` (`lluna`, «Continua amb Google») · `text` (enllaç `far`). Icona opcional |
+| `Button` | `primary` (`far`, una per pantalla) · `secondary` (`sheet` + `vora`) · `light` (`lluna`, «Continua amb Google») · `text` (enllaç `far`) · `danger` (com `text`, en `perill`: accions que esborren, TG-269). Icona opcional |
 | `Card` | Targeta `card` + `linia`; amb `selected`, `vel` + `vora`; amb `onPress`, es pot prémer |
 | `Chip` | Xip de filtre de 34 d'alçada (seleccionat: `far`), amb `hitSlop` fins a 44 |
 | `IndexIndicator` | Xifra de l'índex amb el color de la franja; `md` hi afegeix la franja a sota, `lg` és només la xifra |
@@ -102,6 +102,7 @@ A `apps/mobile/src/shared/ui/`. Cap pantalla torna a definir un botó, una targe
 | `WheelPicker` | Roda a l'estil de l'alarma d'iOS (TG-101): les files giren en cilindre (`rotateX` i opacitat al fil de la interfície), banda `crep`, vores que s'esvaeixen, un tic de vibració a cada fila i dona la volta. Diverses rodes poden compartir una sola banda (`band={false}`) |
 | `Slider` | Barra lliscant (TG-101): pista `crep`, valor `far` i control `lluna`. Segueix el dit al fil de la interfície, avança per passos amb un tic de vibració a cada pas i s'hi ajusta en deixar-la; amb un lector de pantalla, puja i baixa un pas |
 | `Sheet` | Full inferior (TG-101): puja sobre un fons `nit` enfosquit i es tanca tocant fora, amb el botó enrere d'Android o amb el gest d'escapament de VoiceOver. Amb «reduir moviment», només una fosa |
+| `ConfirmationSheet` | Confirmació d'una acció que esborra sobre un `Sheet`: títol, missatge `boira`, «Cancel·la» `secondary` i l'acció en `perill`. Tancar la sessió i eliminar una alerta (TG-269); fa servir aquest full en lloc del diàleg natiu |
 
 L'índex, al Figma, és només la xifra amb el color de la franja i l'etiqueta: ni anell ni barra. L'anell és dels marcadors del mapa (capa de MapLibre, TG-90) i les barres, del desglossament per factors (TG-105).
 

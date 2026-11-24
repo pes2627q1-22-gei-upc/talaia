@@ -554,7 +554,17 @@
         "text": "When the index reaches {{index}}"
       }
     },
-    "summaryTravel": "Under {{travel}}"
+    "summaryTravel": "Under {{travel}}",
+    "delete": {
+      "action": "Delete alert",
+      "rowLabel": "Delete the {{name}} alert",
+      "confirmTitle": "Delete this alert?",
+      "confirmMessage": "The {{name}} alert will be deleted and we'll stop notifying you. This can't be undone.",
+      "cancel": "Cancel",
+      "confirm": "Delete",
+      "errorTitle": "We couldn't delete the alert",
+      "errorMessage": "Check your connection and try again."
+    }
   },
   "auth": {
     "signOut": "Sign out",

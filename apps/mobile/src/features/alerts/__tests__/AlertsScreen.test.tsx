@@ -1,11 +1,13 @@
 import type { Alerta } from '@talaia/shared';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react-native';
 import { useRouter } from 'expo-router';
-import type { PropsWithChildren } from 'react';
+import type { PropsWithChildren, ReactNode } from 'react';
 import { Linking, StyleSheet } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import i18n from '@/core/i18n';
+import { radii, sizes } from '@/core/theme/tokens';
 import { usePushPermission } from '@/features/notifications/PushRegistrationProvider';
 import type { PushRegistrationState } from '@/features/notifications/usePushRegistration';
 import { createQueryWrapper } from '@/test-utils/queryWrapper';
@@ -21,12 +23,41 @@ jest.mock('@/features/notifications/PushRegistrationProvider', () => ({
 jest.mock('../alertsRepository', () => {
   const { useQuery } = jest.requireActual('@tanstack/react-query');
   const actual = jest.requireActual('../alertsRepository');
-  const alertsRepository = { create: jest.fn(), list: jest.fn(), setActive: jest.fn() };
+  const alertsRepository = {
+    create: jest.fn(),
+    list: jest.fn(),
+    setActive: jest.fn(),
+    remove: jest.fn(),
+  };
   return {
     ...actual,
     alertsRepository,
     useAlertsQuery: () =>
       useQuery({ queryKey: actual.ALERTS_KEY, queryFn: () => alertsRepository.list() }),
+  };
+});
+
+// La fila de debò amaga la paperera fins que es llisca (`pointerEvents: 'none'`), i aquí no es pot
+// lliscar: el doble pinta les accions sempre, com si la fila fos oberta.
+const mockClose = jest.fn();
+jest.mock('react-native-gesture-handler/ReanimatedSwipeable', () => {
+  const { View } = jest.requireActual('react-native');
+  return {
+    __esModule: true,
+    default: ({
+      children,
+      renderRightActions,
+      testID,
+    }: {
+      children: ReactNode;
+      renderRightActions: (progress: unknown, translation: unknown, methods: object) => ReactNode;
+      testID: string;
+    }) => (
+      <View testID={testID}>
+        {children}
+        {renderRightActions(undefined, undefined, { close: mockClose })}
+      </View>
+    ),
   };
 });
 
@@ -60,14 +91,16 @@ function renderScreen() {
   const QueryWrapper = createQueryWrapper();
   function Wrapper({ children }: PropsWithChildren) {
     return (
-      <SafeAreaProvider
-        initialMetrics={{
-          frame: { x: 0, y: 0, width: 393, height: 852 },
-          insets: { top: 59, left: 0, right: 0, bottom: 34 },
-        }}
-      >
-        <QueryWrapper>{children}</QueryWrapper>
-      </SafeAreaProvider>
+      <GestureHandlerRootView>
+        <SafeAreaProvider
+          initialMetrics={{
+            frame: { x: 0, y: 0, width: 393, height: 852 },
+            insets: { top: 59, left: 0, right: 0, bottom: 34 },
+          }}
+        >
+          <QueryWrapper>{children}</QueryWrapper>
+        </SafeAreaProvider>
+      </GestureHandlerRootView>
     );
   }
   return render(<AlertsScreen />, { wrapper: Wrapper });
@@ -171,6 +204,44 @@ describe('AlertsScreen', () => {
 
     await fireEvent.press(row);
     expect(push).toHaveBeenCalledWith({ pathname: '/alerta/[id]', params: { id: 'a1' } });
+  });
+
+  it('lliscant la fila apareix una paperera, que demana confirmació (HU20)', async () => {
+    mockClose.mockClear();
+    mockedList.mockResolvedValue([alert({})]);
+    await renderScreen();
+    expect(await screen.findByTestId('alert-swipe-a1')).toBeOnTheScreen();
+
+    const remove = screen.getByTestId('alert-delete-a1');
+    expect(remove).toHaveProp('accessibilityRole', 'button');
+    expect(remove).toHaveProp('accessibilityLabel', "Elimina l'alerta de Pluja d'estels");
+    // Una paperera en lloc de text; el lector de pantalla en diu l'etiqueta.
+    expect(within(remove).getByTestId('alert-delete-icon-a1')).toBeOnTheScreen();
+    expect(within(remove).queryByText('Elimina')).toBeNull();
+    // Un botó rodó, de la mida d'un botó.
+    expect(StyleSheet.flatten(remove.props.style)).toMatchObject({
+      width: sizes.button,
+      height: sizes.button,
+      borderRadius: radii.pill,
+    });
+    await fireEvent.press(remove);
+    expect(mockClose).toHaveBeenCalledTimes(1);
+    expect(await screen.findByText("Vols eliminar l'alerta?")).toBeOnTheScreen();
+    expect(screen.getByRole('button', { name: 'Elimina' })).toBeOnTheScreen();
+    expect(screen.getByRole('button', { name: 'Cancel·la' })).toBeOnTheScreen();
+  });
+
+  it('amb el lector de pantalla, eliminar és una acció de la fila', async () => {
+    mockedList.mockResolvedValue([alert({})]);
+    await renderScreen();
+    const row = await screen.findByTestId('alert-edit-a1');
+    expect(row.props.accessibilityActions).toEqual([
+      { name: 'delete', label: "Elimina l'alerta de Pluja d'estels" },
+    ]);
+    await fireEvent(row, 'accessibilityAction', { nativeEvent: { actionName: 'delete' } });
+    expect(await screen.findByText("Vols eliminar l'alerta?")).toBeOnTheScreen();
+    expect(screen.getByRole('button', { name: 'Elimina' })).toBeOnTheScreen();
+    expect(screen.getByRole('button', { name: 'Cancel·la' })).toBeOnTheScreen();
   });
 
   it('sense alertes, ho diu i deixa crear-ne una', async () => {
