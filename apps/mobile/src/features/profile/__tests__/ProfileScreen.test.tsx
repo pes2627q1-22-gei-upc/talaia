@@ -4,7 +4,7 @@ import { usePreventRemove, useRouter } from 'expo-router';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import type { Perfil } from '@talaia/shared';
 
-import { apiGet, apiPatch } from '@/core/api/httpClient';
+import { apiDelete, apiGet, apiPatch } from '@/core/api/httpClient';
 import i18n, { LANGUAGE_KEY } from '@/core/i18n';
 import { ThemeProvider, type ThemeName } from '@/core/theme/theme';
 import { useAuthViewModel } from '@/features/auth/useAuthViewModel';
@@ -18,6 +18,7 @@ jest.mock('@/core/api/httpClient', () => ({
   ...jest.requireActual('@/core/api/httpClient'),
   apiGet: jest.fn(),
   apiPatch: jest.fn(),
+  apiDelete: jest.fn(),
 }));
 // La targeta de l'estat de l'API té la seva pròpia prova i necessita TanStack Query.
 jest.mock('@/features/apiStatus/ApiStatusCard', () => ({ ApiStatusCard: () => null }));
@@ -25,14 +26,18 @@ jest.mock('expo-router', () => ({ useRouter: jest.fn(), usePreventRemove: jest.f
 
 const push = jest.fn();
 const back = jest.fn();
-jest.mocked(useRouter).mockReturnValue({ push, back } as unknown as ReturnType<typeof useRouter>);
+const replace = jest.fn();
+jest
+  .mocked(useRouter)
+  .mockReturnValue({ push, back, replace } as unknown as ReturnType<typeof useRouter>);
 
 type Auth = ReturnType<typeof useAuthViewModel>;
 
-const signOut = jest.fn(async () => {});
+const signOut = jest.fn(async () => true);
 const restore = jest.fn(async () => {});
 const get = jest.mocked(apiGet);
 const patch = jest.mocked(apiPatch);
+const remove = jest.mocked(apiDelete);
 const profile: Perfil = {
   id: 'p1',
   rol: 'usuari',
@@ -86,6 +91,7 @@ describe('ProfileScreen · sessió (HU35)', () => {
     jest.clearAllMocks();
     get.mockResolvedValue(profile);
     patch.mockResolvedValue(profile);
+    remove.mockResolvedValue(undefined);
     await i18n.changeLanguage('ca');
   });
 
@@ -204,6 +210,83 @@ describe('ProfileScreen · sessió (HU35)', () => {
     expect(back).toHaveBeenCalledTimes(1);
   });
 
+  it('mostra l’eliminació al detall i requereix una confirmació explícita', async () => {
+    await renderProfile(auth(), true);
+    const deleteButton = screen.getByRole('button', { name: 'Eliminar el compte' });
+    expect(deleteButton).toBeOnTheScreen();
+    expect(await screen.findByText('Laia Puig')).toBeOnTheScreen();
+    await fireEvent.press(deleteButton);
+    expect(
+      screen.getByRole('header', { name: 'Segur que vols esborrar el teu compte?' }),
+    ).toBeOnTheScreen();
+    expect(screen.getByText(/No es podran recuperar/)).toBeOnTheScreen();
+    expect(remove).not.toHaveBeenCalled();
+    await fireEvent.press(screen.getAllByRole('button', { name: 'Cancel·la' }).at(-1)!);
+    expect(remove).not.toHaveBeenCalled();
+    await fireEvent.press(deleteButton);
+    await act(async () => {
+      await fireEvent.press(screen.getAllByRole('button', { name: 'Eliminar el compte' }).at(-1)!);
+    });
+    expect(remove).toHaveBeenCalledWith('/perfil');
+    expect(signOut).toHaveBeenCalledTimes(1);
+    expect(replace).toHaveBeenCalledWith('/benvinguda');
+  });
+
+  it('si l’eliminació falla, manté la sessió i deixa reintentar', async () => {
+    remove.mockRejectedValueOnce(new Error('offline'));
+    await renderProfile(auth(), true);
+    await fireEvent.press(screen.getByRole('button', { name: 'Eliminar el compte' }));
+    await act(async () => {
+      await fireEvent.press(screen.getAllByRole('button', { name: 'Eliminar el compte' }).at(-1)!);
+    });
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      "No s'ha pogut eliminar el compte. Torna-ho a provar.",
+    );
+    expect(signOut).not.toHaveBeenCalled();
+    expect(replace).not.toHaveBeenCalled();
+    await act(async () => {
+      await fireEvent.press(screen.getAllByRole('button', { name: 'Eliminar el compte' }).at(-1)!);
+    });
+    expect(remove).toHaveBeenCalledTimes(2);
+    expect(signOut).toHaveBeenCalledTimes(1);
+  });
+
+  it('si falla el tancament de sessió, indica que el compte ja s’ha eliminat i només reintenta sortir', async () => {
+    signOut.mockResolvedValueOnce(false);
+    await renderProfile(auth(), true);
+    await fireEvent.press(screen.getByRole('button', { name: 'Eliminar el compte' }));
+    await act(async () => {
+      await fireEvent.press(screen.getAllByRole('button', { name: 'Eliminar el compte' }).at(-1)!);
+    });
+    expect(remove).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole('header', { name: "El compte s'ha eliminat" })).toBeOnTheScreen();
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      "No s'ha pogut tancar la sessió. Torna-ho a provar.",
+    );
+    expect(replace).not.toHaveBeenCalled();
+    await act(async () => {
+      await fireEvent.press(screen.getAllByRole('button', { name: 'Tanca la sessió' }).at(-1)!);
+    });
+    expect(remove).toHaveBeenCalledTimes(1);
+    expect(signOut).toHaveBeenCalledTimes(2);
+    expect(replace).toHaveBeenCalledWith('/benvinguda');
+  });
+
+  it('durant l’eliminació, mostra l’estat de progrés i evita una segona petició', async () => {
+    let finish!: () => void;
+    remove.mockReturnValueOnce(new Promise<void>((resolve) => (finish = resolve)));
+    await renderProfile(auth(), true);
+    await fireEvent.press(screen.getByRole('button', { name: 'Eliminar el compte' }));
+    await act(async () => {
+      await fireEvent.press(screen.getAllByRole('button', { name: 'Eliminar el compte' }).at(-1)!);
+    });
+    expect(screen.getByRole('button', { name: 'Eliminant el compte…' })).toBeDisabled();
+    expect(screen.getAllByRole('button', { name: 'Cancel·la' }).at(-1)).toBeDisabled();
+    expect(remove).toHaveBeenCalledTimes(1);
+    await act(async () => finish());
+    await waitFor(() => expect(signOut).toHaveBeenCalledTimes(1));
+  });
+
   it('edita el nom i mostra el valor que ha desat l’API', async () => {
     patch.mockResolvedValue({ ...profile, nom: 'Laia Soler' });
     await renderProfile(auth(), true);
@@ -283,6 +366,11 @@ describe('ProfileScreen · sessió (HU35)', () => {
     await renderProfile(auth({ user: null, isAuthenticated: false }));
     expect(screen.queryByRole('button', { name: 'Tanca la sessió' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Els meus plans' })).toBeNull();
+  });
+
+  it('sense sessió, el detall no ofereix eliminar el compte', async () => {
+    await renderProfile(auth({ user: null, isAuthenticated: false }), true);
+    expect(screen.queryByRole('button', { name: 'Eliminar el compte' })).toBeNull();
   });
 
   it('amb sessió, «Els meus plans» obre la llista de plans (TG-160)', async () => {

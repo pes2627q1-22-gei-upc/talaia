@@ -7,6 +7,7 @@ import { makeStyles, useNightTint } from '@/core/theme/theme';
 import { radii, sizes, spacing } from '@/core/theme/tokens';
 import { AppText } from '@/shared/ui/AppText';
 import { Button } from '@/shared/ui/Button';
+import { ConfirmationSheet } from '@/shared/ui/ConfirmationSheet';
 import { PressableScale } from '@/shared/ui/PressableScale';
 import { Screen } from '@/shared/ui/Screen';
 import { Sheet } from '@/shared/ui/Sheet';
@@ -126,8 +127,35 @@ export function MyProfileScreen() {
               )}
             </>
           )}
+          {vm.auth.isAuthenticated ? (
+            <View style={styles.deleteSection}>
+              <PressableScale
+                accessibilityLabel={vm.deleteAccountLabel}
+                accessibilityState={{ disabled: vm.deletingAccount || vm.auth.signingOut }}
+                disabled={vm.deletingAccount || vm.auth.signingOut}
+                onPress={vm.requestDeleteAccount}
+                style={[styles.deleteButton, vm.deletingAccount && styles.disabled]}
+              >
+                <AppText variant="label" color="perill">
+                  {vm.deleteAccountLabel}
+                </AppText>
+              </PressableScale>
+            </View>
+          ) : null}
         </ScrollView>
       </Screen>
+      <ConfirmationSheet
+        visible={vm.deleteConfirmationOpen}
+        title={vm.deleteConfirmationTitle}
+        message={vm.deleteConfirmationMessage}
+        error={vm.deleteError}
+        cancelLabel={vm.cancelLabel}
+        confirmLabel={vm.deletingAccount ? vm.deletingAccountLabel : vm.deleteAccountLabel}
+        disabled={vm.deletingAccount}
+        cancelDisabled={vm.deletingAccount}
+        onCancel={vm.cancelDeleteAccount}
+        onConfirm={vm.confirmDeleteAccount}
+      />
       <Sheet
         visible={pendingRepeat !== null}
         title={vm.unsavedTitle}
@@ -204,6 +232,16 @@ const useStyles = makeStyles(({ colors }) => ({
     justifyContent: 'center',
   },
   disabled: { opacity: 0.4 },
+  deleteSection: { marginTop: spacing.xl },
+  deleteButton: {
+    minHeight: sizes.button,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: colors.vora,
+    borderRadius: radii.md,
+    backgroundColor: colors.sheet,
+  },
   confirmActions: { flexDirection: 'row', gap: spacing.sm },
   confirmAction: {
     flex: 1,
