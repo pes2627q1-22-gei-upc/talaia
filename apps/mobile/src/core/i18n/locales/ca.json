@@ -727,6 +727,40 @@
         "generic": "No hem pogut desar el pla. Torna-ho a provar d'aquí a un moment."
       }
     },
+    "edit": {
+      "header": "Pla d'observació",
+      "title": "Edita el pla",
+      "readOnlyTitle": "Pla fet",
+      "readOnly": "Aquest pla ja s'ha acabat: el pots consultar, però no modificar.",
+      "save": "Desa els canvis",
+      "addToCalendar": "Afegeix-lo al calendari",
+      "pointA11y": "Punt d'observació: {{name}}, {{municipality}}. Toca'l per canviar-lo",
+      "pointRetired": "Aquest punt ja no està disponible; tria'n un altre.",
+      "viewPoint": "Veure el punt",
+      "pointSheet": "Tria el punt",
+      "pointSearch": "Cerca per nom o municipi",
+      "pointsError": "No hem pogut carregar els punts",
+      "noPoints": "Cap punt coincideix amb la cerca.",
+      "errorTitle": "No hem pogut carregar el pla",
+      "missingTitle": "Aquest pla ja no existeix",
+      "missingMessage": "Potser l'has eliminat des d'un altre dispositiu.",
+      "calendarLinked": "Els canvis també s'aplicaran a l'esdeveniment del calendari del mòbil.",
+      "calendarUnavailable": "El calendari no està disponible en aquest entorn: els canvis es desaran només al pla.",
+      "calendarNotice": {
+        "missing": "Pla desat. No hem trobat l'esdeveniment al calendari d'aquest mòbil: potser l'has esborrat o el vas crear des d'un altre dispositiu.",
+        "denied": "Pla desat, però falta el permís de calendari per actualitzar-ne l'esdeveniment.",
+        "failed": "Pla desat, però no hem pogut actualitzar l'esdeveniment del calendari."
+      },
+      "errors": {
+        "alreadyExists": "Ja tens un pla en aquest punt a aquesta hora.",
+        "finished": "Aquest pla ja s'ha acabat i no es pot modificar.",
+        "pointGone": "Aquest punt ja no està disponible; tria'n un altre.",
+        "eventGone": "Aquest fenomen ja no és al calendari; tria'n un altre.",
+        "notFound": "Aquest pla ja no existeix.",
+        "past": "L'hora de sortida ja ha passat. Tria'n una de més tard.",
+        "generic": "No hem pogut desar els canvis. Torna-ho a provar d'aquí a un moment."
+      }
+    },
     "calendar": {
       "label": "Afegeix-lo al meu calendari",
       "hint": "Tria un calendari del mòbil. Si és del teu compte de Google i té la sincronització activada, també apareixerà a Google Calendar.",
@@ -763,7 +797,7 @@
       "departure_single": "Sortida a la {{time}}, {{point}}",
       "retired": "Aquest punt ja no està disponible.",
       "a11y": "{{title}}. {{day}} {{month}}. {{subtitle}}",
-      "openHint": "Obre la fitxa del punt",
+      "openHint": "Obre el pla",
       "emptyUpcomingTitle": "Encara no tens cap pla",
       "emptyUpcomingMessage": "Busca un bon lloc a Explora i crea un pla des de la seva fitxa.",
       "emptyPastTitle": "Encara no tens plans passats",

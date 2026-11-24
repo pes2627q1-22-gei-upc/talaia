@@ -21,7 +21,7 @@ const DATE_BOX = 60;
 const SKELETON_ROWS = 3;
 const SKELETON_HEIGHT = 96;
 
-/** Un pla: data, títol i sortida. Els passats s'atenuen; un de retirat no es pot obrir. */
+/** Un pla: data, títol i sortida. Els passats i els d'un punt retirat s'atenuen. */
 function PlanRowView({
   row,
   index,
@@ -45,10 +45,8 @@ function PlanRowView({
     >
       <PressableScale
         onPress={onPress}
-        disabled={row.retired}
         accessibilityLabel={row.accessibilityLabel}
         accessibilityHint={row.accessibilityHint}
-        accessibilityState={{ disabled: row.retired }}
         style={[styles.row, dimmed && styles.dimmedRow]}
         testID={`plan-row-${row.id}`}
       >
@@ -68,14 +66,12 @@ function PlanRowView({
             {row.subtitle}
           </AppText>
         </View>
-        {row.retired ? null : (
-          <Image
-            source={chevronIcon}
-            tintColor={colors.boira}
-            style={styles.chevron}
-            accessible={false}
-          />
-        )}
+        <Image
+          source={chevronIcon}
+          tintColor={colors.boira}
+          style={styles.chevron}
+          accessible={false}
+        />
       </PressableScale>
     </Animated.View>
   );

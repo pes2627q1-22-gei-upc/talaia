@@ -727,6 +727,40 @@
         "generic": "No hemos podido guardar el plan. Vuelve a intentarlo en un momento."
       }
     },
+    "edit": {
+      "header": "Plan de observación",
+      "title": "Edita el plan",
+      "readOnlyTitle": "Plan hecho",
+      "readOnly": "Este plan ya ha terminado: puedes consultarlo, pero no modificarlo.",
+      "save": "Guarda los cambios",
+      "addToCalendar": "Añádelo al calendario",
+      "pointA11y": "Punto de observación: {{name}}, {{municipality}}. Tócalo para cambiarlo",
+      "pointRetired": "Este punto ya no está disponible; elige otro.",
+      "viewPoint": "Ver el punto",
+      "pointSheet": "Elige el punto",
+      "pointSearch": "Busca por nombre o municipio",
+      "pointsError": "No hemos podido cargar los puntos",
+      "noPoints": "Ningún punto coincide con la búsqueda.",
+      "errorTitle": "No hemos podido cargar el plan",
+      "missingTitle": "Este plan ya no existe",
+      "missingMessage": "Quizá lo has eliminado desde otro dispositivo.",
+      "calendarLinked": "Los cambios también se aplicarán al evento del calendario del móvil.",
+      "calendarUnavailable": "El calendario no está disponible en este entorno: los cambios solo se guardarán en el plan.",
+      "calendarNotice": {
+        "missing": "Plan guardado. No hemos encontrado el evento en el calendario de este móvil: quizá lo has borrado o lo creaste desde otro dispositivo.",
+        "denied": "Plan guardado, pero falta el permiso de calendario para actualizar su evento.",
+        "failed": "Plan guardado, pero no hemos podido actualizar el evento del calendario."
+      },
+      "errors": {
+        "alreadyExists": "Ya tienes un plan en este punto a esta hora.",
+        "finished": "Este plan ya ha terminado y no se puede modificar.",
+        "pointGone": "Este punto ya no está disponible; elige otro.",
+        "eventGone": "Este fenómeno ya no está en el calendario; elige otro.",
+        "notFound": "Este plan ya no existe.",
+        "past": "La hora de salida ya ha pasado. Elige una más tarde.",
+        "generic": "No hemos podido guardar los cambios. Vuelve a intentarlo en un momento."
+      }
+    },
     "calendar": {
       "label": "Añádelo a mi calendario",
       "hint": "Elige un calendario del móvil. Si es de tu cuenta de Google y tiene la sincronización activada, también aparecerá en Google Calendar.",
@@ -763,7 +797,7 @@
       "departure_single": "Salida a la {{time}}, {{point}}",
       "retired": "Este punto ya no está disponible.",
       "a11y": "{{title}}. {{day}} {{month}}. {{subtitle}}",
-      "openHint": "Abre la ficha del punto",
+      "openHint": "Abre el plan",
       "emptyUpcomingTitle": "Aún no tienes ningún plan",
       "emptyUpcomingMessage": "Busca un buen sitio en Explora y crea un plan desde su ficha.",
       "emptyPastTitle": "Aún no tienes planes pasados",

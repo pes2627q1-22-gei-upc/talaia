@@ -55,8 +55,8 @@ function usePlansSection(quan: QuanPlans, enabled: boolean) {
 
 /**
  * «Els meus plans» (HU13, mockup 13): els plans futurs per data i, a part, els passats, que es
- * demanen quan l'usuari obre la pestanya. Tocar un pla obre la fitxa del punt; si el punt s'ha
- * retirat, la fila no es pot obrir. L'índex de cada pla i «Veure'ls al calendari» (TG-158) no hi
+ * demanen quan l'usuari obre la pestanya. Tocar un pla l'obre per editar-lo (`/pla/[id]`, TG-161),
+ * també si el punt s'ha retirat: és l'única manera de triar-ne un altre. L'índex de cada pla i «Veure'ls al calendari» (TG-158) no hi
  * són: l'API no dona l'índex d'un pla.
  */
 export function usePlansViewModel() {
@@ -99,7 +99,7 @@ export function usePlansViewModel() {
         month: monthsOf[row.month] ?? '',
         subtitle,
       }),
-      accessibilityHint: row.retired ? undefined : t('plans.list.openHint'),
+      accessibilityHint: t('plans.list.openHint'),
     };
   };
 
@@ -137,11 +137,10 @@ export function usePlansViewModel() {
       message: t('plans.list.emptyPastMessage'),
     }),
     error: { title: t('plans.list.errorTitle'), retryLabel: t('plans.list.retry') },
-    /** Obre la fitxa del punt del pla; un punt retirat ja no en té. */
+    /** Obre el pla per editar-lo (TG-161); des d'allà, «Veure el punt» porta a la fitxa. */
     onOpen: (row: Pick<PlanListRow, 'id'>) => {
-      const plan = rowsById.get(row.id);
-      if (!plan || plan.retired) return;
-      router.push({ pathname: '/punt/[id]', params: { id: plan.puntId } });
+      if (!rowsById.has(row.id)) return;
+      router.push({ pathname: '/pla/[id]', params: { id: row.id } });
     },
     /** Sense plans: a Explora, on es busca el lloc i, des de la fitxa, es crea el pla. */
     create: { label: t('plans.list.create'), onPress: () => router.navigate('/') },

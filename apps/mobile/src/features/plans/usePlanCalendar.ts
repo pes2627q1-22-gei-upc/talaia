@@ -12,6 +12,13 @@ import { plansRepository } from './plansRepository';
 
 type SetupStatus = 'idle' | 'loading' | 'ready' | 'denied' | 'error' | 'unavailable';
 
+/**
+ * Resultat d'actualitzar l'esdeveniment d'un pla editat (TG-161): `skipped` si el pla no en té o
+ * el mòbil no té calendari (Expo Go); `missing` si no és en aquest mòbil; `denied` sense permís;
+ * `failed` si el calendari ha fallat. En tots els casos el pla ja està desat.
+ */
+export type CalendarUpdateResult = 'updated' | 'skipped' | 'missing' | 'denied' | 'failed';
+
 /** Permís només amb una acció explícita; reintents del vincle sense tornar a crear l’esdeveniment. */
 export function usePlanCalendar() {
   const supported = planCalendarRepository.isSupported();
@@ -99,8 +106,35 @@ export function usePlanCalendar() {
     }
   };
 
+  /**
+   * Després de desar els canvis d'un pla, posa al dia el seu esdeveniment del calendari: el busca
+   * amb el pla d'abans (`previous`, que és el que hi ha al calendari) i hi escriu el nou (`plan`).
+   */
+  const update = async (previous: Pla, plan: Pla, title: string): Promise<CalendarUpdateResult> => {
+    const eventId = previous.calendariEventId;
+    if (!eventId || !supported) return 'skipped';
+    if (syncingRef.current) return 'failed';
+    syncingRef.current = true;
+    setSyncing(true);
+    try {
+      if (!(await planCalendarRepository.eventExists(previous))) return 'missing';
+      await planCalendarRepository.updateEvent(eventId, planCalendarEvent(plan, title));
+      return 'updated';
+    } catch (cause) {
+      if (cause instanceof CalendarPermissionError) {
+        setCanAskAgain(cause.canAskAgain);
+        return 'denied';
+      }
+      return 'failed';
+    } finally {
+      syncingRef.current = false;
+      setSyncing(false);
+    }
+  };
+
   return {
     supported,
+    update,
     enabled,
     toggle,
     status,

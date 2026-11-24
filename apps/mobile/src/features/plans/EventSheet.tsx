@@ -9,9 +9,9 @@ import { Sheet } from '@/shared/ui/Sheet';
 import { Skeleton } from '@/shared/ui/Skeleton';
 import { StateMessage } from '@/shared/ui/StateMessage';
 
-import type { useNewPlanViewModel } from './useNewPlanViewModel';
+import type { usePlanFormFields } from './usePlanFormFields';
 
-type EventSheetProps = ReturnType<typeof useNewPlanViewModel>['eventSheet'];
+type EventSheetProps = ReturnType<typeof usePlanFormFields>['eventSheet'];
 
 /** Alçada màxima de la llista: el full no tapa mai tota la pantalla. */
 const LIST_MAX_HEIGHT = 360;
