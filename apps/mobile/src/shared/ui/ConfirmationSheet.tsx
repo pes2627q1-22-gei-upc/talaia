@@ -18,7 +18,8 @@ type Props = {
   onConfirm: () => void;
 };
 
-export function LogoutConfirmationSheet({
+/** Confirmació d'una acció destructiva: «Tanca la sessió» (perfil) o «Elimina» (plans, TG-162). */
+export function ConfirmationSheet({
   visible,
   title,
   message,

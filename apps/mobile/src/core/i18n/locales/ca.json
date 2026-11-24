@@ -554,7 +554,17 @@
         "text": "Quan l'índex arribi a {{index}}"
       }
     },
-    "summaryTravel": "A menys de {{travel}}"
+    "summaryTravel": "A menys de {{travel}}",
+    "delete": {
+      "action": "Elimina l'alerta",
+      "rowLabel": "Elimina l'alerta de {{name}}",
+      "confirmTitle": "Vols eliminar l'alerta?",
+      "confirmMessage": "L'alerta de {{name}} s'esborrarà i deixarem d'avisar-te. No es pot desfer.",
+      "cancel": "Cancel·la",
+      "confirm": "Elimina",
+      "errorTitle": "No hem pogut eliminar l'alerta",
+      "errorMessage": "Comprova la connexió i torna-ho a provar."
+    }
   },
   "auth": {
     "signOut": "Tanca la sessió",

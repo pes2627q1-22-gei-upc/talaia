@@ -18,7 +18,12 @@ jest.mock('@/features/notifications/PushRegistrationProvider', () => ({
 jest.mock('../alertsRepository', () => {
   const { useQuery } = jest.requireActual('@tanstack/react-query');
   const actual = jest.requireActual('../alertsRepository');
-  const alertsRepository = { create: jest.fn(), list: jest.fn(), setActive: jest.fn() };
+  const alertsRepository = {
+    create: jest.fn(),
+    list: jest.fn(),
+    setActive: jest.fn(),
+    remove: jest.fn(),
+  };
   return {
     ...actual,
     alertsRepository,
@@ -31,7 +36,7 @@ const push = jest.fn();
 jest.mocked(useRouter).mockReturnValue({ push } as unknown as ReturnType<typeof useRouter>);
 const mockedList = jest.mocked(alertsRepository.list);
 const mockedSetActive = jest.mocked(alertsRepository.setActive);
-
+const mockedRemove = jest.mocked(alertsRepository.remove);
 const withPermission = (permission: PushRegistrationState['permission']) =>
   jest.mocked(usePushPermission).mockReturnValue({
     permission,
@@ -62,6 +67,7 @@ describe('useAlertsViewModel', () => {
     push.mockReset();
     mockedList.mockReset();
     mockedSetActive.mockReset();
+    mockedRemove.mockReset();
     withPermission('granted');
     await i18n.changeLanguage('ca');
   });
@@ -208,6 +214,70 @@ describe('useAlertsViewModel', () => {
     const { result } = await renderViewModel();
     expect(result.current.pushNotice).toEqual({
       message: expect.stringMatching(/no pot rebre notificacions/),
+    });
+  });
+
+  describe('eliminar una alerta (HU20)', () => {
+    it('demana confirmació al full i, si es confirma, l’elimina i surt de la llista', async () => {
+      mockedList
+        .mockResolvedValueOnce([alert(), alert({ id: 'a2' })])
+        .mockResolvedValue([alert({ id: 'a2' })]);
+      mockedRemove.mockResolvedValue(undefined);
+      const { result } = await renderViewModel();
+      await waitFor(() => expect(result.current.items).toHaveLength(2));
+      expect(result.current.deleteSheet.visible).toBe(false);
+
+      expect(result.current.items[0]?.delete.label).toBe("Elimina l'alerta de Pluja d'estels");
+      await act(() => result.current.items[0]?.delete.onPress());
+      expect(result.current.deleteSheet).toMatchObject({
+        visible: true,
+        title: "Vols eliminar l'alerta?",
+        message: "L'alerta de Pluja d'estels s'esborrarà i deixarem d'avisar-te. No es pot desfer.",
+        cancelLabel: 'Cancel·la',
+        confirmLabel: 'Elimina',
+      });
+      expect(mockedRemove).not.toHaveBeenCalled();
+
+      await act(() => result.current.deleteSheet.onConfirm());
+      await waitFor(() => expect(result.current.items.map((item) => item.id)).toEqual(['a2']));
+      expect(mockedRemove).toHaveBeenCalledWith('a1');
+      expect(result.current.deleteSheet.visible).toBe(false);
+    });
+
+    it('si es cancel·la, el full es tanca i no elimina res', async () => {
+      mockedList.mockResolvedValue([alert()]);
+      const { result } = await renderViewModel();
+      await waitFor(() => expect(result.current.items).toHaveLength(1));
+
+      await act(() => result.current.items[0]?.delete.onPress());
+      await act(() => result.current.deleteSheet.onCancel());
+      expect(result.current.deleteSheet.visible).toBe(false);
+      expect(mockedRemove).not.toHaveBeenCalled();
+      expect(result.current.items).toHaveLength(1);
+    });
+
+    it('si falla, el full es queda obert amb l’error i l’alerta continua a la llista', async () => {
+      mockedList.mockResolvedValue([alert()]);
+      mockedRemove.mockRejectedValueOnce(new Error('xarxa')).mockResolvedValueOnce(undefined);
+      const { result } = await renderViewModel();
+      await waitFor(() => expect(result.current.items).toHaveLength(1));
+
+      await act(() => result.current.items[0]?.delete.onPress());
+      await act(() => result.current.deleteSheet.onConfirm());
+      await waitFor(() =>
+        expect(result.current.deleteSheet).toMatchObject({
+          visible: true,
+          title: "No hem pogut eliminar l'alerta",
+          message: 'Comprova la connexió i torna-ho a provar.',
+          disabled: false,
+        }),
+      );
+      expect(result.current.items).toHaveLength(1);
+
+      // Es pot tornar a provar des del mateix full.
+      await act(() => result.current.deleteSheet.onConfirm());
+      await waitFor(() => expect(result.current.deleteSheet.visible).toBe(false));
+      expect(mockedRemove).toHaveBeenCalledTimes(2);
     });
   });
 });

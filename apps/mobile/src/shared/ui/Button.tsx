@@ -7,7 +7,8 @@ import { type ColorToken, radii, sizes, spacing } from '@/core/theme/tokens';
 import { AppText } from './AppText';
 import { PressableScale } from './PressableScale';
 
-export type ButtonVariant = 'primary' | 'secondary' | 'light' | 'text';
+/** `danger`: com `text`, en vermell (`perill`), per a una acció que esborra (p. ex. HU20). */
+export type ButtonVariant = 'primary' | 'secondary' | 'light' | 'text' | 'danger';
 
 type ButtonProps = {
   label: string;
@@ -25,6 +26,7 @@ const labelColor: Record<ButtonVariant, ColorToken> = {
   secondary: 'lluna',
   light: 'nit',
   text: 'far',
+  danger: 'perill',
 };
 
 /** Botó del design system. `primary` és l'acció principal de la pantalla (una sola). */
@@ -38,7 +40,7 @@ export function Button({
   style,
 }: ButtonProps) {
   const styles = useStyles();
-  const isText = variant === 'text';
+  const isText = variant === 'text' || variant === 'danger';
   return (
     <PressableScale
       onPress={onPress}
@@ -46,7 +48,7 @@ export function Button({
       haptic={haptic}
       accessibilityState={{ disabled }}
       hitSlop={isText ? spacing.ms : undefined}
-      style={[styles.base, styles[variant], disabled && styles.disabled, style]}
+      style={[styles.base, styles[isText ? 'text' : variant], disabled && styles.disabled, style]}
     >
       {icon}
       <AppText variant={isText ? 'link' : 'label'} color={labelColor[variant]}>

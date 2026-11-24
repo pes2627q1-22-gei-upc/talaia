@@ -554,7 +554,17 @@
         "text": "Cuando el índice llegue a {{index}}"
       }
     },
-    "summaryTravel": "A menos de {{travel}}"
+    "summaryTravel": "A menos de {{travel}}",
+    "delete": {
+      "action": "Eliminar la alerta",
+      "rowLabel": "Eliminar la alerta de {{name}}",
+      "confirmTitle": "¿Quieres eliminar la alerta?",
+      "confirmMessage": "La alerta de {{name}} se borrará y dejaremos de avisarte. No se puede deshacer.",
+      "cancel": "Cancelar",
+      "confirm": "Eliminar",
+      "errorTitle": "No hemos podido eliminar la alerta",
+      "errorMessage": "Comprueba la conexión y vuelve a intentarlo."
+    }
   },
   "auth": {
     "signOut": "Cerrar sesión",
