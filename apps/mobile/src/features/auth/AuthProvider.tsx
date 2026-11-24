@@ -24,7 +24,7 @@ type AuthState = {
   blocked: boolean;
   error: 'restore' | 'logout' | null;
   restore: () => Promise<void>;
-  signOut: () => Promise<void>;
+  signOut: () => Promise<boolean>;
 };
 
 const AuthContext = createContext<AuthState | null>(null);
@@ -102,7 +102,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
   }, [accept, load, invalidate]);
 
   const signOut = useCallback(async () => {
-    if (logoutPending.current) return;
+    if (logoutPending.current) return false;
     logoutPending.current = true;
     setSigningOut(true);
     setError(null);
@@ -113,8 +113,10 @@ export function AuthProvider({ children }: PropsWithChildren) {
       await pushRepository.unregisterDevice();
       await authRepository.signOut();
       if (mounted.current && revision.current === version) accept(null);
+      return true;
     } catch {
       if (mounted.current && revision.current === version) setError('logout');
+      return currentUser.current === null;
     } finally {
       logoutPending.current = false;
       if (mounted.current) {

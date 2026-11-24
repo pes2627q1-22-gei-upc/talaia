@@ -33,7 +33,7 @@ jest
 
 type Auth = ReturnType<typeof useAuthViewModel>;
 
-const signOut = jest.fn(async () => {});
+const signOut = jest.fn(async () => true);
 const restore = jest.fn(async () => {});
 const get = jest.mocked(apiGet);
 const patch = jest.mocked(apiPatch);
@@ -249,6 +249,27 @@ describe('ProfileScreen · sessió (HU35)', () => {
     });
     expect(remove).toHaveBeenCalledTimes(2);
     expect(signOut).toHaveBeenCalledTimes(1);
+  });
+
+  it('si falla el tancament de sessió, indica que el compte ja s’ha eliminat i només reintenta sortir', async () => {
+    signOut.mockResolvedValueOnce(false);
+    await renderProfile(auth(), true);
+    await fireEvent.press(screen.getByRole('button', { name: 'Eliminar el compte' }));
+    await act(async () => {
+      await fireEvent.press(screen.getAllByRole('button', { name: 'Eliminar el compte' }).at(-1)!);
+    });
+    expect(remove).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole('header', { name: "El compte s'ha eliminat" })).toBeOnTheScreen();
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      "No s'ha pogut tancar la sessió. Torna-ho a provar.",
+    );
+    expect(replace).not.toHaveBeenCalled();
+    await act(async () => {
+      await fireEvent.press(screen.getAllByRole('button', { name: 'Tanca la sessió' }).at(-1)!);
+    });
+    expect(remove).toHaveBeenCalledTimes(1);
+    expect(signOut).toHaveBeenCalledTimes(2);
+    expect(replace).toHaveBeenCalledWith('/benvinguda');
   });
 
   it('durant l’eliminació, mostra l’estat de progrés i evita una segona petició', async () => {

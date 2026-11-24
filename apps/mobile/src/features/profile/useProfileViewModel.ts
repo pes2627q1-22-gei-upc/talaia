@@ -32,6 +32,7 @@ export function useProfileViewModel() {
   const [deleteConfirmationOpen, setDeleteConfirmationOpen] = useState(false);
   const [deletingAccount, setDeletingAccount] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [accountDeleted, setAccountDeleted] = useState(false);
   const deletionPending = useRef(false);
   const name = profile.data?.nom?.trim() || null;
   const email = profile.data?.email ?? auth.user?.email ?? null;
@@ -68,12 +69,23 @@ export function useProfileViewModel() {
     setDeletingAccount(true);
     setDeleteError(null);
     try {
-      await deleteAccount();
-      setDeleteConfirmationOpen(false);
-      await auth.signOut();
-      router.replace('/benvinguda');
+      if (!accountDeleted) {
+        try {
+          await deleteAccount();
+        } catch {
+          setDeleteError(t('profile.deleteError'));
+          return;
+        }
+        setAccountDeleted(true);
+      }
+      if (await auth.signOut()) {
+        setDeleteConfirmationOpen(false);
+        router.replace('/benvinguda');
+      } else {
+        setDeleteError(t('auth.logoutError'));
+      }
     } catch {
-      setDeleteError(t('profile.deleteError'));
+      setDeleteError(t('auth.logoutError'));
     } finally {
       deletionPending.current = false;
       setDeletingAccount(false);
@@ -139,10 +151,14 @@ export function useProfileViewModel() {
       setLogoutConfirmationOpen(false);
       void auth.signOut();
     },
-    deleteAccountLabel: t('profile.deleteAccount'),
-    deletingAccountLabel: t('profile.deletingAccount'),
-    deleteConfirmationTitle: t('profile.deleteConfirmationTitle'),
-    deleteConfirmationMessage: t('profile.deleteConfirmationMessage'),
+    deleteAccountLabel: accountDeleted ? auth.logoutLabel : t('profile.deleteAccount'),
+    deletingAccountLabel: t(accountDeleted ? 'auth.signingOut' : 'profile.deletingAccount'),
+    deleteConfirmationTitle: t(
+      accountDeleted ? 'profile.deletedTitle' : 'profile.deleteConfirmationTitle',
+    ),
+    deleteConfirmationMessage: t(
+      accountDeleted ? 'profile.deletedMessage' : 'profile.deleteConfirmationMessage',
+    ),
     deleteConfirmationOpen,
     deletingAccount,
     deleteError,

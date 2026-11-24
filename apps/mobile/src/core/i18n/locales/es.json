@@ -162,6 +162,8 @@
     "deleteConfirmationTitle": "¿Seguro que quieres borrar tu cuenta?",
     "deleteConfirmationMessage": "La cuenta y tus datos personales se borrarán definitivamente. No se podrán recuperar. Los puntos que hayas aportado seguirán publicados sin vincularse contigo.",
     "deleteError": "No se ha podido eliminar la cuenta. Vuelve a intentarlo.",
+    "deletedTitle": "La cuenta se ha eliminado",
+    "deletedMessage": "Los datos de la cuenta ya se han borrado. Cierra sesión para continuar.",
     "title": "Perfil",
     "myProfile": "Mi perfil",
     "back": "Volver al perfil",

@@ -141,7 +141,11 @@ it('no afirma haver tancat sessió si falla el logout i permet reintentar', asyn
   const { result } = await renderHook(useAuthViewModel, { wrapper });
   await waitFor(() => expect(result.current.loading).toBe(false));
   repository.signOut.mockRejectedValueOnce(new Error('network'));
-  await act(() => result.current.signOut());
+  let signedOut!: boolean;
+  await act(async () => {
+    signedOut = await result.current.signOut();
+  });
+  expect(signedOut).toBe(false);
   expect(result.current.error).toBe('logout');
   expect(result.current.user?.id).toBe('one');
   await act(() => result.current.signOut());
@@ -175,7 +179,7 @@ it('un logout antic no esborra una sessió nova', async () => {
   );
   const { result } = await renderHook(useAuthViewModel, { wrapper });
   await waitFor(() => expect(result.current.loading).toBe(false));
-  let pending!: Promise<void>;
+  let pending!: Promise<boolean>;
   await act(() => {
     pending = result.current.signOut();
   });
@@ -204,7 +208,11 @@ it('respecta SIGNED_OUT encara que després falli la revocació remota', async (
   });
   const { result } = await renderHook(useAuthViewModel, { wrapper });
   await waitFor(() => expect(result.current.loading).toBe(false));
-  await act(() => result.current.signOut());
+  let signedOut!: boolean;
+  await act(async () => {
+    signedOut = await result.current.signOut();
+  });
+  expect(signedOut).toBe(true);
   expect(result.current.user).toBeNull();
   expect(result.current.error).toBeNull();
 });

@@ -162,6 +162,8 @@
     "deleteConfirmationTitle": "Segur que vols esborrar el teu compte?",
     "deleteConfirmationMessage": "El compte i les teves dades personals s'esborraran definitivament. No es podran recuperar. Els punts que hagis aportat continuaran publicats sense vincle amb tu.",
     "deleteError": "No s'ha pogut eliminar el compte. Torna-ho a provar.",
+    "deletedTitle": "El compte s'ha eliminat",
+    "deletedMessage": "Les dades del compte ja s'han esborrat. Tanca la sessió per continuar.",
     "title": "Perfil",
     "myProfile": "El meu perfil",
     "back": "Torna al perfil",

@@ -7,6 +7,7 @@ import { makeStyles, useNightTint } from '@/core/theme/theme';
 import { radii, sizes, spacing } from '@/core/theme/tokens';
 import { AppText } from '@/shared/ui/AppText';
 import { Button } from '@/shared/ui/Button';
+import { ConfirmationSheet } from '@/shared/ui/ConfirmationSheet';
 import { PressableScale } from '@/shared/ui/PressableScale';
 import { Screen } from '@/shared/ui/Screen';
 import { Sheet } from '@/shared/ui/Sheet';
@@ -15,7 +16,6 @@ import { StateMessage } from '@/shared/ui/StateMessage';
 import { TextField } from '@/shared/ui/TextField';
 
 import { ProfileAvatar } from './ProfileAvatar';
-import { LogoutConfirmationSheet } from './LogoutConfirmationSheet';
 import { useProfileViewModel } from './useProfileViewModel';
 
 const editIcon = require('@/assets/images/profile/edit.svg');
@@ -144,7 +144,7 @@ export function MyProfileScreen() {
           ) : null}
         </ScrollView>
       </Screen>
-      <LogoutConfirmationSheet
+      <ConfirmationSheet
         visible={vm.deleteConfirmationOpen}
         title={vm.deleteConfirmationTitle}
         message={vm.deleteConfirmationMessage}

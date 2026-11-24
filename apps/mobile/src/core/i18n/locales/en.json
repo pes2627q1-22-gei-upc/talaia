@@ -162,6 +162,8 @@
     "deleteConfirmationTitle": "Are you sure you want to delete your account?",
     "deleteConfirmationMessage": "Your account and personal data will be permanently deleted. They cannot be recovered. Spots you contributed will stay published without a link to you.",
     "deleteError": "Could not delete your account. Please try again.",
+    "deletedTitle": "Account deleted",
+    "deletedMessage": "Your account data has been deleted. Sign out to continue.",
     "title": "Profile",
     "myProfile": "My profile",
     "back": "Back to profile",
