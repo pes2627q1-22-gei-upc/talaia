@@ -184,7 +184,12 @@
     "savedPointsHint": "Consulta els punts que has desat",
     "savedPointsEmpty": "Encara no tens cap punt favorit.",
     "savedPointsError": "No s'han pogut carregar els punts favorits.",
+    "savedPointsHelp": "Toca el cor per treure un punt dels favorits.",
+    "savedPointRemoved": "Has tret {{name}} dels favorits.",
+    "undoSavedPoint": "Desfés",
+    "undoSavedPointError": "No hem pogut recuperar el favorit. Torna-ho a provar.",
     "openSavedPoint": "Obre la fitxa del punt",
+    "removeSavedPoint": "Treu {{name}} dels favorits",
     "retry": "Torna-ho a provar",
     "comingSoon": "Properament"
   },

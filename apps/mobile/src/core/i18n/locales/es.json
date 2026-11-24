@@ -184,7 +184,12 @@
     "savedPointsHint": "Consulta los puntos que has guardado",
     "savedPointsEmpty": "Todavía no tienes puntos favoritos.",
     "savedPointsError": "No se han podido cargar los puntos favoritos.",
+    "savedPointsHelp": "Toca el corazón para quitar un punto de favoritos.",
+    "savedPointRemoved": "Has quitado {{name}} de favoritos.",
+    "undoSavedPoint": "Deshacer",
+    "undoSavedPointError": "No hemos podido recuperar el favorito. Vuelve a intentarlo.",
     "openSavedPoint": "Abre la ficha del punto",
+    "removeSavedPoint": "Quitar {{name}} de favoritos",
     "retry": "Volver a intentar",
     "comingSoon": "Próximamente"
   },

@@ -184,7 +184,12 @@
     "savedPointsHint": "View the spots you've saved",
     "savedPointsEmpty": "You don't have any favorite spots yet.",
     "savedPointsError": "Couldn't load your favorite spots.",
+    "savedPointsHelp": "Tap the heart to remove a spot from favorites.",
+    "savedPointRemoved": "Removed {{name}} from favorites.",
+    "undoSavedPoint": "Undo",
+    "undoSavedPointError": "Couldn't restore the favorite. Try again.",
     "openSavedPoint": "Open the spot details",
+    "removeSavedPoint": "Remove {{name}} from favorites",
     "retry": "Try again",
     "comingSoon": "Coming soon"
   },
