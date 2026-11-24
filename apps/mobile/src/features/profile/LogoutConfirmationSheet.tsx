@@ -11,9 +11,11 @@ type Props = {
   visible: boolean;
   title: string;
   message: string;
+  error?: string | null;
   cancelLabel: string;
   confirmLabel: string;
   disabled: boolean;
+  cancelDisabled?: boolean;
   onCancel: () => void;
   onConfirm: () => void;
 };
@@ -22,9 +24,11 @@ export function LogoutConfirmationSheet({
   visible,
   title,
   message,
+  error,
   cancelLabel,
   confirmLabel,
   disabled,
+  cancelDisabled = false,
   onCancel,
   onConfirm,
 }: Props) {
@@ -34,8 +38,19 @@ export function LogoutConfirmationSheet({
       <AppText variant="body" color="boira">
         {message}
       </AppText>
+      {error ? (
+        <AppText accessibilityRole="alert" color="tap">
+          {error}
+        </AppText>
+      ) : null}
       <View style={styles.actions}>
-        <Button label={cancelLabel} variant="secondary" onPress={onCancel} style={styles.action} />
+        <Button
+          label={cancelLabel}
+          variant="secondary"
+          disabled={cancelDisabled}
+          onPress={onCancel}
+          style={styles.action}
+        />
         <PressableScale
           accessibilityLabel={confirmLabel}
           accessibilityState={{ disabled }}

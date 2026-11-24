@@ -1,11 +1,11 @@
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { isSupportedLanguage, saveLanguage, SUPPORTED_LANGUAGES, type Language } from '@/core/i18n';
 import { useAuthViewModel } from '@/features/auth/useAuthViewModel';
 
-import { useProfileQuery, useUpdateProfileName } from './profileRepository';
+import { deleteAccount, useProfileQuery, useUpdateProfileName } from './profileRepository';
 
 /** Avatar de reserva quan Supabase no en té cap: inicials del nom o del correu. */
 export function profileInitials(name: string | null | undefined, email: string | null | undefined) {
@@ -29,6 +29,10 @@ export function useProfileViewModel() {
   const [nameEditOpen, setNameEditOpen] = useState(false);
   const [languageOpen, setLanguageOpen] = useState(false);
   const [logoutConfirmationOpen, setLogoutConfirmationOpen] = useState(false);
+  const [deleteConfirmationOpen, setDeleteConfirmationOpen] = useState(false);
+  const [deletingAccount, setDeletingAccount] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const deletionPending = useRef(false);
   const name = profile.data?.nom?.trim() || null;
   const email = profile.data?.email ?? auth.user?.email ?? null;
   const draftName = draftOverride ?? name ?? '';
@@ -56,6 +60,23 @@ export function useProfileViewModel() {
       setDraftOverride(null);
     } catch {
       setNameError(t('profile.nameSaveError'));
+    }
+  };
+  const confirmDeleteAccount = async () => {
+    if (deletionPending.current) return;
+    deletionPending.current = true;
+    setDeletingAccount(true);
+    setDeleteError(null);
+    try {
+      await deleteAccount();
+      setDeleteConfirmationOpen(false);
+      await auth.signOut();
+      router.replace('/benvinguda');
+    } catch {
+      setDeleteError(t('profile.deleteError'));
+    } finally {
+      deletionPending.current = false;
+      setDeletingAccount(false);
     }
   };
 
@@ -118,6 +139,21 @@ export function useProfileViewModel() {
       setLogoutConfirmationOpen(false);
       void auth.signOut();
     },
+    deleteAccountLabel: t('profile.deleteAccount'),
+    deletingAccountLabel: t('profile.deletingAccount'),
+    deleteConfirmationTitle: t('profile.deleteConfirmationTitle'),
+    deleteConfirmationMessage: t('profile.deleteConfirmationMessage'),
+    deleteConfirmationOpen,
+    deletingAccount,
+    deleteError,
+    requestDeleteAccount: () => {
+      setDeleteError(null);
+      setDeleteConfirmationOpen(true);
+    },
+    cancelDeleteAccount: () => {
+      if (!deletionPending.current) setDeleteConfirmationOpen(false);
+    },
+    confirmDeleteAccount: () => void confirmDeleteAccount(),
     plans: auth.isAuthenticated
       ? {
           label: t('profile.plans'),
