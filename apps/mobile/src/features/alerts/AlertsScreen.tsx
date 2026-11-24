@@ -1,5 +1,6 @@
 import { Image } from 'expo-image';
 import { FlatList, View } from 'react-native';
+import ReanimatedSwipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 
 import { makeStyles, useTheme } from '@/core/theme/theme';
@@ -7,6 +8,7 @@ import { motion, radii, sizes, spacing } from '@/core/theme/tokens';
 import { AppText } from '@/shared/ui/AppText';
 import { Button } from '@/shared/ui/Button';
 import { Card } from '@/shared/ui/Card';
+import { ConfirmationSheet } from '@/shared/ui/ConfirmationSheet';
 import { PressableScale } from '@/shared/ui/PressableScale';
 import { Screen } from '@/shared/ui/Screen';
 import { Skeleton } from '@/shared/ui/Skeleton';
@@ -23,6 +25,8 @@ const ICON_BOX = 52;
 const ICON = 26;
 const SKELETON_ROWS = 3;
 const SKELETON_HEIGHT = 88;
+// Un fitxer, com la fletxa enrere: una `data:` URI amb l'SVG no es pintava a Android.
+const trashIcon = require('@/assets/images/alerts/paperera.svg');
 
 // El color el posa `tintColor` (`pedra`), perquè canvia amb el tema.
 const bellIcon = {
@@ -31,7 +35,11 @@ const bellIcon = {
   )}`,
 };
 
-/** Una alerta: fenomen i resum (es prem per editar-la) i interruptor. Una de desactivada s'apaga. */
+/**
+ * Una alerta: fenomen i resum (es prem per editar-la) i interruptor. Una de desactivada s'apaga.
+ * Lliscant-la cap a l'esquerra apareix una paperera (HU20), que demana confirmació; amb el lector de
+ * pantalla, és una acció de la fila.
+ */
 function AlertRow({ item, index }: { item: AlertItem; index: number }) {
   const styles = useStyles();
   const { colors } = useTheme();
@@ -42,49 +50,83 @@ function AlertRow({ item, index }: { item: AlertItem; index: number }) {
         .easing(motion.enter)
         .withInitialValues({ opacity: 0, transform: [{ translateY: 6 }] })}
     >
-      <Card style={styles.row}>
-        {/* L'interruptor queda fora del botó: cadascun es prem i es llegeix per separat. */}
-        <PressableScale
-          onPress={item.onPress}
-          accessibilityHint={item.editHint}
-          style={styles.edit}
-          testID={`alert-edit-${item.id}`}
-        >
-          <View style={[styles.iconBox, !item.active && styles.off]}>
+      <ReanimatedSwipeable
+        friction={2}
+        rightThreshold={sizes.touch}
+        overshootRight={false}
+        renderRightActions={(_progress, _translation, swipeable) => (
+          <PressableScale
+            onPress={() => {
+              item.delete.onPress();
+              swipeable.close();
+            }}
+            accessibilityRole="button"
+            accessibilityLabel={item.delete.label}
+            style={styles.deleteAction}
+            testID={`alert-delete-${item.id}`}
+          >
             <Image
-              source={GOAL_ICONS[item.goal]}
-              tintColor={colors.pedra}
-              style={styles.icon}
+              source={trashIcon}
+              tintColor={colors.nit}
+              style={styles.deleteIcon}
               accessible={false}
+              testID={`alert-delete-icon-${item.id}`}
             />
-          </View>
-          <View style={[styles.text, !item.active && styles.off]} testID={`alert-text-${item.id}`}>
-            <AppText variant="label">{item.name}</AppText>
-            {/* El tipus d'avís, amb la seva icona: es distingeix d'un cop d'ull (TG-268). */}
-            <View style={styles.notify} testID={`alert-notify-${item.id}`}>
+          </PressableScale>
+        )}
+        testID={`alert-swipe-${item.id}`}
+      >
+        <Card style={styles.row}>
+          {/* L'interruptor queda fora del botó: cadascun es prem i es llegeix per separat. */}
+          <PressableScale
+            onPress={item.onPress}
+            accessibilityHint={item.editHint}
+            accessibilityActions={[{ name: 'delete', label: item.delete.label }]}
+            onAccessibilityAction={(event) => {
+              if (event.nativeEvent.actionName === 'delete') item.delete.onPress();
+            }}
+            style={styles.edit}
+            testID={`alert-edit-${item.id}`}
+          >
+            <View style={[styles.iconBox, !item.active && styles.off]}>
               <Image
-                source={NOTIFY_ICONS[item.notify.type]}
-                tintColor={colors.far}
-                style={styles.notifyIcon}
+                source={GOAL_ICONS[item.goal]}
+                tintColor={colors.pedra}
+                style={styles.icon}
                 accessible={false}
-                testID={`alert-notify-icon-${item.id}`}
               />
-              <AppText variant="small" color="far" style={styles.shrink}>
-                {item.notify.text}
+            </View>
+            <View
+              style={[styles.text, !item.active && styles.off]}
+              testID={`alert-text-${item.id}`}
+            >
+              <AppText variant="label">{item.name}</AppText>
+              {/* El tipus d'avís, amb la seva icona: es distingeix d'un cop d'ull (TG-268). */}
+              <View style={styles.notify} testID={`alert-notify-${item.id}`}>
+                <Image
+                  source={NOTIFY_ICONS[item.notify.type]}
+                  tintColor={colors.far}
+                  style={styles.notifyIcon}
+                  accessible={false}
+                  testID={`alert-notify-icon-${item.id}`}
+                />
+                <AppText variant="small" color="far" style={styles.shrink}>
+                  {item.notify.text}
+                </AppText>
+              </View>
+              <AppText variant="small" color="boira">
+                {item.summary}
               </AppText>
             </View>
-            <AppText variant="small" color="boira">
-              {item.summary}
-            </AppText>
-          </View>
-        </PressableScale>
-        <Toggle
-          value={item.active}
-          onValueChange={item.onToggle}
-          accessibilityLabel={item.toggleLabel}
-          testID={`alert-toggle-${item.id}`}
-        />
-      </Card>
+          </PressableScale>
+          <Toggle
+            value={item.active}
+            onValueChange={item.onToggle}
+            accessibilityLabel={item.toggleLabel}
+            testID={`alert-toggle-${item.id}`}
+          />
+        </Card>
+      </ReanimatedSwipeable>
     </Animated.View>
   );
 }
@@ -147,6 +189,7 @@ export function AlertsScreen() {
           }
         />
       )}
+      <ConfirmationSheet {...vm.deleteSheet} />
     </Screen>
   );
 }
@@ -175,6 +218,18 @@ const useStyles = makeStyles(({ colors }) => ({
   notifyIcon: { width: sizes.iconSmall, height: sizes.iconSmall },
   shrink: { flexShrink: 1 },
   off: { opacity: 0.5 },
+  // Un cercle de la mida d'un botó, centrat al costat de la targeta.
+  deleteAction: {
+    width: sizes.button,
+    height: sizes.button,
+    alignSelf: 'center',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginHorizontal: spacing.md,
+    borderRadius: radii.pill,
+    backgroundColor: colors.perill,
+  },
   create: { marginTop: spacing.sm },
   notice: { gap: spacing.sm },
+  deleteIcon: { width: sizes.icon, height: sizes.icon },
 }));

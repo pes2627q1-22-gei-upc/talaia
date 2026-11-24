@@ -1,4 +1,6 @@
+import type { Alerta } from '@talaia/shared';
 import { useRouter } from 'expo-router';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { useAlertsQuery } from './alertsRepository';
@@ -11,7 +13,12 @@ export function useEditAlertViewModel(alertId: string) {
   const { t } = useTranslation();
   const router = useRouter();
   const alerts = useAlertsQuery();
-  const alert = alerts.data?.find((item) => item.id === alertId);
+  // Un cop trobada, l'alerta es queda: si s'elimina des d'aquí (HU20), surt de la llista mentre
+  // la pantalla encara marxa, i no ha de canviar pel missatge de «no l'hem trobada».
+  const found = alerts.data?.find((item) => item.id === alertId);
+  const [last, setLast] = useState<Alerta | undefined>(found);
+  if (found && found !== last) setLast(found);
+  const alert = found ?? last;
 
   const state = alert
     ? ('ready' as const)

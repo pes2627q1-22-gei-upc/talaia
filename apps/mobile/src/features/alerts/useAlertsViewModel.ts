@@ -9,6 +9,7 @@ import { usePushPermission } from '@/features/notifications/PushRegistrationProv
 
 import { ALERTS_KEY, alertsRepository, useAlertsQuery } from './alertsRepository';
 import { kmToTravel, notifyTypeOf } from './newAlertModel';
+import { useDeleteAlert } from './useDeleteAlert';
 
 export type PushNotice = {
   message: string;
@@ -17,7 +18,8 @@ export type PushNotice = {
 
 /**
  * Pestanya «Alertes» (HU19, mockup 10): les alertes de l'usuari amb l'interruptor d'activació.
- * Prémer una alerta l'obre per editar-la (HU18).
+ * Prémer una alerta l'obre per editar-la (HU18); lliscar-la cap a l'esquerra mostra una paperera
+ * (HU20).
  *
  * HU17, criteri 4: sense permís de notificacions, l'app continua igual i la pantalla d'alertes
  * ho diu. «No demanat» no es mostra: el permís es demana en crear una alerta.
@@ -28,6 +30,7 @@ export function useAlertsViewModel() {
   const queryClient = useQueryClient();
   const alerts = useAlertsQuery();
   const { permission } = usePushPermission();
+  const deletion = useDeleteAlert();
 
   const setActiveInCache = (id: string, activa: boolean) =>
     queryClient.setQueryData<Alerta[]>(ALERTS_KEY, (list) =>
@@ -104,6 +107,10 @@ export function useAlertsViewModel() {
         editHint: t('alerts.editHint'),
         onPress: () => router.push({ pathname: '/alerta/[id]', params: { id: alert.id } }),
         onToggle: (activa: boolean) => toggle.mutate({ id: alert.id, activa }),
+        delete: {
+          label: t('alerts.delete.rowLabel', { name }),
+          onPress: () => deletion.confirmDelete(alert.id, name),
+        },
       };
     }),
     toggleError: toggle.isError ? t('alerts.toggleError') : null,
@@ -114,5 +121,6 @@ export function useAlertsViewModel() {
     },
     create: { label: t('alerts.create'), onPress: () => router.push('/nova-alerta') },
     pushNotice,
+    deleteSheet: deletion.sheet,
   };
 }

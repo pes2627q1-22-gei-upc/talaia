@@ -1,5 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react-native';
 
+import { colors } from '@/core/theme/tokens';
+
 import { Button } from '../Button';
 
 describe('Button', () => {
@@ -17,5 +19,11 @@ describe('Button', () => {
     await fireEvent.press(button);
     expect(onPress).not.toHaveBeenCalled();
     expect(button).toBeDisabled();
+  });
+
+  it('`danger` és un botó de text en vermell (`perill`), per a accions que esborren', async () => {
+    await render(<Button variant="danger" label="Elimina l'alerta" onPress={jest.fn()} />);
+    expect(screen.getByRole('button', { name: "Elimina l'alerta" })).toBeOnTheScreen();
+    expect(screen.getByText("Elimina l'alerta")).toHaveStyle({ color: colors.perill });
   });
 });
