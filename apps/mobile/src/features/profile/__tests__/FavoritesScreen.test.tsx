@@ -2,7 +2,7 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-
 import { useRouter } from 'expo-router';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-import { apiDelete, apiGet } from '@/core/api/httpClient';
+import { apiDelete, apiGet, apiPost } from '@/core/api/httpClient';
 import i18n from '@/core/i18n';
 import { ThemeProvider, type ThemeName } from '@/core/theme/theme';
 import { colorsVermell } from '@/core/theme/tokens';
@@ -15,12 +15,14 @@ jest.mock('@/core/api/httpClient', () => ({
   ...jest.requireActual('@/core/api/httpClient'),
   apiGet: jest.fn(),
   apiDelete: jest.fn(),
+  apiPost: jest.fn(),
 }));
 jest.mock('@/features/auth/useAuthViewModel', () => ({ useAuthViewModel: jest.fn() }));
 jest.mock('expo-router', () => ({ useRouter: jest.fn() }));
 
 const get = jest.mocked(apiGet);
 const del = jest.mocked(apiDelete);
+const post = jest.mocked(apiPost);
 const push = jest.fn();
 const back = jest.fn();
 
@@ -45,6 +47,7 @@ async function show(theme: ThemeName = 'normal') {
 beforeEach(async () => {
   jest.clearAllMocks();
   del.mockResolvedValue(undefined);
+  post.mockResolvedValue({ id: 'montsec', nom: 'Montsec', municipi: 'Àger' });
   jest.mocked(useRouter).mockReturnValue({ push, back } as unknown as ReturnType<typeof useRouter>);
   jest
     .mocked(useAuthViewModel)
@@ -60,12 +63,17 @@ it('mostra les files sense tapar el text i obre la fitxa tocada', async () => {
   await show();
   expect(screen.getByRole('header', { name: 'Punts favorits' })).toBeOnTheScreen();
   expect(await screen.findByText('2 llocs desats per tornar-hi')).toBeOnTheScreen();
+  expect(screen.getByText('Toca el cor per treure un punt dels favorits.')).toBeOnTheScreen();
   const row = await screen.findByRole('button', { name: 'Parc Astronòmic del Montsec, Àger' });
   expect(screen.getByText('Parc Astronòmic del Montsec')).toHaveProp('numberOfLines', 2);
   expect(screen.getByText('Àger')).toHaveProp('numberOfLines', 1);
   expect(screen.getByRole('button', { name: 'Mirador del Pirineu, Sort' })).toBeOnTheScreen();
+  expect(screen.getAllByTestId(/^favorite-card-/).map((item) => item.props.testID)).toEqual([
+    'favorite-card-pirineu',
+    'favorite-card-montsec',
+  ]);
   const card = screen.getByTestId('favorite-card-montsec');
-  expect(card.props.style).toMatchObject({
+  expect(card.props.style[0]).toMatchObject({
     flexDirection: 'row',
     alignItems: 'stretch',
     minHeight: expect.any(Number),
@@ -85,13 +93,17 @@ it('mostra les files sense tapar el text i obre la fitxa tocada', async () => {
   expect(get).toHaveBeenCalledWith('/favorits', undefined, { signal: expect.any(AbortSignal) });
 });
 
-it('treu el punt des de la llista immediatament i manté la fitxa accessible', async () => {
+it('buida el cor, deixa acabar la sortida i permet desfer l’eliminació', async () => {
   get
     .mockResolvedValueOnce([
       { id: 'montsec', nom: 'Montsec', municipi: 'Àger' },
       { id: 'pirineu', nom: 'Pirineu', municipi: 'Sort' },
     ])
-    .mockResolvedValue([{ id: 'pirineu', nom: 'Pirineu', municipi: 'Sort' }]);
+    .mockResolvedValueOnce([{ id: 'pirineu', nom: 'Pirineu', municipi: 'Sort' }])
+    .mockResolvedValue([
+      { id: 'pirineu', nom: 'Pirineu', municipi: 'Sort' },
+      { id: 'montsec', nom: 'Montsec', municipi: 'Àger' },
+    ]);
   let finish!: () => void;
   del.mockImplementation(
     () =>
@@ -102,13 +114,24 @@ it('treu el punt des de la llista immediatament i manté la fitxa accessible', a
   await show();
   const remove = await screen.findByRole('button', { name: 'Treu Montsec dels favorits' });
   await fireEvent.press(remove);
-  expect(screen.queryByText('Montsec')).toBeNull();
+  expect(screen.getByText('Montsec')).toBeOnTheScreen();
+  expect(screen.getByTestId('favorite-heart-montsec').props.source).toEqual([
+    require('@/assets/images/point/heart-outline.svg'),
+  ]);
   expect(screen.getByText('Pirineu')).toBeOnTheScreen();
   expect(push).not.toHaveBeenCalled();
   expect(del).toHaveBeenCalledWith('/favorits/montsec');
   await act(async () => finish());
-  await waitFor(() => expect(get).toHaveBeenCalledTimes(2));
-  expect(screen.queryByText('Montsec')).toBeNull();
+  await waitFor(() => expect(screen.queryByText('Montsec')).toBeNull());
+  expect(await screen.findByRole('button', { name: 'Desfés' })).toBeOnTheScreen();
+  await fireEvent.press(screen.getByRole('button', { name: 'Desfés' }));
+  expect(post).toHaveBeenCalledWith('/favorits', { puntId: 'montsec' });
+  expect(await screen.findByText('Montsec')).toBeOnTheScreen();
+  await waitFor(() => expect(get).toHaveBeenCalledTimes(3));
+  expect(screen.getAllByTestId(/^favorite-card-/).map((item) => item.props.testID)).toEqual([
+    'favorite-card-montsec',
+    'favorite-card-pirineu',
+  ]);
 });
 
 it('restaura el punt i mostra un error si falla l’eliminació', async () => {
@@ -146,7 +169,7 @@ it('manté les targetes coherents en mode nit sense fer dependre la llista de l�
   expect(await screen.findByText('3 llocs desats per tornar-hi')).toBeOnTheScreen();
   expect(screen.queryByText('82')).toBeNull();
   expect(screen.queryByText('0')).toBeNull();
-  expect(screen.getByTestId('favorite-card-montsec').props.style).toMatchObject({
+  expect(screen.getByTestId('favorite-card-montsec').props.style[0]).toMatchObject({
     backgroundColor: colorsVermell.card,
   });
 });
