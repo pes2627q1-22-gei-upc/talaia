@@ -256,6 +256,24 @@ describe('useAlertsViewModel', () => {
       expect(result.current.items).toHaveLength(1);
     });
 
+    it('mentre s’elimina, «Cancel·la» no tanca el full (la petició ja ha sortit)', async () => {
+      mockedList.mockResolvedValue([alert()]);
+      let finish: () => void = () => undefined;
+      mockedRemove.mockReturnValue(new Promise<void>((resolve) => (finish = resolve)));
+      const { result } = await renderViewModel();
+      await waitFor(() => expect(result.current.items).toHaveLength(1));
+
+      await act(() => result.current.items[0]?.delete.onPress());
+      await act(() => result.current.deleteSheet.onConfirm());
+      await waitFor(() => expect(result.current.deleteSheet.disabled).toBe(true));
+
+      await act(() => result.current.deleteSheet.onCancel());
+      expect(result.current.deleteSheet.visible).toBe(true);
+
+      await act(async () => finish());
+      await waitFor(() => expect(result.current.deleteSheet.visible).toBe(false));
+    });
+
     it('si falla, el full es queda obert amb l’error i l’alerta continua a la llista', async () => {
       mockedList.mockResolvedValue([alert()]);
       mockedRemove.mockRejectedValueOnce(new Error('xarxa')).mockResolvedValueOnce(undefined);

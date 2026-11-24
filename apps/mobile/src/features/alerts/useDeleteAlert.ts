@@ -30,7 +30,10 @@ export function useDeleteAlert(onDeleted?: () => void) {
     onSettled: () => queryClient.invalidateQueries({ queryKey: ALERTS_KEY }),
   });
 
+  // Mentre s'elimina, el full no es tanca (ni amb «Cancel·la», ni tocant fora, ni amb enrere): la
+  // petició ja ha sortit i no s'ha de donar a entendre que s'ha cancel·lat.
   const close = () => {
+    if (remove.isPending) return;
     setOpen(false);
     remove.reset();
   };
