@@ -41,6 +41,22 @@ export type PlaNou = {
   notes?: string | null;
 };
 
+/**
+ * Cos de `PATCH /api/v1/plans/{id}` (HU14, TG-161): només els camps que canvien, i almenys un.
+ * `null` treu el fenomen, el final o les notes. El vincle al calendari no hi és: va per
+ * `PUT /plans/{id}/calendari`.
+ */
+export type PlaCanvis = {
+  /** Un punt publicat. */
+  puntId?: string;
+  esdevenimentId?: string | null;
+  /** ISO 8601 amb zona. Si canvia, no pot ser una hora que ja ha passat. */
+  dataHoraInici?: string;
+  /** Posterior a l'inici del pla resultant. */
+  dataHoraFi?: string | null;
+  notes?: string | null;
+};
+
 /** `?quan=` de `GET /api/v1/plans` (TG-160). */
 export type QuanPlans = 'futurs' | 'passats';
 

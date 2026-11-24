@@ -281,3 +281,132 @@ describe('plansRepository.create', () => {
     expect(queries).toHaveLength(5);
   });
 });
+
+describe('plansRepository.update', () => {
+  const sqls = (queries: { sql: string }[]) => queries.map((q) => q.sql);
+  /** El pla bloquejat: Montsec, les Leònides, el 20/11 a les 21:00 UTC. */
+  const ACTUAL = {
+    punt_id: MONTSEC,
+    esdeveniment_id: 'leonides-2026',
+    data_hora_inici: new Date('2026-11-20T21:00:00.000Z'),
+  };
+  const PRADES = 'bbbbbbbb-0000-4000-8000-000000000002';
+
+  it('bloqueja el pla, comprova el pla resultant, actualitza només els canvis i el retorna', async () => {
+    const { db, queries } = fakeDb([
+      [ACTUAL],
+      [{ id: PRADES }],
+      [{ codi: 'leonides-2026' }],
+      [],
+      [{ id: PLA }],
+      [FILA],
+    ]);
+
+    await expect(
+      createPlansRepository(db).update(PERFIL, PLA, {
+        puntId: PRADES,
+        dataHoraInici: '2026-11-20T23:00:00+01:00',
+        dataHoraFi: null,
+      }),
+    ).resolves.toEqual({ ok: true, pla: PLA_AMB_TEXTOS });
+
+    const [actual, punt, esdeveniment, duplicat, update, select] = queries;
+    expect(actual?.sql).toBe(
+      'select "punt_id", "esdeveniment_id", "data_hora_inici" from "plans" where "id" = $1 and "perfil_id" = $2 for update',
+    );
+    expect(actual?.parameters).toEqual([PLA, PERFIL]);
+    expect(punt?.sql).toBe(
+      'select "id" from "punts_observacio" where "id" = $1 and "estat" = $2 for share',
+    );
+    expect(punt?.parameters).toEqual([PRADES, 'PUBLICAT']);
+    // El fenomen no canvia, però el del pla resultant s'ha de poder veure.
+    expect(esdeveniment?.parameters?.at(-1)).toBe('leonides-2026');
+    expect(duplicat?.sql).toBe(
+      'select "id" from "plans" where "perfil_id" = $1 and "punt_id" = $2 and "data_hora_inici" = $3 and "id" <> $4',
+    );
+    expect(duplicat?.parameters).toEqual([
+      PERFIL,
+      PRADES,
+      new Date('2026-11-20T22:00:00.000Z'),
+      PLA,
+    ]);
+    expect(update?.sql).toBe(
+      'update "plans" set "punt_id" = $1, "data_hora_inici" = $2, "data_hora_fi" = $3 where "id" = $4 and "perfil_id" = $5 returning "id"',
+    );
+    expect(update?.parameters).toEqual([
+      PRADES,
+      new Date('2026-11-20T22:00:00.000Z'),
+      null,
+      PLA,
+      PERFIL,
+    ]);
+    expect(select?.sql).toBe(`${SELECT_PLANS} and "pl"."id" = $2`);
+  });
+
+  it('amb només les notes, comprova el punt actual i el duplicat amb l’hora actual', async () => {
+    const { db, queries } = fakeDb([
+      [{ ...ACTUAL, esdeveniment_id: null }],
+      [{ id: MONTSEC }],
+      [],
+      [{ id: PLA }],
+      [FILA],
+    ]);
+
+    await createPlansRepository(db).update(PERFIL, PLA, { notes: 'Termo' });
+
+    expect(sqls(queries).some((sql) => sql.includes('esdeveniments_astronomics'))).toBe(false);
+    expect(queries[1]?.parameters).toEqual([MONTSEC, 'PUBLICAT']);
+    expect(queries[2]?.parameters).toEqual([PERFIL, MONTSEC, ACTUAL.data_hora_inici, PLA]);
+    expect(queries[3]?.sql).toBe(
+      'update "plans" set "notes" = $1 where "id" = $2 and "perfil_id" = $3 returning "id"',
+    );
+  });
+
+  it('esdevenimentId: null treu el fenomen sense buscar-lo', async () => {
+    const { db, queries } = fakeDb([[ACTUAL], [{ id: MONTSEC }], [], [{ id: PLA }], [FILA]]);
+    await createPlansRepository(db).update(PERFIL, PLA, { esdevenimentId: null });
+    expect(sqls(queries).some((sql) => sql.includes('esdeveniments_astronomics'))).toBe(false);
+    expect(queries[3]?.sql).toContain('set "esdeveniment_id" = $1');
+    expect(queries[3]?.parameters?.[0]).toBeNull();
+  });
+
+  it.each([
+    ['el pla no és del perfil', [[]], 'not_found', 1],
+    ['el punt no és publicat', [[ACTUAL], []], 'punt_not_found', 2],
+    ['el fenomen no és públic', [[ACTUAL], [{ id: MONTSEC }], []], 'event_not_found', 3],
+    [
+      'ja té un altre pla al mateix punt i hora',
+      [[ACTUAL], [{ id: MONTSEC }], [{ codi: 'leonides-2026' }], [{ id: 'altre' }]],
+      'duplicate',
+      4,
+    ],
+  ] as const)('si %s, %s i no actualitza', async (_cas, files, reason, consultes) => {
+    const { db, queries } = fakeDb(files as unknown as Record<string, unknown>[][]);
+    await expect(createPlansRepository(db).update(PERFIL, PLA, { notes: 'x' })).resolves.toEqual({
+      ok: false,
+      reason,
+    });
+    expect(queries).toHaveLength(consultes);
+    expect(sqls(queries).some((sql) => sql.startsWith('update'))).toBe(false);
+  });
+
+  it('una violació de l’índex únic (una carrera) és duplicate; la resta d’errors es propaguen', async () => {
+    const repoAmbError = (error: unknown) => {
+      const { db } = fakeDb([]);
+      jest.spyOn(db, 'transaction').mockReturnValue({
+        execute: async () => {
+          throw error;
+        },
+      } as never);
+      return createPlansRepository(db);
+    };
+    await expect(
+      repoAmbError(Object.assign(new Error('unique'), { code: '23505' })).update(PERFIL, PLA, {
+        notes: 'x',
+      }),
+    ).resolves.toEqual({ ok: false, reason: 'duplicate' });
+    await expect(
+      repoAmbError(new Error('connection refused')).update(PERFIL, PLA, { notes: 'x' }),
+    ).rejects.toThrow('connection refused');
+  });
+});
