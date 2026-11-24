@@ -749,6 +749,15 @@
       "create": "Troba un lloc",
       "errorTitle": "No hem pogut carregar els plans",
       "retry": "Torna-ho a provar"
+    },
+    "delete": {
+      "button": "Elimina «{{title}}»",
+      "title": "Vols eliminar el pla?",
+      "message": "«{{title}}» desapareixerà dels teus plans.",
+      "messageCalendar": "«{{title}}» desapareixerà dels teus plans i, si encara hi és, del calendari del mòbil.",
+      "error": "No s'ha pogut eliminar el pla. Torna-ho a provar.",
+      "cancel": "Cancel·la",
+      "confirm": "Elimina"
     }
   },
   "notifications": {

@@ -1,10 +1,19 @@
 import type { QuanPlans } from '@talaia/shared';
+import { useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { ApiError } from '@/core/api/httpClient';
+
+import { planCalendarRepository } from './planCalendarRepository';
 import { planEventsRange, planRow, type PlanRow } from './planModel';
-import { useEventsBetweenQuery, usePlansQuery } from './plansRepository';
+import {
+  PLANS_KEY,
+  plansRepository,
+  useEventsBetweenQuery,
+  usePlansQuery,
+} from './plansRepository';
 
 export type PlansSectionState = 'loading' | 'error' | 'empty' | 'ready';
 
@@ -18,6 +27,7 @@ export type PlanListRow = {
   retired: boolean;
   accessibilityLabel: string;
   accessibilityHint?: string;
+  deleteLabel: string;
 };
 
 export type PlansSection = {
@@ -50,18 +60,23 @@ function usePlansSection(quan: QuanPlans, enabled: boolean) {
           ? 'loading'
           : 'ready';
 
-  return { state, rows, retry: () => void plans.refetch() };
+  return { state, rows, plans: plans.data ?? [], retry: () => void plans.refetch() };
 }
 
 /**
  * «Els meus plans» (HU13, mockup 13): els plans futurs per data i, a part, els passats, que es
  * demanen quan l'usuari obre la pestanya. Tocar un pla obre la fitxa del punt; si el punt s'ha
  * retirat, la fila no es pot obrir. L'índex de cada pla i «Veure'ls al calendari» (TG-158) no hi
- * són: l'API no dona l'índex d'un pla.
+ * són: l'API no dona l'índex d'un pla. Qualsevol pla, també un de passat o d'un punt retirat, es
+ * pot eliminar amb confirmació (HU15, TG-162).
  */
 export function usePlansViewModel() {
   const { t } = useTranslation();
   const router = useRouter();
+  const queryClient = useQueryClient();
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteFailed, setDeleteFailed] = useState(false);
   const [tab, setTab] = useState<QuanPlans>('futurs');
   // Un cop oberts, els passats es queden carregats encara que es torni a «Propers».
   const [pastRequested, setPastRequested] = useState(false);
@@ -100,6 +115,7 @@ export function usePlansViewModel() {
         subtitle,
       }),
       accessibilityHint: row.retired ? undefined : t('plans.list.openHint'),
+      deleteLabel: t('plans.delete.button', { title }),
     };
   };
 
@@ -114,6 +130,32 @@ export function usePlansViewModel() {
   });
 
   const rowsById = new Map([...upcoming.rows, ...past.rows].map((row) => [row.id, row]));
+  const pendingPlan = [...upcoming.plans, ...past.plans].find((plan) => plan.id === deleteId);
+  const pendingRow = deleteId ? rowsById.get(deleteId) : undefined;
+
+  /**
+   * Primer l'API i, si va bé, l'esdeveniment del calendari del mòbil: si l'API falla, el pla
+   * continua existint i l'esdeveniment s'ha de quedar. Un 404 vol dir que ja no hi era (esborrat
+   * des d'un altre mòbil): compta com a fet. Si el calendari falla, el pla ja està esborrat igualment.
+   */
+  const confirmDelete = async () => {
+    if (!pendingPlan || deleting) return;
+    setDeleting(true);
+    setDeleteFailed(false);
+    try {
+      await plansRepository.remove(pendingPlan.id);
+    } catch (error) {
+      if (!(error instanceof ApiError && error.status === 404)) {
+        setDeleteFailed(true);
+        setDeleting(false);
+        return;
+      }
+    }
+    await planCalendarRepository.deleteEvent(pendingPlan).catch(() => false);
+    setDeleteId(null);
+    setDeleting(false);
+    await queryClient.invalidateQueries({ queryKey: PLANS_KEY });
+  };
 
   return {
     title: t('plans.list.title'),
@@ -142,6 +184,29 @@ export function usePlansViewModel() {
       const plan = rowsById.get(row.id);
       if (!plan || plan.retired) return;
       router.push({ pathname: '/punt/[id]', params: { id: plan.puntId } });
+    },
+    onDelete: (row: Pick<PlanListRow, 'id'>) => {
+      setDeleteFailed(false);
+      setDeleteId(row.id);
+    },
+    deletion: {
+      visible: pendingPlan !== undefined,
+      title: t('plans.delete.title'),
+      message: deleteFailed
+        ? t('plans.delete.error')
+        : t(
+            pendingPlan?.calendariEventId ? 'plans.delete.messageCalendar' : 'plans.delete.message',
+            {
+              title: pendingRow ? toListRow(pendingRow).title : '',
+            },
+          ),
+      cancelLabel: t('plans.delete.cancel'),
+      confirmLabel: t('plans.delete.confirm'),
+      disabled: deleting,
+      onCancel: () => {
+        if (!deleting) setDeleteId(null);
+      },
+      onConfirm: () => void confirmDelete(),
     },
     /** Sense plans: a Explora, on es busca el lloc i, des de la fitxa, es crea el pla. */
     create: { label: t('plans.list.create'), onPress: () => router.navigate('/') },

@@ -3,7 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react-native';
 import type { PropsWithChildren } from 'react';
 
-import { ApiError, apiGet, apiPost, apiPut } from '@/core/api/httpClient';
+import { ApiError, apiDelete, apiGet, apiPost, apiPut } from '@/core/api/httpClient';
 import i18n from '@/core/i18n';
 
 import {
@@ -20,6 +20,7 @@ jest.mock('@/core/api/httpClient', () => ({
   apiGet: jest.fn(),
   apiPost: jest.fn(),
   apiPut: jest.fn(),
+  apiDelete: jest.fn(),
 }));
 const get = jest.mocked(apiGet);
 const post = jest.mocked(apiPost);
@@ -27,6 +28,12 @@ const post = jest.mocked(apiPost);
 beforeEach(() => {
   get.mockReset();
   post.mockReset();
+});
+
+it('elimina el pla amb DELETE /plans/{id} (TG-162)', async () => {
+  jest.mocked(apiDelete).mockResolvedValue(undefined);
+  await plansRepository.remove('p 1');
+  expect(apiDelete).toHaveBeenCalledWith('/plans/p%201');
 });
 
 it('crea el pla amb POST /plans i el cos exacte', async () => {

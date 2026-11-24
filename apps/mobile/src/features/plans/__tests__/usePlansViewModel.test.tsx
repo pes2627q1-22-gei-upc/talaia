@@ -4,18 +4,26 @@ import { act, renderHook, waitFor } from '@testing-library/react-native';
 import { useRouter } from 'expo-router';
 import type { PropsWithChildren } from 'react';
 
-import { ApiError, apiGet } from '@/core/api/httpClient';
+import { ApiError, apiDelete, apiGet } from '@/core/api/httpClient';
 import i18n from '@/core/i18n';
 
 import { plan } from '../__fixtures__/plans';
+import { planCalendarRepository } from '../planCalendarRepository';
 import { PLANS_KEY } from '../plansRepository';
 import { usePlansViewModel } from '../usePlansViewModel';
 
 jest.mock('@/core/api/httpClient', () => ({
   ...jest.requireActual('@/core/api/httpClient'),
   apiGet: jest.fn(),
+  apiDelete: jest.fn(),
 }));
 jest.mock('expo-router', () => ({ useRouter: jest.fn() }));
+jest.mock('../planCalendarRepository', () => ({
+  planCalendarRepository: { deleteEvent: jest.fn() },
+}));
+
+const del = jest.mocked(apiDelete);
+const deleteEvent = jest.mocked(planCalendarRepository.deleteEvent);
 
 const get = jest.mocked(apiGet);
 const push = jest.fn();
@@ -71,6 +79,10 @@ async function renderVm() {
 beforeEach(async () => {
   get.mockReset();
   get.mockImplementation(respond());
+  del.mockReset();
+  del.mockResolvedValue(undefined);
+  deleteEvent.mockReset();
+  deleteEvent.mockResolvedValue(true);
   push.mockReset();
   navigate.mockReset();
   await i18n.changeLanguage('ca');
@@ -270,3 +282,96 @@ it.each([
     expect(result.current.upcoming.rows.map((row) => row.title)).toEqual([garraf, rapita]);
   },
 );
+
+describe('eliminar un pla (HU15, TG-162)', () => {
+  const linked = plan({ id: 'p1', esdevenimentId: 'orionides-2026', calendariEventId: 'event-1' });
+
+  async function openDeletion(lists: Lists = { futurs: [linked, upcoming[1]!], passats: past }) {
+    get.mockImplementation(respond(lists));
+    const vm = await renderVm();
+    await waitFor(() => expect(vm.result.current.upcoming.state).toBe('ready'));
+    expect(vm.result.current.deletion.visible).toBe(false);
+    await act(() => vm.result.current.onDelete({ id: 'p1' }));
+    return vm;
+  }
+
+  it("demana confirmació amb el títol del pla i esmenta el calendari si n'hi ha", async () => {
+    const { result } = await openDeletion();
+    expect(result.current.deletion).toMatchObject({
+      visible: true,
+      title: 'Vols eliminar el pla?',
+      message:
+        '«Oriònides a Àger» desapareixerà dels teus plans i, si encara hi és, del calendari del mòbil.',
+      confirmLabel: 'Elimina',
+      cancelLabel: 'Cancel·la',
+      disabled: false,
+    });
+    expect(result.current.upcoming.rows[0]!.deleteLabel).toBe('Elimina «Oriònides a Àger»');
+    expect(del).not.toHaveBeenCalled();
+  });
+
+  it("sense calendari vinculat, el missatge no l'esmenta", async () => {
+    const { result } = await openDeletion({ futurs: upcoming, passats: [] });
+    expect(result.current.deletion.message).toBe(
+      '«Oriònides a Àger» desapareixerà dels teus plans.',
+    );
+  });
+
+  it("confirmar l'esborra a l'API, després al calendari, i refresca les llistes", async () => {
+    const { result, client } = await openDeletion();
+    const invalidate = jest.spyOn(client, 'invalidateQueries');
+    await act(() => result.current.deletion.onConfirm());
+    await waitFor(() => expect(result.current.deletion.visible).toBe(false));
+    expect(del).toHaveBeenCalledWith('/plans/p1');
+    expect(deleteEvent).toHaveBeenCalledWith(linked);
+    expect(del.mock.invocationCallOrder[0]!).toBeLessThan(deleteEvent.mock.invocationCallOrder[0]!);
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: PLANS_KEY });
+  });
+
+  it("si l'API falla, no toca el calendari i el full ho diu", async () => {
+    del.mockRejectedValue(new ApiError(500, 'internal', 'boom'));
+    const { result } = await openDeletion();
+    await act(() => result.current.deletion.onConfirm());
+    await waitFor(() =>
+      expect(result.current.deletion.message).toBe(
+        "No s'ha pogut eliminar el pla. Torna-ho a provar.",
+      ),
+    );
+    expect(result.current.deletion.visible).toBe(true);
+    expect(result.current.deletion.disabled).toBe(false);
+    expect(deleteEvent).not.toHaveBeenCalled();
+  });
+
+  it('un 404 vol dir que ja no hi era: compta com a eliminat', async () => {
+    del.mockRejectedValue(new ApiError(404, 'plan_not_found', 'no'));
+    const { result } = await openDeletion();
+    await act(() => result.current.deletion.onConfirm());
+    await waitFor(() => expect(result.current.deletion.visible).toBe(false));
+    expect(deleteEvent).toHaveBeenCalledWith(linked);
+  });
+
+  it('si el calendari falla, el pla queda eliminat igualment', async () => {
+    deleteEvent.mockRejectedValue(new Error('calendar'));
+    const { result } = await openDeletion();
+    await act(() => result.current.deletion.onConfirm());
+    await waitFor(() => expect(result.current.deletion.visible).toBe(false));
+  });
+
+  it('cancel·lar tanca el full sense esborrar res', async () => {
+    const { result } = await openDeletion();
+    await act(() => result.current.deletion.onCancel());
+    expect(result.current.deletion.visible).toBe(false);
+    expect(del).not.toHaveBeenCalled();
+  });
+
+  it('un pla passat d’un punt retirat també es pot eliminar', async () => {
+    get.mockImplementation(respond());
+    const { result } = await renderVm();
+    await waitFor(() => expect(result.current.upcoming.state).toBe('ready'));
+    await act(() => result.current.tabs[1]!.onSelect());
+    await waitFor(() => expect(result.current.past.state).toBe('ready'));
+    await act(() => result.current.onDelete({ id: 'p0' }));
+    await act(() => result.current.deletion.onConfirm());
+    expect(del).toHaveBeenCalledWith('/plans/p0');
+  });
+});

@@ -16,6 +16,7 @@ jest.mock('expo-calendar', () => ({
   requestCalendarPermissions: jest.fn(),
   getCalendars: jest.fn(),
   ExpoCalendar: { get: jest.fn() },
+  ExpoCalendarEvent: { get: jest.fn() },
   EntityTypes: { EVENT: 'event' },
 }));
 
@@ -121,4 +122,46 @@ it('torna a comprovar el permís i que el calendari encara sigui modificable en 
   await expect(
     planCalendarRepository.createEvent('google', planCalendarEvent(plan, 'Talaia')),
   ).rejects.toThrow('calendar_read_only');
+});
+
+describe('deleteEvent (TG-162)', () => {
+  const getEvent = jest.mocked(Calendar.ExpoCalendarEvent.get);
+  const linked = { ...plan, calendariEventId: 'event-1' };
+  const remove = jest.fn(async () => undefined);
+  const deviceEvent = (overrides = {}) =>
+    ({
+      ...planCalendarEvent(linked, 'Cel estrellat · Montsec'),
+      delete: remove,
+      ...overrides,
+    }) as unknown as Calendar.ExpoCalendarEvent;
+
+  it("esborra l'esdeveniment si és el del pla, sense demanar permís", async () => {
+    getEvent.mockResolvedValue(deviceEvent());
+    await expect(planCalendarRepository.deleteEvent(linked)).resolves.toBe(true);
+    expect(getEvent).toHaveBeenCalledWith('event-1');
+    expect(remove).toHaveBeenCalledTimes(1);
+    expect(requestPermission).not.toHaveBeenCalled();
+  });
+
+  it('no toca un esdeveniment amb el mateix id que no és el del pla (un altre mòbil)', async () => {
+    getEvent.mockResolvedValue(deviceEvent({ startDate: '2026-10-21T18:00:00.000Z' }));
+    await expect(planCalendarRepository.deleteEvent(linked)).resolves.toBe(false);
+    expect(remove).not.toHaveBeenCalled();
+  });
+
+  it("si l'esdeveniment ja no hi és, no fa res", async () => {
+    getEvent.mockRejectedValue(new Error('event not found'));
+    await expect(planCalendarRepository.deleteEvent(linked)).resolves.toBe(false);
+  });
+
+  it('sense permís, sense vincle o a Expo Go, ni el busca', async () => {
+    getPermission.mockResolvedValue(permission(false));
+    await expect(planCalendarRepository.deleteEvent(linked)).resolves.toBe(false);
+    getPermission.mockResolvedValue(permission(true));
+    await expect(planCalendarRepository.deleteEvent(plan)).resolves.toBe(false);
+    jest.mocked(isRunningInExpoGo).mockReturnValue(true);
+    await expect(planCalendarRepository.deleteEvent(linked)).resolves.toBe(false);
+    expect(getEvent).not.toHaveBeenCalled();
+    expect(requestPermission).not.toHaveBeenCalled();
+  });
 });

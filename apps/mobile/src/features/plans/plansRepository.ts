@@ -2,7 +2,7 @@ import type { CalendariPla, EsdevenimentsResponse, Pla, PlaNou, QuanPlans } from
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 
-import { apiGet, apiPost, apiPut } from '@/core/api/httpClient';
+import { apiDelete, apiGet, apiPost, apiPut } from '@/core/api/httpClient';
 
 import { eventWindow } from './planModel';
 
@@ -13,6 +13,10 @@ export const PLANS_KEY = ['plans'] as const;
 export const plansRepository = {
   create(plan: PlaNou): Promise<Pla> {
     return apiPost<Pla>('/plans', plan);
+  },
+  /** HU15, TG-162. L'esdeveniment del calendari del mòbil l'esborra `planCalendarRepository`. */
+  remove(id: string): Promise<void> {
+    return apiDelete<void>(`/plans/${encodeURIComponent(id)}`);
   },
   linkCalendar(id: string, link: CalendariPla): Promise<void> {
     return apiPut<void>(`/plans/${encodeURIComponent(id)}/calendari`, link);

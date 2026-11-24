@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import type { PropsWithChildren } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-import { ApiError, apiGet } from '@/core/api/httpClient';
+import { ApiError, apiDelete, apiGet } from '@/core/api/httpClient';
 import i18n from '@/core/i18n';
 import { createQueryWrapper } from '@/test-utils/queryWrapper';
 
@@ -14,6 +14,7 @@ import { PlansScreen } from '../PlansScreen';
 jest.mock('@/core/api/httpClient', () => ({
   ...jest.requireActual('@/core/api/httpClient'),
   apiGet: jest.fn(),
+  apiDelete: jest.fn(),
 }));
 jest.mock('expo-router', () => ({ useRouter: jest.fn() }));
 jest.mock('expo-haptics');
@@ -125,4 +126,26 @@ it('un error es mostra amb «Torna-ho a provar», que torna a demanar els plans'
   serve({ futurs: [plan()], passats: [] });
   await fireEvent.press(screen.getByRole('button', { name: 'Torna-ho a provar' }));
   await waitFor(() => expect(screen.getByText('Cel estrellat a Àger')).toBeOnTheScreen());
+});
+
+it('la paperera, també en un pla retirat, demana confirmació i elimina el pla (TG-162)', async () => {
+  const retired = plan({
+    id: 'p0',
+    punt: { id: 'prades', nom: 'Coll de Prades', municipi: 'Prades', publicat: false },
+  });
+  serve({ futurs: [retired], passats: [] });
+  jest.mocked(apiDelete).mockResolvedValue(undefined);
+  await renderScreen();
+  const trash = await screen.findByRole('button', { name: 'Elimina «Cel estrellat a Prades»' });
+  expect(screen.getByTestId('plan-row-p0')).toBeDisabled();
+  expect(trash).toBeEnabled();
+  await fireEvent.press(trash);
+  expect(await screen.findByText('Vols eliminar el pla?')).toBeOnTheScreen();
+  expect(
+    screen.getByText('«Cel estrellat a Prades» desapareixerà dels teus plans.'),
+  ).toBeOnTheScreen();
+  serve({ futurs: [], passats: [] });
+  await fireEvent.press(screen.getByRole('button', { name: 'Elimina' }));
+  await waitFor(() => expect(apiDelete).toHaveBeenCalledWith('/plans/p0'));
+  expect(await screen.findByText('Encara no tens cap pla')).toBeOnTheScreen();
 });

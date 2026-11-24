@@ -749,6 +749,15 @@
       "create": "Encuentra un sitio",
       "errorTitle": "No hemos podido cargar los planes",
       "retry": "Vuelve a intentarlo"
+    },
+    "delete": {
+      "button": "Eliminar «{{title}}»",
+      "title": "¿Quieres eliminar el plan?",
+      "message": "«{{title}}» desaparecerá de tus planes.",
+      "messageCalendar": "«{{title}}» desaparecerá de tus planes y, si todavía está, del calendario del móvil.",
+      "error": "No se ha podido eliminar el plan. Vuelve a intentarlo.",
+      "cancel": "Cancelar",
+      "confirm": "Eliminar"
     }
   },
   "notifications": {
