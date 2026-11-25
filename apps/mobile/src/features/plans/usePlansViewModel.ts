@@ -1,4 +1,4 @@
-import type { QuanPlans } from '@talaia/shared';
+import type { Pla, QuanPlans } from '@talaia/shared';
 import { useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
@@ -77,6 +77,8 @@ export function usePlansViewModel() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [deleteFailed, setDeleteFailed] = useState(false);
+  // El pla ja s'ha esborrat a l'API, però el seu esdeveniment s'ha quedat al calendari del mòbil.
+  const [eventLeft, setEventLeft] = useState<Pla | null>(null);
   const [tab, setTab] = useState<QuanPlans>('futurs');
   // Un cop oberts, els passats es queden carregats encara que es torni a «Propers».
   const [pastRequested, setPastRequested] = useState(false);
@@ -133,10 +135,18 @@ export function usePlansViewModel() {
   const pendingPlan = [...upcoming.plans, ...past.plans].find((plan) => plan.id === deleteId);
   const pendingRow = deleteId ? rowsById.get(deleteId) : undefined;
 
+  /** `false` si esborrar l'esdeveniment ha fallat; no trobar-lo o no ser el del pla no és un error. */
+  const removeEvent = (plan: Pla) =>
+    planCalendarRepository.deleteEvent(plan).then(
+      () => true,
+      () => false,
+    );
+
   /**
    * Primer l'API i, si va bé, l'esdeveniment del calendari del mòbil: si l'API falla, el pla
    * continua existint i l'esdeveniment s'ha de quedar. Un 404 vol dir que ja no hi era (esborrat
-   * des d'un altre mòbil): compta com a fet. Si el calendari falla, el pla ja està esborrat igualment.
+   * des d'un altre mòbil): compta com a fet. Si el calendari falla, el pla ja està esborrat, i el
+   * full ho diu i deixa tornar-ho a provar (HU15: també s'ha d'eliminar del calendari).
    */
   const confirmDelete = async () => {
     if (!pendingPlan || deleting) return;
@@ -151,10 +161,18 @@ export function usePlansViewModel() {
         return;
       }
     }
-    await planCalendarRepository.deleteEvent(pendingPlan).catch(() => false);
+    setEventLeft((await removeEvent(pendingPlan)) ? null : pendingPlan);
     setDeleteId(null);
     setDeleting(false);
     await queryClient.invalidateQueries({ queryKey: PLANS_KEY });
+  };
+
+  /** Torna a provar d'esborrar l'esdeveniment d'un pla ja eliminat. */
+  const retryEvent = async () => {
+    if (!eventLeft || deleting) return;
+    setDeleting(true);
+    if (await removeEvent(eventLeft)) setEventLeft(null);
+    setDeleting(false);
   };
 
   return {
@@ -189,25 +207,40 @@ export function usePlansViewModel() {
       setDeleteFailed(false);
       setDeleteId(row.id);
     },
-    deletion: {
-      visible: pendingPlan !== undefined,
-      title: t('plans.delete.title'),
-      message: deleteFailed
-        ? t('plans.delete.error')
-        : t(
-            pendingPlan?.calendariEventId ? 'plans.delete.messageCalendar' : 'plans.delete.message',
-            {
-              title: pendingRow ? toListRow(pendingRow).title : '',
-            },
-          ),
-      cancelLabel: t('plans.delete.cancel'),
-      confirmLabel: t('plans.delete.confirm'),
-      disabled: deleting,
-      onCancel: () => {
-        if (!deleting) setDeleteId(null);
-      },
-      onConfirm: () => void confirmDelete(),
-    },
+    deletion: eventLeft
+      ? {
+          visible: true,
+          title: t('plans.delete.eventLeftTitle'),
+          message: t('plans.delete.eventLeftMessage'),
+          cancelLabel: t('plans.delete.close'),
+          confirmLabel: t('plans.delete.retry'),
+          disabled: deleting,
+          onCancel: () => {
+            if (!deleting) setEventLeft(null);
+          },
+          onConfirm: () => void retryEvent(),
+        }
+      : {
+          visible: pendingPlan !== undefined,
+          title: t('plans.delete.title'),
+          message: deleteFailed
+            ? t('plans.delete.error')
+            : t(
+                pendingPlan?.calendariEventId
+                  ? 'plans.delete.messageCalendar'
+                  : 'plans.delete.message',
+                {
+                  title: pendingRow ? toListRow(pendingRow).title : '',
+                },
+              ),
+          cancelLabel: t('plans.delete.cancel'),
+          confirmLabel: t('plans.delete.confirm'),
+          disabled: deleting,
+          onCancel: () => {
+            if (!deleting) setDeleteId(null);
+          },
+          onConfirm: () => void confirmDelete(),
+        },
     /** Sense plans: a Explora, on es busca el lloc i, des de la fitxa, es crea el pla. */
     create: { label: t('plans.list.create'), onPress: () => router.navigate('/') },
   };

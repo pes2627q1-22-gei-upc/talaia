@@ -757,7 +757,11 @@
       "messageCalendar": "«{{title}}» desaparecerá de tus planes y, si todavía está, del calendario del móvil.",
       "error": "No se ha podido eliminar el plan. Vuelve a intentarlo.",
       "cancel": "Cancelar",
-      "confirm": "Eliminar"
+      "confirm": "Eliminar",
+      "eventLeftTitle": "Se ha eliminado el plan",
+      "eventLeftMessage": "Sin embargo, el evento sigue en el calendario del móvil. Vuelve a intentarlo o bórralo desde la app Calendario.",
+      "retry": "Volver a intentarlo",
+      "close": "Cerrar"
     }
   },
   "notifications": {

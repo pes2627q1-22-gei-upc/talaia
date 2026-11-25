@@ -757,7 +757,11 @@
       "messageCalendar": "«{{title}}» desapareixerà dels teus plans i, si encara hi és, del calendari del mòbil.",
       "error": "No s'ha pogut eliminar el pla. Torna-ho a provar.",
       "cancel": "Cancel·la",
-      "confirm": "Elimina"
+      "confirm": "Elimina",
+      "eventLeftTitle": "S'ha eliminat el pla",
+      "eventLeftMessage": "L'esdeveniment, però, continua al calendari del mòbil. Torna-ho a provar o esborra'l des de l'app Calendari.",
+      "retry": "Torna-ho a provar",
+      "close": "Tanca"
     }
   },
   "notifications": {

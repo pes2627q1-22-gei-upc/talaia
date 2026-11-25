@@ -350,8 +350,47 @@ describe('eliminar un pla (HU15, TG-162)', () => {
     expect(deleteEvent).toHaveBeenCalledWith(linked);
   });
 
-  it('si el calendari falla, el pla queda eliminat igualment', async () => {
+  it('si el calendari falla, el pla queda eliminat i el full ho diu i deixa tornar-ho a provar', async () => {
     deleteEvent.mockRejectedValue(new Error('calendar'));
+    const { result, client } = await openDeletion();
+    const invalidate = jest.spyOn(client, 'invalidateQueries');
+    await act(() => result.current.deletion.onConfirm());
+    await waitFor(() => expect(result.current.deletion.title).toBe("S'ha eliminat el pla"));
+    expect(result.current.deletion).toMatchObject({
+      visible: true,
+      message:
+        "L'esdeveniment, però, continua al calendari del mòbil. Torna-ho a provar o esborra'l des de l'app Calendari.",
+      confirmLabel: 'Torna-ho a provar',
+      cancelLabel: 'Tanca',
+      disabled: false,
+    });
+    expect(del).toHaveBeenCalledTimes(1);
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: PLANS_KEY });
+
+    // El segon intent tampoc no va: el full continua obert, i el pla no es torna a esborrar.
+    await act(() => result.current.deletion.onConfirm());
+    expect(deleteEvent).toHaveBeenCalledTimes(2);
+    expect(result.current.deletion.title).toBe("S'ha eliminat el pla");
+
+    deleteEvent.mockResolvedValue(true);
+    await act(() => result.current.deletion.onConfirm());
+    await waitFor(() => expect(result.current.deletion.visible).toBe(false));
+    expect(deleteEvent).toHaveBeenLastCalledWith(linked);
+    expect(del).toHaveBeenCalledTimes(1);
+  });
+
+  it('si el calendari falla, «Tanca» tanca el full sense tornar-ho a provar', async () => {
+    deleteEvent.mockRejectedValue(new Error('calendar'));
+    const { result } = await openDeletion();
+    await act(() => result.current.deletion.onConfirm());
+    await waitFor(() => expect(result.current.deletion.cancelLabel).toBe('Tanca'));
+    await act(() => result.current.deletion.onCancel());
+    expect(result.current.deletion.visible).toBe(false);
+    expect(deleteEvent).toHaveBeenCalledTimes(1);
+  });
+
+  it('no trobar l’esdeveniment, o que no sigui el del pla, no és un error', async () => {
+    deleteEvent.mockResolvedValue(false);
     const { result } = await openDeletion();
     await act(() => result.current.deletion.onConfirm());
     await waitFor(() => expect(result.current.deletion.visible).toBe(false));
