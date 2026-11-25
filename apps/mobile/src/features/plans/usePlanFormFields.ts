@@ -67,16 +67,25 @@ export function usePlanFormFields(
   const [event, setEvent] = useState<Esdeveniment | null>(null);
   // El fenomen inicial només es coneix pel seu id fins que arriba la llista.
   const [pendingEventId, setPendingEventId] = useState(initial.esdevenimentId);
+  // Amb el dia canviat abans de conèixer-lo, s'ha de comprovar amb la llista del dia nou.
+  const [pendingNeedsCheck, setPendingNeedsCheck] = useState(false);
   const [notes, setNotes] = useState(initial.notes);
   const [sheet, setSheet] = useState<PlanSheet | null>(null);
   const [pastError, setPastError] = useState(false);
 
   const events = usePlanEventsQuery(departure.date);
   const eventList = events.data?.data ?? [];
-  const chosenEvent =
-    event ?? (pendingEventId ? eventList.find((item) => item.id === pendingEventId) : undefined);
+  const pendingEvent = pendingEventId
+    ? eventList.find((item) => item.id === pendingEventId)
+    : undefined;
+  // Només es treu quan la llista del dia nou ha arribat i el fenomen no hi encaixa.
+  const pendingDropped =
+    pendingNeedsCheck &&
+    events.isSuccess &&
+    !(pendingEvent && eventFitsDay(pendingEvent, departure.date));
+  const chosenEvent = event ?? (pendingDropped ? undefined : pendingEvent);
   /** El fenomen del formulari, encara que la llista no hagi arribat (o hagi fallat). */
-  const esdevenimentId = event?.id ?? pendingEventId;
+  const esdevenimentId = event?.id ?? (pendingDropped ? null : pendingEventId);
 
   const today = localDate(new Date());
   const weekdays = t('explore.weekdays', { returnObjects: true }) as string[];
@@ -105,9 +114,15 @@ export function usePlanFormFields(
   };
 
   const chooseDay = (date: string) => {
-    // Un fenomen que queda fora de la finestra del dia nou es treu.
-    setEvent(chosenEvent && eventFitsDay(chosenEvent, date) ? chosenEvent : null);
-    setPendingEventId(null);
+    if (pendingEventId && !chosenEvent && !pendingDropped) {
+      // La llista encara no ha arribat (o ha fallat): es conserva i es comprova amb la del dia nou.
+      setPendingNeedsCheck(true);
+    } else {
+      // Un fenomen que queda fora de la finestra del dia nou es treu.
+      setEvent(chosenEvent && eventFitsDay(chosenEvent, date) ? chosenEvent : null);
+      setPendingEventId(null);
+      setPendingNeedsCheck(false);
+    }
     changeDeparture({ date });
     setSheet(null);
   };
@@ -115,6 +130,7 @@ export function usePlanFormFields(
   const chooseEvent = (item: Esdeveniment | null) => {
     setEvent(item);
     setPendingEventId(null);
+    setPendingNeedsCheck(false);
     onEdit();
     setSheet(null);
   };

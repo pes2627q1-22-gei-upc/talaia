@@ -168,6 +168,22 @@ it('moure la sortida mou el final i en conserva la durada', async () => {
   });
 });
 
+it('canviar el dia abans que arribin els fenòmens conserva el del pla', async () => {
+  const withEvent = { ...plan, esdevenimentId: 'leonides-2026' };
+  get.mockImplementation((path: string) =>
+    path === '/esdeveniments' ? new Promise(() => {}) : Promise.resolve(withEvent),
+  );
+  const { result } = await renderVm(withEvent);
+  await act(async () => result.current.dateSheet.onChange('2026-10-22'));
+  await act(async () => result.current.save!.onPress());
+  await waitFor(() => expect(back).toHaveBeenCalled());
+  // Sense `esdevenimentId`: el fenomen desat no es toca.
+  expect(patch).toHaveBeenCalledWith('/plans/plan-1', {
+    dataHoraInici: '2026-10-22T21:15:00.000Z',
+    dataHoraFi: '2026-10-23T00:00:00.000Z',
+  });
+});
+
 it('un doble toc a «Desa» només envia un PATCH', async () => {
   let resolve: (value: Pla) => void = () => {};
   patch.mockReturnValue(new Promise((done) => (resolve = done)));
