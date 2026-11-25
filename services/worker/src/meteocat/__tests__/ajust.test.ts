@@ -62,6 +62,14 @@ describe('biaix de la humitat (ADR-0038)', () => {
     expect(biaixHumitat([...bones.slice(5), ...dolentes])).toBe(2);
   });
 
+  it('amb un nombre parell de parelles, la mediana és la mitjana de les dues del mig (TG-185)', () => {
+    // 24 parelles a +2 i 24 a +5: les del mig són +2 i +5, i la mediana, +3,5.
+    const meitat = PARELLES_MINIMES / 2;
+    expect(biaixHumitat([...parelles(meitat, 5), ...parelles(meitat, 2)])).toBe(3.5);
+    // Amb una més a +5, el nombre és senar i la mediana és la del mig: +5.
+    expect(biaixHumitat([...parelles(meitat + 1, 5), ...parelles(meitat, 2)])).toBe(5);
+  });
+
   it('es retalla a ±15 i s’arrodoneix a la dècima', () => {
     expect(biaixHumitat(parelles(PARELLES_MINIMES, 40))).toBe(BIAIX_MAXIM);
     expect(biaixHumitat(parelles(PARELLES_MINIMES, -40))).toBe(-BIAIX_MAXIM);
@@ -267,5 +275,27 @@ describe('ajustaHumitatXema', () => {
 
     expect((await ajustaHumitatXema({ meteo, repository: repo, ara })).calculat).toBe(false);
     expect(repo.estacionsAssignades).not.toHaveBeenCalled();
+  });
+
+  it('sense cap estació assignada a un punt dona el dia per fet sense cridar Open-Meteo (TG-185)', async () => {
+    const repo = repositori([], []);
+    const meteo: OpenMeteoClient = { previsio: jest.fn(async () => []) };
+
+    const resum = await ajustaHumitatXema({ meteo, repository: repo, ara });
+
+    expect(resum).toEqual({ calculat: true, estacions: 0, amb: 0 });
+    expect(meteo.previsio).not.toHaveBeenCalled();
+    expect(repo.desaBiaixos).not.toHaveBeenCalled();
+  });
+
+  it('si Open-Meteo torna menys ubicacions que estacions, les que falten queden sense biaix (TG-185)', async () => {
+    const { hores, lectures } = setmana();
+    const repo = repositori(lectures, [CC, UG]);
+    const meteo: OpenMeteoClient = { previsio: jest.fn(async () => [hores]) };
+
+    const resum = await ajustaHumitatXema({ meteo, repository: repo, ara });
+
+    expect(resum).toEqual({ calculat: true, estacions: 2, amb: 1 });
+    expect(repo.desats[1]).toEqual({ codi: 'UG', biaix: null, mostres: 0 });
   });
 });
