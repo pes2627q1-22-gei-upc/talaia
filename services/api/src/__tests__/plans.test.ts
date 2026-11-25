@@ -1,4 +1,4 @@
-import type { Pla, PlaNou } from '@talaia/shared';
+import type { Pla, PlaCanvis, PlaNou } from '@talaia/shared';
 import { createLocalJWKSet, exportJWK, generateKeyPair, SignJWT } from 'jose';
 import request from 'supertest';
 
@@ -115,6 +115,40 @@ function memoryRepository() {
       fila.pla.calendariEventId = eventId;
       return true;
     }),
+    update: jest.fn(async (perfilId: string, id: string, canvis: PlaCanvis) => {
+      const fila = files.find((f) => f.perfilId === perfilId && f.pla.id === id);
+      if (!fila) return { ok: false, reason: 'not_found' } as const;
+      const puntId = canvis.puntId ?? fila.pla.puntId;
+      const esdevenimentId =
+        canvis.esdevenimentId === undefined ? fila.pla.esdevenimentId : canvis.esdevenimentId;
+      const inici = new Date(canvis.dataHoraInici ?? fila.pla.dataHoraInici).toISOString();
+      if (!PUNTS[puntId] || retirats.has(puntId)) {
+        return { ok: false, reason: 'punt_not_found' } as const;
+      }
+      if (esdevenimentId && esdevenimentId !== LEONIDES) {
+        return { ok: false, reason: 'event_not_found' } as const;
+      }
+      const duplicat = files.some(
+        (f) =>
+          f.perfilId === perfilId &&
+          f.pla.id !== id &&
+          f.pla.puntId === puntId &&
+          f.pla.dataHoraInici === inici,
+      );
+      if (duplicat) return { ok: false, reason: 'duplicate' } as const;
+      Object.assign(fila.pla, {
+        puntId,
+        esdevenimentId,
+        dataHoraInici: inici,
+        ...(canvis.dataHoraFi !== undefined && {
+          dataHoraFi: canvis.dataHoraFi && new Date(canvis.dataHoraFi).toISOString(),
+        }),
+        ...(canvis.notes !== undefined && { notes: canvis.notes }),
+        // El trigger `plans_set_data_actualitzacio`.
+        dataActualitzacio: ARA.toISOString(),
+      });
+      return { ok: true, pla: ambPunt(fila.pla) } as const;
+    }),
   };
   return repo;
 }
@@ -179,6 +213,186 @@ const NOU: PlaNou = {
   dataHoraFi: '2026-11-18T02:00:00+01:00',
   notes: 'Portar el trípode',
 };
+
+const modifica = async (com: string, id: string, body: unknown, acceptLanguage?: string) => {
+  const req = request(app)
+    .patch(`/api/v1/plans/${id}`)
+    .set('Authorization', `Bearer ${await tokenFor(com)}`);
+  return (acceptLanguage ? req.set('Accept-Language', acceptLanguage) : req).send(body as object);
+};
+
+describe('PATCH /api/v1/plans/{id}', () => {
+  /** Un pla que ha començat a les 11:00 UTC i acaba a les 14:00: ARA (12:00) és al mig. */
+  const COMENCAT: PlaNou = {
+    puntId: PRADES,
+    dataHoraInici: '2026-11-16T11:00:00Z',
+    dataHoraFi: '2026-11-16T14:00:00Z',
+  };
+  /** Un pla de la nit del 14/11, ja acabat. */
+  const ACABAT: PlaNou = { puntId: PRADES, dataHoraInici: '2026-11-14T21:00:00Z' };
+
+  it('modifica l’hora i el punt (200) i retorna el mateix Pla que el GET', async () => {
+    const { body: pla } = await crea(MARIA.auth, NOU);
+    const canvis = { puntId: PRADES, dataHoraInici: '2026-11-17T23:00:00+01:00' };
+
+    const res = await modifica(MARIA.auth, pla.id, canvis);
+
+    expect(res.status).toBe(200);
+    expect(res.headers['cache-control']).toBe('no-store');
+    expect(res.body).toEqual({
+      ...pla,
+      punt: { id: PRADES, nom: 'Prades', municipi: 'Prades', publicat: true },
+      dataHoraInici: '2026-11-17T22:00:00.000Z',
+      dataActualitzacio: ARA.toISOString(),
+    });
+    // El perfil surt del JWT; al repositori només hi arriben els camps enviats.
+    expect(repo.update).toHaveBeenCalledWith(MARIA.perfil, pla.id, canvis);
+    expect((await llegeix(MARIA.auth, pla.id)).body).toEqual(res.body);
+  });
+
+  it('esdevenimentId: null treu el fenomen i notes: null, les notes', async () => {
+    const { body: pla } = await crea(MARIA.auth, NOU);
+    const res = await modifica(MARIA.auth, pla.id, { esdevenimentId: null, notes: null });
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({
+      esdevenimentId: null,
+      notes: null,
+      dataHoraFi: pla.dataHoraFi,
+    });
+  });
+
+  it('el nom del punt segueix Accept-Language', async () => {
+    const { body: pla } = await crea(MARIA.auth, { ...NOU, puntId: PRADES });
+    const res = await modifica(MARIA.auth, pla.id, { puntId: MONTSEC }, 'es-ES,es;q=0.9');
+    expect(res.body.punt.nom).toBe('Observatorio del Montsec');
+    expect(res.headers.vary).toContain('Accept-Language');
+  });
+
+  it.each([
+    ['un cos buit', {}],
+    ['un camp desconegut', { notes: 'x', perfilId: PERE.perfil }],
+    ['el vincle al calendari (va pel PUT)', { calendariEventId: 'event-1' }],
+    ['una data sense zona', { dataHoraInici: '2026-11-17T22:00:00' }],
+    ['un puntId que no és un UUID', { puntId: 'montsec' }],
+    ['unes notes buides', { notes: '' }],
+  ])('rebutja %s amb 400 validation_error', async (_cas, body) => {
+    const { body: pla } = await crea(MARIA.auth, NOU);
+    const res = await modifica(MARIA.auth, pla.id, body);
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe('validation_error');
+    expect(repo.update).not.toHaveBeenCalled();
+  });
+
+  it('400 si el final no és posterior a l’inici del pla resultant (inici nou amb el final antic)', async () => {
+    // NOU acaba el 18/11 a les 01:00 UTC.
+    const { body: pla } = await crea(MARIA.auth, NOU);
+    const res = await modifica(MARIA.auth, pla.id, { dataHoraInici: '2026-11-18T01:00:00Z' });
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe('validation_error');
+    expect(res.body.error.message).toContain('dataHoraFi');
+    expect(repo.update).not.toHaveBeenCalled();
+  });
+
+  it('dataHoraFi: null treu el final, i llavors l’inici es pot moure més tard', async () => {
+    const { body: pla } = await crea(MARIA.auth, NOU);
+    const res = await modifica(MARIA.auth, pla.id, {
+      dataHoraInici: '2026-11-18T02:00:00Z',
+      dataHoraFi: null,
+    });
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({ dataHoraInici: '2026-11-18T02:00:00.000Z', dataHoraFi: null });
+  });
+
+  it('422 punt_not_found si es canvia a un punt retirat o inexistent', async () => {
+    const { body: pla } = await crea(MARIA.auth, NOU);
+    retirats.add(PRADES);
+    for (const puntId of [PRADES, NO_EXISTEIX]) {
+      const res = await modifica(MARIA.auth, pla.id, { puntId });
+      expect(res.status).toBe(422);
+      expect(res.body.error.code).toBe('punt_not_found');
+    }
+  });
+
+  it('422 punt_not_found si el punt del pla s’ha retirat, encara que no es canviï', async () => {
+    const { body: pla } = await crea(MARIA.auth, NOU);
+    retirats.add(MONTSEC);
+    const res = await modifica(MARIA.auth, pla.id, { notes: 'Una altra nota' });
+    expect(res.status).toBe(422);
+    expect(res.body.error.code).toBe('punt_not_found');
+    // Triant-ne un de publicat, es desa.
+    expect((await modifica(MARIA.auth, pla.id, { puntId: PRADES })).status).toBe(200);
+  });
+
+  it('422 event_not_found amb un esdeveniment que no existeix', async () => {
+    const { body: pla } = await crea(MARIA.auth, NOU);
+    const res = await modifica(MARIA.auth, pla.id, { esdevenimentId: 'no-existeix-2026' });
+    expect(res.status).toBe(422);
+    expect(res.body.error.code).toBe('event_not_found');
+  });
+
+  it('409 plan_already_exists si coincideix en punt i hora amb un altre pla seu', async () => {
+    const { body: primer } = await crea(MARIA.auth, NOU);
+    const { body: segon } = await crea(MARIA.auth, { ...NOU, puntId: PRADES });
+    const res = await modifica(MARIA.auth, segon.id, { puntId: MONTSEC });
+    expect(res.status).toBe(409);
+    expect(res.body.error.code).toBe('plan_already_exists');
+    expect((await llegeix(MARIA.auth, primer.id)).body).toEqual(primer);
+  });
+
+  it('el mateix pla amb la mateixa hora i punt no és un duplicat (200)', async () => {
+    const { body: pla } = await crea(MARIA.auth, NOU);
+    const res = await modifica(MARIA.auth, pla.id, {
+      puntId: MONTSEC,
+      dataHoraInici: NOU.dataHoraInici,
+      notes: 'Ara amb termo',
+    });
+    expect(res.status).toBe(200);
+    expect(res.body.notes).toBe('Ara amb termo');
+  });
+
+  it('el pla d’un altre usuari respon 404 plan_not_found, igual que un que no existeix', async () => {
+    const { body: pla } = await crea(MARIA.auth, NOU);
+    const alie = await modifica(PERE.auth, pla.id, { notes: 'meu' });
+    const inexistent = await modifica(PERE.auth, NO_EXISTEIX, { notes: 'meu' });
+    expect(alie.status).toBe(404);
+    expect(alie.body).toEqual(inexistent.body);
+    expect(alie.body.error.code).toBe('plan_not_found');
+    expect((await llegeix(MARIA.auth, pla.id)).body.notes).toBe(NOU.notes);
+  });
+
+  it('409 plan_finished amb un pla acabat', async () => {
+    const { body: pla } = await crea(MARIA.auth, ACABAT);
+    const res = await modifica(MARIA.auth, pla.id, { notes: 'Massa tard' });
+    expect(res.status).toBe(409);
+    expect(res.body.error.code).toBe('plan_finished');
+    expect(repo.update).not.toHaveBeenCalled();
+  });
+
+  it('un pla començat es pot desar si no es mou l’inici', async () => {
+    const { body: pla } = await crea(MARIA.auth, COMENCAT);
+    const res = await modifica(MARIA.auth, pla.id, {
+      notes: 'Hi som',
+      dataHoraInici: COMENCAT.dataHoraInici,
+      dataHoraFi: '2026-11-16T15:00:00Z',
+    });
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({ notes: 'Hi som', dataHoraFi: '2026-11-16T15:00:00.000Z' });
+  });
+
+  it('400 si l’inici es mou a una hora que ja ha passat', async () => {
+    const { body: pla } = await crea(MARIA.auth, COMENCAT);
+    const res = await modifica(MARIA.auth, pla.id, { dataHoraInici: '2026-11-16T11:30:00Z' });
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe('validation_error');
+    expect(res.body.error.message).toContain('passada');
+  });
+
+  it('400 si l’id no és un UUID', async () => {
+    const res = await modifica(MARIA.auth, 'el-meu-pla', { notes: 'x' });
+    expect(res.status).toBe(400);
+    expect(repo.findById).not.toHaveBeenCalled();
+  });
+});
 
 describe('PUT /api/v1/plans/{id}/calendari', () => {
   const link = async (com: string, id: string, body: unknown = { calendariEventId: 'event-1' }) =>
@@ -533,6 +747,11 @@ describe('/api/v1/plans sense un usuari vàlid', () => {
       'GET {id}',
       (token?: string) => ambToken(request(app).get(`/api/v1/plans/${NO_EXISTEIX}`), token),
     ],
+    [
+      'PATCH {id}',
+      (token?: string) =>
+        ambToken(request(app).patch(`/api/v1/plans/${NO_EXISTEIX}`), token).send({ notes: 'x' }),
+    ],
   ] as const;
 
   it.each(peticions)('%s sense Authorization respon 401', async (_metode, peticio) => {
@@ -557,6 +776,7 @@ describe('/api/v1/plans sense un usuari vàlid', () => {
       expect(repo.list).not.toHaveBeenCalled();
       expect(repo.findById).not.toHaveBeenCalled();
       expect(repo.setCalendarEvent).not.toHaveBeenCalled();
+      expect(repo.update).not.toHaveBeenCalled();
     },
   );
 });
@@ -566,6 +786,7 @@ describe('/api/v1/plans sense DATABASE_URL', () => {
     ['post', '/api/v1/plans'],
     ['get', '/api/v1/plans'],
     ['get', `/api/v1/plans/${NO_EXISTEIX}`],
+    ['patch', `/api/v1/plans/${NO_EXISTEIX}`],
   ] as const)('amb un JWT vàlid, %s %s respon 503 database_unavailable', async (method, path) => {
     const res = await request(createApp({ supabaseUrl, jwks, profileStore }))
       [method](path)
@@ -581,9 +802,10 @@ describe('/plans a l’OpenAPI', () => {
     const res = await request(createApp()).get('/api/v1/openapi.json');
     const { post, get } = res.body.paths['/plans'];
     const { get: getId } = res.body.paths['/plans/{id}'];
+    const { patch } = res.body.paths['/plans/{id}'];
     const { put: putCalendar } = res.body.paths['/plans/{id}/calendari'];
 
-    for (const operacio of [post, get, getId, putCalendar]) {
+    for (const operacio of [post, get, getId, patch, putCalendar]) {
       expect(operacio.tags).toEqual(['Plans']);
       expect(operacio.security).toEqual([{ BearerSupabase: [] }]);
       expect(operacio.responses['403'].description).toContain('account_blocked');
@@ -606,5 +828,28 @@ describe('/plans a l’OpenAPI', () => {
     expect(res.body.components.schemas).toHaveProperty('PlaNou');
     expect(res.body.components.schemas).toHaveProperty('CalendariPla');
     expect(putCalendar.responses['204']).toBeDefined();
+  });
+
+  it('documenta PATCH {id} amb PlaCanvis i tots els errors', async () => {
+    const res = await request(createApp()).get('/api/v1/openapi.json');
+    const { patch } = res.body.paths['/plans/{id}'];
+    expect(Object.keys(patch.responses).sort()).toEqual([
+      '200',
+      '400',
+      '401',
+      '403',
+      '404',
+      '409',
+      '422',
+      '503',
+    ]);
+    expect(patch.responses['409'].description).toContain('plan_finished');
+    expect(patch.responses['409'].description).toContain('plan_already_exists');
+    expect(patch.responses['422'].description).toContain('punt_not_found');
+    expect(patch.responses['404'].description).toContain('plan_not_found');
+    expect(patch.requestBody.content['application/json'].schema.$ref).toBe(
+      '#/components/schemas/PlaCanvis',
+    );
+    expect(res.body.components.schemas.PlaCanvis.properties).not.toHaveProperty('calendariEventId');
   });
 });

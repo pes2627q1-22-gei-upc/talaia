@@ -7,9 +7,9 @@ import { Button } from '@/shared/ui/Button';
 import { Sheet } from '@/shared/ui/Sheet';
 import { WHEEL_HEIGHT, WHEEL_ITEM, WheelPicker } from '@/shared/ui/WheelPicker';
 
-import type { useNewPlanViewModel } from './useNewPlanViewModel';
+import type { usePlanFormFields } from './usePlanFormFields';
 
-type DepartureTimeSheetProps = ReturnType<typeof useNewPlanViewModel>['timeSheet'];
+type DepartureTimeSheetProps = ReturnType<typeof usePlanFormFields>['timeSheet'];
 
 /** Amplada dels dos punts entre les rodes. */
 const SEPARATOR = 24;

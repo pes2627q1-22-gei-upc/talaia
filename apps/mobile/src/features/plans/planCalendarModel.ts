@@ -24,3 +24,28 @@ export function planCalendarEvent(plan: Pla, title: string): PlanCalendarEvent {
     timeZone: 'Europe/Madrid',
   };
 }
+
+/** El que es llegeix d'un esdeveniment del calendari del mòbil per reconèixer-lo. */
+export type DeviceEventFields = {
+  startDate: string | Date;
+  endDate: string | Date;
+  location?: string | null;
+};
+
+const sameInstant = (a: string | Date, b: string) => new Date(a).getTime() === Date.parse(b);
+
+/**
+ * Si l'esdeveniment és el que l'app va crear per al pla (TG-161, TG-162). L'id de
+ * `calendariEventId` només val al mòbil que el va crear, i en un altre pot ser un esdeveniment de
+ * l'usuari: abans de modificar-lo o esborrar-lo, han de coincidir l'inici, el final i el municipi
+ * del punt. El títol no hi compta, perquè depèn de l'idioma que tenia l'app en crear-lo. Si
+ * l'usuari l'ha mogut, no es toca.
+ */
+export function isPlanEvent(event: DeviceEventFields, plan: Pla): boolean {
+  const expected = planCalendarEvent(plan, '');
+  return (
+    sameInstant(event.startDate, expected.startDate) &&
+    sameInstant(event.endDate, expected.endDate) &&
+    (event.location ?? '').includes(plan.punt.municipi)
+  );
+}

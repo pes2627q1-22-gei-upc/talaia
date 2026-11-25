@@ -1,4 +1,4 @@
-import type { CalendariPla, Pla, PlaNou, QuanPlans } from '@talaia/shared';
+import type { CalendariPla, Pla, PlaCanvis, PlaNou, QuanPlans } from '@talaia/shared';
 import { Router, type Request, type RequestHandler } from 'express';
 import { z } from 'zod';
 
@@ -30,6 +30,28 @@ const textOpcional = (camp: string, max: number) =>
     .nullable()
     .optional();
 
+const puntIdSchema = z
+  .uuid({ error: 'puntId ha de ser un UUID' })
+  .meta({ description: 'Un punt publicat (`id` de la fitxa i del GeoJSON del mapa)' });
+
+const esdevenimentIdSchema = z
+  .string({ error: 'esdevenimentId ha de ser un text' })
+  .regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, {
+    error: "esdevenimentId ha de ser l'id d'un esdeveniment",
+  })
+  .max(200, { error: "esdevenimentId ha de ser l'id d'un esdeveniment" })
+  .nullable()
+  .optional()
+  .meta({
+    description: 'L’`id` de `GET /esdeveniments/{id}`. Absent o `null`: sense fenomen concret',
+    example: 'perseids-2027',
+  });
+
+const dataHoraFiSchema = dataHora('dataHoraFi')
+  .nullable()
+  .optional()
+  .meta({ description: 'Posterior a `dataHoraInici`', example: '2026-11-21T01:00:00Z' });
+
 /**
  * HU12: punt, fenomen (opcional), data i hora. Estricte: un camp desconegut (per exemple un
  * `perfilId`) és un 400. L'usuari surt sempre del JWT. No es comprova que la data sigui futura: ho fa
@@ -37,26 +59,10 @@ const textOpcional = (camp: string, max: number) =>
  */
 const PlaNouSchema: z.ZodType<PlaNou> = z
   .strictObject({
-    puntId: z
-      .uuid({ error: 'puntId ha de ser un UUID' })
-      .meta({ description: 'Un punt publicat (`id` de la fitxa i del GeoJSON del mapa)' }),
-    esdevenimentId: z
-      .string({ error: 'esdevenimentId ha de ser un text' })
-      .regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, {
-        error: "esdevenimentId ha de ser l'id d'un esdeveniment",
-      })
-      .max(200, { error: "esdevenimentId ha de ser l'id d'un esdeveniment" })
-      .nullable()
-      .optional()
-      .meta({
-        description: 'L’`id` de `GET /esdeveniments/{id}`. Absent o `null`: sense fenomen concret',
-        example: 'perseids-2027',
-      }),
+    puntId: puntIdSchema,
+    esdevenimentId: esdevenimentIdSchema,
     dataHoraInici: dataHora('dataHoraInici').meta({ example: '2026-11-20T21:00:00Z' }),
-    dataHoraFi: dataHora('dataHoraFi')
-      .nullable()
-      .optional()
-      .meta({ description: 'Posterior a `dataHoraInici`', example: '2026-11-21T01:00:00Z' }),
+    dataHoraFi: dataHoraFiSchema,
     calendariEventId: textOpcional('calendariEventId', 255).meta({
       description: 'Id de l’esdeveniment al calendari del mòbil (TG-158)',
     }),
@@ -68,6 +74,27 @@ const PlaNouSchema: z.ZodType<PlaNou> = z
     { error: 'dataHoraFi ha de ser posterior a dataHoraInici', path: ['dataHoraFi'] },
   )
   .meta({ id: 'PlaNou' });
+
+/**
+ * HU14 (TG-161): els camps que canvien, i almenys un. Estricte, com el POST: el vincle al calendari
+ * no hi és (va per `PUT /plans/{id}/calendari`) i un camp desconegut és un 400. Les regles que
+ * depenen del pla actual (final posterior a l'inici resultant, pla acabat, inici al passat) les
+ * comprova el servei.
+ */
+const PlaCanvisSchema: z.ZodType<PlaCanvis> = z
+  .strictObject({
+    puntId: puntIdSchema.optional(),
+    esdevenimentId: esdevenimentIdSchema,
+    dataHoraInici: dataHora('dataHoraInici')
+      .optional()
+      .meta({ description: 'No pot ser una hora passada', example: '2026-11-20T22:00:00Z' }),
+    dataHoraFi: dataHoraFiSchema,
+    notes: textOpcional('notes', 1000),
+  })
+  .refine((canvis) => Object.keys(canvis).length > 0, {
+    error: 'Cal almenys un camp per modificar',
+  })
+  .meta({ id: 'PlaCanvis' });
 
 const PlansQuerySchema = z.object({
   quan: z
@@ -189,6 +216,40 @@ registry.registerPath({
   },
 });
 
+registry.registerPath({
+  method: 'patch',
+  path: '/plans/{id}',
+  tags: ['Plans'],
+  security: [{ BearerSupabase: [] }],
+  summary: 'Modifica un pla de l’usuari autenticat (HU14, TG-161)',
+  description:
+    'Només els camps enviats; `null` treu el fenomen, el final o les notes. Les comprovacions es fan sobre el pla resultant (l’actual amb els canvis): el punt ha de ser publicat (també si no es canvia: el pla d’un punt retirat s’ha de moure a un altre), el fenomen públic, el final posterior a l’inici i cap altre pla de l’usuari al mateix punt i hora. Un pla acabat no es pot modificar; un de començat sí, però l’inici no es pot moure a una hora passada. El vincle al calendari no canvia (`PUT /plans/{id}/calendari`). Respon el mateix `Pla` que el GET.',
+  request: {
+    headers: AcceptLanguageHeaders,
+    params: PlaParamsSchema,
+    body: { required: true, content: { 'application/json': { schema: PlaCanvisSchema } } },
+  },
+  responses: {
+    200: {
+      description: 'El pla modificat, amb `dataActualitzacio` al dia',
+      content: { 'application/json': { schema: PlaSchema } },
+    },
+    400: errorResponse(
+      '`validation_error`: l’`id` o el cos no són vàlids (cos buit, camp desconegut), el final no és posterior a l’inici del pla resultant o l’inici nou ja ha passat',
+    ),
+    404: errorResponse(
+      `\`plan_not_found\`: l’usuari no té cap pla amb aquest \`id\`; ${NO_PROFILE}`,
+    ),
+    409: errorResponse(
+      '`plan_finished`: el pla ja ha acabat; `plan_already_exists`: ja té un altre pla en aquest punt a la mateixa hora d’inici',
+    ),
+    422: errorResponse(
+      '`punt_not_found`: el punt del pla resultant no és publicat; `event_not_found`: el fenomen no és cap esdeveniment públic',
+    ),
+    ...ERRORS_AUTH,
+  },
+});
+
 /**
  * El perfil de l'usuari del JWT, que `requireUser` ha llegit per mirar si està bloquejat. Mai no
  * surt de la petició: cadascú només pot llegir els seus plans (RNF06).
@@ -258,6 +319,14 @@ export function createPlansRouter({ requireUser, service }: PlansRouterOptions):
     const perfilId = currentPerfilId(req);
     if (!service) throw databaseUnavailable();
     res.set(NO_CACHE).json(await service.get(perfilId, id, req.get('Accept-Language')));
+  });
+
+  router.patch('/:id', async (req, res) => {
+    const { id } = PlaParamsSchema.parse(req.params);
+    const canvis = PlaCanvisSchema.parse(req.body ?? {});
+    const perfilId = currentPerfilId(req);
+    if (!service) throw databaseUnavailable();
+    res.set(NO_CACHE).json(await service.update(perfilId, id, canvis, req.get('Accept-Language')));
   });
 
   router.put('/:id/calendari', async (req, res) => {

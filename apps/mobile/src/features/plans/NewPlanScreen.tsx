@@ -19,7 +19,12 @@ import { Toggle } from '@/shared/ui/Toggle';
 
 import { DepartureTimeSheet } from './DepartureTimeSheet';
 import { EventSheet } from './EventSheet';
-import { type NewPlanParams, useNewPlanViewModel } from './useNewPlanViewModel';
+import { PointSheet } from './PointSheet';
+import {
+  type NewPlanParams,
+  type PlanFormViewModel,
+  useNewPlanViewModel,
+} from './useNewPlanViewModel';
 
 const pinIcon = require('@/assets/images/explora/ubicacio.svg');
 const calendarIcon = require('@/assets/images/plans/calendari.svg');
@@ -59,12 +64,18 @@ function ValueCard({
   icon: ImageSource;
   label: string;
   value: string;
-  onPress: () => void;
+  /** Sense, la targeta només es llegeix (un pla acabat, TG-161). */
+  onPress?: () => void;
 }) {
   const styles = useStyles();
   const { colors } = useTheme();
   return (
-    <PressableScale onPress={onPress} accessibilityLabel={`${label}: ${value}`} style={styles.card}>
+    <PressableScale
+      onPress={onPress}
+      disabled={!onPress}
+      accessibilityLabel={`${label}: ${value}`}
+      style={styles.card}
+    >
       <View style={styles.cardLabel}>
         <Image source={icon} tintColor={colors.boira} style={styles.icon} accessible={false} />
         <AppText variant="label" color="boira" numberOfLines={1} style={styles.shrink}>
@@ -78,7 +89,6 @@ function ValueCard({
   );
 }
 
-/** «Pla d'observació» (HU12, mockup 06), amb calendari del mòbil opcional (TG-158). */
 /** L'enrere i el nom de la pantalla, fixos a dalt en tots els estats (també en desar el calendari). */
 function TopBar({ back, title }: { back: { label: string; onPress: () => void }; title: string }) {
   const styles = useStyles();
@@ -92,12 +102,21 @@ function TopBar({ back, title }: { back: { label: string; onPress: () => void };
   );
 }
 
+/** «Pla d'observació» (HU12, mockup 06), amb calendari del mòbil opcional (TG-158). */
 export function NewPlanScreen(params: NewPlanParams) {
+  return <PlanFormView vm={useNewPlanViewModel(params)} />;
+}
+
+/**
+ * El formulari d'un pla: nou (`NewPlanScreen`) o desat (`EditPlanScreen`, TG-161), on el punt es
+ * pot canviar, el calendari s'actualitza i un pla acabat només es llegeix.
+ */
+export function PlanFormView({ vm }: { vm: PlanFormViewModel }) {
   const styles = useStyles();
   const { colors } = useTheme();
-  const vm = useNewPlanViewModel(params);
   const { height } = useWindowDimensions();
-  const { visible, title, closeLabel, onClose, ...calendar } = vm.dateSheet;
+  const { visible, title, closeLabel, onClose, ...month } = vm.dateSheet;
+  const calendar = vm.calendar;
 
   if (vm.saved) {
     const saved = vm.saved;
@@ -142,6 +161,11 @@ export function NewPlanScreen(params: NewPlanParams) {
           <AppText variant="display" accessibilityRole="header">
             {vm.title}
           </AppText>
+          {vm.readOnlyMessage ? (
+            <AppText variant="body" color="boira">
+              {vm.readOnlyMessage}
+            </AppText>
+          ) : null}
         </Enter>
 
         <Enter index={1}>
@@ -153,7 +177,19 @@ export function NewPlanScreen(params: NewPlanParams) {
             iconTint={colors.lluna}
             loading={vm.point.loading}
             loadingTestID="plan-point-loading"
+            onPress={vm.point.onPress}
+            chevron={!!vm.point.onPress}
           />
+          {vm.point.error ? (
+            <AppText variant="small" color="tap" accessibilityRole="alert">
+              {vm.point.error}
+            </AppText>
+          ) : null}
+          {vm.point.link ? (
+            <PressableScale onPress={vm.point.link.onPress} style={styles.link}>
+              <AppText variant="link">{vm.point.link.label}</AppText>
+            </PressableScale>
+          ) : null}
         </Enter>
 
         <Enter index={2}>
@@ -162,13 +198,13 @@ export function NewPlanScreen(params: NewPlanParams) {
               icon={calendarIcon}
               label={vm.day.label}
               value={vm.day.value}
-              onPress={vm.day.onPress}
+              onPress={vm.readOnly ? undefined : vm.day.onPress}
             />
             <ValueCard
               icon={clockIcon}
               label={vm.time.label}
               value={vm.time.value}
-              onPress={vm.time.onPress}
+              onPress={vm.readOnly ? undefined : vm.time.onPress}
             />
           </View>
           {vm.pastMessage ? (
@@ -185,8 +221,8 @@ export function NewPlanScreen(params: NewPlanParams) {
             label={vm.event.value}
             accessibilityLabel={`${vm.event.label}: ${vm.event.value}`}
             iconTint={colors.lluna}
-            onPress={vm.event.onPress}
-            chevron
+            onPress={vm.readOnly ? undefined : vm.event.onPress}
+            chevron={!vm.readOnly}
           />
         </Enter>
 
@@ -197,50 +233,79 @@ export function NewPlanScreen(params: NewPlanParams) {
             value={vm.notes.value}
             onChangeText={vm.notes.onChange}
             maxLength={vm.notes.maxLength}
+            editable={!vm.readOnly}
             multiline
           />
         </Enter>
 
-        <Enter index={5}>
-          <View style={styles.calendarRow}>
-            <AppText variant="label" style={styles.calendarLabel}>
-              {vm.calendar.label}
-            </AppText>
-            <Toggle
-              value={vm.calendar.value}
-              onValueChange={vm.calendar.onChange}
-              accessibilityLabel={vm.calendar.label}
-              disabled={vm.calendar.disabled}
-            />
-          </View>
-          <AppText variant="small" color="boira">
-            {vm.calendar.hint}
-          </AppText>
-          {vm.calendar.loading && (
-            <View accessible accessibilityLabel={vm.calendar.loadingLabel}>
-              <Skeleton height={sizes.button} />
-            </View>
-          )}
-          {vm.calendar.target && (
-            <FieldRow
-              icon={calendarIcon}
-              label={vm.calendar.target.value}
-              accessibilityLabel={`${vm.calendar.target.label}: ${vm.calendar.target.value}`}
-              onPress={vm.calendar.target.onPress}
-              chevron
-            />
-          )}
-          {vm.calendar.error && (
-            <AppText variant="small" color="tap" accessibilityRole="alert">
-              {vm.calendar.error}
-            </AppText>
-          )}
-          {vm.calendar.action && (
-            <PressableScale onPress={vm.calendar.action.onPress}>
-              <AppText variant="link">{vm.calendar.action.label}</AppText>
-            </PressableScale>
-          )}
-        </Enter>
+        {calendar ? (
+          <Enter index={5}>
+            {calendar.linkedHint ? (
+              <>
+                <AppText variant="label">{calendar.label}</AppText>
+                <AppText variant="small" color="boira">
+                  {calendar.linkedHint}
+                </AppText>
+              </>
+            ) : (
+              <>
+                <View style={styles.calendarRow}>
+                  <AppText variant="label" style={styles.calendarLabel}>
+                    {calendar.label}
+                  </AppText>
+                  <Toggle
+                    value={calendar.value}
+                    onValueChange={calendar.onChange}
+                    accessibilityLabel={calendar.label}
+                    disabled={calendar.disabled}
+                  />
+                </View>
+                <AppText variant="small" color="boira">
+                  {calendar.hint}
+                </AppText>
+                {calendar.loading && (
+                  <View accessible accessibilityLabel={calendar.loadingLabel}>
+                    <Skeleton height={sizes.button} />
+                  </View>
+                )}
+                {calendar.target && (
+                  <FieldRow
+                    icon={calendarIcon}
+                    label={calendar.target.value}
+                    accessibilityLabel={`${calendar.target.label}: ${calendar.target.value}`}
+                    onPress={calendar.target.onPress}
+                    chevron
+                  />
+                )}
+                {calendar.error && (
+                  <AppText variant="small" color="tap" accessibilityRole="alert">
+                    {calendar.error}
+                  </AppText>
+                )}
+                {calendar.action && (
+                  <PressableScale onPress={calendar.action.onPress}>
+                    <AppText variant="link">{calendar.action.label}</AppText>
+                  </PressableScale>
+                )}
+              </>
+            )}
+            {vm.calendarNotice ? (
+              <View style={styles.notice}>
+                <AppText variant="small" accessibilityRole="alert">
+                  {vm.calendarNotice.message}
+                </AppText>
+                {vm.calendarNotice.action ? (
+                  <PressableScale onPress={vm.calendarNotice.action.onPress} style={styles.link}>
+                    <AppText variant="link">{vm.calendarNotice.action.label}</AppText>
+                  </PressableScale>
+                ) : null}
+                <PressableScale onPress={vm.calendarNotice.finish.onPress} style={styles.link}>
+                  <AppText variant="link">{vm.calendarNotice.finish.label}</AppText>
+                </PressableScale>
+              </View>
+            ) : null}
+          </Enter>
+        ) : null}
 
         <Enter index={6}>
           {vm.error ? (
@@ -248,20 +313,23 @@ export function NewPlanScreen(params: NewPlanParams) {
               {vm.error}
             </AppText>
           ) : null}
-          <Button
-            label={vm.save.label}
-            onPress={vm.save.onPress}
-            disabled={vm.save.disabled}
-            haptic
-          />
+          {vm.save ? (
+            <Button
+              label={vm.save.label}
+              onPress={vm.save.onPress}
+              disabled={vm.save.disabled}
+              haptic
+            />
+          ) : null}
         </Enter>
       </ScrollView>
 
       <Sheet visible={visible} onClose={onClose} title={title} closeLabel={closeLabel}>
-        <MonthCalendar {...calendar} />
+        <MonthCalendar {...month} />
       </Sheet>
       <DepartureTimeSheet {...vm.timeSheet} />
       <EventSheet {...vm.eventSheet} />
+      {vm.pointSheet ? <PointSheet {...vm.pointSheet} /> : null}
       <Sheet
         visible={vm.calendarSheet.visible}
         title={vm.calendarSheet.title}
@@ -334,4 +402,13 @@ const useStyles = makeStyles(({ colors }) => ({
   },
   calendarSelected: { borderColor: colors.far },
   continue: { minHeight: sizes.touch, justifyContent: 'center', alignItems: 'center' },
+  link: { minHeight: sizes.touch, justifyContent: 'center', alignSelf: 'flex-start' },
+  notice: {
+    gap: spacing.xs,
+    padding: spacing.md,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: colors.linia,
+    backgroundColor: colors.card,
+  },
 }));

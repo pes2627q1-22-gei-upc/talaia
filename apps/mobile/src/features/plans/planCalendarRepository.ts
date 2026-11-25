@@ -1,8 +1,9 @@
+import type { Pla } from '@talaia/shared';
 import { isRunningInExpoGo, requireOptionalNativeModule } from 'expo';
 import type * as CalendarModule from 'expo-calendar';
 import { Platform } from 'react-native';
 
-import type { PlanCalendarEvent } from './planCalendarModel';
+import { isPlanEvent, type PlanCalendarEvent } from './planCalendarModel';
 
 export type DeviceCalendar = { id: string; title: string; account: string };
 export type CalendarAccess =
@@ -31,7 +32,10 @@ async function permission() {
     : current;
 }
 
-/** Només llegeix metadades dels calendaris i crea esdeveniments; no llegeix esdeveniments personals. */
+/**
+ * Només llegeix metadades dels calendaris i crea esdeveniments; dels esdeveniments existents només
+ * llegeix el del pla (pel seu id) per actualitzar-lo.
+ */
 export const planCalendarRepository = {
   isSupported(): boolean {
     return (
@@ -65,5 +69,32 @@ export const planCalendarRepository = {
     const target = await calendar().ExpoCalendar.get(calendarId);
     if (!target.allowsModifications) throw new Error('calendar_read_only');
     return (await target.createEvent(event)).id;
+  },
+
+  /**
+   * Si l'esdeveniment del pla (`calendariEventId`) és en aquest mòbil i encara és el que l'app va
+   * crear (`isPlanEvent`, amb el pla d'abans d'editar-lo). `false` si s'ha esborrat, si es va crear
+   * en un altre mòbil (l'id només val per al que el va crear) o si l'usuari l'ha mogut. Demana el
+   * permís si cal: sense, `CalendarPermissionError`.
+   */
+  async eventExists(plan: Pla): Promise<boolean> {
+    if (!plan.calendariEventId || !planCalendarRepository.isSupported()) return false;
+    const access = await permission();
+    if (!access.granted) throw new CalendarPermissionError(access.canAskAgain);
+    try {
+      return isPlanEvent(await calendar().ExpoCalendarEvent.get(plan.calendariEventId), plan);
+    } catch {
+      // `get` llança si l'esdeveniment no existeix.
+      return false;
+    }
+  },
+
+  /** Posa al dia l'esdeveniment amb el títol, les hores, la ubicació i les notes del pla (TG-161). */
+  async updateEvent(eventId: string, event: PlanCalendarEvent): Promise<void> {
+    if (!planCalendarRepository.isSupported()) throw new Error('calendar_unavailable');
+    const access = await permission();
+    if (!access.granted) throw new CalendarPermissionError(access.canAskAgain);
+    const target = await calendar().ExpoCalendarEvent.get(eventId);
+    await target.update(event);
   },
 };

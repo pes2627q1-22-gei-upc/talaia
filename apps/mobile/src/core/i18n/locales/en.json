@@ -727,6 +727,40 @@
         "generic": "We couldn't save the plan. Try again in a moment."
       }
     },
+    "edit": {
+      "header": "Stargazing plan",
+      "title": "Edit plan",
+      "readOnlyTitle": "Past plan",
+      "readOnly": "This plan is over: you can look at it, but not change it.",
+      "save": "Save changes",
+      "addToCalendar": "Add it to the calendar",
+      "pointA11y": "Viewpoint: {{name}}, {{municipality}}. Tap to change it",
+      "pointRetired": "This spot is no longer available; choose another one.",
+      "viewPoint": "View the spot",
+      "pointSheet": "Choose the spot",
+      "pointSearch": "Search by name or town",
+      "pointsError": "We couldn't load the spots",
+      "noPoints": "No spot matches your search.",
+      "errorTitle": "We couldn't load the plan",
+      "missingTitle": "This plan no longer exists",
+      "missingMessage": "You may have deleted it from another device.",
+      "calendarLinked": "Changes will also be applied to the event in your phone's calendar.",
+      "calendarUnavailable": "The calendar isn't available here: changes will only be saved to the plan.",
+      "calendarNotice": {
+        "missing": "Plan saved. We couldn't find its event in this phone's calendar: you may have deleted it or created it from another device.",
+        "denied": "Plan saved, but calendar permission is needed to update its event.",
+        "failed": "Plan saved, but we couldn't update the calendar event."
+      },
+      "errors": {
+        "alreadyExists": "You already have a plan at this spot at this time.",
+        "finished": "This plan is over and can't be changed.",
+        "pointGone": "This spot is no longer available; choose another one.",
+        "eventGone": "This phenomenon is no longer in the calendar; choose another one.",
+        "notFound": "This plan no longer exists.",
+        "past": "The departure time has already passed. Choose a later one.",
+        "generic": "We couldn't save the changes. Try again in a moment."
+      }
+    },
     "calendar": {
       "label": "Add it to my calendar",
       "hint": "Choose a calendar on your phone. If it belongs to your Google account and syncing is enabled, it will also appear in Google Calendar.",
@@ -763,7 +797,7 @@
       "departure_single": "Leaving at {{time}}, {{point}}",
       "retired": "This spot is no longer available.",
       "a11y": "{{title}}. {{month}} {{day}}. {{subtitle}}",
-      "openHint": "Opens the spot's page",
+      "openHint": "Opens the plan",
       "emptyUpcomingTitle": "You don't have any plans yet",
       "emptyUpcomingMessage": "Find a good spot in Explore and create a plan from its page.",
       "emptyPastTitle": "No past plans yet",

@@ -33,7 +33,7 @@ function RootStack() {
     <Stack screenOptions={rootStackOptions(name === 'vermell')}>
       {/* Des de la benvinguda, l'app entra amb una fosa (la benvinguda ja ha fet la seva sortida). */}
       <Stack.Screen name="(tabs)" options={{ animation: 'fade' }} />
-      {/* `punt/[id]`, `pla/nou`, `plans` i `el-meu-perfil` porten el seu botó enrere (ADR-0032). */}
+      {/* `punt/[id]`, `pla/nou`, `pla/[id]`, `plans` i `el-meu-perfil` porten el seu botó enrere (ADR-0032). */}
       <Stack.Screen
         name="benvinguda"
         options={{ presentation: 'fullScreenModal', animation: 'fade' }}

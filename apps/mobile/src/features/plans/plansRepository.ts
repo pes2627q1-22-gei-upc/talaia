@@ -1,8 +1,15 @@
-import type { CalendariPla, EsdevenimentsResponse, Pla, PlaNou, QuanPlans } from '@talaia/shared';
-import { useQuery } from '@tanstack/react-query';
+import type {
+  CalendariPla,
+  EsdevenimentsResponse,
+  Pla,
+  PlaCanvis,
+  PlaNou,
+  QuanPlans,
+} from '@talaia/shared';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 
-import { apiGet, apiPost, apiPut } from '@/core/api/httpClient';
+import { apiGet, apiPatch, apiPost, apiPut } from '@/core/api/httpClient';
 
 import { eventWindow } from './planModel';
 
@@ -16,6 +23,13 @@ export const plansRepository = {
   },
   linkCalendar(id: string, link: CalendariPla): Promise<void> {
     return apiPut<void>(`/plans/${encodeURIComponent(id)}/calendari`, link);
+  },
+  get(id: string, signal?: AbortSignal): Promise<Pla> {
+    return apiGet<Pla>(`/plans/${encodeURIComponent(id)}`, undefined, { signal });
+  },
+  /** Només els camps que han canviat (`planChanges`); el calendari va per `linkCalendar` (TG-161). */
+  update(id: string, changes: PlaCanvis): Promise<Pla> {
+    return apiPatch<Pla>(`/plans/${encodeURIComponent(id)}`, changes);
   },
   /** Futurs (del més proper al més llunyà) o passats (del més recent al més antic), TG-160. */
   list(quan: QuanPlans, signal?: AbortSignal): Promise<Pla[]> {
@@ -34,6 +48,26 @@ export function usePlansQuery(quan: QuanPlans, enabled = true) {
     queryKey: [...PLANS_KEY, quan, i18n.resolvedLanguage ?? 'ca'] as const,
     queryFn: ({ signal }) => plansRepository.list(quan, signal),
     enabled,
+    retry: false,
+  });
+}
+
+/**
+ * Un pla (`GET /plans/{id}`), per editar-lo (TG-161). Penja de `PLANS_KEY`: desar-lo el refresca
+ * amb les llistes. Des d'«Els meus plans» el pla ja és a la memòria cau de la llista i surt sense
+ * esperar (sense esquelet); igualment es torna a demanar.
+ */
+export function usePlanQuery(id: string) {
+  const { i18n } = useTranslation();
+  const client = useQueryClient();
+  return useQuery<Pla>({
+    queryKey: [...PLANS_KEY, 'detail', id, i18n.resolvedLanguage ?? 'ca'] as const,
+    queryFn: ({ signal }) => plansRepository.get(id, signal),
+    placeholderData: (): Pla | undefined =>
+      client
+        .getQueriesData<Pla[]>({ queryKey: PLANS_KEY })
+        .flatMap(([, data]) => (Array.isArray(data) ? data : []))
+        .find((plan) => plan.id === id),
     retry: false,
   });
 }
