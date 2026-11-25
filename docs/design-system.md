@@ -54,6 +54,11 @@ Quan s'observa, l'app passa a vermell sobre negre: el blau i el verd trenquen l'
 - **Com es fa servir:** les pantalles no importen `colors`: fan servir `useTheme()` i `makeStyles()` (`core/theme/theme.tsx`), i així es tornen a pintar quan canvia el tema. Una regla d'ESLint (`no-restricted-imports`) ho fa complir.
 - **Icones SVG:** els SVG porten el seu color. Una icona que no té `tintColor` el pren de `useNightTint()`, que en mode nit dona `lluna` (o `nit` amb `useNightTint('nit')`, sobre un botó `primary`) i en el tema normal no fa res.
 - **Mapes:** les DOM components (`NightMap`, `PointLocationMapContent` i `ZonePickerMap`) no veuen el tema. Reben `night`, posen `filter: grayscale(1)` només al canvas de MapLibre i, a sobre de tot, una capa `#FF0000` amb `mix-blend-mode: multiply` (`core/theme/nightMap.ts`). El que es dibuixa al canvas rep la paleta normal, i el filtre el passa a vermell. Els marcadors HTML, l'atribució i els controls reben la del tema: el gris els apagaria (`#FF0000` → `#360000`), i la capa no els canvia.
+- **Quan s'activa (TG-240, `features/nightMode/`):**
+  - **A mà:** l'interruptor «Mode nit» del Perfil, amb sessió o sense. La tria es desa a AsyncStorage (`talaia:mode-nit`) fins a les 06:00 següents (`nextNightEnd`): si es tria a la 01:00, caduca cinc hores després.
+  - **Sol:** si no hi ha cap tria vigent i l'usuari és a menys de 500 m del punt d'un pla seu durant la franja del pla (de l'inici a `dataHoraFi` o, si no en té, fins a les 06:00). Ho avisa a dalt, amb «Desactiva», i VoiceOver ho llegeix.
+  - **Ubicació:** només es mira durant la franja d'un pla, en primer pla, cada 5 minuts i en tornar a l'app. Només si l'usuari ja ha donat el permís: el mode nit no el demana mai, i sense permís només hi ha l'interruptor. La posició no surt del mòbil.
+  - `NightModeProvider` (a `AppProviders`) decideix el nom del tema i el passa al `ThemeProvider`. La lògica és a `nightModeModel.ts`, sense React.
 
 ## Tipografia
 

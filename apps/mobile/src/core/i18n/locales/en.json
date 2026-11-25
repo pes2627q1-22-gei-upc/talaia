@@ -198,7 +198,9 @@
     "openSavedPoint": "Open the spot details",
     "removeSavedPoint": "Remove {{name}} from favorites",
     "retry": "Try again",
-    "comingSoon": "Coming soon"
+    "comingSoon": "Coming soon",
+    "nightModeLabel": "Night mode",
+    "nightModeHint": "Red on black. Turns on by itself at a plan’s spot, at its time."
   },
   "apiStatus": {
     "title": "Server status",
@@ -809,5 +811,9 @@
   },
   "notifications": {
     "channelName": "Sky alerts"
+  },
+  "nightMode": {
+    "notice": "Night mode on: you’re near {{point}}.",
+    "turnOff": "Turn off"
   }
 }

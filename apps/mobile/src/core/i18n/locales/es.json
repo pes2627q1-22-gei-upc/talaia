@@ -198,7 +198,9 @@
     "openSavedPoint": "Abre la ficha del punto",
     "removeSavedPoint": "Quitar {{name}} de favoritos",
     "retry": "Volver a intentar",
-    "comingSoon": "Próximamente"
+    "comingSoon": "Próximamente",
+    "nightModeLabel": "Modo noche",
+    "nightModeHint": "Rojo sobre negro. Se activa solo en el punto de un plan, a su hora."
   },
   "apiStatus": {
     "title": "Estado del servidor",
@@ -809,5 +811,9 @@
   },
   "notifications": {
     "channelName": "Alertas del cielo"
+  },
+  "nightMode": {
+    "notice": "Modo noche activado: estás cerca de {{point}}.",
+    "turnOff": "Desactivar"
   }
 }

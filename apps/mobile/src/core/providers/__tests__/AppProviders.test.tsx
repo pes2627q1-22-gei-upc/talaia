@@ -26,6 +26,10 @@ jest.mock('@/features/auth/AuthProvider', () => ({
 jest.mock('@/features/notifications/PushRegistrationProvider', () => ({
   PushRegistrationProvider: ({ children }: PropsWithChildren) => children,
 }));
+// El mode nit també necessita la sessió (TG-240): es prova a `NightModeProvider.test.tsx`.
+jest.mock('@/features/nightMode/NightModeProvider', () => ({
+  NightModeProvider: ({ children }: PropsWithChildren) => children,
+}));
 
 beforeEach(() => {
   mockLanguageReady = new Promise<void>((resolve, reject) => {

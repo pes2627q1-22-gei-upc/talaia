@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 
 import { isSupportedLanguage, saveLanguage, SUPPORTED_LANGUAGES, type Language } from '@/core/i18n';
 import { useAuthViewModel } from '@/features/auth/useAuthViewModel';
+import { useNightMode } from '@/features/nightMode/NightModeProvider';
 
 import { deleteAccount, useProfileQuery, useUpdateProfileName } from './profileRepository';
 
@@ -19,6 +20,7 @@ export function profileInitials(name: string | null | undefined, email: string |
 /** Perfil de l'API, edició del nom i accessos de la pestanya. */
 export function useProfileViewModel() {
   const auth = useAuthViewModel();
+  const nightMode = useNightMode();
   const router = useRouter();
   const { t, i18n } = useTranslation();
   const current: Language = isSupportedLanguage(i18n.language) ? i18n.language : 'ca';
@@ -131,6 +133,13 @@ export function useProfileViewModel() {
     languageValue: t(`profile.languages.${current}`),
     languageOpen,
     toggleLanguage: () => setLanguageOpen((open) => !open),
+    /** Interruptor del mode nit (HU45): la tria mana fins a les 06:00 següents. */
+    nightMode: {
+      label: t('profile.nightModeLabel'),
+      hint: t('profile.nightModeHint'),
+      value: nightMode.on,
+      onValueChange: nightMode.setOn,
+    },
     closeLanguage: () => setLanguageOpen(false),
     currentLanguage: current,
     languages: SUPPORTED_LANGUAGES.map((code) => ({

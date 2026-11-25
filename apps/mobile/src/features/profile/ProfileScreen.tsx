@@ -10,6 +10,7 @@ import { ConfirmationSheet } from '@/shared/ui/ConfirmationSheet';
 import { PressableScale } from '@/shared/ui/PressableScale';
 import { Screen } from '@/shared/ui/Screen';
 import { Skeleton } from '@/shared/ui/Skeleton';
+import { Toggle } from '@/shared/ui/Toggle';
 
 import { LanguageSheet } from './LanguageSheet';
 import { ProfileAvatar } from './ProfileAvatar';
@@ -21,6 +22,7 @@ const savedIcon = require('@/assets/images/profile/saved.svg');
 const languageIcon = require('@/assets/images/profile/language.svg');
 const chevronIcon = require('@/assets/images/calendar/chevron-down.svg');
 const logoutIcon = require('@/assets/images/profile/logout.svg');
+const nightIcon = require('@/assets/images/point/moon.svg');
 
 type MenuRowProps = {
   icon: number;
@@ -29,9 +31,11 @@ type MenuRowProps = {
   onPress?: () => void;
   badge?: string;
   value?: string;
+  /** Una fila amb interruptor (mode nit) en lloc de navegar. */
+  toggle?: { value: boolean; onValueChange: (value: boolean) => void };
 };
 
-function MenuRow({ icon, label, hint, onPress, badge, value }: MenuRowProps) {
+function MenuRow({ icon, label, hint, onPress, badge, value, toggle }: MenuRowProps) {
   const styles = useStyles();
   const tint = useNightTint();
   const content = (
@@ -49,7 +53,13 @@ function MenuRow({ icon, label, hint, onPress, badge, value }: MenuRowProps) {
           </AppText>
         ) : null}
       </View>
-      {badge ? (
+      {toggle ? (
+        <Toggle
+          value={toggle.value}
+          onValueChange={toggle.onValueChange}
+          accessibilityLabel={label}
+        />
+      ) : badge ? (
         <View style={styles.badge}>
           <AppText variant="caption" color="boira">
             {badge}
@@ -131,6 +141,12 @@ export function ProfileScreen() {
                 value={vm.languageValue}
                 onPress={vm.toggleLanguage}
               />
+              <MenuRow
+                icon={nightIcon}
+                label={vm.nightMode.label}
+                hint={vm.nightMode.hint}
+                toggle={vm.nightMode}
+              />
             </View>
             <PressableScale
               accessibilityLabel={vm.auth.logoutLabel}
@@ -161,6 +177,12 @@ export function ProfileScreen() {
               hint={vm.languageValue}
               value={vm.languageValue}
               onPress={vm.toggleLanguage}
+            />
+            <MenuRow
+              icon={nightIcon}
+              label={vm.nightMode.label}
+              hint={vm.nightMode.hint}
+              toggle={vm.nightMode}
             />
           </View>
         )}

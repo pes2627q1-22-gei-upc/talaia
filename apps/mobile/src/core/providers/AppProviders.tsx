@@ -6,8 +6,8 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { queryClient } from '@/core/api/queryClient';
 import { languageReady } from '@/core/i18n';
-import { ThemeProvider } from '@/core/theme/theme';
 import { AuthProvider } from '@/features/auth/AuthProvider';
+import { NightModeProvider } from '@/features/nightMode/NightModeProvider';
 import { PushRegistrationProvider } from '@/features/notifications/PushRegistrationProvider';
 
 /** Tots els proveïdors globals de l'app, en un sol lloc. */
@@ -33,7 +33,7 @@ export function AppProviders({ children }: PropsWithChildren) {
         <QueryClientProvider client={queryClient}>
           <AuthProvider>
             <PushRegistrationProvider>
-              <ThemeProvider>{children}</ThemeProvider>
+              <NightModeProvider>{children}</NightModeProvider>
             </PushRegistrationProvider>
           </AuthProvider>
         </QueryClientProvider>
