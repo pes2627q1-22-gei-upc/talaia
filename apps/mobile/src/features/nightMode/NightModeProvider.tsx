@@ -103,7 +103,8 @@ export function NightModeProvider({ children }: PropsWithChildren) {
 
   useEffect(() => {
     const features = points.data?.features;
-    if (windowKey === '' || !features) return;
+    // Només en primer pla: un tic del rellotge just en passar a segon pla no ha de mirar on és.
+    if (windowKey === '' || !features || AppState.currentState !== 'active') return;
     let alive = true;
     nightModeRepository
       .position()

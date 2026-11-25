@@ -2,7 +2,7 @@ import type { Pla } from '@talaia/shared';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import type { PropsWithChildren } from 'react';
-import { AccessibilityInfo, Pressable, Text } from 'react-native';
+import { AccessibilityInfo, AppState, Pressable, Text } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { apiGet } from '@/core/api/httpClient';
@@ -103,8 +103,14 @@ async function renderProvider() {
 
 const theme = () => screen.getByTestId('theme');
 
+/** Al mock de React Native, `currentState` és una funció: aquí, el valor que tindria a l'app. */
+const setAppState = (state: string) => {
+  (AppState as unknown as { currentState: string }).currentState = state;
+};
+
 beforeEach(async () => {
   jest.clearAllMocks();
+  setAppState('active');
   repo.load.mockResolvedValue(null);
   repo.save.mockResolvedValue(undefined);
   repo.position.mockResolvedValue(MONTSEC);
@@ -194,4 +200,13 @@ it('amb una tria a mà vigent, ser a prop no canvia el tema ni avisa', async () 
   expect(theme()).toHaveTextContent('normal');
   expect(screen.queryByTestId('night-mode-notice')).toBeNull();
   expect(announce).not.toHaveBeenCalled();
+});
+
+it('en segon pla no mira la ubicació, encara que hi hagi un pla en franja', async () => {
+  setAppState('background');
+  serve([enFranja()]);
+  await renderProvider();
+  await waitFor(() => expect(get).toHaveBeenCalledWith('/punts'));
+  expect(repo.position).not.toHaveBeenCalled();
+  expect(theme()).toHaveTextContent('normal');
 });
