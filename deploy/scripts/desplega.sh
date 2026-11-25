@@ -93,8 +93,18 @@ main() {
   # El certificat és per a PUBLIC_HOST: amb --resolve, curl el valida contra el 8080 local.
   pas="healthcheck"
   host=$(sed -n 's/^PUBLIC_HOST=\([^[:space:]#]*\).*/\1/p' "$ENV_FILE")
-  curl -fsS -o /dev/null --retry 10 --retry-delay 3 --retry-all-errors \
-    --resolve "$host:8080:127.0.0.1" "https://$host:8080/api/v1/health"
+  # 10 intents, 3 s entre l'un i l'altre (SALUT_ESPERA, 0 als tests). El bucle és a mà: la VM és
+  # Ubuntu 20.04, amb curl 7.68, i `--retry-all-errors` no hi és fins a la 7.71.
+  salut=""
+  for _ in 1 2 3 4 5 6 7 8 9 10; do
+    if curl -fsS -o /dev/null --max-time 10 \
+      --resolve "$host:8080:127.0.0.1" "https://$host:8080/api/v1/health"; then
+      salut=ok
+      break
+    fi
+    sleep "${SALUT_ESPERA:-3}"
+  done
+  [ -n "$salut" ]
   pas="docker image prune"
   docker image prune -f > /dev/null
   echo "$objectiu" > "$estat/talaia-desplegat"

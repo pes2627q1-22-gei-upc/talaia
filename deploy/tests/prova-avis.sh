@@ -122,9 +122,11 @@ cat > "$dir/bin/docker" <<EOF
 [ "\$1" = compose ] && echo x >> "$dir/docker-crides"
 exit 0
 EOF
+# Com el curl 7.68 de la VM (Ubuntu 20.04): no coneix `--retry-all-errors` (curl 7.71) i surt amb 2.
 cat > "$dir/bin/curl" <<EOF
 #!/bin/sh
 case "\$*" in
+  *--retry-all-errors*) echo "curl: option --retry-all-errors: is unknown" >&2; exit 2 ;;
   *api/v1/health*) exit "\$(cat "$dir/salut")" ;;
 esac
 exec "$curl_real" "\$@"
@@ -140,7 +142,7 @@ git clone -q --bare "$dir/codi" "$dir/origin.git"
 git clone -q -b stable "$dir/origin.git" "$dir/vm"
 entorn="$dir/ple.env"
 desplega() {
-  env PATH="$dir/bin:$PATH" DEPLOY_LOG="$dir/deploy.log" "$@" sh "$dir/vm/deploy/scripts/desplega.sh" \
+  env PATH="$dir/bin:$PATH" DEPLOY_LOG="$dir/deploy.log" SALUT_ESPERA=0 "$@" sh "$dir/vm/deploy/scripts/desplega.sh" \
     "$entorn" >> "$dir/deploy.log" 2>&1 || true
 }
 crides() { cat "$dir/docker-crides" 2>/dev/null | wc -l | tr -d ' '; }
