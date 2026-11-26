@@ -24,8 +24,8 @@ const SKELETON_ROWS = 3;
 const SKELETON_HEIGHT = 96;
 
 /**
- * Un pla: data, títol i sortida, i la paperera (TG-162). Els passats s'atenuen; un de retirat no es
- * pot obrir, però sí eliminar. La paperera és un botó a part perquè VoiceOver la trobi.
+ * Un pla: data, títol i sortida, i la paperera (TG-162). Els passats i els d'un punt retirat
+ * s'atenuen. La paperera és un botó a part perquè VoiceOver la trobi.
  */
 function PlanRowView({
   row,
@@ -53,10 +53,8 @@ function PlanRowView({
       <View style={[styles.row, dimmed && styles.dimmedRow]}>
         <PressableScale
           onPress={onPress}
-          disabled={row.retired}
           accessibilityLabel={row.accessibilityLabel}
           accessibilityHint={row.accessibilityHint}
-          accessibilityState={{ disabled: row.retired }}
           style={styles.open}
           testID={`plan-row-${row.id}`}
         >
@@ -76,14 +74,12 @@ function PlanRowView({
               {row.subtitle}
             </AppText>
           </View>
-          {row.retired ? null : (
-            <Image
-              source={chevronIcon}
-              tintColor={colors.boira}
-              style={styles.chevron}
-              accessible={false}
-            />
-          )}
+          <Image
+            source={chevronIcon}
+            tintColor={colors.boira}
+            style={styles.chevron}
+            accessible={false}
+          />
         </PressableScale>
         <PressableScale
           onPress={onDelete}

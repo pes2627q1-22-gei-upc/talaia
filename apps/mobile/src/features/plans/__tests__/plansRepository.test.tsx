@@ -3,7 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react-native';
 import type { PropsWithChildren } from 'react';
 
-import { ApiError, apiDelete, apiGet, apiPost, apiPut } from '@/core/api/httpClient';
+import { ApiError, apiDelete, apiGet, apiPatch, apiPost, apiPut } from '@/core/api/httpClient';
 import i18n from '@/core/i18n';
 
 import {
@@ -21,6 +21,7 @@ jest.mock('@/core/api/httpClient', () => ({
   apiPost: jest.fn(),
   apiPut: jest.fn(),
   apiDelete: jest.fn(),
+  apiPatch: jest.fn(),
 }));
 const get = jest.mocked(apiGet);
 const post = jest.mocked(apiPost);
@@ -130,4 +131,18 @@ describe('consultes de «Els meus plans»', () => {
     expect(result.current.fetchStatus).toBe('idle');
     expect(get).not.toHaveBeenCalled();
   });
+});
+
+it('modifica un pla amb PATCH /plans/{id} i només els canvis (TG-161)', async () => {
+  const patch = jest.mocked(apiPatch);
+  patch.mockResolvedValue({ id: 'p 1' });
+  await expect(plansRepository.update('p 1', { notes: 'Termo' })).resolves.toEqual({ id: 'p 1' });
+  expect(patch).toHaveBeenCalledWith('/plans/p%201', { notes: 'Termo' });
+});
+
+it('llegeix un pla amb GET /plans/{id}', async () => {
+  get.mockResolvedValue({ id: 'p1' });
+  const signal = new AbortController().signal;
+  await expect(plansRepository.get('p1', signal)).resolves.toEqual({ id: 'p1' });
+  expect(get).toHaveBeenCalledWith('/plans/p1', undefined, { signal });
 });

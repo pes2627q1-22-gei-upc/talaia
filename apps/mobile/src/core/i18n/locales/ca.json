@@ -157,6 +157,13 @@
     "discardChanges": "Descarta els canvis",
     "logoutConfirmationTitle": "Vols tancar la sessió?",
     "logoutConfirmationMessage": "Hauràs de tornar a entrar per accedir al teu compte.",
+    "deleteAccount": "Eliminar el compte",
+    "deletingAccount": "Eliminant el compte…",
+    "deleteConfirmationTitle": "Segur que vols esborrar el teu compte?",
+    "deleteConfirmationMessage": "El compte i les teves dades personals s'esborraran definitivament. No es podran recuperar. Els punts que hagis aportat continuaran publicats sense vincle amb tu.",
+    "deleteError": "No s'ha pogut eliminar el compte. Torna-ho a provar.",
+    "deletedTitle": "El compte s'ha eliminat",
+    "deletedMessage": "Les dades del compte ja s'han esborrat. Tanca la sessió per continuar.",
     "title": "Perfil",
     "myProfile": "El meu perfil",
     "back": "Torna al perfil",
@@ -184,9 +191,16 @@
     "savedPointsHint": "Consulta els punts que has desat",
     "savedPointsEmpty": "Encara no tens cap punt favorit.",
     "savedPointsError": "No s'han pogut carregar els punts favorits.",
+    "savedPointsHelp": "Toca el cor per treure un punt dels favorits.",
+    "savedPointRemoved": "Has tret {{name}} dels favorits.",
+    "undoSavedPoint": "Desfés",
+    "undoSavedPointError": "No hem pogut recuperar el favorit. Torna-ho a provar.",
     "openSavedPoint": "Obre la fitxa del punt",
+    "removeSavedPoint": "Treu {{name}} dels favorits",
     "retry": "Torna-ho a provar",
-    "comingSoon": "Properament"
+    "comingSoon": "Properament",
+    "nightModeLabel": "Mode nit",
+    "nightModeHint": "Vermell sobre negre. S'activa sol al punt d'un pla, a la seva hora."
   },
   "apiStatus": {
     "title": "Estat del servidor",
@@ -549,7 +563,17 @@
         "text": "Quan l'índex arribi a {{index}}"
       }
     },
-    "summaryTravel": "A menys de {{travel}}"
+    "summaryTravel": "A menys de {{travel}}",
+    "delete": {
+      "action": "Elimina l'alerta",
+      "rowLabel": "Elimina l'alerta de {{name}}",
+      "confirmTitle": "Vols eliminar l'alerta?",
+      "confirmMessage": "L'alerta de {{name}} s'esborrarà i deixarem d'avisar-te. No es pot desfer.",
+      "cancel": "Cancel·la",
+      "confirm": "Elimina",
+      "errorTitle": "No hem pogut eliminar l'alerta",
+      "errorMessage": "Comprova la connexió i torna-ho a provar."
+    }
   },
   "auth": {
     "signOut": "Tanca la sessió",
@@ -705,6 +729,40 @@
         "generic": "No hem pogut desar el pla. Torna-ho a provar d'aquí a un moment."
       }
     },
+    "edit": {
+      "header": "Pla d'observació",
+      "title": "Edita el pla",
+      "readOnlyTitle": "Pla fet",
+      "readOnly": "Aquest pla ja s'ha acabat: el pots consultar, però no modificar.",
+      "save": "Desa els canvis",
+      "addToCalendar": "Afegeix-lo al calendari",
+      "pointA11y": "Punt d'observació: {{name}}, {{municipality}}. Toca'l per canviar-lo",
+      "pointRetired": "Aquest punt ja no està disponible; tria'n un altre.",
+      "viewPoint": "Veure el punt",
+      "pointSheet": "Tria el punt",
+      "pointSearch": "Cerca per nom o municipi",
+      "pointsError": "No hem pogut carregar els punts",
+      "noPoints": "Cap punt coincideix amb la cerca.",
+      "errorTitle": "No hem pogut carregar el pla",
+      "missingTitle": "Aquest pla ja no existeix",
+      "missingMessage": "Potser l'has eliminat des d'un altre dispositiu.",
+      "calendarLinked": "Els canvis també s'aplicaran a l'esdeveniment del calendari del mòbil.",
+      "calendarUnavailable": "El calendari no està disponible en aquest entorn: els canvis es desaran només al pla.",
+      "calendarNotice": {
+        "missing": "Pla desat. No hem trobat l'esdeveniment al calendari d'aquest mòbil: potser l'has esborrat o el vas crear des d'un altre dispositiu.",
+        "denied": "Pla desat, però falta el permís de calendari per actualitzar-ne l'esdeveniment.",
+        "failed": "Pla desat, però no hem pogut actualitzar l'esdeveniment del calendari."
+      },
+      "errors": {
+        "alreadyExists": "Ja tens un pla en aquest punt a aquesta hora.",
+        "finished": "Aquest pla ja s'ha acabat i no es pot modificar.",
+        "pointGone": "Aquest punt ja no està disponible; tria'n un altre.",
+        "eventGone": "Aquest fenomen ja no és al calendari; tria'n un altre.",
+        "notFound": "Aquest pla ja no existeix.",
+        "past": "L'hora de sortida ja ha passat. Tria'n una de més tard.",
+        "generic": "No hem pogut desar els canvis. Torna-ho a provar d'aquí a un moment."
+      }
+    },
     "calendar": {
       "label": "Afegeix-lo al meu calendari",
       "hint": "Tria un calendari del mòbil. Si és del teu compte de Google i té la sincronització activada, també apareixerà a Google Calendar.",
@@ -741,7 +799,7 @@
       "departure_single": "Sortida a la {{time}}, {{point}}",
       "retired": "Aquest punt ja no està disponible.",
       "a11y": "{{title}}. {{day}} {{month}}. {{subtitle}}",
-      "openHint": "Obre la fitxa del punt",
+      "openHint": "Obre el pla",
       "emptyUpcomingTitle": "Encara no tens cap pla",
       "emptyUpcomingMessage": "Busca un bon lloc a Explora i crea un pla des de la seva fitxa.",
       "emptyPastTitle": "Encara no tens plans passats",
@@ -766,5 +824,9 @@
   },
   "notifications": {
     "channelName": "Alertes del cel"
+  },
+  "nightMode": {
+    "notice": "Mode nit activat: ets a prop de {{point}}.",
+    "turnOff": "Desactiva"
   }
 }

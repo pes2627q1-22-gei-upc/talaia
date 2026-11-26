@@ -165,3 +165,64 @@ describe('deleteEvent (TG-162)', () => {
     expect(requestPermission).not.toHaveBeenCalled();
   });
 });
+
+describe('esdeveniment d’un pla editat (TG-161)', () => {
+  const getEvent = jest.mocked(Calendar.ExpoCalendarEvent.get);
+  const linked = { ...plan, calendariEventId: 'event-123' };
+  const nativeEvent = (overrides = {}) =>
+    ({
+      id: 'event-123',
+      startDate: plan.dataHoraInici,
+      endDate: plan.dataHoraFi,
+      location: 'Serra del Montsec, Àger',
+      update: jest.fn(async () => undefined),
+      ...overrides,
+    }) as unknown as Calendar.ExpoCalendarEvent;
+
+  it('eventExists: l’esdeveniment del pla, si és en aquest mòbil i encara és el que es va crear', async () => {
+    getEvent.mockResolvedValue(nativeEvent());
+    await expect(planCalendarRepository.eventExists(linked)).resolves.toBe(true);
+    expect(getEvent).toHaveBeenCalledWith('event-123');
+    // Mogut per l'usuari, o un altre esdeveniment amb el mateix id en un altre mòbil: no es toca.
+    getEvent.mockResolvedValue(nativeEvent({ startDate: '2026-10-21T19:00:00.000Z' }));
+    await expect(planCalendarRepository.eventExists(linked)).resolves.toBe(false);
+  });
+
+  it('eventExists: false si l’esdeveniment no existeix (get llança) o el pla no en té', async () => {
+    getEvent.mockRejectedValue(new Error('Event not found'));
+    await expect(planCalendarRepository.eventExists(linked)).resolves.toBe(false);
+    await expect(planCalendarRepository.eventExists(plan)).resolves.toBe(false);
+  });
+
+  it('eventExists: sense permís, CalendarPermissionError; a Expo Go, false sense tocar res', async () => {
+    getPermission.mockResolvedValue(permission(false, false));
+    await expect(planCalendarRepository.eventExists(linked)).rejects.toBeInstanceOf(
+      CalendarPermissionError,
+    );
+    jest.mocked(isRunningInExpoGo).mockReturnValue(true);
+    getPermission.mockClear();
+    await expect(planCalendarRepository.eventExists(linked)).resolves.toBe(false);
+    expect(getPermission).not.toHaveBeenCalled();
+  });
+
+  it('updateEvent escriu el títol, les hores, la ubicació i les notes del pla', async () => {
+    const event = nativeEvent();
+    getEvent.mockResolvedValue(event);
+    const details = planCalendarEvent({ ...plan, notes: 'Termo' }, 'Oriònides · Montsec');
+    await planCalendarRepository.updateEvent('event-123', details);
+    expect(getEvent).toHaveBeenCalledWith('event-123');
+    expect(event.update).toHaveBeenCalledWith(details);
+  });
+
+  it('updateEvent: sense permís (i sense poder-lo demanar) o sense calendari, error', async () => {
+    getPermission.mockResolvedValue(permission(false, true));
+    requestPermission.mockResolvedValue(permission(false, false));
+    await expect(
+      planCalendarRepository.updateEvent('event-123', planCalendarEvent(plan, 'T')),
+    ).rejects.toBeInstanceOf(CalendarPermissionError);
+    jest.mocked(isRunningInExpoGo).mockReturnValue(true);
+    await expect(
+      planCalendarRepository.updateEvent('event-123', planCalendarEvent(plan, 'T')),
+    ).rejects.toThrow('calendar_unavailable');
+  });
+});

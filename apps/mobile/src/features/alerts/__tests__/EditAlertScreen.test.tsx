@@ -1,5 +1,5 @@
 import type { Alerta } from '@talaia/shared';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react-native';
 import { useRouter } from 'expo-router';
 import type { PropsWithChildren } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -27,7 +27,12 @@ jest.mock('@/features/explore/locationRepository', () => {
 jest.mock('../alertsRepository', () => {
   const { useQuery } = jest.requireActual('@tanstack/react-query');
   const actual = jest.requireActual('../alertsRepository');
-  const alertsRepository = { create: jest.fn(), list: jest.fn(), update: jest.fn() };
+  const alertsRepository = {
+    create: jest.fn(),
+    list: jest.fn(),
+    update: jest.fn(),
+    remove: jest.fn(),
+  };
   return {
     ...actual,
     alertsRepository,
@@ -41,7 +46,7 @@ const back = jest.fn();
 jest.mocked(useRouter).mockReturnValue({ back } as unknown as ReturnType<typeof useRouter>);
 const mockedList = jest.mocked(alertsRepository.list);
 const mockedUpdate = jest.mocked(alertsRepository.update);
-
+const mockedRemove = jest.mocked(alertsRepository.remove);
 const SAVED: Alerta = {
   id: 'a1',
   objectiu: 'pluja_estels',
@@ -81,6 +86,7 @@ describe('EditAlertScreen', () => {
     back.mockReset();
     mockedList.mockReset();
     mockedUpdate.mockReset();
+    mockedRemove.mockReset();
     jest
       .mocked(getCurrentPlace)
       .mockResolvedValue({ status: 'ready', place: { name: 'Girona', lat: 41.98, lon: 2.82 } });
@@ -120,6 +126,48 @@ describe('EditAlertScreen', () => {
 
     await waitFor(() => expect(back).toHaveBeenCalledTimes(1));
     expect(mockedUpdate).toHaveBeenCalledWith('a1', { objectiu: 'via_lactia' });
+  });
+
+  it('«Elimina l’alerta» és al final del formulari, apartat de la barra de pestanyes (TG-267)', async () => {
+    mockedList.mockResolvedValue([SAVED]);
+    await renderScreen();
+    const remove = await screen.findByRole('button', { name: "Elimina l'alerta" });
+    expect(remove).toBeEnabled();
+    const scroll = screen.getByTestId('new-alert-scroll');
+    expect(scroll.props.contentInsetAdjustmentBehavior).toBe('automatic');
+    expect(within(scroll).getByRole('button', { name: "Elimina l'alerta" })).toBeOnTheScreen();
+  });
+
+  it('eliminar demana confirmació, elimina l’alerta i torna a la llista (HU20)', async () => {
+    mockedList.mockResolvedValueOnce([SAVED]).mockResolvedValue([]);
+    mockedRemove.mockResolvedValue(undefined);
+    await renderScreen();
+
+    await fireEvent.press(await screen.findByRole('button', { name: "Elimina l'alerta" }));
+    // El full de confirmació de l'app, no el diàleg natiu.
+    expect(await screen.findByText("Vols eliminar l'alerta?")).toBeOnTheScreen();
+    expect(
+      screen.getByText(
+        "L'alerta de Pluja d'estels s'esborrarà i deixarem d'avisar-te. No es pot desfer.",
+      ),
+    ).toBeOnTheScreen();
+    expect(mockedRemove).not.toHaveBeenCalled();
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Elimina' }));
+    await waitFor(() => expect(back).toHaveBeenCalledTimes(1));
+    expect(mockedRemove).toHaveBeenCalledWith('a1');
+    // Mentre la pantalla marxa, no canvia pel missatge d'alerta inexistent.
+    await waitFor(() => expect(mockedList).toHaveBeenCalledTimes(2));
+    expect(screen.queryByText('No hem trobat aquesta alerta')).toBeNull();
+  });
+
+  it('si es cancel·la l’eliminació, no passa res', async () => {
+    mockedList.mockResolvedValue([SAVED]);
+    await renderScreen();
+    await fireEvent.press(await screen.findByRole('button', { name: "Elimina l'alerta" }));
+    await fireEvent.press(await screen.findByRole('button', { name: 'Cancel·la' }));
+    expect(mockedRemove).not.toHaveBeenCalled();
+    expect(back).not.toHaveBeenCalled();
   });
 
   it('el full de l’hora s’obre amb l’hora desada', async () => {

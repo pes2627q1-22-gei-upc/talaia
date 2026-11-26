@@ -32,6 +32,7 @@ import {
   notifyTypeOf,
   travelToKm,
 } from './newAlertModel';
+import { useDeleteAlert } from './useDeleteAlert';
 
 type Coordinates = { lat: number; lon: number };
 type Zone = Coordinates & { name: string };
@@ -122,7 +123,10 @@ export function useNewAlertViewModel(saved?: Alerta) {
     },
   });
 
-  const canSave = form !== null && !unchanged && !save.isPending;
+  // En editar, també s'hi pot eliminar l'alerta (HU20): en acabar, torna a la llista.
+  const deletion = useDeleteAlert(() => router.back());
+
+  const canSave = form !== null && !unchanged && !save.isPending && !deletion.isDeleting;
   const submit = () => {
     if (!canSave) return;
     save.mutate(saved && changes ? { id: saved.id, changes } : { alert: form });
@@ -295,5 +299,13 @@ export function useNewAlertViewModel(saved?: Alerta) {
       disabled: !canSave,
       onPress: submit,
     },
+    remove: saved
+      ? {
+          label: deletion.label,
+          disabled: deletion.isDeleting || save.isPending,
+          onPress: () => deletion.confirmDelete(saved.id, t(`explore.goals.${saved.objectiu}`)),
+        }
+      : null,
+    deleteSheet: deletion.sheet,
   };
 }

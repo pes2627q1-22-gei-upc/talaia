@@ -65,10 +65,10 @@ function usePlansSection(quan: QuanPlans, enabled: boolean) {
 
 /**
  * «Els meus plans» (HU13, mockup 13): els plans futurs per data i, a part, els passats, que es
- * demanen quan l'usuari obre la pestanya. Tocar un pla obre la fitxa del punt; si el punt s'ha
- * retirat, la fila no es pot obrir. L'índex de cada pla i «Veure'ls al calendari» (TG-158) no hi
- * són: l'API no dona l'índex d'un pla. Qualsevol pla, també un de passat o d'un punt retirat, es
- * pot eliminar amb confirmació (HU15, TG-162).
+ * demanen quan l'usuari obre la pestanya. Tocar un pla l'obre per editar-lo (`/pla/[id]`, TG-161),
+ * també si el punt s'ha retirat: és l'única manera de triar-ne un altre. L'índex de cada pla i
+ * «Veure'ls al calendari» (TG-158) no hi són: l'API no dona l'índex d'un pla. Qualsevol pla, també
+ * un de passat o d'un punt retirat, es pot eliminar amb confirmació (HU15, TG-162).
  */
 export function usePlansViewModel() {
   const { t } = useTranslation();
@@ -116,7 +116,7 @@ export function usePlansViewModel() {
         month: monthsOf[row.month] ?? '',
         subtitle,
       }),
-      accessibilityHint: row.retired ? undefined : t('plans.list.openHint'),
+      accessibilityHint: t('plans.list.openHint'),
       deleteLabel: t('plans.delete.button', { title }),
     };
   };
@@ -197,11 +197,10 @@ export function usePlansViewModel() {
       message: t('plans.list.emptyPastMessage'),
     }),
     error: { title: t('plans.list.errorTitle'), retryLabel: t('plans.list.retry') },
-    /** Obre la fitxa del punt del pla; un punt retirat ja no en té. */
+    /** Obre el pla per editar-lo (TG-161); des d'allà, «Veure el punt» porta a la fitxa. */
     onOpen: (row: Pick<PlanListRow, 'id'>) => {
-      const plan = rowsById.get(row.id);
-      if (!plan || plan.retired) return;
-      router.push({ pathname: '/punt/[id]', params: { id: plan.puntId } });
+      if (!rowsById.has(row.id)) return;
+      router.push({ pathname: '/pla/[id]', params: { id: row.id } });
     },
     onDelete: (row: Pick<PlanListRow, 'id'>) => {
       setDeleteFailed(false);

@@ -21,7 +21,7 @@ npm run api                   # = npm run dev -w services/api, amb recàrrega
 - Alertes: `GET` i `POST /api/v1/alertes` i `PATCH` i `DELETE /api/v1/alertes/{id}` (cal el JWT de Supabase)
 - Tokens de push: `PUT /api/v1/perfil/dispositius` i `DELETE /api/v1/perfil/dispositius/{token}` (JWT)
 - Favorits: `GET` i `POST /api/v1/favorits` i `DELETE /api/v1/favorits/{puntId}` (cal el JWT de Supabase)
-- Plans: `POST` i `GET /api/v1/plans` (`?quan=futurs|passats`), i `GET` i `DELETE /api/v1/plans/{id}` (cal el JWT de Supabase)
+- Plans: `POST` i `GET /api/v1/plans` (`?quan=futurs|passats`), i `GET`, `PATCH` i `DELETE /api/v1/plans/{id}` (cal el JWT de Supabase)
 - Recomanacions: `http://localhost:3000/api/v1/recomanacions?objectiu=cel_estrellat&lat=41.39&lon=2.17&data=<YYYY-MM-DD>&desDe=22&finsA=6&tempsMaxim=150`; «a prop meu»: `…/recomanacions?lat=41.39&lon=2.17`; «on veure-ho»: `…/recomanacions?lat=41.39&lon=2.17&esdevenimentId=leonids-2026`
 - Visibilitat d'una ubicació qualsevol: `http://localhost:3000/api/v1/visibilitat?lat=41.95&lon=1.52` (no cal `DATABASE_URL`; amb `&hora=<ISO 8601>`, una altra hora)
 - Documentació (Swagger UI): <http://localhost:3000/api/v1/docs>
@@ -69,7 +69,7 @@ src/
     dispositius.ts      PUT i DELETE /perfil/dispositius: Expo push tokens (ADR-0028)
     admin.ts            GET /admin/me, GET /admin/usuaris i PATCH /admin/usuaris/{id} (ADR-0029)
     favorits.ts         POST, GET i DELETE /favorits: els punts favorits de l'usuari del JWT (HU25–HU27)
-    plans.ts            POST, GET i GET {id} /plans: els plans d'observació de l'usuari del JWT (HU12)
+    plans.ts            POST, GET, GET {id} i PATCH {id} /plans: els plans d'observació de l'usuari del JWT (HU12, HU14)
     puntIndex.ts        GET /punts/{id}/index: desglossament de l'índex per hores i factors (HU04)
     rutes.ts            GET /punts/{id}/rutes: alternatives des de l'origen de l'usuari (TG-135)
     recomanacions.ts    GET /recomanacions (validació de la consulta i OpenAPI)
@@ -101,7 +101,7 @@ src/
     favoritsService.ts     Hora en curs de l'índex, 404 si el punt no és publicat i errors de la BD → 503
   plans/
     plansRepository.ts  Plans d'un perfil amb @talaia/db: sempre filtrats pel perfil, amb el punt (també si s'ha retirat)
-    plansService.ts     Nom del punt per idioma, 422 si el punt o l'esdeveniment no hi són, 404 i errors de la BD → 503
+    plansService.ts     Nom del punt per idioma, regles de temps de l'edició (validaCanvis), 422 si el punt o l'esdeveniment no hi són, 404 i errors de la BD → 503
   recomanacions/
     franja.ts           Franja horària local de Catalunya (Europe/Madrid) → UTC, amb el canvi d'hora
     finestra.ts         Finestra horària d'un esdeveniment del calendari (codi pur, TG-140)
@@ -365,13 +365,14 @@ Els punts favorits de l'usuari autenticat (tipus `Favorit` i `FavoritNou` a `@ta
 
 Errors: JWT absent o invàlid → 401 `unauthorized`; compte bloquejat → 403 `account_blocked`; cos o `puntId` invàlids → 400 `validation_error`; usuari sense perfil (no ha fet `POST /perfil`) → 404 `profile_not_found`; `POST` d'un punt que no existeix o no és publicat → 404 `punt_not_found`; sense `DATABASE_URL` o amb la base de dades caiguda → 503 `database_unavailable`.
 
-## `/plans` (HU12 · TG-156)
+## `/plans` (HU12 · TG-156, HU14 · TG-161)
 
-Els plans d'observació de l'usuari autenticat (tipus `Pla`, `PlaNou`, `QuanPlans` i `CalendariPla` a `@talaia/shared`, taula `plans`). Totes les rutes passen per `requireUser` (JWT de Supabase i compte no bloquejat) i responen amb `Cache-Control: no-store`. El nom del punt segueix `Accept-Language` (ca, es, en; reserva ca), com a `/punts`.
+Els plans d'observació de l'usuari autenticat (tipus `Pla`, `PlaNou`, `PlaCanvis`, `QuanPlans` i `CalendariPla` a `@talaia/shared`, taula `plans`). Totes les rutes passen per `requireUser` (JWT de Supabase i compte no bloquejat) i responen amb `Cache-Control: no-store`. El nom del punt segueix `Accept-Language` (ca, es, en; reserva ca), com a `/punts`.
 
 - `POST /plans`: crea el pla i respon 201 amb el mateix `Pla` que el `GET`, punt inclòs, perquè l'app no l'hagi de tornar a demanar. Són obligatoris `puntId` (un punt `PUBLICAT`) i `dataHoraInici`; `esdevenimentId` (l'`id` de `GET /esdeveniments/{id}`, és a dir, el `codi`), `dataHoraFi` (posterior a l'inici), `calendariEventId` (≤ 255) i `notes` (≤ 1000) són opcionals. Les dates són ISO 8601 **amb zona** i es desen en UTC. No es comprova que la data sigui futura: ho fa l'app (TG-157). El cos és estricte: un camp de més (per exemple `perfilId`) és un 400. L'esdeveniment ha de ser un dels que `GET /esdeveniments/{id}` retorna (rellevant per a Catalunya i publicable; `esdevenimentsPublics`), perquè `/recomanacions?esdevenimentId=` no respongui 404 amb el mateix id. Com a molt 20 plans pendents per usuari (`MAX_PLANS_FUTURS`; els passats no hi compten) i un sol pla per punt i hora d'inici (índex únic `plans_perfil_punt_inici_key`): un doble toc a «Crea el pla» no en crea dos. El perfil es bloqueja (`for update`) mentre es crea, com a les alertes.
 - `GET /plans`: tots els plans per data (`[]` si no en té cap). Amb `?quan=futurs`, els que encara no s'han acabat, del més proper al més llunyà. Un pla s'acaba a `dataHoraFi` o, si no en té, al final de la nit que conté l'inici (les 12:00 locals de l'endemà de la nit, com `nightWindow(defaultNight(inici)).to`; `fiEfectiu` a `plansRepository.ts`): un pla «aquesta nit a les 21:00» continua sent futur mentre s'observa. Amb `?quan=passats`, la resta, del més recent al més antic.
 - `GET /plans/{id}`: el pla. Si és d'un altre usuari, respon 404 igual que si no existís, per no revelar-ne l'existència.
+- `PATCH /plans/{id}` (HU14, TG-161): modifica el pla i respon 200 amb el mateix `Pla` que el `GET` (`dataActualitzacio` la posa el trigger). Cos estricte i parcial (`PlaCanvis`): `puntId`, `esdevenimentId`, `dataHoraInici`, `dataHoraFi` i `notes`, amb els límits del `POST`, i almenys un; `null` treu el fenomen, el final o les notes. `calendariEventId` no hi és: va pel `PUT …/calendari`. Tot es comprova sobre el **pla resultant** (l'actual amb els canvis): `dataHoraFi` > `dataHoraInici` (400), el punt `PUBLICAT` **encara que no es canviï** (422 `punt_not_found`: el pla d'un punt retirat només es desa triant-ne un altre), el fenomen públic (422 `event_not_found`) i cap altre pla de l'usuari al mateix punt i hora (409 `plan_already_exists`; el mateix pla no compta). Un pla acabat (`fiEfectiu` < ara) és un 409 `plan_finished`; un de començat es pot modificar, però una `dataHoraInici` nova no pot ser al passat (400; enviar la mateixa hora no és moure-la). Les regles de temps són al servei (`validaCanvis`, amb el rellotge injectat); el repositori bloqueja el pla (`for update`), fa les comprovacions i l'`update … where id and perfil_id` en una transacció, i converteix una violació de `plans_perfil_punt_inici_key` (23505, una carrera) en 409.
 - `PUT /plans/{id}/calendari` (TG-158): desa el vincle amb l’esdeveniment creat al calendari del mòbil. Cos estricte `{ "calendariEventId": "…" }`, text no buit de fins a 255 caràcters, retallat als extrems. Respon 204 i és idempotent; un pla inexistent o aliè és un 404 `plan_not_found`. L’UPDATE filtra pel perfil del JWT i l’id del pla, sense canviar-ne el punt, dates, fenomen ni notes. L’app desa primer el pla i només després crea l’esdeveniment i envia aquest vincle. No cal cap migració: la columna ja existeix.
 - `DELETE /plans/{id}` (TG-162): esborra el pla i respon 204. Un pla inexistent o aliè és un 404 `plan_not_found`, igual que al `GET`; el `DELETE` filtra pel perfil del JWT. També es pot esborrar el d'un punt retirat. L'esdeveniment del calendari del mòbil no el toca: l'esborra l'app, perquè `calendariEventId` només val al mòbil que el va crear, i abans comprova que l'inici, el final i el municipi coincideixin amb els del pla.
 
@@ -393,7 +394,7 @@ Els plans d'observació de l'usuari autenticat (tipus `Pla`, `PlaNou`, `QuanPlan
 - **Punts retirats:** només es pot crear un pla amb un punt `PUBLICAT`, però si el punt es retira després, el pla continua sortint amb `punt.publicat: false`: el `GET` no filtra per l'estat del punt. Si el punt s'esborra de debò, s'esborren els seus plans (vegeu P23 a `docs/decisions/pendents.md`).
 - `PATCH` (TG-161) i `DELETE` (TG-162) encara no hi són.
 
-Errors: JWT absent o invàlid → 401 `unauthorized`; compte bloquejat → 403 `account_blocked`; cos, `quan` o `id` invàlids (també `dataHoraFi` ≤ `dataHoraInici`) → 400 `validation_error`; usuari sense perfil → 404 `profile_not_found`; pla que no és de l'usuari → 404 `plan_not_found`; `POST` amb un punt que no existeix o no és publicat → 422 `punt_not_found`, o amb un esdeveniment que no existeix o no és públic → 422 `event_not_found`; `POST` amb 20 plans pendents → 409 `plan_limit_reached`, o amb un pla al mateix punt i hora → 409 `plan_already_exists`; sense `DATABASE_URL` o amb la base de dades caiguda → 503 `database_unavailable`.
+Errors: JWT absent o invàlid → 401 `unauthorized`; compte bloquejat → 403 `account_blocked`; cos, `quan` o `id` invàlids (també `dataHoraFi` ≤ `dataHoraInici`) → 400 `validation_error`; usuari sense perfil → 404 `profile_not_found`; pla que no és de l'usuari → 404 `plan_not_found`; `POST` amb un punt que no existeix o no és publicat → 422 `punt_not_found`, o amb un esdeveniment que no existeix o no és públic → 422 `event_not_found`; `POST` amb 20 plans pendents → 409 `plan_limit_reached`, o (també `PATCH`) amb un pla al mateix punt i hora → 409 `plan_already_exists`; `PATCH` d'un pla acabat → 409 `plan_finished`, d'un punt retirat (encara que no es canviï) → 422 `punt_not_found`, i amb un inici nou al passat → 400 `validation_error`; sense `DATABASE_URL` o amb la base de dades caiguda → 503 `database_unavailable`.
 
 ## Rol d'administrador i comptes bloquejats (TG-177, HU41)
 

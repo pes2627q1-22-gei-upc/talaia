@@ -1,5 +1,5 @@
 import type { DB, createDb } from '@talaia/db';
-import type { Pla, PlaNou, QuanPlans } from '@talaia/shared';
+import type { Pla, PlaCanvis, PlaNou, QuanPlans } from '@talaia/shared';
 import { sql, type ExpressionBuilder } from 'kysely';
 
 import { esdevenimentsPublics } from '../esdeveniments/esdevenimentsRepository';
@@ -41,6 +41,19 @@ export type CreatePlaResult =
   | { ok: false; reason: 'punt_not_found' | 'event_not_found' | 'limit' | 'duplicate' };
 
 /**
+ * `not_found`: el pla no existeix o és d'un altre usuari. `punt_not_found` i `event_not_found`: el
+ * punt o el fenomen del pla resultant (el que ja tenia, si no es canvien) no és publicat o públic.
+ * `duplicate`: el pla resultant coincideix en punt i hora amb un altre pla de l'usuari.
+ */
+export type UpdatePlaResult =
+  | { ok: true; pla: PlaAmbTextos }
+  | { ok: false; reason: 'not_found' | 'punt_not_found' | 'event_not_found' | 'duplicate' };
+
+/** Violació d'un índex únic de Postgres (`plans_perfil_punt_inici_key`). */
+const isUniqueViolation = (err: unknown) =>
+  typeof err === 'object' && err !== null && 'code' in err && err.code === '23505';
+
+/**
  * Plans d'un usuari (HU12, TG-156). Totes les operacions reben el perfil de l'usuari del JWT
  * (`perfils.id`, el que deixa `requireUser`) i hi filtren a l'SQL: els plans d'un altre usuari no es
  * poden ni llegir ni tocar (RNF06). Les consultes només s'escriuen aquí (ADR-0013).
@@ -63,12 +76,18 @@ export type PlansRepository = {
   setCalendarEvent(perfilId: string, id: string, eventId: string): Promise<boolean>;
   /** Esborra un pla propi (TG-162); false si no existeix o és d'un altre usuari. */
   delete(perfilId: string, id: string): Promise<boolean>;
+  /**
+   * Aplica `canvis` (només els camps presents) al pla del perfil (HU14, TG-161), en una transacció
+   * que bloqueja el pla: comprova el punt, el fenomen i els duplicats sobre el pla resultant. Les
+   * regles de temps (pla acabat, inici al passat, final posterior) les comprova el servei.
+   */
+  update(perfilId: string, id: string, canvis: PlaCanvis): Promise<UpdatePlaResult>;
 };
 
 export function createPlansRepository(db: Db): PlansRepository {
   /**
    * Els plans del perfil amb el seu punt. Sense filtrar per l'estat del punt: el pla d'un punt
-   * retirat no ha de desaparèixer (TG-161 i TG-174 hi tornaran).
+   * retirat no ha de desaparèixer: a l'edició (TG-161) se'n tria un altre.
    */
   const plansDelPerfil = (conn: Db, perfilId: string) =>
     conn
@@ -195,6 +214,83 @@ export function createPlansRepository(db: Db): PlansRepository {
         .returning('id')
         .executeTakeFirst();
       return esborrat !== undefined;
+    },
+
+    async update(perfilId, id, canvis) {
+      try {
+        return await db.transaction().execute(async (trx) => {
+          // `for update`: dues edicions alhora del mateix pla no es trepitgen les comprovacions.
+          const actual = await trx
+            .selectFrom('plans')
+            .select(['puntId', 'esdevenimentId', 'dataHoraInici'])
+            .where('id', '=', id)
+            .where('perfilId', '=', perfilId)
+            .forUpdate()
+            .executeTakeFirst();
+          if (!actual) return { ok: false, reason: 'not_found' } as const;
+
+          const puntId = canvis.puntId ?? actual.puntId;
+          const esdevenimentId =
+            canvis.esdevenimentId === undefined ? actual.esdevenimentId : canvis.esdevenimentId;
+          const inici = new Date(canvis.dataHoraInici ?? actual.dataHoraInici);
+
+          // Sempre, encara que el punt no canviï: un pla d'un punt retirat només es pot desar
+          // triant-ne un de publicat.
+          const punt = await trx
+            .selectFrom('puntsObservacio')
+            .select('id')
+            .where('id', '=', puntId)
+            .where('estat', '=', 'PUBLICAT')
+            .forShare()
+            .executeTakeFirst();
+          if (!punt) return { ok: false, reason: 'punt_not_found' } as const;
+
+          if (esdevenimentId) {
+            const esdeveniment = await esdevenimentsPublics(trx)
+              .select('e.codi')
+              .where('e.codi', '=', esdevenimentId)
+              .forShare()
+              .executeTakeFirst();
+            if (!esdeveniment) return { ok: false, reason: 'event_not_found' } as const;
+          }
+
+          const duplicat = await trx
+            .selectFrom('plans')
+            .select('id')
+            .where('perfilId', '=', perfilId)
+            .where('puntId', '=', puntId)
+            .where('dataHoraInici', '=', inici)
+            .where('id', '<>', id)
+            .executeTakeFirst();
+          if (duplicat) return { ok: false, reason: 'duplicate' } as const;
+
+          await trx
+            .updateTable('plans')
+            .set({
+              ...(canvis.puntId !== undefined && { puntId: canvis.puntId }),
+              ...(canvis.esdevenimentId !== undefined && { esdevenimentId: canvis.esdevenimentId }),
+              ...(canvis.dataHoraInici !== undefined && { dataHoraInici: inici }),
+              ...(canvis.dataHoraFi !== undefined && {
+                dataHoraFi: canvis.dataHoraFi === null ? null : new Date(canvis.dataHoraFi),
+              }),
+              ...(canvis.notes !== undefined && { notes: canvis.notes }),
+            })
+            .where('id', '=', id)
+            .where('perfilId', '=', perfilId)
+            .returning('id')
+            .executeTakeFirstOrThrow();
+
+          // `data_actualitzacio` la posa el trigger `plans_set_data_actualitzacio`.
+          const fila = await plansDelPerfil(trx, perfilId)
+            .where('pl.id', '=', id)
+            .executeTakeFirstOrThrow();
+          return { ok: true, pla: toPla(fila) } as const;
+        });
+      } catch (err) {
+        // Una carrera amb un altre pla al mateix punt i hora: l'índex únic l'atura.
+        if (isUniqueViolation(err)) return { ok: false, reason: 'duplicate' } as const;
+        throw err;
+      }
     },
   };
 }

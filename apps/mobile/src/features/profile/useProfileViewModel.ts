@@ -1,11 +1,12 @@
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { isSupportedLanguage, saveLanguage, SUPPORTED_LANGUAGES, type Language } from '@/core/i18n';
 import { useAuthViewModel } from '@/features/auth/useAuthViewModel';
+import { useNightMode } from '@/features/nightMode/NightModeProvider';
 
-import { useProfileQuery, useUpdateProfileName } from './profileRepository';
+import { deleteAccount, useProfileQuery, useUpdateProfileName } from './profileRepository';
 
 /** Avatar de reserva quan Supabase no en té cap: inicials del nom o del correu. */
 export function profileInitials(name: string | null | undefined, email: string | null | undefined) {
@@ -19,6 +20,7 @@ export function profileInitials(name: string | null | undefined, email: string |
 /** Perfil de l'API, edició del nom i accessos de la pestanya. */
 export function useProfileViewModel() {
   const auth = useAuthViewModel();
+  const nightMode = useNightMode();
   const router = useRouter();
   const { t, i18n } = useTranslation();
   const current: Language = isSupportedLanguage(i18n.language) ? i18n.language : 'ca';
@@ -29,6 +31,11 @@ export function useProfileViewModel() {
   const [nameEditOpen, setNameEditOpen] = useState(false);
   const [languageOpen, setLanguageOpen] = useState(false);
   const [logoutConfirmationOpen, setLogoutConfirmationOpen] = useState(false);
+  const [deleteConfirmationOpen, setDeleteConfirmationOpen] = useState(false);
+  const [deletingAccount, setDeletingAccount] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [accountDeleted, setAccountDeleted] = useState(false);
+  const deletionPending = useRef(false);
   const name = profile.data?.nom?.trim() || null;
   const email = profile.data?.email ?? auth.user?.email ?? null;
   const draftName = draftOverride ?? name ?? '';
@@ -56,6 +63,34 @@ export function useProfileViewModel() {
       setDraftOverride(null);
     } catch {
       setNameError(t('profile.nameSaveError'));
+    }
+  };
+  const confirmDeleteAccount = async () => {
+    if (deletionPending.current) return;
+    deletionPending.current = true;
+    setDeletingAccount(true);
+    setDeleteError(null);
+    try {
+      if (!accountDeleted) {
+        try {
+          await deleteAccount();
+        } catch {
+          setDeleteError(t('profile.deleteError'));
+          return;
+        }
+        setAccountDeleted(true);
+      }
+      if (await auth.signOut()) {
+        setDeleteConfirmationOpen(false);
+        router.replace('/benvinguda');
+      } else {
+        setDeleteError(t('auth.logoutError'));
+      }
+    } catch {
+      setDeleteError(t('auth.logoutError'));
+    } finally {
+      deletionPending.current = false;
+      setDeletingAccount(false);
     }
   };
 
@@ -98,6 +133,13 @@ export function useProfileViewModel() {
     languageValue: t(`profile.languages.${current}`),
     languageOpen,
     toggleLanguage: () => setLanguageOpen((open) => !open),
+    /** Interruptor del mode nit (HU45): la tria mana fins a les 06:00 següents. */
+    nightMode: {
+      label: t('profile.nightModeLabel'),
+      hint: t('profile.nightModeHint'),
+      value: nightMode.on,
+      onValueChange: nightMode.setOn,
+    },
     closeLanguage: () => setLanguageOpen(false),
     currentLanguage: current,
     languages: SUPPORTED_LANGUAGES.map((code) => ({
@@ -118,6 +160,25 @@ export function useProfileViewModel() {
       setLogoutConfirmationOpen(false);
       void auth.signOut();
     },
+    deleteAccountLabel: accountDeleted ? auth.logoutLabel : t('profile.deleteAccount'),
+    deletingAccountLabel: t(accountDeleted ? 'auth.signingOut' : 'profile.deletingAccount'),
+    deleteConfirmationTitle: t(
+      accountDeleted ? 'profile.deletedTitle' : 'profile.deleteConfirmationTitle',
+    ),
+    deleteConfirmationMessage: t(
+      accountDeleted ? 'profile.deletedMessage' : 'profile.deleteConfirmationMessage',
+    ),
+    deleteConfirmationOpen,
+    deletingAccount,
+    deleteError,
+    requestDeleteAccount: () => {
+      setDeleteError(null);
+      setDeleteConfirmationOpen(true);
+    },
+    cancelDeleteAccount: () => {
+      if (!deletionPending.current) setDeleteConfirmationOpen(false);
+    },
+    confirmDeleteAccount: () => void confirmDeleteAccount(),
     plans: auth.isAuthenticated
       ? {
           label: t('profile.plans'),

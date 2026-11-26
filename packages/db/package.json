@@ -1,6 +1,6 @@
 {
   "name": "@talaia/db",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "Accés a la base de dades de l'API i el worker: Kysely sobre Postgres + PostGIS. Vegeu README.md.",
   "main": "src/index.ts",

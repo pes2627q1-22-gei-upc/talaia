@@ -123,7 +123,7 @@ it('carrega els propers amb el nom del fenomen i la sortida, sense demanar els p
   ]);
 });
 
-it('els passats es demanen en obrir-los; un punt retirat no obre la fitxa', async () => {
+it('els passats es demanen en obrir-los; el pla d’un punt retirat també s’obre', async () => {
   const { result } = await renderVm();
   await waitFor(() => expect(result.current.upcoming.state).toBe('ready'));
   await act(async () => result.current.tabs[1]!.onSelect());
@@ -134,17 +134,22 @@ it('els passats es demanen en obrir-los; un punt retirat no obre la fitxa', asyn
     title: 'Cel estrellat a Prades',
     subtitle: 'Aquest punt ja no està disponible.',
     retired: true,
-    accessibilityHint: undefined,
+    accessibilityHint: 'Obre el pla',
   });
   result.current.onOpen(row);
-  expect(push).not.toHaveBeenCalled();
+  expect(push).toHaveBeenCalledWith({ pathname: '/pla/[id]', params: { id: row.id } });
 });
 
-it('obrir un pla porta a la fitxa del seu punt', async () => {
+it('obrir un pla porta a la seva edició (TG-161)', async () => {
   const { result } = await renderVm();
   await waitFor(() => expect(result.current.upcoming.state).toBe('ready'));
-  result.current.onOpen(result.current.upcoming.rows[0]!);
-  expect(push).toHaveBeenCalledWith({ pathname: '/punt/[id]', params: { id: 'montsec' } });
+  const row = result.current.upcoming.rows[0]!;
+  result.current.onOpen(row);
+  expect(push).toHaveBeenCalledWith({ pathname: '/pla/[id]', params: { id: row.id } });
+  // Una fila que ja no és a cap llista no obre res.
+  push.mockClear();
+  result.current.onOpen({ id: 'cap' });
+  expect(push).not.toHaveBeenCalled();
 });
 
 it('sense plans, el buit porta a Explora', async () => {

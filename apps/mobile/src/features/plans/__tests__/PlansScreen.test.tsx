@@ -67,7 +67,7 @@ it('porta el seu botó enrere, fix sobre el títol, que torna al perfil', async 
   expect(back).toHaveBeenCalledTimes(1);
 });
 
-it('ensenya els propers amb esquelets mentre carreguen i obre la fitxa en tocar-ne un', async () => {
+it('ensenya els propers amb esquelets mentre carreguen i obre el pla en tocar-ne un', async () => {
   serve({ futurs: [plan()], passats: [] });
   await renderScreen();
   expect(screen.getByText('Els meus plans')).toBeOnTheScreen();
@@ -82,10 +82,11 @@ it('ensenya els propers amb esquelets mentre carreguen i obre la fitxa en tocar-
   expect(screen.getByText('Sortida a les 23:15, Serra del Montsec')).toBeOnTheScreen();
   expect(screen.queryByTestId('plans-loading')).toBeNull();
   await fireEvent.press(row);
-  expect(push).toHaveBeenCalledWith({ pathname: '/punt/[id]', params: { id: 'montsec' } });
+  // HU14 (TG-161): la fila obre l'edició del pla; la fitxa hi és amb «Veure el punt».
+  expect(push).toHaveBeenCalledWith({ pathname: '/pla/[id]', params: { id: 'p1' } });
 });
 
-it("les pastilles canvien a «Passats»; un pla d'un punt retirat surt desactivat", async () => {
+it("les pastilles canvien a «Passats»; un pla d'un punt retirat s'obre per triar-ne un altre", async () => {
   const retired = plan({
     id: 'p0',
     punt: { id: 'prades', nom: 'Coll de Prades', municipi: 'Prades', publicat: false },
@@ -99,9 +100,9 @@ it("les pastilles canvien a «Passats»; un pla d'un punt retirat surt desactiva
   expect(screen.getByText('Aquest punt ja no està disponible.')).toBeOnTheScreen();
   expect(screen.queryByText('Cel estrellat a Àger')).toBeNull();
   const row = screen.getByTestId('plan-row-p0');
-  expect(row).toBeDisabled();
+  expect(row).toBeEnabled();
   await fireEvent.press(row);
-  expect(push).not.toHaveBeenCalled();
+  expect(push).toHaveBeenCalledWith({ pathname: '/pla/[id]', params: { id: 'p0' } });
 });
 
 it('sense plans, el buit amb el botó cap a Explora (els passats, sense botó)', async () => {
@@ -137,7 +138,7 @@ it('la paperera, també en un pla retirat, demana confirmació i elimina el pla 
   jest.mocked(apiDelete).mockResolvedValue(undefined);
   await renderScreen();
   const trash = await screen.findByRole('button', { name: 'Elimina «Cel estrellat a Prades»' });
-  expect(screen.getByTestId('plan-row-p0')).toBeDisabled();
+  expect(screen.getByTestId('plan-row-p0')).toBeEnabled();
   expect(trash).toBeEnabled();
   await fireEvent.press(trash);
   expect(await screen.findByText('Vols eliminar el pla?')).toBeOnTheScreen();

@@ -11,6 +11,8 @@ jest.mock('../planCalendarRepository', () => ({
     isSupported: jest.fn(() => true),
     requestCalendars: jest.fn(),
     createEvent: jest.fn(),
+    eventExists: jest.fn(),
+    updateEvent: jest.fn(),
   },
 }));
 jest.mock('../plansRepository', () => ({ plansRepository: { linkCalendar: jest.fn() } }));
@@ -115,4 +117,61 @@ it('distingeix la revocació de permisos i evita dos esdeveniments amb un doble 
     ]);
   });
   expect(create).toHaveBeenCalledTimes(1);
+});
+
+describe('update: l’esdeveniment d’un pla editat (TG-161)', () => {
+  const exists = jest.mocked(planCalendarRepository.eventExists);
+  const updateEvent = jest.mocked(planCalendarRepository.updateEvent);
+  const supported = jest.mocked(planCalendarRepository.isSupported);
+  const previous = { ...plan, calendariEventId: 'native-event-1' };
+  const edited = { ...previous, dataHoraInici: '2026-10-21T22:00:00.000Z', notes: 'Termo' };
+
+  beforeEach(() => {
+    supported.mockReturnValue(true);
+    exists.mockResolvedValue(true);
+    updateEvent.mockResolvedValue(undefined);
+  });
+
+  it('amb l’esdeveniment al mòbil, el busca amb el pla d’abans i hi escriu el nou', async () => {
+    const { result } = await renderHook(() => usePlanCalendar());
+    await expect(result.current.update(previous, edited, 'Talaia · Montsec')).resolves.toBe(
+      'updated',
+    );
+    expect(exists).toHaveBeenCalledWith(previous);
+    expect(updateEvent).toHaveBeenCalledWith('native-event-1', {
+      title: 'Talaia · Montsec',
+      location: 'Serra del Montsec, Àger',
+      startDate: '2026-10-21T22:00:00.000Z',
+      endDate: '2026-10-22T00:00:00.000Z',
+      notes: 'Termo',
+      timeZone: 'Europe/Madrid',
+    });
+  });
+
+  it('si no és en aquest mòbil, missing i no l’actualitza', async () => {
+    exists.mockResolvedValue(false);
+    const { result } = await renderHook(() => usePlanCalendar());
+    await expect(result.current.update(previous, edited, 'T')).resolves.toBe('missing');
+    expect(updateEvent).not.toHaveBeenCalled();
+  });
+
+  it('sense esdeveniment vinculat o sense calendari (Expo Go), no crida res', async () => {
+    const { result } = await renderHook(() => usePlanCalendar());
+    await expect(result.current.update(plan, edited, 'T')).resolves.toBe('skipped');
+    supported.mockReturnValue(false);
+    const { result: expoGo } = await renderHook(() => usePlanCalendar());
+    await expect(expoGo.current.update(previous, edited, 'T')).resolves.toBe('skipped');
+    expect(exists).not.toHaveBeenCalled();
+    expect(updateEvent).not.toHaveBeenCalled();
+  });
+
+  it('un error del calendari o del permís no fa fallar res: el pla ja és desat', async () => {
+    updateEvent.mockRejectedValueOnce(new Error('boom'));
+    const { result } = await renderHook(() => usePlanCalendar());
+    await expect(result.current.update(previous, edited, 'T')).resolves.toBe('failed');
+    exists.mockRejectedValueOnce(new CalendarPermissionError(false));
+    await expect(result.current.update(previous, edited, 'T')).resolves.toBe('denied');
+    await waitFor(() => expect(result.current.canAskAgain).toBe(false));
+    expect(result.current.syncing).toBe(false);
+  });
 });

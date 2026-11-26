@@ -54,6 +54,11 @@ Quan s'observa, l'app passa a vermell sobre negre: el blau i el verd trenquen l'
 - **Com es fa servir:** les pantalles no importen `colors`: fan servir `useTheme()` i `makeStyles()` (`core/theme/theme.tsx`), i així es tornen a pintar quan canvia el tema. Una regla d'ESLint (`no-restricted-imports`) ho fa complir.
 - **Icones SVG:** els SVG porten el seu color. Una icona que no té `tintColor` el pren de `useNightTint()`, que en mode nit dona `lluna` (o `nit` amb `useNightTint('nit')`, sobre un botó `primary`) i en el tema normal no fa res.
 - **Mapes:** les DOM components (`NightMap`, `PointLocationMapContent` i `ZonePickerMap`) no veuen el tema. Reben `night`, posen `filter: grayscale(1)` només al canvas de MapLibre i, a sobre de tot, una capa `#FF0000` amb `mix-blend-mode: multiply` (`core/theme/nightMap.ts`). El que es dibuixa al canvas rep la paleta normal, i el filtre el passa a vermell. Els marcadors HTML, l'atribució i els controls reben la del tema: el gris els apagaria (`#FF0000` → `#360000`), i la capa no els canvia.
+- **Quan s'activa (TG-240, `features/nightMode/`):**
+  - **A mà:** l'interruptor «Mode nit» del Perfil, amb sessió o sense. La tria es desa a AsyncStorage (`talaia:mode-nit`) fins a les 06:00 següents (`nextNightEnd`): si es tria a la 01:00, caduca cinc hores després.
+  - **Sol:** si no hi ha cap tria vigent i l'usuari és a menys de 500 m del punt d'un pla seu durant la franja del pla (de l'inici a `dataHoraFi` o, si no en té, fins a les 06:00). Ho avisa a dalt, amb «Desactiva», i VoiceOver ho llegeix.
+  - **Ubicació:** només es mira durant la franja d'un pla, en primer pla, cada 5 minuts i en tornar a l'app. Només si l'usuari ja ha donat el permís: el mode nit no el demana mai, i sense permís només hi ha l'interruptor. La posició no surt del mòbil.
+  - `NightModeProvider` (a `AppProviders`) decideix el nom del tema i el passa al `ThemeProvider`. La lògica és a `nightModeModel.ts`, sense React.
 
 ## Tipografia
 
@@ -89,7 +94,7 @@ A `apps/mobile/src/shared/ui/`. Cap pantalla torna a definir un botó, una targe
 |---|---|
 | `AppText` | Text amb una variant tipogràfica i un color de token |
 | `PressableScale` | Base de tot el que es pot prémer: s'enfonsa a 0,96 i torna amb un spring; `haptic` (`true` o `'selection'`) |
-| `Button` | `primary` (`far`, una per pantalla) · `secondary` (`sheet` + `vora`) · `light` (`lluna`, «Continua amb Google») · `text` (enllaç `far`). Icona opcional |
+| `Button` | `primary` (`far`, una per pantalla) · `secondary` (`sheet` + `vora`) · `light` (`lluna`, «Continua amb Google») · `text` (enllaç `far`) · `danger` (com `text`, en `perill`: accions que esborren, TG-269). Icona opcional |
 | `Card` | Targeta `card` + `linia`; amb `selected`, `vel` + `vora`; amb `onPress`, es pot prémer |
 | `Chip` | Xip de filtre de 34 d'alçada (seleccionat: `far`), amb `hitSlop` fins a 44 |
 | `IndexIndicator` | Xifra de l'índex amb el color de la franja; `md` hi afegeix la franja a sota, `lg` és només la xifra |
@@ -102,6 +107,7 @@ A `apps/mobile/src/shared/ui/`. Cap pantalla torna a definir un botó, una targe
 | `WheelPicker` | Roda a l'estil de l'alarma d'iOS (TG-101): les files giren en cilindre (`rotateX` i opacitat al fil de la interfície), banda `crep`, vores que s'esvaeixen, un tic de vibració a cada fila i dona la volta. Diverses rodes poden compartir una sola banda (`band={false}`) |
 | `Slider` | Barra lliscant (TG-101): pista `crep`, valor `far` i control `lluna`. Segueix el dit al fil de la interfície, avança per passos amb un tic de vibració a cada pas i s'hi ajusta en deixar-la; amb un lector de pantalla, puja i baixa un pas |
 | `Sheet` | Full inferior (TG-101): puja sobre un fons `nit` enfosquit i es tanca tocant fora, amb el botó enrere d'Android o amb el gest d'escapament de VoiceOver. Amb «reduir moviment», només una fosa |
+| `ConfirmationSheet` | Confirmació d'una acció que esborra sobre un `Sheet`: títol, missatge `boira`, «Cancel·la» `secondary` i l'acció en `perill`. Tancar la sessió i eliminar una alerta (TG-269); fa servir aquest full en lloc del diàleg natiu |
 
 L'índex, al Figma, és només la xifra amb el color de la franja i l'etiqueta: ni anell ni barra. L'anell és dels marcadors del mapa (capa de MapLibre, TG-90) i les barres, del desglossament per factors (TG-105).
 

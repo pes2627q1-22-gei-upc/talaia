@@ -1,4 +1,4 @@
-import type { Esdeveniment, Pla, PlaNou } from '@talaia/shared';
+import type { Esdeveniment, Pla, PlaCanvis, PlaNou } from '@talaia/shared';
 
 import { ACCOUNT_BLOCKED } from '@/core/api/accountBlocked';
 import { ApiError } from '@/core/api/httpClient';
@@ -147,6 +147,67 @@ export function buildNewPlan(input: {
   };
 }
 
+/** El formulari d'un pla desat (HU14, TG-161): el que l'usuari pot canviar a l'edició. */
+export type PlanForm = {
+  puntId: string;
+  esdevenimentId: string | null;
+  departure: Departure;
+  /** Del final menys l'inici; `null` si el pla no té final. Moure la sortida el conserva. */
+  durationMs: number | null;
+  notes: string;
+};
+
+export function planForm(plan: Pla): PlanForm {
+  const start = Date.parse(plan.dataHoraInici);
+  return {
+    puntId: plan.punt.id,
+    esdevenimentId: plan.esdevenimentId,
+    departure: toDeparture(new Date(start)),
+    durationMs: plan.dataHoraFi ? Date.parse(plan.dataHoraFi) - start : null,
+    notes: plan.notes ?? '',
+  };
+}
+
+/** Les rodes van de minut en minut com a molt: els segons d'un pla no són un canvi. */
+const sameMinute = (a: string | null, b: string | null) =>
+  a === null || b === null
+    ? a === b
+    : Math.floor(Date.parse(a) / 60_000) === Math.floor(Date.parse(b) / 60_000);
+
+/**
+ * Cos de `PATCH /plans/{id}`: només els camps que han canviat respecte al pla desat; `null` si no
+ * n'ha canviat cap. Si la sortida es mou, el final es mou igual (es conserva la durada).
+ */
+export function planChanges(plan: Pla, form: PlanForm): PlaCanvis | null {
+  const next = buildNewPlan(form);
+  const changes: PlaCanvis = {};
+  if (form.puntId !== plan.punt.id) changes.puntId = form.puntId;
+  if (form.esdevenimentId !== plan.esdevenimentId) changes.esdevenimentId = form.esdevenimentId;
+  if (!sameMinute(next.dataHoraInici, plan.dataHoraInici)) {
+    changes.dataHoraInici = next.dataHoraInici;
+  }
+  if (!sameMinute(next.dataHoraFi ?? null, plan.dataHoraFi)) {
+    changes.dataHoraFi = next.dataHoraFi ?? null;
+  }
+  if (next.notes !== plan.notes) changes.notes = next.notes ?? null;
+  return Object.keys(changes).length > 0 ? changes : null;
+}
+
+/** La sortida del formulari és la del pla desat (un pla començat es pot desar sense moure-la). */
+export const sameDeparture = (plan: Pla, departure: Departure) =>
+  sameMinute(departureIso(departure), plan.dataHoraInici);
+
+/**
+ * Si el pla ja s'ha acabat, com `fiEfectiu` de l'API: a `dataHoraFi` o, si no en té, a les 12:00 de
+ * l'endemà de la seva nit (la nit d'un inici és el dia de `inici − 12 h`). Hora del mòbil.
+ */
+export function isPlanFinished(plan: Pla, now: Date = new Date()): boolean {
+  if (plan.dataHoraFi) return Date.parse(plan.dataHoraFi) < now.getTime();
+  const night = new Date(Date.parse(plan.dataHoraInici) - 12 * 60 * 60 * 1000);
+  const end = new Date(night.getFullYear(), night.getMonth(), night.getDate() + 1, 12);
+  return end.getTime() < now.getTime();
+}
+
 export type PlanErrorKey = 'alreadyExists' | 'limitReached' | 'pointGone' | 'generic';
 
 /**
@@ -165,6 +226,36 @@ export function planErrorKey(error: unknown): PlanErrorKey | null {
       return 'limitReached';
     case 'punt_not_found':
       return 'pointGone';
+    default:
+      return 'generic';
+  }
+}
+
+export type PlanUpdateErrorKey =
+  'alreadyExists' | 'finished' | 'pointGone' | 'eventGone' | 'notFound' | 'past' | 'generic';
+
+/**
+ * Text de l'error del `PATCH /plans/{id}` (TG-161). Com `planErrorKey`, `account_blocked` el pinta
+ * `AccountBlockedScreen`. Un `validation_error` amb el formulari validat només pot ser una sortida
+ * que ha passat mentre la pantalla era oberta.
+ */
+export function planUpdateErrorKey(error: unknown): PlanUpdateErrorKey | null {
+  if (!(error instanceof ApiError)) return 'generic';
+  switch (error.code) {
+    case ACCOUNT_BLOCKED:
+      return null;
+    case 'plan_already_exists':
+      return 'alreadyExists';
+    case 'plan_finished':
+      return 'finished';
+    case 'punt_not_found':
+      return 'pointGone';
+    case 'event_not_found':
+      return 'eventGone';
+    case 'plan_not_found':
+      return 'notFound';
+    case 'validation_error':
+      return 'past';
     default:
       return 'generic';
   }
@@ -226,7 +317,7 @@ export type PlanRow = {
   phenomenon: string | null;
   place: { article: PlaceArticle; name: string };
   pointName: string;
-  /** El punt s'ha retirat: la fitxa ja no hi és i la fila no es pot obrir. */
+  /** El punt s'ha retirat: la fitxa ja no hi és, però el pla s'obre per triar-ne un altre. */
   retired: boolean;
 };
 
@@ -248,4 +339,18 @@ export function planRow(plan: Pla, eventNames: ReadonlyMap<string, string>): Pla
     pointName: plan.punt.nom,
     retired: !plan.punt.publicat,
   };
+}
+
+/** Un punt que es pot triar a l'edició: els publicats de `GET /punts` (TG-161). */
+export type PointOption = { id: string; nom: string; municipi: string };
+
+/** Minúscules i sense accents: «montsec» troba «Montsec» i «agér» troba «Àger». */
+const fold = (text: string) => text.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+
+/** Els punts que contenen la cerca al nom o al municipi, per ordre alfabètic del nom. */
+export function searchPoints(points: readonly PointOption[], query: string): PointOption[] {
+  const needle = fold(query);
+  return points
+    .filter((point) => !needle || fold(`${point.nom} ${point.municipi}`).includes(needle))
+    .sort((a, b) => a.nom.localeCompare(b.nom, 'ca'));
 }

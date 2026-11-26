@@ -1,6 +1,6 @@
 {
   "name": "@talaia/worker",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "Worker de Talaia: ingesta de dades externes i recàlcul horari de l'índex de visibilitat.",
   "scripts": {

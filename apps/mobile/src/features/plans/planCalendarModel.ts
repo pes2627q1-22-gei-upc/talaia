@@ -35,10 +35,11 @@ export type DeviceEventFields = {
 const sameInstant = (a: string | Date, b: string) => new Date(a).getTime() === Date.parse(b);
 
 /**
- * Si l'esdeveniment és el que l'app va crear per al pla (TG-162). L'id de `calendariEventId` només
- * val al mòbil que el va crear, i en un altre pot ser un esdeveniment de l'usuari: abans d'esborrar,
- * han de coincidir l'inici, el final i el municipi del punt. El títol no hi compta, perquè
- * depèn de l'idioma que tenia l'app en crear-lo. Si l'usuari l'ha mogut, no s'esborra.
+ * Si l'esdeveniment és el que l'app va crear per al pla (TG-161, TG-162). L'id de
+ * `calendariEventId` només val al mòbil que el va crear, i en un altre pot ser un esdeveniment de
+ * l'usuari: abans de modificar-lo o esborrar-lo, han de coincidir l'inici, el final i el municipi
+ * del punt. El títol no hi compta, perquè depèn de l'idioma que tenia l'app en crear-lo. Si
+ * l'usuari l'ha mogut, no es toca.
  */
 export function isPlanEvent(event: DeviceEventFields, plan: Pla): boolean {
   const expected = planCalendarEvent(plan, '');
