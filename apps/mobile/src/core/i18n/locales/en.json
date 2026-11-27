@@ -807,6 +807,19 @@
       "create": "Find a spot",
       "errorTitle": "We couldn't load your plans",
       "retry": "Try again"
+    },
+    "delete": {
+      "button": "Delete “{{title}}”",
+      "title": "Delete this plan?",
+      "message": "“{{title}}” will be removed from your plans.",
+      "messageCalendar": "“{{title}}” will be removed from your plans and, if it’s still there, from your phone’s calendar.",
+      "error": "Couldn’t delete the plan. Try again.",
+      "cancel": "Cancel",
+      "confirm": "Delete",
+      "eventLeftTitle": "Plan deleted",
+      "eventLeftMessage": "The event is still in your phone’s calendar, though. Try again, or delete it in the Calendar app.",
+      "retry": "Try again",
+      "close": "Close"
     }
   },
   "notifications": {

@@ -72,6 +72,24 @@ export const planCalendarRepository = {
   },
 
   /**
+   * Esborra l'esdeveniment del pla (TG-162) si encara és el que l'app va crear (`isPlanEvent`). No
+   * demana permís: si no n'hi ha, o l'esdeveniment ja no hi és, no fa res i torna `false`.
+   */
+  async deleteEvent(plan: Pla): Promise<boolean> {
+    if (!plan.calendariEventId || !planCalendarRepository.isSupported()) return false;
+    if (!(await calendar().getCalendarPermissions()).granted) return false;
+    let event: CalendarModule.ExpoCalendarEvent;
+    try {
+      event = await calendar().ExpoCalendarEvent.get(plan.calendariEventId);
+    } catch {
+      return false;
+    }
+    if (!isPlanEvent(event, plan)) return false;
+    await event.delete();
+    return true;
+  },
+
+  /**
    * Si l'esdeveniment del pla (`calendariEventId`) és en aquest mòbil i encara és el que l'app va
    * crear (`isPlanEvent`, amb el pla d'abans d'editar-lo). `false` si s'ha esborrat, si es va crear
    * en un altre mòbil (l'id només val per al que el va crear) o si l'usuari l'ha mogut. Demana el

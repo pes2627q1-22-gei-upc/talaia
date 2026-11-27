@@ -21,6 +21,11 @@ export type PlansService = {
   /** Desa el vincle al calendari del mòbil; 404 si el pla no és del perfil. */
   setCalendarEvent(perfilId: string, id: string, eventId: string): Promise<void>;
   /**
+   * Esborra el pla (TG-162); 404 si no és del perfil. L'esdeveniment del calendari del mòbil
+   * l'esborra l'app: l'id només val al dispositiu que l'ha creat.
+   */
+  delete(perfilId: string, id: string): Promise<void>;
+  /**
    * Modifica un pla propi (HU14, TG-161) i el retorna com el GET. 404 `plan_not_found`; 409
    * `plan_finished` o `plan_already_exists`; 422 `punt_not_found` o `event_not_found`; 400
    * `validation_error` si el pla resultant no té el final després de l'inici o si l'inici nou ja ha
@@ -167,6 +172,13 @@ export function createPlansService(
         esdevenimentId:
           canvis.esdevenimentId === undefined ? actual.esdevenimentId : canvis.esdevenimentId,
       });
+    },
+
+    async delete(perfilId, id) {
+      const esborrat = await fromDatabase(`no s'ha pogut esborrar el pla ${id}`, () =>
+        repository.delete(perfilId, id),
+      );
+      if (!esborrat) throw new ApiError(404, 'plan_not_found', 'No tens cap pla amb aquest id');
     },
   };
 }

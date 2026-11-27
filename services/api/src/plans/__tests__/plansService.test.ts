@@ -43,6 +43,7 @@ function repository(overrides: Partial<PlansRepository> = {}): jest.Mocked<Plans
     list: jest.fn(async () => [PLA_AMB_TEXTOS]),
     findById: jest.fn(async () => PLA_AMB_TEXTOS),
     setCalendarEvent: jest.fn(async () => true),
+    delete: jest.fn(async () => true),
     update: jest.fn(async () => ({ ok: true, pla: PLA_AMB_TEXTOS }) as const),
     ...overrides,
   } as jest.Mocked<PlansRepository>;
@@ -59,11 +60,13 @@ describe('plansService', () => {
     await service(repo).list(PERFIL, 'futurs');
     await service(repo).get(PERFIL, PLA);
     await service(repo).setCalendarEvent(PERFIL, PLA, 'event-1');
+    await service(repo).delete(PERFIL, PLA);
 
     expect(repo.create).toHaveBeenCalledWith(PERFIL, NOU, ARA);
     expect(repo.list).toHaveBeenCalledWith(PERFIL, 'futurs', ARA);
     expect(repo.findById).toHaveBeenCalledWith(PERFIL, PLA);
     expect(repo.setCalendarEvent).toHaveBeenCalledWith(PERFIL, PLA, 'event-1');
+    expect(repo.delete).toHaveBeenCalledWith(PERFIL, PLA);
   });
 
   it('sense rellotge injectat, fa servir l’hora actual', async () => {
@@ -124,12 +127,14 @@ describe('plansService', () => {
       list: falla,
       findById: falla,
       setCalendarEvent: falla,
+      delete: falla,
     });
     for (const crida of [
       service(repo).create(PERFIL, NOU),
       service(repo).list(PERFIL),
       service(repo).get(PERFIL, PLA),
       service(repo).setCalendarEvent(PERFIL, PLA, 'event-1'),
+      service(repo).delete(PERFIL, PLA),
     ]) {
       await expect(crida).rejects.toMatchObject({ status: 503, code: 'database_unavailable' });
     }
@@ -139,6 +144,14 @@ describe('plansService', () => {
   it('un vincle a un pla inexistent o aliè retorna 404', async () => {
     const repo = repository({ setCalendarEvent: jest.fn(async () => false) });
     await expect(service(repo).setCalendarEvent(PERFIL, PLA, 'event-1')).rejects.toMatchObject({
+      status: 404,
+      code: 'plan_not_found',
+    });
+  });
+
+  it('esborrar un pla inexistent o aliè retorna 404 plan_not_found', async () => {
+    const repo = repository({ delete: jest.fn(async () => false) });
+    await expect(service(repo).delete(PERFIL, PLA)).rejects.toMatchObject({
       status: 404,
       code: 'plan_not_found',
     });
